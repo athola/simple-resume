@@ -1,0 +1,199 @@
+{% extends "cv_base.html" %}
+
+{% block sidebar%}
+
+  <!-- Profile picture -->
+  {% if image_uri %}
+    {% if image_link %}<a href="{{ image_link }}" style="display: block;">{% endif %}
+      <img class="profile" src="{{ url_for('static', filename=image_uri) }}">
+    {% if image_link %}</a>{% endif %}
+  {% endif %}
+
+  <h3>{{ titles["contact"] }}</h3>
+
+  {% if address %}
+    <div class="skill-container">
+      <img class="icon" src="{{ url_for('static', filename='icons/' + config.get('theme_color_name', 'default') + '/address.jpg') }}">
+      <div class="contact-container">
+        <div class="contact-text"> <!-- Allow multiline in address -->
+          {% for x in address %}
+            <p>{{ x }}</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  {% endif %}
+
+  {% if phone %}
+    <div class="skill-container">
+      <img class="icon" src="{{ url_for('static', filename='icons/' + config.get('theme_color_name', 'default') + '/phone.jpg') }}">
+      <div class="contact-container">
+        <p class="contact-text">{{ phone }}</p>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  {% endif %}
+
+  {% if email %}
+    <div class="skill-container">
+      <img class="icon" src="{{ url_for('static', filename='icons/' + config.get('theme_color_name', 'default') + '/email.jpg') }}">
+      <div class="contact-container">
+        <p class="contact-text">
+          <a href="mailto:{{ email }}" style="display: block;">
+            {{ email }}
+          </a>
+        </p>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  {% endif %}
+
+  {% if web %}
+    <div class="skill-container">
+      <img class="icon" src="{{ url_for('static', filename='icons/' + config.get('theme_color_name', 'default') + '/web.jpg') }}">
+      <div class="contact-container">
+        <p class="contact-text">
+          <a href="{{ web }}">
+            {{ web }}
+          </a>
+        </p>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  {% endif %}
+
+  {% if linkedin %}
+    <div class="skill-container">
+      <img class="icon" src="{{ url_for('static', filename='icons/' + config.get('theme_color_name', 'default') + '/linkedin.jpg') }}">
+      <div class="contact-container">
+        <p class="contact-text">
+          <a href="https://www.linkedin.com/{{ linkedin }}">
+            {{ linkedin }}
+          </a>
+        </p>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  {% endif %}
+
+  <!-- Language -->
+  <h3>{{ titles["language"] }}</h3>
+  <div class="skill-container">
+
+    {% for name, value in languages.items() %}
+      <p style="margin-bottom: 0">
+        {{ name }}
+      </p>
+      <div class="bar-container">
+        <div class="bar-blue" style="width: {{ value }}mm"></div>
+        <div class="bar-grey" style="width: {{ config['sidebar_width'] - 2*config['padding'] - value }}mm"></div>
+      </div>
+      <div class="skill-spacer"></div>
+    {% endfor %}
+
+  </div>
+
+  <!-- Expertise -->
+  <h3>{{ titles["expertise"] }}</h3>
+  <div class="skill-container">
+
+    {% for name, value in expertise.items() %}
+      <p style="margin-bottom: 0">
+        {{ name }}
+      </p>
+      <div class="bar-container">
+        <div class="bar-blue" style="width: {{ value }}mm"></div>
+        <div class="bar-grey" style="width: {{ config['sidebar_width'] - 2*config['padding'] - value }}mm"></div>
+      </div>
+      <div class="skill-spacer"></div>
+    {% endfor %}
+
+  </div>
+
+  <!-- Programming -->
+  <h3>{{ titles["programming"] }}</h3>
+  <div class="skill-container">
+
+    {% for name, value in programming.items() %}
+      <p style="margin-bottom: 0">
+        {{ name }}
+      </p>
+      <div class="bar-container">
+        <div class="bar-blue" style="width: {{ value }}mm"></div>
+        <div class="bar-grey" style="width: {{ config['sidebar_width'] - 2*config['padding'] - value }}mm"></div>
+      </div>
+      <div class="skill-spacer"></div>
+    {% endfor %}
+
+  </div>
+
+{% endblock %}
+
+
+{% block body%}
+  <h1>{{ full_name }}</h1>
+
+  {% if description %}
+  <div class="pitch">
+    {% autoescape false %}
+      {{ description }}
+    {% endautoescape %}
+  </div>
+  {% endif %} 
+
+  {% for name, block_data in body.items() %}
+    <h2> {{ name }}</h2>
+
+    {% for data in block_data %}
+      <div class="content">
+
+        <!-- Date Sidebar -->
+        <div class="date-container">
+          <p class="date1">
+            {{ data["end"] }}
+          </p>
+
+          {% if data["start"] %}
+            <p class="date2">
+              {{ data["start"] }}
+            </p>
+          {% endif %} 
+        </div>
+
+        <!-- Content itself -->
+        <div class="description-container">
+
+          <!-- If there is description use h4, else regular text -->
+          {% if data["description"] %}<h4><b>{% else %}<p>{% endif %} 
+
+            <!-- Allows to add a link to the title -->
+            {% if data["title_link"] %}<a href="{{ data['title_link'] }}">{% endif %} 
+              {{ data["title"] }}
+            {% if data["title_link"] %}</a>{% endif %} 
+
+          {% if data["description"] %}</b></h4>{% else %}</p>{% endif %} 
+
+          <h5>
+            <!-- Allows to add a link to the company -->
+            {% if data["company_link"] %}<a href="{{ data['company_link'] }}">{% endif %} 
+              {{ data["company"] }}
+            {% if data["company_link"] %}</a>{% endif %}
+          </h5>
+
+          {% if data["description"] %}
+            <div class="description">
+              {% autoescape false %}
+                {{ data["description"] }}
+              {% endautoescape %}
+            </div>
+          {% endif %} 
+
+        </div>
+      </div>
+    {% endfor %}
+
+    <div class="spacer"></div>
+  {% endfor %}
+
+{% endblock %}

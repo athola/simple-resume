@@ -1,0 +1,152 @@
+template: cv_no_bars
+
+full_name: John Doe
+
+# Address should be a list (with only one element if needed)
+address: 
+  - City
+
+phone: 555 555 5555
+web: http://web.com # It will automatically add an hiperlink
+linkedin: in/user.com # It will automatically add an hiperlink
+email: email@email.com # It will automatically add an hiperlink
+
+image_uri: images/default_profile_2.png
+
+# To allow multilanguage
+titles:
+  contact: Contact
+  language: Languages
+  expertise: Expertise
+  programming: Programming
+  keyskills: Key Skills
+
+description: |
+  This is where you can write your pitch. It is written using **Markdown**. You can include bold, italics, links...
+  
+  Take a look at the [cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet).
+  
+  If you don't want this section you can just comment it. The same applies for the profile picture.
+
+
+
+expertise:
+  - Data Engineering
+  - Cloud Platforms
+  - Artificial Intelligence
+
+# Max value will be sidebar_width - 2*padding = 36 by default
+languages:
+  English: 30
+  Spanish: 25
+
+keyskills:
+  - Spark / Dask
+  - SQL
+  - Luigi / Airflow
+  - AWS / Azure
+  - Python
+  - Pandas
+  - Tensorflow / Keras
+
+body:
+  Experience:
+    -
+      start: 01/2019
+      end: Actual
+      title: Developer
+      title_link: http://google.com
+      company: Basetis
+      company_link: https://www.basetis.com/
+      description: | # The | Allows to have markdown below
+        - Description line 1
+        - Description line 2
+        - Description line 3
+    -
+      start: 09/2018
+      end: 12/2018
+      title: Backend
+      company: Basetis
+      description: |
+        Description are written using **Markdown**. You can include bold, italics, links...
+
+        Take a look at the [cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet).
+
+  Education:
+    -
+      start: 09/2010
+      end: 09/2015
+      title: Engineering
+      company: UPC
+      description: Simple description
+
+    -
+      start: 09/2010
+      end: 09/2015
+      title: Engineering
+      company: UPC
+      description:  Simple description
+
+    -
+      start: 09/2010
+      end: 09/2015
+      title: Engineering
+      company: UPC
+      description:  Simple description
+
+    # You can comment sections you don't want to show
+    # -
+    #   start: 09/1901
+    #   end: 09/1900
+    #   title: Elementary school
+    #   company: Funny name
+    #   description:  Simple description
+
+  # You can have more simpler blocks without descritpion
+  # Good option for certificates or courses
+  Certifications:
+    -
+      end: 09/2017
+      title: Certification 1
+      title_link: https://google.com/
+      company: Company
+      company_link: https://google.com/
+
+    -
+      end: 09/2017
+      title: Certification 2
+      company: Company
+
+
+config:
+  # Document colors
+  theme_color: "#0395DE" # Cool blue
+  sidebar_color: "#F6F6F6" # Light grey
+  bar_background_color: "#DFDFDF" # Darker light grey
+  date2_color: "#616161" # Grey
+
+  # Sizes
+  padding: 12
+  page_width: 210
+  page_height: 297
+
+  sidebar_width: 60
+  profile_image_padding_bottom: 6
+
+  pitch_padding_top: 4
+  pitch_padding_bottom: 4
+  pitch_padding_left: 4
+
+  h2_padding_left: 4
+  date_container_width: 13
+  date_container_padding_left: 8
+  description_container_padding_left: 3
+
+  # Frame for previewing
+  frame_padding: 10
+  frame_color: "#757575" # Grey 600
+
+  # Cover letter paddings
+  cover_padding_top: 10
+  cover_padding_bottom: 20
+  cover_padding_h: 25
