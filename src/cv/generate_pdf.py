@@ -20,7 +20,9 @@ def generate_pdf():
         
         input_file = f"http://{URL_PRINT}{name}"
         output_file = f"{PATH_OUTPUT}{name}.pdf"
-        time.sleep(2)
+        if not os.path.exists(PATH_OUTPUT):
+            os.mkdir(PATH_OUTPUT)
+        time.sleep(1)
         print(f"\n-- Creating {name}.pdf --")
         css = CSS(string=''' @page {size: Letter; margin: 0in 0.44in 0.2in 0.44in;} ''')
         HTML(input_file).write_pdf(output_file, stylesheets=[css])
