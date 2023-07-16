@@ -2,7 +2,7 @@
 
 import os
 import time
-from weasyprint import HTML
+from weasyprint import CSS, HTML
 
 from .config import PATH_INPUT, URL_PRINT, PATH_OUTPUT, STATIC_LOC
 from .index import run_app
@@ -22,7 +22,8 @@ def generate_pdf():
         output_file = f"{PATH_OUTPUT}{name}.pdf"
         time.sleep(2)
         print(f"\n-- Creating {name}.pdf --")
-        HTML(input_file).write_pdf(output_file)
+        css = CSS(string=''' @page {size: Letter; margin: 0in 0.44in 0.2in 0.44in;} ''')
+        HTML(input_file).write_pdf(output_file, stylesheets=[css])
 
 
 if __name__ == "__main__":

@@ -65,3 +65,6 @@ src/static/images/*
 
 # Notebooks for images
 utilities/**.ipynb
+
+# Generated pdf
+sample/output

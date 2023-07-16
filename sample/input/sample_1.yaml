@@ -128,8 +128,8 @@ config:
 
   # Sizes
   padding: 12
-  page_width: 210
-  page_height: 297
+  page_width: 190
+  page_height: 270
 
   sidebar_width: 60
   profile_image_padding_bottom: 6

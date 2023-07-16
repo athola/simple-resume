@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Load data from YAML files as ordered dicts."""
 
 from oyaml import safe_load

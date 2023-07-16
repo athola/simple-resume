@@ -24,10 +24,18 @@ pillow = "^9.4.0"
 pydantic = "^1.10.6"
 tqdm = "^4.65.0"
 vpalette = "^3.0.0"
+pylint = "^2.17.4"
 
 [tool.poetry.scripts]
 generate_pdf = "cv:generate_pdf"
 run_app = "cv:run_app"
+
+[tool.pylint.master]
+recursive = true
+ignore = [
+    "static",
+    "templates"
+]
 
 [build-system]
 requires = ["poetry-core"]
