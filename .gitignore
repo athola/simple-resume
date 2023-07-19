@@ -68,3 +68,7 @@ utilities/**.ipynb
 
 # Generated pdf
 sample/output
+
+# Private Folders/Files
+cv_private/
+**/*/private_headshot.jpg

@@ -86,21 +86,13 @@
     {% endfor %}
   </div>
 
-  <!-- Language -->
-  <h3>{{ titles["language"] }}</h3>
+  <!-- Certification -->
+  <h3>{{ titles["certification"] }}</h3>
   <div class="skill-container">
-
-    {% for name, value in languages.items() %}
-      <p style="margin-bottom: 0">
-        {{ name }}
-      </p>
-      <div class="bar-container">
-        <div class="bar-blue" style="width: {{ value }}mm"></div>
-        <div class="bar-grey" style="width: {{ config['sidebar_width'] - 2*config['padding'] - value }}mm"></div>
-      </div>
+    {% for name in certification %}
+      <p style="margin-bottom: 5px">{{ name }}</p>
       <div class="skill-spacer"></div>
     {% endfor %}
-
   </div>
 
   <!-- Key Skills -->

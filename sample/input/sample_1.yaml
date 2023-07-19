@@ -18,7 +18,7 @@ image_link: https://google.com
 # To allow multilanguage
 titles:
   contact: Contact
-  language: Languages
+  certification: Certifications
   expertise: Expertise
   programming: Programming
   keyskills: Key Skills
@@ -36,10 +36,9 @@ expertise:
   - Cloud Platforms
   - Artificial Intelligence
 
-# Max value will be sidebar_width - 2*padding = 36 by default
-languages:
-  English: 30
-  Spanish: 25
+certification:
+  - Certificate1
+  - Certificate2
 
 keyskills:
   - Spark / Dask
@@ -102,22 +101,6 @@ body:
     #   title: Elementary school
     #   company: Funny name
     #   description:  Simple description
-
-  # You can have more simpler blocks without descritpion
-  # Good option for certificates or courses
-  Certifications:
-    -
-      end: 09/2017
-      title: Certification 1
-      title_link: https://google.com/
-      company: Company
-      company_link: https://google.com/
-
-    -
-      end: 09/2017
-      title: Certification 2
-      company: Company
-
 
 config:
   # Document colors
