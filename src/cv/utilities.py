@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Load data from YAML files as ordered dicts."""
+from typing import Any, Dict
 
 from oyaml import safe_load
 from markdown import markdown
-from typing import Any, Dict
 
 from .config import FILE_DEFAULT, PATH_INPUT
 
@@ -22,7 +22,7 @@ def _transform_from_markdown(data: Dict[str, Any]):
 
     # Descriptions in body
     if "body" in data:
-        for block_name, block_data in data["body"].items():
+        for block_data in data["body"].values():
             for element in block_data:
                 if "description" in element:
                     element["description"] = markdown(element["description"])

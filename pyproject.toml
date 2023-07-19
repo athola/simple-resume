@@ -16,19 +16,24 @@ python = "^3.8.0"
 flask = "^2.2.3"
 markdown = "^3.4.1"
 oyaml = "^1.0"
-httpx = "^0.24.1"
 weasyprint = "^59.0"
 
 [tool.poetry.group.utils.dependencies]
-pillow = "^9.4.0"
-pydantic = "^1.10.6"
-tqdm = "^4.65.0"
-vpalette = "^3.0.0"
 pylint = "^2.17.4"
+mypy = "^1.4.1"
+types-markdown = "^3.4.2.9"
 
 [tool.poetry.scripts]
 generate_pdf = "cv:generate_pdf"
 run_app = "cv:run_app"
+
+[[tool.mypy.overrides]]
+module = "oyaml"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "weasyprint"
+ignore_missing_imports = true
 
 [tool.pylint.master]
 recursive = true

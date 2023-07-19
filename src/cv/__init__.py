@@ -1,4 +1,5 @@
-# cv/__init__.py
+#!/usr/bin/env python3
+"""Manage imports for cv project."""
 
 from .generate_pdf import generate_pdf
 from .index import run_app

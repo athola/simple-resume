@@ -4,12 +4,19 @@ import os
 import time
 from weasyprint import CSS, HTML
 
-from .config import PATH_INPUT, URL_PRINT, PATH_OUTPUT, STATIC_LOC
+from .config import PATH_INPUT, URL_PRINT, PATH_OUTPUT
 from .index import run_app
-from .utilities import get_content
 
 
 def generate_pdf():
+    """Generate pdf from html.
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
     run_app(True)
     for filename in os.listdir(PATH_INPUT):
 
@@ -17,7 +24,7 @@ def generate_pdf():
 
         if extension not in ["yaml", "yml"]:
             continue
-        
+
         input_file = f"http://{URL_PRINT}{name}"
         output_file = f"{PATH_OUTPUT}{name}.pdf"
         if not os.path.exists(PATH_OUTPUT):

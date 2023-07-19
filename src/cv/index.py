@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Loads CV as a webpage for testing purposes."""
+"""Load CV as a webpage for testing purposes."""
 from threading import Thread
 
 from flask import Flask, render_template
