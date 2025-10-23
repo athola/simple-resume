@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """All modifiable constants."""
 
+import os
+
 # Paths
-PATH_DATA = "cv_private"
+PATH_DATA = os.environ.get("CV_DATA_DIR", "cv_private")
 # PATH_DATA = "sample"  # Uncomment if wanting to use the sample folder
 PATH_INPUT = f"{PATH_DATA}/input/"
 PATH_OUTPUT = f"{PATH_DATA}/output/"

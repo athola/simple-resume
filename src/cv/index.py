@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 """Load CV as a webpage for testing purposes."""
+
 from threading import Thread
 
 from flask import Flask, render_template
 
 from .utilities import get_content
 
-
 APP = Flask(__name__)
 
 
 @APP.route("/v/<name>")
 @APP.route("/view/<name>")
-def show(name: str = '', preview: bool = True) -> str:
+@APP.route("/v/")
+@APP.route("/view/")
+def show(name: str = "", preview: bool = True) -> str:
     """Render a CV for previews.
 
     Args:
@@ -24,13 +26,20 @@ def show(name: str = '', preview: bool = True) -> str:
 
     """
     data = get_content(name)
-    template = f"{data['template']}.html"
+
+    # Handle missing template field gracefully
+    template_name = data.get("template", "cv_no_bars")
+    template = f"{template_name}.html"
+
+    # Rename config to avoid conflict with Flask's config
+    if "config" in data:
+        data["cv_config"] = data.pop("config")
 
     return render_template(template, preview=preview, **data)
 
 
 @APP.route("/print/<name>")
-def mprint(name: str = '') -> str:
+def mprint(name: str = "") -> str:
     """Display a CV without any frame for printing.
 
     Args:
@@ -95,7 +104,7 @@ def run_app(daemon: bool = False) -> None:
 
     """
     if daemon:
-        Thread(name='flask_app', target=execute_app, daemon=True).start()
+        Thread(name="flask_app", target=execute_app, daemon=True).start()
     else:
         execute_app()
 

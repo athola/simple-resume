@@ -1,0 +1,80 @@
+name: Linting
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  ruff:
+    name: Ruff Linting
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+      with:
+        version: "latest"
+
+    - name: Install dependencies
+      run: uv sync --extra utils
+
+    - name: Run Ruff linting
+      run: uv run ruff check src/ tests/
+
+    - name: Run Ruff formatting check
+      run: uv run ruff format --check src/ tests/
+
+  flake8:
+    name: Flake8 Linting
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+      with:
+        version: "latest"
+
+    - name: Install dependencies
+      run: uv sync --extra utils
+
+    - name: Run Flake8
+      run: uv run flake8 src/ tests/ --max-line-length=88 --extend-ignore=E203,W503
+
+  pylint:
+    name: Pylint Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+      with:
+        version: "latest"
+
+    - name: Install dependencies
+      run: uv sync --extra utils
+
+    - name: Run Pylint
+      run: uv run pylint src/cv/ --disable=C0114,C0115,C0116

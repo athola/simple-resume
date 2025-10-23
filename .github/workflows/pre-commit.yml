@@ -1,0 +1,124 @@
+name: Pre-commit Checks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  pre-commit:
+    name: Pre-commit Hook Validation
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+      with:
+        version: "latest"
+
+    - name: Install dependencies
+      run: uv sync --extra utils
+
+    - name: Install pre-commit
+      run: |
+        pip install pre-commit
+        pre-commit install
+
+    - name: Cache pre-commit
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pre-commit
+        key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+    - name: Run pre-commit on all files
+      run: pre-commit run --all-files --show-diff-on-failure
+
+  local-dev-setup:
+    name: Local Development Setup Validation
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+      with:
+        version: "latest"
+
+    - name: Test make commands
+      run: |
+        # Install dependencies
+        uv sync --extra utils
+
+        # Test make commands (if Makefile exists)
+        if [ -f "Makefile" ]; then
+          echo "Testing Makefile commands..."
+          make help || echo "No help target found"
+
+          # Test lint command
+          if make -n lint 2>/dev/null; then
+            echo "✓ make lint command exists"
+            make lint
+          else
+            echo "✗ make lint command not found"
+          fi
+
+          # Test typecheck command
+          if make -n typecheck 2>/dev/null; then
+            echo "✓ make typecheck command exists"
+            make typecheck
+          else
+            echo "✗ make typecheck command not found"
+          fi
+
+          # Test test command
+          if make -n test 2>/dev/null; then
+            echo "✓ make test command exists"
+          else
+            echo "✗ make test command not found"
+          fi
+        else
+          echo "No Makefile found, testing direct uv commands..."
+
+          # Test direct uv commands
+          uv run ruff check src/
+          echo "✓ uv run ruff check works"
+
+          uv run mypy src/cv/
+          echo "✓ uv run mypy works"
+
+          uv run ty check src/cv/
+          echo "✓ uv run ty works"
+
+          uv run pytest
+          echo "✓ uv run pytest works"
+        fi
+
+    - name: Validate development environment
+      run: |
+        echo "Validating development environment setup..."
+
+        # Check if all required tools are available
+        uv run ruff --version
+        uv run mypy --version
+        uv run ty --version
+        uv run pytest --version
+
+        echo "✓ All development tools are available"
+
+        # Test imports work correctly
+        uv run python -c "import cv.utilities; print('✓ cv.utilities imports correctly')"
+        uv run python -c "from cv.utilities import get_content; print('✓ get_content imports correctly')"

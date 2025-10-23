@@ -38,16 +38,16 @@
         font-weight: normal;
       }
       h1, h2, h3, h5 {
-        color: {{ config["theme_color"] }};
+        color: {{ cv_config["theme_color"] }};
       }
       h1 {
         font-size: 30pt;
         font-family: 'Avenir 35';
         padding-top: 11mm;
         padding-bottom: 8.5mm;
-        padding-right: {{ config["padding"] }}mm;
+        padding-right: {{ cv_config["padding"] }}mm;
         text-align: center;
-        border-bottom: 3px solid {{ config["sidebar_color"] }};
+        border-bottom: 3px solid {{ cv_config["sidebar_color"] }};
       }
       h2 {
         font-size: 16pt;
@@ -76,30 +76,30 @@
 
       /* Layout styles */
       .frame {
-        padding-top: {{ config["frame_padding"] }}mm;
-        padding-bottom: {{ config["frame_padding"] }}mm;
-        padding-left: {{ config["frame_padding"] }}mm;
-        padding-right: {{ config["frame_padding"] }}mm;
-        background-color: {{ config["frame_color"] }};
+        padding-top: {{ cv_config["frame_padding"] }}mm;
+        padding-bottom: {{ cv_config["frame_padding"] }}mm;
+        padding-left: {{ cv_config["frame_padding"] }}mm;
+        padding-right: {{ cv_config["frame_padding"] }}mm;
+        background-color: {{ cv_config["frame_color"] }};
       }
       .page {
         page-break-after: always;
-        width: {{ config["page_width"] }}mm;
-        height: {{ config["page_height"] }}mm;
+        width: {{ cv_config["page_width"] }}mm;
+        height: {{ cv_config["page_height"] }}mm;
         background-color: white;
       }
       .body {
         float: left;
-        width: {{ config["page_width"] }}mm;
-        height: {{ config["page_height"] }}mm;
+        width: {{ cv_config["page_width"] }}mm;
+        height: {{ cv_config["page_height"] }}mm;
       }
 
       /* Content styles */
       .description {
-        padding-top: {{ config["cover_padding_top"] }}mm;
-        padding-bottom: {{ config["cover_padding_bottom"] }}mm;
-        padding-left: {{ config["cover_padding_h"] }}mm;
-        padding-right: {{ config["cover_padding_h"] }}mm;
+        padding-top: {{ cv_config["cover_padding_top"] }}mm;
+        padding-bottom: {{ cv_config["cover_padding_bottom"] }}mm;
+        padding-left: {{ cv_config["cover_padding_h"] }}mm;
+        padding-right: {{ cv_config["cover_padding_h"] }}mm;
       }
 
       code {
