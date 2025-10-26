@@ -17,6 +17,8 @@ repos:
     rev: v0.5.6
     hooks:
       - id: ruff
+        args: [--fix, --exit-non-zero-on-fix, --select=PL]
+      - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
 
@@ -26,18 +28,6 @@ repos:
       - id: mypy
         additional_dependencies: [types-markdown]
         args: [--strict]
-
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.0.0
-    hooks:
-      - id: flake8
-        args: [--max-line-length=100, --extend-ignore=E203,W503]
-
-  - repo: https://github.com/pycqa/pylint
-    rev: v3.2.6
-    hooks:
-      - id: pylint
-        args: [--disable=C0114,C0115,C0116, --score=yes]
 
   - repo: https://github.com/pycqa/bandit
     rev: 1.7.5

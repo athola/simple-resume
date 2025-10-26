@@ -54,8 +54,6 @@ utils = [
     "ruff>=0.14.0",
     "mypy>=1.18.0",
     "ty>=0.0.1a23",
-    "flake8>=7.0.0",
-    "pylint>=3.2.0",
     "pytype>=2024.10.11",
     "types-markdown>=3.9.0",
     "pytest>=8.0.0",
@@ -71,7 +69,7 @@ run-server = "cv.index:run_app"
 packages = ["src/cv"]
 
 [tool.ruff]
-line-length = 100
+line-length = 88
 target-version = "py310"
 exclude = [".venv", ".uv-cache", "src/cv/static", "src/cv/templates"]
 
@@ -83,20 +81,26 @@ select = [
     "I",    # isort
     "C",    # flake8-comprehensions
     "B",    # flake8-bugbear
-    "PL",   # Pylint codes (the equivalent rules)
+    "PL",   # All Pylint rules (complete coverage)
     "SIM",  # flake8-simplify
     "UP",   # pyupgrade
     "RUF",  # Ruff-specific rules
     "PERF", # Performance rules
     "PT",   # flake8-pytest-style
+    "N",    # pep8-naming
+    "ANN",  # flake8-annotations
 ]
 extend-ignore = [
-    "PLR2004",  # magic-value-comparison
-    "PLR0911",  # too-many-return-statements
-    "PLR0912",  # too-many-branches
-    "PLR0913",  # too-many-arguments
-    "PLR0915",  # too-many-statements
-    "PLW0603",  # global-statement
+    "E203",    # whitespace before ':' (conflicts with black/ruff format)
+    "PLR2004", # magic-value-comparison
+    "PLR0911", # too-many-return-statements
+    "PLR0912", # too-many-branches
+    "PLR0913", # too-many-arguments
+    "PLR0915", # too-many-statements
+    "PLW0603", # global-statement
+    "D100",    # missing-module-docstring (equivalent to pylint C0114)
+    "D101",    # missing-class-docstring (equivalent to pylint C0115)
+    "D102",    # missing-function-docstring (equivalent to pylint C0116)
 ]
 
 [tool.ruff.lint.per-file-ignores]

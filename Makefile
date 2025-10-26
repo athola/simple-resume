@@ -1,4 +1,4 @@
-.PHONY: help install lint format typecheck clean run-server generate-pdf
+.PHONY: help install lint format typecheck clean run-server generate-pdf validate
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -63,3 +63,25 @@ test: ## Run all tests
 
 test-coverage: ## Run tests with coverage report
 	uv run pytest --cov=src/cv --cov-report=term-missing
+
+validate: ## Validate current commit is ready for PR (runs all workflow checks)
+	@echo "Validating commit is ready for PR..."
+	@echo ""
+	@echo "Installing dependencies..."
+	uv sync --extra utils
+	@echo ""
+	@echo "Running tests..."
+	uv run pytest || (echo "Tests failed - fix before pushing" && exit 1)
+	@echo ""
+	@echo "Running linting checks..."
+	uv run ruff check src/ tests/ || (echo "Linting failed - run 'make fix-all' to auto-fix" && exit 1)
+	uv run ruff format --check src/ tests/ || (echo "Code formatting issues - run 'make fix-all'" && exit 1)
+	@echo ""
+	@echo "Running type checking..."
+	uv run mypy src/cv/ || (echo "MyPy type checking failed" && exit 1)
+	uv run ty check src/cv/ || (echo "Ty type checking failed" && exit 1)
+	@echo ""
+	@echo "Running additional static analysis with ruff pylint rules..."
+	uv run ruff check src/cv/ --select=PL || (echo "Ruff pylint rules failed" && exit 1)
+	@echo ""
+	@echo "All checks passed! Commit is ready for PR"

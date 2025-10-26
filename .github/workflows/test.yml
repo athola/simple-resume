@@ -28,12 +28,3 @@ jobs:
 
     - name: Run tests
       run: uv run pytest
-
-    - name: Run type checking
-      run: uv run mypy src/cv/
-
-    - name: Run additional type checking
-      run: uv run ty check src/cv/
-
-    - name: Run linting
-      run: uv run ruff check src/cv/
