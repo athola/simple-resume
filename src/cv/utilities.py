@@ -6,7 +6,16 @@ from typing import Any
 from markdown import markdown
 from oyaml import safe_load
 
-from .config import FILE_DEFAULT, PATH_INPUT
+from .config import FILE_DEFAULT
+from .config import PATH_INPUT as CONFIG_PATH_INPUT
+
+PATH_INPUT: str = CONFIG_PATH_INPUT
+
+__all__ = [
+    "FILE_DEFAULT",
+    "PATH_INPUT",
+    "get_content",
+]
 
 
 def _read_yaml(uri: str) -> dict[str, Any]:
@@ -43,7 +52,6 @@ def _transform_from_markdown(data: dict[str, Any]) -> None:
 
 def get_content(name: str = "") -> dict[str, Any]:
     """Return content of the CV."""
-
     if not name:
         name = FILE_DEFAULT
 

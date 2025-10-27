@@ -6,7 +6,7 @@ These tests follow the Red-Green-Refactor cycle:
 3. REFACTOR: Improve code while keeping tests green
 
 Tests follow extreme programming practices:
-- Comprehensive edge case coverage
+- Edge case coverage
 - Business logic validation
 - Clear, descriptive test names
 - Single assertion per test where possible
@@ -151,7 +151,7 @@ class TestTransformFromMarkdown:
     def test_transform_markdown_in_body_sections(self) -> None:
         """RED: Test that markdown in body sections is converted to HTML."""
         # Arrange
-        data = {
+        data: dict[str, Any] = {
             "body": {
                 "Experience": [
                     {"description": "- Item 1\n- Item 2 with **bold** text"},
@@ -183,7 +183,7 @@ class TestTransformFromMarkdown:
     def test_transform_with_no_markdown_fields(self) -> None:
         """RED: Test that data without markdown fields is unchanged."""
         # Arrange
-        data = {
+        data: dict[str, Any] = {
             "name": "John Doe",
             "age": 30,
             "body": {
@@ -208,7 +208,7 @@ class TestTransformFromMarkdown:
     def test_transform_with_empty_body_sections(self) -> None:
         """RED: Test handling of empty body sections."""
         # Arrange
-        data = {"body": {"Experience": [], "Education": []}}
+        data: dict[str, Any] = {"body": {"Experience": [], "Education": []}}
 
         # Act
         _transform_from_markdown(data)
@@ -218,9 +218,10 @@ class TestTransformFromMarkdown:
         assert data["body"]["Education"] == []
 
     def test_transform_with_complex_markdown_content(self) -> None:
-        """RED: Test transformation of complex markdown with links, lists, and formatting."""
+        """RED: Test transformation of complex markdown with links, lists, and
+        formatting."""
         # Arrange
-        data = {
+        data: dict[str, Any] = {
             "description": """
 # Professional Summary
 
@@ -248,7 +249,7 @@ Visit my [portfolio](https://example.com) for more details.
     def test_transform_preserves_other_fields(self) -> None:
         """RED: Test that transformation preserves non-markdown fields."""
         # Arrange
-        data = {
+        data: dict[str, Any] = {
             "name": "John Doe",
             "email": "john@example.com",
             "description": "Simple description",
@@ -270,7 +271,7 @@ Visit my [portfolio](https://example.com) for more details.
     def test_transform_with_code_blocks_and_tables(self) -> None:
         """RED: Test transformation of markdown code blocks and tables."""
         # Arrange
-        data = {
+        data: dict[str, Any] = {
             "description": """Here's some code:
 
 ```python
@@ -305,7 +306,7 @@ And a table:
     def test_enhanced_markdown_features_for_technical_cvs(self) -> None:
         """GREEN: Test that enhanced markdown features work for technical CVs."""
         # Arrange
-        data = {
+        data: dict[str, Any] = {
             "body": {
                 "Projects": [
                     {
@@ -449,7 +450,7 @@ class TestGetContent:
     @patch("cv.utilities.FILE_DEFAULT", "default_cv")
     @patch("cv.utilities.PATH_INPUT", "test_input/")
     def test_get_content_with_empty_name_uses_default(
-        self, mock_transform: Mock, mock_read
+        self, mock_transform: Mock, mock_read: Mock
     ) -> None:
         """RED: Test that empty name uses default file name."""
         # Arrange
@@ -489,7 +490,7 @@ class TestGetContent:
     @patch("cv.utilities.FILE_DEFAULT", "default_cv")
     @patch("cv.utilities.PATH_INPUT", "test_input/")
     def test_get_content_with_name_containing_dot(
-        self, mock_transform: Mock, mock_read
+        self, mock_transform: Mock, mock_read: Mock
     ) -> None:
         """RED: Test that names with dots are handled correctly."""
         # Arrange
@@ -511,7 +512,7 @@ class TestGetContent:
     @patch("cv.utilities.FILE_DEFAULT", "default_cv")
     @patch("cv.utilities.PATH_INPUT", "test_input/")
     def test_get_content_with_name_containing_multiple_dots(
-        self, mock_transform: Mock, mock_read
+        self, mock_transform: Mock, mock_read: Mock
     ) -> None:
         """RED: Test that names with multiple dots are handled correctly."""
         # Arrange
@@ -560,7 +561,7 @@ class TestGetContent:
     @patch("cv.utilities.FILE_DEFAULT", "default_cv")
     @patch("cv.utilities.PATH_INPUT", "test_input/")
     def test_get_content_integration_with_markdown_transformation(
-        self, mock_transform: Mock, mock_read
+        self, mock_transform: Mock, mock_read: Mock
     ) -> None:
         """GREEN: Integration test for complete get_content workflow."""
         # Arrange
@@ -592,7 +593,7 @@ class TestGetContent:
         assert result["name"] == "Test User"
 
     def test_get_content_business_logic_validation(
-        self, sample_cv_file: Path, monkeypatch
+        self, sample_cv_file: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """GREEN: Business logic test for CV content structure validation."""
         # Arrange

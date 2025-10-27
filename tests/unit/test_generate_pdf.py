@@ -59,8 +59,10 @@ class TestGeneratePdf:
         expected_files = ["cv1.yaml", "cv2.yml"]
         assert mock_listdir.call_count == 1
 
-        # Verify output directory check
-        mock_exists.assert_called_once()
+          # Verify both input and output directory checks
+        assert mock_exists.call_count == 2
+        mock_exists.assert_any_call('cv_private/input/')
+        mock_exists.assert_any_call('cv_private/output/')
 
         # Verify sleep is called for each file (WeasyPrint timing)
         assert mock_sleep.call_count == len(expected_files)
@@ -95,7 +97,8 @@ class TestGeneratePdf:
         # Arrange
         mock_run_app.return_value = None
         mock_listdir.return_value = ["cv1.yaml"]
-        mock_exists.return_value = False  # Output directory doesn't exist
+        # Input directory exists, output directory doesn't
+        mock_exists.side_effect = lambda path: path == 'cv_private/input/'
         mock_makedirs.return_value = None
         mock_css.return_value = Mock()
         mock_html_instance = Mock()
@@ -105,14 +108,16 @@ class TestGeneratePdf:
         generate_pdf()
 
         # Assert
-        mock_exists.assert_called_once()
-        mock_makedirs.assert_called_once()
+        assert mock_exists.call_count == 2
+        mock_exists.assert_any_call('cv_private/input/')
+        mock_exists.assert_any_call('cv_private/output/')
+        mock_makedirs.assert_called_once_with('cv_private/output/', exist_ok=True)
         mock_html_instance.write_pdf.assert_called_once()
 
     @patch("cv.generate_pdf.run_app")
     @patch("cv.generate_pdf.os.listdir")
     def test_generate_pdf_filters_non_yaml_files(
-        self, mock_listdir: Mock, mock_run_app
+        self, mock_listdir: Mock, mock_run_app: Mock
     ) -> None:
         """RED: Test that only YAML and YML files are processed."""
         # Arrange
@@ -178,7 +183,7 @@ class TestGeneratePdf:
     @patch("cv.generate_pdf.run_app")
     @patch("cv.generate_pdf.os.listdir")
     def test_generate_pdf_with_mixed_extensions(
-        self, mock_listdir: Mock, mock_run_app
+        self, mock_listdir: Mock, mock_run_app: Mock
     ) -> None:
         """RED: Test handling of mixed file extensions."""
         # Arrange
@@ -322,7 +327,7 @@ class TestGeneratePdf:
     @patch("cv.generate_pdf.run_app")
     @patch("cv.generate_pdf.os.listdir")
     def test_generate_pdf_business_logic_validation(
-        self, mock_listdir: Mock, mock_run_app
+        self, mock_listdir: Mock, mock_run_app: Mock
     ) -> None:
         """GREEN: Business logic test for PDF generation workflow."""
         # Arrange
@@ -388,7 +393,7 @@ class TestGeneratePdf:
         "cv.generate_pdf.os.listdir", side_effect=PermissionError("Permission denied")
     )
     def test_generate_pdf_permission_error_handling(
-        self, mock_listdir: Mock, mock_run_app
+        self, mock_listdir: Mock, mock_run_app: Mock
     ) -> None:
         """GREEN: Test handling of permission errors."""
         # Act & Assert

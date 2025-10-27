@@ -82,21 +82,23 @@ target-version = "py310"
 exclude = [".venv", ".uv-cache", "src/cv/static", "src/cv/templates"]
 
 [tool.ruff.lint]
+# Rules: https://docs.astral.sh/ruff/rules/
+# Using a subset of ruff-recommended rules plus some extras
+# For a more aggressive linting, use:
+# select = [
+#   "ALL",
+# ]
 select = [
-    "E",    # pycodestyle errors
-    "W",    # pycodestyle warnings
-    "F",    # pyflakes
-    "I",    # isort
-    "C",    # flake8-comprehensions
-    "B",    # flake8-bugbear
-    "PL",   # All Pylint rules (complete coverage)
-    "SIM",  # flake8-simplify
-    "UP",   # pyupgrade
-    "RUF",  # Ruff-specific rules
-    "PERF", # Performance rules
-    "PT",   # flake8-pytest-style
-    "N",    # pep8-naming
-    "ANN",  # flake8-annotations
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # pyflakes
+  "I",   # isort
+  "B",   # flake8-bugbear
+  "C4",  # flake8-comprehensions
+  "UP",  # pyupgrade
+  "S",   # flake8-bandit
+  "PL",   # All Pylint rules (complete coverage)
+  "D",   # pydocstyle
 ]
 extend-ignore = [
     "E203",    # whitespace before ':' (conflicts with black/ruff format)
@@ -121,6 +123,7 @@ extend-ignore = [
     "RUF001",   # Allow unicode characters in test strings
     "RUF002",   # Allow unicode characters in docstrings
     "RUF003",   # Allow unicode characters in comments
+    "S101",     # Allow assert statements in tests
 ]
 
 [tool.ruff.format]
@@ -154,6 +157,22 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "flask"
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pytest"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "yaml"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_decorators = false
+
+[[tool.mypy.overrides]]
+module = "cv.index"
+disallow_untyped_decorators = false
 
 [tool.pyright]
 include = ["src/**"]

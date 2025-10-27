@@ -47,7 +47,7 @@ def sample_cv_data() -> dict[str, Any]:
                     "company": "Test Company",
                     "description": (
                         "- Developed **amazing** features\n"
-                        "- Wrote comprehensive tests\n"
+                        "- Wrote tests\n"
                         "- Followed TDD principles"
                     ),
                 }
@@ -100,8 +100,8 @@ def sample_cv_file(temp_dir: Path, sample_cv_data: dict[str, Any]) -> Path:
 def create_complete_cv_data(
     template: str = "cv_no_bars",
     full_name: str = "Test User",
-    experience: list | None = None,
-    expertise: list | None = None,
+    experience: list[dict[str, Any]] | None = None,
+    expertise: list[str] | dict[str, int] | None = None,
     description: str = "This is a **test** description.",
 ) -> dict[str, Any]:
     """Create a complete CV data structure with all required fields."""
@@ -112,13 +112,13 @@ def create_complete_cv_data(
                 "end": "Present",
                 "title": "Test Developer",
                 "company": "Test Company",
-                "description": (
-                    "- Developed **amazing** features\n- Wrote comprehensive tests"
-                ),
+                "description": ("- Developed **amazing** features\n- Wrote tests"),
             }
         ]
 
     # Different templates expect different data formats
+    certification: list[str] | dict[str, int]
+
     if template == "cv_with_bars":
         if expertise is None:
             expertise = {"Python": 95, "Testing": 90, "TDD": 85}
@@ -226,7 +226,7 @@ Visit my [portfolio](https://janesmith.dev) for more examples.
 
 ### Key Projects
 1. **E-commerce Platform**: Built using Django with 100% test coverage
-2. **API Gateway**: Microservices architecture with comprehensive integration tests
+2. **API Gateway**: Microservices architecture with integration tests
 3. **Testing Framework**: Custom pytest plugins for the organization
 
 *Learn more about our [testing methodology](https://techcorp.dev/testing)*

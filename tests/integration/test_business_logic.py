@@ -9,7 +9,7 @@ These tests implement TDD principles for business rules and user stories:
 """
 
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 import yaml
 
@@ -17,11 +17,28 @@ import cv.utilities
 from cv.utilities import get_content
 
 
+class ContactScenario(TypedDict):
+    """Contact validation scenario definition."""
+
+    name: str
+    data: dict[str, Any]
+    should_be_valid: bool
+
+
+class TemplateScenario(TypedDict):
+    """Template validation scenario definition."""
+
+    name: str
+    data: dict[str, Any]
+    appropriate: bool
+
+
 class TestCVBusinessRules:
     """Business logic tests for CV domain rules and constraints."""
 
     def test_user_story_professional_cv_creation(self, temp_dir: Path) -> None:
-        """User Story: As a professional, I want to create a polished CV that highlights my experience."""
+        """User Story: As a professional, I want to create a polished CV
+        that highlights my experience."""
         # Business Rule: Professional CV must have complete contact information
         professional_cv_data = {
             "template": "cv_no_bars",
@@ -97,8 +114,10 @@ Led teams of 5-10 engineers in enterprise-scale projects.
         self._validate_professional_cv_business_rules(processed_cv)
 
     def test_user_story_student_cv_creation(self, temp_dir: Path) -> None:
-        """User Story: As a student, I want to create a CV that emphasizes my education and projects."""
-        # Business Rule: Student CV should highlight education and potential over experience
+        """User Story: As a student, I want to create a CV that emphasizes my
+        education and projects."""
+        # Business Rule: Student CV should highlight education and potential
+        # over experience
         student_cv_data = {
             "template": "cv_no_bars",
             "full_name": "Alex Johnson",
@@ -149,7 +168,8 @@ Passionate about machine learning, competitive programming, and open source.
                         "company": "Capstone Project",
                         "description": """
 ## Project Overview
-Developed **machine learning application** that helps students create personalized study plans.
+Developed **machine learning application** that helps students create
+personalized study plans.
 
 ### Technical Implementation
 - **Backend**: Python with FastAPI, PostgreSQL database
@@ -169,7 +189,9 @@ Developed **machine learning application** that helps students create personaliz
                         "end": "12/2023",
                         "title": "Competitive Programming Platform",
                         "company": "Course Project",
-                        "description": "Built platform for coding contests with 500+ problems",
+                        "description": (
+                            "Built platform for coding contests with 500+ problems"
+                        ),
                     },
                 ],
             },
@@ -180,7 +202,8 @@ Developed **machine learning application** that helps students create personaliz
         self._validate_student_cv_business_rules(processed_cv)
 
     def test_user_story_career_change_cv(self, temp_dir: Path) -> None:
-        """User Story: As a career changer, I want to highlight transferable skills and new certifications."""
+        """User Story: As a career changer, I want to highlight transferable
+        skills and new certifications."""
         # Business Rule: Career change CV must bridge past experience with new goals
         career_change_cv_data = {
             "template": "cv_with_bars",
@@ -191,14 +214,19 @@ Developed **machine learning application** that helps students create personaliz
             "description": """
 ## Career Transition: Finance → Software Engineering
 
-**Finance professional** with 7 years experience transitioning to **software engineering**.
-Combining analytical expertise with modern programming skills for **FinTech** opportunities.
+**Finance professional** with 7 years experience transitioning to
+**software engineering**.
+Combining analytical expertise with modern programming skills for
+**FinTech** opportunities.
 
 ### Career Change Narrative
-After successful career in **financial analysis**, discovered passion for **technology** through automation projects.
-Completed **intensive coding bootcamp** and built portfolio of **real-world applications**.
+After successful career in **financial analysis**, discovered passion for
+**technology** through automation projects.
+Completed **intensive coding bootcamp** and built portfolio of
+**real-world applications**.
 
-**Goal**: Leverage **domain expertise** in finance with **technical skills** in software development.
+**Goal**: Leverage **domain expertise** in finance with **technical skills**
+in software development.
             """.strip(),
             "body": {
                 "Experience": [
@@ -277,14 +305,14 @@ Completed **intensive coding bootcamp** and built portfolio of **real-world appl
         appropriate_cv = {
             "template": "cv_no_bars",
             "full_name": "Balanced User",
-            "description": "Experienced professional with comprehensive background",
+            "description": "Experienced professional with a diverse background",
             "expertise": ["Skill 1", "Skill 2", "Skill 3"],
             "body": {
                 "Experience": [
                     {
                         "title": "Senior Developer",
                         "company": "TechCorp",
-                        "description": "Comprehensive experience description",
+                        "description": "Detailed experience description",
                     }
                 ]
             },
@@ -329,7 +357,7 @@ Completed **intensive coding bootcamp** and built portfolio of **real-world appl
     def test_business_rule_contact_information_validation(self, temp_dir: Path) -> None:
         """Business Rule: Contact information must be valid and complete."""
         # Test Cases for contact information validation
-        test_cases = [
+        test_cases: list[ContactScenario] = [
             {
                 "name": "valid_contact",
                 "data": {
@@ -384,7 +412,7 @@ Completed **intensive coding bootcamp** and built portfolio of **real-world appl
     def test_business_rule_template_appropriateness(self, temp_dir: Path) -> None:
         """Business Rule: Template choice should match content type and profession."""
         # Test Cases for template appropriateness
-        test_scenarios = [
+        test_scenarios: list[TemplateScenario] = [
             {
                 "name": "technical_with_no_bars",
                 "data": {
@@ -410,7 +438,13 @@ Completed **intensive coding bootcamp** and built portfolio of **real-world appl
                 "data": {
                     "template": "cover",
                     "full_name": "Student User",
-                    "description": "This is a detailed description of my qualifications and experience that makes me suitable for this position. I have extensive knowledge in various technologies and I'm very passionate about learning new things and contributing to the team's success with my skills and dedication.",
+                    "description": (
+                        "This is a detailed description of my qualifications and "
+                        "experience that makes me suitable for this position. I have "
+                        "extensive knowledge in various technologies and I'm very "
+                        "passionate about learning new things and contributing to the "
+                        "team's success with my skills and dedication."
+                    ),
                     "body": {"Education": [{"title": "Student"}]},
                 },
                 "appropriate": True,
@@ -534,15 +568,14 @@ Completed **intensive coding bootcamp** and built portfolio of **real-world appl
             if clean_phone.replace("+", "").isdigit() and len(clean_phone) >= 10:
                 contact_methods += 1
 
-        if cv_data.get("web"):
-            if cv_data["web"].startswith(("http://", "https://")):
-                contact_methods += 1
+        if cv_data.get("web") and cv_data["web"].startswith(("http://", "https://")):
+            contact_methods += 1
 
-        if cv_data.get("linkedin"):
-            if "linkedin.com" in cv_data["linkedin"] or cv_data["linkedin"].startswith(
-                "in/"
-            ):
-                contact_methods += 1
+        if cv_data.get("linkedin") and (
+            "linkedin.com" in cv_data["linkedin"]
+            or cv_data["linkedin"].startswith("in/")
+        ):
+            contact_methods += 1
 
         # Business Rule: Must have at least 2 valid contact methods
         return contact_methods >= 2

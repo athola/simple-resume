@@ -78,7 +78,7 @@ jobs:
 
     - name: Run Pyright
       run: |
-        pyright --pythonpath=.venv/bin/python --venv-path=. --venv=.venv src/cv/
+        pyright src/cv/
 
   pytype:
     name: Pytype Type Checking

@@ -2,8 +2,6 @@
 
 import argparse
 import os
-import subprocess
-import sys
 import time
 
 from weasyprint import CSS, HTML
@@ -20,27 +18,17 @@ def generate_pdf(data_dir: str | None = None) -> None:
 
     Returns:
         None
+
     """
-    # If data_dir is provided, restart the script with the environment variable set
+    # If data_dir is provided, update environment configuration directly
     if data_dir:
-        env = os.environ.copy()
-        env["CV_DATA_DIR"] = data_dir
-
-        # Restart the script without the data_dir argument
-        result = subprocess.run(
-            [sys.executable, "-m", "cv.generate_pdf"],
-            env=env,
-            capture_output=False,
-            text=True,
-            check=False,
-        )
-
-        # Exit with the same code as the subprocess
-        sys.exit(result.returncode)
+        os.environ["CV_DATA_DIR"] = data_dir
 
     run_app(True)
 
-    # Create output directory if it doesn't exist (check once, not in loop)
+    # Create input and output directories if they don't exist
+    if not os.path.exists(PATH_INPUT):
+        os.makedirs(PATH_INPUT, exist_ok=True)
     if not os.path.exists(PATH_OUTPUT):
         os.makedirs(PATH_OUTPUT, exist_ok=True)
 
@@ -72,7 +60,7 @@ MIN_FILENAME_PARTS = 2  # filename must have at least name and extension
 
 
 def main() -> None:
-    """Main entry point for command line interface."""
+    """Generate PDF files from CV data via command line interface."""
     parser = argparse.ArgumentParser(description="Generate PDF files from CV data")
     parser.add_argument(
         "--data-dir",

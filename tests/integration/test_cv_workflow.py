@@ -11,7 +11,7 @@ These tests follow TDD principles with focus on:
 import threading
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 from unittest.mock import patch
 
 import yaml
@@ -19,6 +19,14 @@ import yaml
 from cv.index import APP
 from cv.utilities import get_content
 from tests.conftest import create_complete_cv_data
+
+
+class ValidationScenario(TypedDict):
+    """Typed scenario definition for CV validation tests."""
+
+    name: str
+    data: dict[str, Any]
+    should_be_valid: bool
 
 
 class TestCVWorkflowIntegration:
@@ -50,8 +58,7 @@ class TestCVWorkflowIntegration:
 
             # Step 3: Test web rendering
             with APP.test_client() as client:
-                with patch("cv.utilities.PATH_INPUT", str(test_input_dir) + "/"):
-                    response = client.get("/v/john_doe")
+                response = client.get("/v/john_doe")
 
             # Assert
             assert response.status_code == 200
@@ -117,15 +124,14 @@ class TestCVWorkflowIntegration:
 
                 # Test web rendering
                 with APP.test_client() as client:
-                    with patch("cv.utilities.PATH_INPUT", str(test_input_dir) + "/"):
-                        response = client.get(f"/v/{cv_name}")
-                        assert response.status_code == 200
-                        assert expected_data["full_name"].encode() in response.data
+                    response = client.get(f"/v/{cv_name}")
+                    assert response.status_code == 200
+                    assert expected_data["full_name"].encode() in response.data
 
     def test_cv_content_validation_workflow(self, temp_dir: Path) -> None:
         """GREEN: Business logic validation for CV content requirements."""
         # Arrange - Test various CV content scenarios
-        test_scenarios = [
+        test_scenarios: list[ValidationScenario] = [
             {
                 "name": "complete_cv",
                 "data": create_complete_cv_data(
@@ -162,9 +168,8 @@ class TestCVWorkflowIntegration:
 
                 # Should render in web interface
                 with APP.test_client() as client:
-                    with patch("cv.utilities.PATH_INPUT", str(test_input_dir) + "/"):
-                        response = client.get(f"/v/{scenario['name']}")
-                        assert response.status_code == 200
+                    response = client.get(f"/v/{scenario['name']}")
+                    assert response.status_code == 200
 
     def test_markdown_processing_integration(self, temp_dir: Path) -> None:
         """GREEN: Test markdown processing in complete workflow."""
@@ -225,8 +230,7 @@ Visit my [portfolio](https://janesmith.dev) for more examples.
 
             # Test web rendering with processed markdown
             with APP.test_client() as client:
-                with patch("cv.utilities.PATH_INPUT", str(test_input_dir) + "/"):
-                    response = client.get("/v/markdown_test")
+                response = client.get("/v/markdown_test")
 
         # Assert
         assert response.status_code == 200
@@ -262,18 +266,16 @@ Visit my [portfolio](https://janesmith.dev) for more examples.
             assert content["full_name"] == "Valid User"
 
             with APP.test_client() as client:
-                with patch("cv.utilities.PATH_INPUT", str(test_input_dir) + "/"):
-                    response = client.get("/v/valid")
-                    assert response.status_code == 200
+                response = client.get("/v/valid")
+                assert response.status_code == 200
 
             # System should continue working with second CV
             content = get_content("test")
             assert content["full_name"] == "Test User"
 
             with APP.test_client() as client:
-                with patch("cv.utilities.PATH_INPUT", str(test_input_dir) + "/"):
-                    response = client.get("/v/test")
-                    assert response.status_code == 200
+                response = client.get("/v/test")
+                assert response.status_code == 200
 
     def test_performance_with_large_cv_dataset(self, temp_dir: Path) -> None:
         """GREEN: Performance test with large number of CVs."""
@@ -315,10 +317,9 @@ Visit my [portfolio](https://janesmith.dev) for more examples.
             # Test web rendering performance
             start_time = time.time()
             with APP.test_client() as client:
-                with patch("cv.utilities.PATH_INPUT", str(test_input_dir) + "/"):
-                    for i in range(num_cvs):
-                        response = client.get(f"/v/user_{i}")
-                        assert response.status_code == 200
+                for i in range(num_cvs):
+                    response = client.get(f"/v/user_{i}")
+                    assert response.status_code == 200
 
             render_time = time.time() - start_time
 

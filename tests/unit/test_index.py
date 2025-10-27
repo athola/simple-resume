@@ -2,13 +2,12 @@
 
 These tests follow the Red-Green-Refactor cycle and extreme programming practices:
 - Test-driven development approach
-- Comprehensive edge case coverage
+- Edge case coverage
 - Business logic validation
 - Web application behavior testing
 - Route handling and response validation
 """
 
-import os
 import threading
 import time
 from unittest.mock import Mock, patch
@@ -152,7 +151,7 @@ class TestFlaskApp:
     @patch("cv.index.render_template")
     @patch("cv.index.get_content")
     def test_show_route_response_content_type(
-        self, mock_get_content: Mock, mock_render
+        self, mock_get_content: Mock, mock_render: Mock
     ) -> None:
         """GREEN: Test that response has correct content type."""
         # Arrange
@@ -170,7 +169,7 @@ class TestFlaskApp:
     @patch("cv.index.render_template")
     @patch("cv.index.get_content")
     def test_show_route_with_different_templates(
-        self, mock_get_content: Mock, mock_render
+        self, mock_get_content: Mock, mock_render: Mock
     ) -> None:
         """GREEN: Test that different templates are handled correctly."""
         # Arrange
@@ -200,7 +199,7 @@ class TestAppExecution:
 
     @patch("cv.index.APP")
     @patch.dict("os.environ", {"FLASK_DEBUG": "true"})
-    def test_execute_app_calls_flask_run(self, mock_flask_app) -> None:
+    def test_execute_app_calls_flask_run(self, mock_flask_app: Mock) -> None:
         """RED: Test that execute_app calls Flask run with correct parameters."""
         # Act
         execute_app()
@@ -210,7 +209,9 @@ class TestAppExecution:
 
     @patch("cv.index.execute_app")
     @patch("cv.index.Thread")
-    def test_run_app_with_daemon_true(self, mock_thread, mock_execute) -> None:
+    def test_run_app_with_daemon_true(
+        self, mock_thread: Mock, mock_execute: Mock
+    ) -> None:
         """RED: Test that run_app with daemon=True creates thread correctly."""
         # Act
         run_app(daemon=True)
@@ -222,7 +223,7 @@ class TestAppExecution:
         mock_thread.return_value.start.assert_called_once()
 
     @patch("cv.index.execute_app")
-    def test_run_app_with_daemon_false(self, mock_execute) -> None:
+    def test_run_app_with_daemon_false(self, mock_execute: Mock) -> None:
         """RED: Test that run_app with daemon=False calls execute directly."""
         # Act
         run_app(daemon=False)
@@ -231,7 +232,7 @@ class TestAppExecution:
         mock_execute.assert_called_once()
 
     @patch("cv.index.execute_app")
-    def test_run_app_default_daemon_false(self, mock_execute) -> None:
+    def test_run_app_default_daemon_false(self, mock_execute: Mock) -> None:
         """RED: Test that run_app defaults to daemon=False."""
         # Act
         run_app()
@@ -241,7 +242,9 @@ class TestAppExecution:
 
     @patch("cv.index.execute_app")
     @patch("cv.index.Thread")
-    def test_run_app_thread_configuration(self, mock_thread, mock_execute) -> None:
+    def test_run_app_thread_configuration(
+        self, mock_thread: Mock, mock_execute: Mock
+    ) -> None:
         """GREEN: Test that thread is configured correctly for daemon mode."""
         # Act
         run_app(daemon=True)
@@ -261,7 +264,7 @@ class TestBusinessLogic:
     @patch("cv.index.get_content")
     @patch("cv.index.render_template")
     def test_show_route_business_logic_validation(
-        self, mock_render: Mock, mock_get_content
+        self, mock_render: Mock, mock_get_content: Mock
     ) -> None:
         """GREEN: Business logic test for CV data validation in routes."""
         # Arrange
@@ -297,7 +300,7 @@ class TestBusinessLogic:
     @patch("cv.index.get_content")
     @patch("cv.index.render_template")
     def test_show_route_handles_missing_template_field(
-        self, mock_render: Mock, mock_get_content
+        self, mock_render: Mock, mock_get_content: Mock
     ) -> None:
         """GREEN: Test handling of CV data missing template field."""
         # Arrange
@@ -323,7 +326,7 @@ class TestBusinessLogic:
     @patch("cv.index.render_template")
     @patch("cv.index.get_content")
     def test_show_route_with_special_characters_in_name(
-        self, mock_get_content: Mock, mock_render
+        self, mock_get_content: Mock, mock_render: Mock
     ) -> None:
         """GREEN: Test handling of special characters in CV names."""
         # Arrange
@@ -350,7 +353,7 @@ class TestBusinessLogic:
     @patch("cv.index.render_template")
     @patch("cv.index.get_content")
     def test_show_route_performance_with_large_cv_data(
-        self, mock_get_content: Mock, mock_render
+        self, mock_get_content: Mock, mock_render: Mock
     ) -> None:
         """GREEN: Performance test with large CV data."""
         # Arrange
