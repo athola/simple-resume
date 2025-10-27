@@ -24,6 +24,7 @@ description: |
   ```python
   import requests
 
+
   def fetch_data(url):
       """Fetch data from API endpoint."""
       response = requests.get(url)
@@ -127,7 +128,7 @@ description: |
 ```markdown
 ```python
 def example():
-  print("Hello")
+    print("Hello")
 ```
 ```
 
@@ -167,6 +168,7 @@ Projects:
       from fastapi import FastAPI
 
       app = FastAPI()
+
 
       @app.get("/api/v1/data")
       async def get_data():

@@ -110,25 +110,15 @@ jobs:
 
     - name: Check docstring coverage
       run: |
-        pip install docstring-coverage
-        docstring-coverage src/cv/ --fail-under=80 || true
+        uv add --dev docstring-coverage
+        uv run docstring-coverage src/cv/ --fail-under=80 || true
 
     - name: Check README links
       run: |
-        pip install markdown-link-check
-        markdown-link-check README.md || true
+        uv add --dev markdown-link-check
+        uv run markdown-link-check README.md || true
 
     - name: Validate Markdown files
       run: |
-        find . -name "*.md" -not -path "./.git/*" -not -path "./.venv/*" -not -path "./htmlcov/*" | xargs -I {} python3 -c "
-import sys
-import markdown
-try:
-    with open('{}', 'r') as f:
-        content = f.read()
-    markdown.markdown(content)
-    print(f'✓ {} is valid markdown')
-except Exception as e:
-    print(f'✗ {} has invalid markdown: {e}')
-    sys.exit(1)
-"
+        uv add --dev markdown
+        find . -name "*.md" -not -path "./.git/*" -not -path "./.venv/*" -not -path "./htmlcov/*" -exec sh -c 'uv run python -c "import markdown; content=open(\"\\$1\").read(); markdown.markdown(content); echo \"✓ \\$1 is valid markdown\""' _ {} \;

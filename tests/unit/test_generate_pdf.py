@@ -7,10 +7,9 @@ These tests follow the Red-Green-Refactor cycle and extreme programming practice
 - Business logic for CV processing
 - Integration with external dependencies
 """
-import os
-import tempfile
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+
+import time
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -29,8 +28,17 @@ class TestGeneratePdf:
     @patch("cv.generate_pdf.print")
     @patch("cv.generate_pdf.HTML")
     @patch("cv.generate_pdf.CSS")
-    def test_generate_pdf_success_workflow(self, mock_css, mock_html, mock_print,
-                                         mock_sleep, mock_makedirs, mock_exists, mock_listdir, mock_run_app):
+    def test_generate_pdf_success_workflow(
+        self,
+        mock_css: Mock,
+        mock_html: Mock,
+        mock_print: Mock,
+        mock_sleep: Mock,
+        mock_makedirs: Mock,
+        mock_exists: Mock,
+        mock_listdir: Mock,
+        mock_run_app: Mock,
+    ) -> None:
         """RED: Test complete PDF generation workflow."""
         # Arrange
         mock_run_app.return_value = None
@@ -72,8 +80,17 @@ class TestGeneratePdf:
     @patch("cv.generate_pdf.print")
     @patch("cv.generate_pdf.HTML")
     @patch("cv.generate_pdf.CSS")
-    def test_generate_pdf_creates_output_directory(self, mock_css, mock_html, mock_print,
-                                                  mock_sleep, mock_makedirs, mock_exists, mock_listdir, mock_run_app):
+    def test_generate_pdf_creates_output_directory(
+        self,
+        mock_css: Mock,
+        mock_html: Mock,
+        mock_print: Mock,
+        mock_sleep: Mock,
+        mock_makedirs: Mock,
+        mock_exists: Mock,
+        mock_listdir: Mock,
+        mock_run_app: Mock,
+    ) -> None:
         """RED: Test that output directory is created when it doesn't exist."""
         # Arrange
         mock_run_app.return_value = None
@@ -94,7 +111,9 @@ class TestGeneratePdf:
 
     @patch("cv.generate_pdf.run_app")
     @patch("cv.generate_pdf.os.listdir")
-    def test_generate_pdf_filters_non_yaml_files(self, mock_listdir, mock_run_app):
+    def test_generate_pdf_filters_non_yaml_files(
+        self, mock_listdir: Mock, mock_run_app
+    ) -> None:
         """RED: Test that only YAML and YML files are processed."""
         # Arrange
         mock_run_app.return_value = None
@@ -104,7 +123,7 @@ class TestGeneratePdf:
             "readme.txt",
             "script.py",
             "config.json",
-            "style.css"
+            "style.css",
         ]
 
         # Act
@@ -124,8 +143,17 @@ class TestGeneratePdf:
     @patch("cv.generate_pdf.print")
     @patch("cv.generate_pdf.HTML")
     @patch("cv.generate_pdf.CSS")
-    def test_generate_pdf_css_configuration(self, mock_css, mock_html, mock_print,
-                                           mock_sleep, mock_makedirs, mock_exists, mock_listdir, mock_run_app):
+    def test_generate_pdf_css_configuration(
+        self,
+        mock_css: Mock,
+        mock_html: Mock,
+        mock_print: Mock,
+        mock_sleep: Mock,
+        mock_makedirs: Mock,
+        mock_exists: Mock,
+        mock_listdir: Mock,
+        mock_run_app: Mock,
+    ) -> None:
         """RED: Test that CSS is configured correctly for PDF generation."""
         # Arrange
         mock_run_app.return_value = None
@@ -144,13 +172,14 @@ class TestGeneratePdf:
             string=" @page {size: Letter; margin: 0in 0.44in 0.2in 0.44in;} "
         )
         mock_html_instance.write_pdf.assert_called_once_with(
-            f"{PATH_OUTPUT}test_cv.pdf",
-            stylesheets=[mock_css_instance]
+            f"{PATH_OUTPUT}test_cv.pdf", stylesheets=[mock_css_instance]
         )
 
     @patch("cv.generate_pdf.run_app")
     @patch("cv.generate_pdf.os.listdir")
-    def test_generate_pdf_with_mixed_extensions(self, mock_listdir, mock_run_app):
+    def test_generate_pdf_with_mixed_extensions(
+        self, mock_listdir: Mock, mock_run_app
+    ) -> None:
         """RED: Test handling of mixed file extensions."""
         # Arrange
         mock_run_app.return_value = None
@@ -158,17 +187,18 @@ class TestGeneratePdf:
             "cv1.yaml",
             "cv2.yml",
             "cv3.YAML",  # Upper case
-            "cv4.YML",   # Upper case
+            "cv4.YML",  # Upper case
             "document.txt",
-            "image.png"
+            "image.png",
         ]
 
-        with patch("cv.generate_pdf.os.path.exists", return_value=True), \
-             patch("cv.generate_pdf.time.sleep"), \
-             patch("cv.generate_pdf.print"), \
-             patch("cv.generate_pdf.HTML") as mock_html, \
-             patch("cv.generate_pdf.CSS") as mock_css:
-
+        with (
+            patch("cv.generate_pdf.os.path.exists", return_value=True),
+            patch("cv.generate_pdf.time.sleep"),
+            patch("cv.generate_pdf.print"),
+            patch("cv.generate_pdf.HTML") as mock_html,
+            patch("cv.generate_pdf.CSS") as mock_css,
+        ):
             mock_html_instance = Mock()
             mock_html.return_value = mock_html_instance
             mock_css.return_value = Mock()
@@ -183,7 +213,9 @@ class TestGeneratePdf:
 
     @patch("cv.generate_pdf.run_app")
     @patch("cv.generate_pdf.os.listdir")
-    def test_generate_pdf_empty_directory(self, mock_listdir, mock_run_app):
+    def test_generate_pdf_empty_directory(
+        self, mock_listdir: Mock, mock_run_app: Mock
+    ) -> None:
         """RED: Test handling of empty input directory."""
         # Arrange
         mock_run_app.return_value = None
@@ -204,8 +236,17 @@ class TestGeneratePdf:
     @patch("cv.generate_pdf.print")
     @patch("cv.generate_pdf.HTML")
     @patch("cv.generate_pdf.CSS")
-    def test_generate_pdf_error_handling(self, mock_css, mock_html, mock_print,
-                                         mock_sleep, mock_makedirs, mock_exists, mock_listdir, mock_run_app):
+    def test_generate_pdf_error_handling(
+        self,
+        mock_css: Mock,
+        mock_html: Mock,
+        mock_print: Mock,
+        mock_sleep: Mock,
+        mock_makedirs: Mock,
+        mock_exists: Mock,
+        mock_listdir: Mock,
+        mock_run_app: Mock,
+    ) -> None:
         """RED: Test error handling during PDF generation."""
         # Arrange
         mock_run_app.return_value = None
@@ -216,7 +257,10 @@ class TestGeneratePdf:
         mock_html.return_value = mock_html_instance
 
         # Make the second PDF generation fail
-        mock_html_instance.write_pdf.side_effect = [None, Exception("PDF generation failed")]
+        mock_html_instance.write_pdf.side_effect = [
+            None,
+            Exception("PDF generation failed"),
+        ]
 
         # Act & Assert
         with pytest.raises(Exception, match="PDF generation failed"):
@@ -233,8 +277,17 @@ class TestGeneratePdf:
     @patch("cv.generate_pdf.print")
     @patch("cv.generate_pdf.HTML")
     @patch("cv.generate_pdf.CSS")
-    def test_generate_pdf_file_naming_logic(self, mock_css, mock_html, mock_print,
-                                            mock_sleep, mock_makedirs, mock_exists, mock_listdir, mock_run_app):
+    def test_generate_pdf_file_naming_logic(
+        self,
+        mock_css: Mock,
+        mock_html: Mock,
+        mock_print: Mock,
+        mock_sleep: Mock,
+        mock_makedirs: Mock,
+        mock_exists: Mock,
+        mock_listdir: Mock,
+        mock_run_app: Mock,
+    ) -> None:
         """RED: Test file naming and path logic."""
         # Arrange
         mock_run_app.return_value = None
@@ -251,7 +304,7 @@ class TestGeneratePdf:
         # Check that HTML was called with correct URLs
         expected_html_calls = [
             ("http://localhost:5000/print/john_doe",),
-            ("http://localhost:5000/print/jane_smith",)
+            ("http://localhost:5000/print/jane_smith",),
         ]
         actual_html_calls = [call.args for call in mock_html.call_args_list]
         assert actual_html_calls == expected_html_calls
@@ -259,14 +312,18 @@ class TestGeneratePdf:
         # Check that write_pdf was called with correct output files
         expected_write_calls = [
             (f"{PATH_OUTPUT}john_doe.pdf",),
-            (f"{PATH_OUTPUT}jane_smith.pdf",)
+            (f"{PATH_OUTPUT}jane_smith.pdf",),
         ]
-        actual_write_calls = [call.args for call in mock_html_instance.write_pdf.call_args_list]
+        actual_write_calls = [
+            call.args for call in mock_html_instance.write_pdf.call_args_list
+        ]
         assert actual_write_calls == expected_write_calls
 
     @patch("cv.generate_pdf.run_app")
     @patch("cv.generate_pdf.os.listdir")
-    def test_generate_pdf_business_logic_validation(self, mock_listdir, mock_run_app):
+    def test_generate_pdf_business_logic_validation(
+        self, mock_listdir: Mock, mock_run_app
+    ) -> None:
         """GREEN: Business logic test for PDF generation workflow."""
         # Arrange
         mock_run_app.return_value = None
@@ -292,8 +349,17 @@ class TestGeneratePdf:
     @patch("cv.generate_pdf.print")
     @patch("cv.generate_pdf.HTML")
     @patch("cv.generate_pdf.CSS")
-    def test_generate_pdf_performance_considerations(self, mock_css, mock_html, mock_print,
-                                                     mock_sleep, mock_makedirs, mock_exists, mock_listdir, mock_run_app):
+    def test_generate_pdf_performance_considerations(
+        self,
+        mock_css: Mock,
+        mock_html: Mock,
+        mock_print: Mock,
+        mock_sleep: Mock,
+        mock_makedirs: Mock,
+        mock_exists: Mock,
+        mock_listdir: Mock,
+        mock_run_app: Mock,
+    ) -> None:
         """GREEN: Performance test for PDF generation."""
         # Arrange
         mock_run_app.return_value = None
@@ -302,8 +368,6 @@ class TestGeneratePdf:
         mock_css.return_value = Mock()
         mock_html_instance = Mock()
         mock_html.return_value = mock_html_instance
-
-        import time
 
         # Act
         start_time = time.time()
@@ -320,8 +384,12 @@ class TestGeneratePdf:
         assert mock_sleep.call_count == 50
 
     @patch("cv.generate_pdf.run_app")
-    @patch("cv.generate_pdf.os.listdir", side_effect=PermissionError("Permission denied"))
-    def test_generate_pdf_permission_error_handling(self, mock_listdir, mock_run_app):
+    @patch(
+        "cv.generate_pdf.os.listdir", side_effect=PermissionError("Permission denied")
+    )
+    def test_generate_pdf_permission_error_handling(
+        self, mock_listdir: Mock, mock_run_app
+    ) -> None:
         """GREEN: Test handling of permission errors."""
         # Act & Assert
         with pytest.raises(PermissionError, match="Permission denied"):
@@ -333,13 +401,24 @@ class TestGeneratePdf:
     @patch("cv.generate_pdf.run_app")
     @patch("cv.generate_pdf.os.listdir")
     @patch("cv.generate_pdf.os.path.exists")
-    @patch("cv.generate_pdf.os.makedirs", side_effect=OSError("Directory creation failed"))
+    @patch(
+        "cv.generate_pdf.os.makedirs", side_effect=OSError("Directory creation failed")
+    )
     @patch("cv.generate_pdf.time.sleep")
     @patch("cv.generate_pdf.print")
     @patch("cv.generate_pdf.HTML")
     @patch("cv.generate_pdf.CSS")
-    def test_generate_pdf_directory_creation_error(self, mock_css, mock_html, mock_print,
-                                                  mock_sleep, mock_makedirs, mock_exists, mock_listdir, mock_run_app):
+    def test_generate_pdf_directory_creation_error(
+        self,
+        mock_css: Mock,
+        mock_html: Mock,
+        mock_print: Mock,
+        mock_sleep: Mock,
+        mock_makedirs: Mock,
+        mock_exists: Mock,
+        mock_listdir: Mock,
+        mock_run_app: Mock,
+    ) -> None:
         """GREEN: Test handling of directory creation errors."""
         # Arrange
         mock_run_app.return_value = None
@@ -356,7 +435,7 @@ class TestGeneratePdf:
         mock_exists.assert_called_once()
         mock_makedirs.assert_called_once()
 
-    def test_generate_pdf_url_formatting(self):
+    def test_generate_pdf_url_formatting(self) -> None:
         """GREEN: Test URL formatting for different CV names."""
         # Test data with various naming patterns
         test_cases = [
@@ -364,18 +443,19 @@ class TestGeneratePdf:
             ("jane.smith", "http://localhost:5000/print/jane.smith"),
             ("user123", "http://localhost:5000/print/user123"),
             ("cv-with-dashes", "http://localhost:5000/print/cv-with-dashes"),
-            ("CamelCase", "http://localhost:5000/print/CamelCase")
+            ("CamelCase", "http://localhost:5000/print/CamelCase"),
         ]
 
-        with patch("cv.generate_pdf.run_app"), \
-             patch("cv.generate_pdf.os.listdir") as mock_listdir, \
-             patch("cv.generate_pdf.os.path.exists", return_value=True), \
-             patch("cv.generate_pdf.os.makedirs"), \
-             patch("cv.generate_pdf.time.sleep"), \
-             patch("cv.generate_pdf.print"), \
-             patch("cv.generate_pdf.HTML") as mock_html, \
-             patch("cv.generate_pdf.CSS") as mock_css:
-
+        with (
+            patch("cv.generate_pdf.run_app"),
+            patch("cv.generate_pdf.os.listdir") as mock_listdir,
+            patch("cv.generate_pdf.os.path.exists", return_value=True),
+            patch("cv.generate_pdf.os.makedirs"),
+            patch("cv.generate_pdf.time.sleep"),
+            patch("cv.generate_pdf.print"),
+            patch("cv.generate_pdf.HTML") as mock_html,
+            patch("cv.generate_pdf.CSS") as mock_css,
+        ):
             mock_html_instance = Mock()
             mock_html.return_value = mock_html_instance
             mock_css.return_value = Mock()
@@ -401,8 +481,17 @@ class TestGeneratePdf:
     @patch("cv.generate_pdf.print")
     @patch("cv.generate_pdf.HTML")
     @patch("cv.generate_pdf.CSS")
-    def test_generate_pdf_css_styling_validation(self, mock_css, mock_html, mock_print,
-                                                mock_sleep, mock_makedirs, mock_exists, mock_listdir, mock_run_app):
+    def test_generate_pdf_css_styling_validation(
+        self,
+        mock_css: Mock,
+        mock_html: Mock,
+        mock_print: Mock,
+        mock_sleep: Mock,
+        mock_makedirs: Mock,
+        mock_exists: Mock,
+        mock_listdir: Mock,
+        mock_run_app: Mock,
+    ) -> None:
         """GREEN: Business logic validation for CSS styling."""
         # Arrange
         mock_run_app.return_value = None
@@ -422,9 +511,15 @@ class TestGeneratePdf:
 
         # Validate CSS contains required page settings
         assert "size: Letter" in css_string, "Should use Letter page size"
-        assert "margin: 0in 0.44in 0.2in 0.44in" in css_string, "Should have correct margins"
+        assert (
+            "margin: 0in 0.44in 0.2in 0.44in" in css_string
+        ), "Should have correct margins"
 
         # Validate PDF generation parameters
         pdf_call_args = mock_html_instance.write_pdf.call_args
-        assert len(pdf_call_args[1]["stylesheets"]) == 1, "Should have exactly one stylesheet"
-        assert pdf_call_args[1]["stylesheets"][0] == mock_css_instance, "Should use created CSS instance"
+        assert (
+            len(pdf_call_args[1]["stylesheets"]) == 1
+        ), "Should have exactly one stylesheet"
+        assert (
+            pdf_call_args[1]["stylesheets"][0] == mock_css_instance
+        ), "Should use created CSS instance"

@@ -32,6 +32,3 @@ jobs:
 
     - name: Run Ruff formatting check
       run: uv run ruff format --check src/ tests/
-
-  
-  

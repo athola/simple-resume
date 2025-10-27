@@ -36,7 +36,9 @@ def _transform_from_markdown(data: dict[str, Any]) -> None:
         for block_data in data["body"].values():
             for element in block_data:
                 if "description" in element:
-                    element["description"] = markdown(element["description"], extensions=extensions)
+                    element["description"] = markdown(
+                        element["description"], extensions=extensions
+                    )
 
 
 def get_content(name: str = "") -> dict[str, Any]:

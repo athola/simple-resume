@@ -7,11 +7,13 @@ These tests follow the Red-Green-Refactor cycle and extreme programming practice
 - Web application behavior testing
 - Route handling and response validation
 """
+
+import os
+import threading
+import time
 from unittest.mock import Mock, patch
 
-import pytest
-
-from cv.index import APP, execute_app, mprint, print_sample, run_app, show, show_sample
+from cv.index import APP, execute_app, run_app
 
 
 class TestFlaskApp:
@@ -19,13 +21,15 @@ class TestFlaskApp:
 
     @patch("cv.index.get_content")
     @patch("cv.index.render_template")
-    def test_show_route_with_valid_name(self, mock_render, mock_get_content):
+    def test_show_route_with_valid_name(
+        self, mock_render: Mock, mock_get_content: Mock
+    ) -> None:
         """RED: Test that show route renders correct template with data."""
         # Arrange
         mock_data = {
             "template": "cv_no_bars",
             "full_name": "John Doe",
-            "description": "<p>Test description</p>"
+            "description": "<p>Test description</p>",
         }
         mock_get_content.return_value = mock_data
         mock_render.return_value = "Rendered HTML content"
@@ -37,17 +41,18 @@ class TestFlaskApp:
         # Assert
         assert response.status_code == 200
         mock_get_content.assert_called_once_with("john_doe")
-        mock_render.assert_called_once_with("cv_no_bars.html", preview=True, **mock_data)
+        mock_render.assert_called_once_with(
+            "cv_no_bars.html", preview=True, **mock_data
+        )
 
     @patch("cv.index.get_content")
     @patch("cv.index.render_template")
-    def test_show_route_with_empty_name(self, mock_render, mock_get_content):
+    def test_show_route_with_empty_name(
+        self, mock_render: Mock, mock_get_content: Mock
+    ) -> None:
         """RED: Test that show route with empty name uses default."""
         # Arrange
-        mock_data = {
-            "template": "cv_no_bars",
-            "full_name": "Default User"
-        }
+        mock_data = {"template": "cv_no_bars", "full_name": "Default User"}
         mock_get_content.return_value = mock_data
         mock_render.return_value = "Default HTML content"
 
@@ -58,11 +63,15 @@ class TestFlaskApp:
         # Assert
         assert response.status_code == 200
         mock_get_content.assert_called_once_with("")
-        mock_render.assert_called_once_with("cv_no_bars.html", preview=True, **mock_data)
+        mock_render.assert_called_once_with(
+            "cv_no_bars.html", preview=True, **mock_data
+        )
 
     @patch("cv.index.get_content")
     @patch("cv.index.render_template")
-    def test_show_route_view_alias(self, mock_render, mock_get_content):
+    def test_show_route_view_alias(
+        self, mock_render: Mock, mock_get_content: Mock
+    ) -> None:
         """RED: Test that /view/ route works the same as /v/ route."""
         # Arrange
         mock_data = {"template": "cv_no_bars", "full_name": "Jane Doe"}
@@ -76,10 +85,12 @@ class TestFlaskApp:
         # Assert
         assert response.status_code == 200
         mock_get_content.assert_called_once_with("jane_doe")
-        mock_render.assert_called_once_with("cv_no_bars.html", preview=True, **mock_data)
+        mock_render.assert_called_once_with(
+            "cv_no_bars.html", preview=True, **mock_data
+        )
 
     @patch("cv.index.show")
-    def test_print_route_calls_show_with_preview_false(self, mock_show):
+    def test_print_route_calls_show_with_preview_false(self, mock_show: Mock) -> None:
         """RED: Test that print route calls show with preview=False."""
         # Arrange
         mock_show.return_value = "Print-friendly HTML"
@@ -93,7 +104,7 @@ class TestFlaskApp:
         mock_show.assert_called_once_with("john_doe", preview=False)
 
     @patch("cv.index.mprint")
-    def test_print_sample_route_calls_mprint(self, mock_mprint):
+    def test_print_sample_route_calls_mprint(self, mock_mprint: Mock) -> None:
         """RED: Test that print.html route calls mprint function."""
         # Arrange
         mock_mprint.return_value = "Sample print HTML"
@@ -107,7 +118,7 @@ class TestFlaskApp:
         mock_mprint.assert_called_once()
 
     @patch("cv.index.show")
-    def test_root_route_calls_show_with_empty_name(self, mock_show):
+    def test_root_route_calls_show_with_empty_name(self, mock_show: Mock) -> None:
         """RED: Test that root route calls show with empty name."""
         # Arrange
         mock_show.return_value = "Root HTML content"
@@ -121,7 +132,7 @@ class TestFlaskApp:
         mock_show.assert_called_once()
 
     @patch("cv.index.get_content")
-    def test_show_route_with_invalid_cv_data(self, mock_get_content):
+    def test_show_route_with_invalid_cv_data(self, mock_get_content: Mock) -> None:
         """RED: Test handling of invalid CV data."""
         # Arrange
         mock_get_content.side_effect = FileNotFoundError("CV file not found")
@@ -131,16 +142,18 @@ class TestFlaskApp:
             response = client.get("/v/nonexistent")
             assert response.status_code == 500  # Should result in server error
 
-    def test_app_configuration(self):
+    def test_app_configuration(self) -> None:
         """GREEN: Test Flask app configuration."""
         # Assert
         assert APP is not None
         assert APP.name == "cv.index"
-        assert hasattr(APP, 'route')
+        assert hasattr(APP, "route")
 
     @patch("cv.index.render_template")
     @patch("cv.index.get_content")
-    def test_show_route_response_content_type(self, mock_get_content, mock_render):
+    def test_show_route_response_content_type(
+        self, mock_get_content: Mock, mock_render
+    ) -> None:
         """GREEN: Test that response has correct content type."""
         # Arrange
         mock_get_content.return_value = {"template": "cv_no_bars"}
@@ -156,13 +169,15 @@ class TestFlaskApp:
 
     @patch("cv.index.render_template")
     @patch("cv.index.get_content")
-    def test_show_route_with_different_templates(self, mock_get_content, mock_render):
+    def test_show_route_with_different_templates(
+        self, mock_get_content: Mock, mock_render
+    ) -> None:
         """GREEN: Test that different templates are handled correctly."""
         # Arrange
         test_cases = [
             ("cv_no_bars", "cv_no_bars.html"),
             ("cv_with_bars", "cv_with_bars.html"),
-            ("cover", "cover.html")
+            ("cover", "cover.html"),
         ]
 
         for template, expected_template_file in test_cases:
@@ -175,14 +190,17 @@ class TestFlaskApp:
 
             # Assert
             assert response.status_code == 200
-            mock_render.assert_called_with(f"{expected_template_file}", preview=True, **{"template": template})
+            mock_render.assert_called_with(
+                f"{expected_template_file}", preview=True, **{"template": template}
+            )
 
 
 class TestAppExecution:
     """Test cases for app execution and threading functionality."""
 
     @patch("cv.index.APP")
-    def test_execute_app_calls_flask_run(self, mock_flask_app):
+    @patch.dict("os.environ", {"FLASK_DEBUG": "true"})
+    def test_execute_app_calls_flask_run(self, mock_flask_app) -> None:
         """RED: Test that execute_app calls Flask run with correct parameters."""
         # Act
         execute_app()
@@ -192,21 +210,19 @@ class TestAppExecution:
 
     @patch("cv.index.execute_app")
     @patch("cv.index.Thread")
-    def test_run_app_with_daemon_true(self, mock_thread, mock_execute):
+    def test_run_app_with_daemon_true(self, mock_thread, mock_execute) -> None:
         """RED: Test that run_app with daemon=True creates thread correctly."""
         # Act
         run_app(daemon=True)
 
         # Assert
         mock_thread.assert_called_once_with(
-            name="flask_app",
-            target=mock_execute,
-            daemon=True
+            name="flask_app", target=mock_execute, daemon=True
         )
         mock_thread.return_value.start.assert_called_once()
 
     @patch("cv.index.execute_app")
-    def test_run_app_with_daemon_false(self, mock_execute):
+    def test_run_app_with_daemon_false(self, mock_execute) -> None:
         """RED: Test that run_app with daemon=False calls execute directly."""
         # Act
         run_app(daemon=False)
@@ -215,7 +231,7 @@ class TestAppExecution:
         mock_execute.assert_called_once()
 
     @patch("cv.index.execute_app")
-    def test_run_app_default_daemon_false(self, mock_execute):
+    def test_run_app_default_daemon_false(self, mock_execute) -> None:
         """RED: Test that run_app defaults to daemon=False."""
         # Act
         run_app()
@@ -225,7 +241,7 @@ class TestAppExecution:
 
     @patch("cv.index.execute_app")
     @patch("cv.index.Thread")
-    def test_run_app_thread_configuration(self, mock_thread, mock_execute):
+    def test_run_app_thread_configuration(self, mock_thread, mock_execute) -> None:
         """GREEN: Test that thread is configured correctly for daemon mode."""
         # Act
         run_app(daemon=True)
@@ -244,14 +260,16 @@ class TestBusinessLogic:
 
     @patch("cv.index.get_content")
     @patch("cv.index.render_template")
-    def test_show_route_business_logic_validation(self, mock_render, mock_get_content):
+    def test_show_route_business_logic_validation(
+        self, mock_render: Mock, mock_get_content
+    ) -> None:
         """GREEN: Business logic test for CV data validation in routes."""
         # Arrange
         valid_cv_data = {
             "template": "cv_no_bars",
             "full_name": "John Doe",
             "description": "<p>Valid description</p>",
-            "email": "john@example.com"
+            "email": "john@example.com",
         }
         mock_get_content.return_value = valid_cv_data
         mock_render.return_value = "Valid CV content"
@@ -273,17 +291,19 @@ class TestBusinessLogic:
         mock_render.assert_called_once()
         call_args = mock_render.call_args
         assert call_args[0][0] == "cv_no_bars.html"  # Template name
-        assert call_args[1]["preview"] is True      # Preview mode
+        assert call_args[1]["preview"] is True  # Preview mode
         assert call_args[1]["full_name"] == "John Doe"
 
     @patch("cv.index.get_content")
     @patch("cv.index.render_template")
-    def test_show_route_handles_missing_template_field(self, mock_render, mock_get_content):
+    def test_show_route_handles_missing_template_field(
+        self, mock_render: Mock, mock_get_content
+    ) -> None:
         """GREEN: Test handling of CV data missing template field."""
         # Arrange
         invalid_cv_data = {
             "full_name": "John Doe",
-            "description": "Description but no template"
+            "description": "Description but no template",
         }
         mock_get_content.return_value = invalid_cv_data
         mock_render.return_value = "Rendered HTML with default template"
@@ -296,18 +316,22 @@ class TestBusinessLogic:
         assert response.status_code == 200
         mock_get_content.assert_called_once_with("invalid")
         # Should use default template when 'template' field is missing
-        mock_render.assert_called_once_with("cv_no_bars.html", preview=True, **invalid_cv_data)
+        mock_render.assert_called_once_with(
+            "cv_no_bars.html", preview=True, **invalid_cv_data
+        )
 
     @patch("cv.index.render_template")
     @patch("cv.index.get_content")
-    def test_show_route_with_special_characters_in_name(self, mock_get_content, mock_render):
+    def test_show_route_with_special_characters_in_name(
+        self, mock_get_content: Mock, mock_render
+    ) -> None:
         """GREEN: Test handling of special characters in CV names."""
         # Arrange
         special_names = [
             "john-doe_2024",
             "maria.silva.dev",
             "user@domain",
-            "cv_with-123-numbers"
+            "cv_with-123-numbers",
         ]
 
         mock_data = {"template": "cv_no_bars", "full_name": "Test User"}
@@ -325,7 +349,9 @@ class TestBusinessLogic:
 
     @patch("cv.index.render_template")
     @patch("cv.index.get_content")
-    def test_show_route_performance_with_large_cv_data(self, mock_get_content, mock_render):
+    def test_show_route_performance_with_large_cv_data(
+        self, mock_get_content: Mock, mock_render
+    ) -> None:
         """GREEN: Performance test with large CV data."""
         # Arrange
         large_cv_data = {
@@ -334,17 +360,13 @@ class TestBusinessLogic:
             "description": "A" * 10000,  # Large description
             "body": {
                 "Experience": [
-                    {
-                        "title": f"Job {i}",
-                        "description": "B" * 1000
-                    } for i in range(100)  # 100 experience entries
+                    {"title": f"Job {i}", "description": "B" * 1000}
+                    for i in range(100)  # 100 experience entries
                 ]
-            }
+            },
         }
         mock_get_content.return_value = large_cv_data
         mock_render.return_value = "Large CV content"
-
-        import time
 
         # Act
         start_time = time.time()
@@ -356,7 +378,7 @@ class TestBusinessLogic:
         assert response.status_code == 200
         assert end_time - start_time < 1.0  # Should respond within 1 second
 
-    def test_route_not_found_handling(self):
+    def test_route_not_found_handling(self) -> None:
         """GREEN: Test handling of non-existent routes."""
         # Act
         with APP.test_client() as client:
@@ -367,19 +389,18 @@ class TestBusinessLogic:
 
     @patch("cv.index.render_template")
     @patch("cv.index.get_content")
-    def test_concurrent_requests_handling(self, mock_get_content, mock_render):
+    def test_concurrent_requests_handling(
+        self, mock_get_content: Mock, mock_render: Mock
+    ) -> None:
         """GREEN: Test handling of multiple concurrent requests."""
         # Arrange
         mock_data = {"template": "cv_no_bars", "full_name": "Concurrent User"}
         mock_get_content.return_value = mock_data
         mock_render.return_value = "Concurrent content"
 
-        import threading
-        import time
-
         results = []
 
-        def make_request():
+        def make_request() -> None:
             with APP.test_client() as client:
                 response = client.get("/v/concurrent")
                 results.append(response.status_code)

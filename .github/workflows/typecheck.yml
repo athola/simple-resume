@@ -77,7 +77,8 @@ jobs:
       run: npm install -g pyright
 
     - name: Run Pyright
-      run: pyright src/cv/
+      run: |
+        pyright --pythonpath=.venv/bin/python --venv-path=. --venv=.venv src/cv/
 
   pytype:
     name: Pytype Type Checking

@@ -7,15 +7,14 @@ These tests follow TDD principles with focus on:
 - Business process validation
 - User story scenarios
 """
-import os
-import tempfile
+
+import threading
+import time
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
 from unittest.mock import patch
 
-import pytest
 import yaml
-from flask import Flask
 
 from cv.index import APP
 from cv.utilities import get_content
@@ -25,7 +24,9 @@ from tests.conftest import create_complete_cv_data
 class TestCVWorkflowIntegration:
     """Integration tests for complete CV generation workflow."""
 
-    def test_end_to_end_cv_creation_workflow(self, temp_dir: Path, sample_cv_data: Dict[str, Any]):
+    def test_end_to_end_cv_creation_workflow(
+        self, temp_dir: Path, sample_cv_data: dict[str, Any]
+    ) -> None:
         """GREEN: Test complete workflow from YAML to web rendering."""
         # Arrange - Create realistic CV data
         cv_file = temp_dir / "john_doe.yaml"
@@ -56,7 +57,7 @@ class TestCVWorkflowIntegration:
             assert response.status_code == 200
             assert b"John Doe" in response.data
 
-    def test_multiple_cv_management_workflow(self, temp_dir: Path):
+    def test_multiple_cv_management_workflow(self, temp_dir: Path) -> None:
         """GREEN: Test workflow with multiple CVs for different purposes."""
         # Arrange - Create multiple CV variants using helper function
         cv_variants = {
@@ -64,26 +65,34 @@ class TestCVWorkflowIntegration:
                 template="cv_no_bars",
                 full_name="Alice Johnson",
                 expertise=["Python", "Docker", "Kubernetes", "CI/CD"],
-                experience=[{
-                    "start": "01/2020",
-                    "end": "Present",
-                    "title": "Senior DevOps Engineer",
-                    "company": "TechCorp",
-                    "description": "Managed **containerized** deployments"
-                }]
+                experience=[
+                    {
+                        "start": "01/2020",
+                        "end": "Present",
+                        "title": "Senior DevOps Engineer",
+                        "company": "TechCorp",
+                        "description": "Managed **containerized** deployments",
+                    }
+                ],
             ),
             "managerial_cv": create_complete_cv_data(
                 template="cv_with_bars",
                 full_name="Alice Johnson",
-                expertise={"Team Leadership": 90, "Project Management": 85, "Agile": 80},
-                experience=[{
-                    "start": "01/2018",
-                    "end": "Present",
-                    "title": "Engineering Manager",
-                    "company": "TechCorp",
-                    "description": "Led a team of **10 engineers**"
-                }]
-            )
+                expertise={
+                    "Team Leadership": 90,
+                    "Project Management": 85,
+                    "Agile": 80,
+                },
+                experience=[
+                    {
+                        "start": "01/2018",
+                        "end": "Present",
+                        "title": "Engineering Manager",
+                        "company": "TechCorp",
+                        "description": "Led a team of **10 engineers**",
+                    }
+                ],
+            ),
         }
 
         test_input_dir = temp_dir / "input"
@@ -113,7 +122,7 @@ class TestCVWorkflowIntegration:
                         assert response.status_code == 200
                         assert expected_data["full_name"].encode() in response.data
 
-    def test_cv_content_validation_workflow(self, temp_dir: Path):
+    def test_cv_content_validation_workflow(self, temp_dir: Path) -> None:
         """GREEN: Business logic validation for CV content requirements."""
         # Arrange - Test various CV content scenarios
         test_scenarios = [
@@ -124,18 +133,17 @@ class TestCVWorkflowIntegration:
                     full_name="Complete User",
                     description="Complete CV description",
                     expertise=["Skill1", "Skill2"],
-                    experience=[{"title": "Developer", "company": "TechCo"}]
+                    experience=[{"title": "Developer", "company": "TechCo"}],
                 ),
-                "should_be_valid": True
+                "should_be_valid": True,
             },
             {
                 "name": "minimal_cv",
                 "data": create_complete_cv_data(
-                    template="cv_no_bars",
-                    full_name="Minimal User"
+                    template="cv_no_bars", full_name="Minimal User"
                 ),
-                "should_be_valid": True
-            }
+                "should_be_valid": True,
+            },
         ]
 
         test_input_dir = temp_dir / "input"
@@ -158,7 +166,7 @@ class TestCVWorkflowIntegration:
                         response = client.get(f"/v/{scenario['name']}")
                         assert response.status_code == 200
 
-    def test_markdown_processing_integration(self, temp_dir: Path):
+    def test_markdown_processing_integration(self, temp_dir: Path) -> None:
         """GREEN: Test markdown processing in complete workflow."""
         # Arrange - Create CV with markdown content using helper function
         markdown_description = """
@@ -178,12 +186,13 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
 Visit my [portfolio](https://janesmith.dev) for more examples.
         """.strip()
 
-        markdown_experience = [{
-            "start": "01/2021",
-            "end": "Present",
-            "title": "Lead Developer",
-            "company": "Tech Corp",
-            "description": """
+        markdown_experience = [
+            {
+                "start": "01/2021",
+                "end": "Present",
+                "title": "Lead Developer",
+                "company": "Tech Corp",
+                "description": """
 ## Responsibilities
 - Architecture design and implementation
 - **Code review** and mentoring
@@ -191,14 +200,15 @@ Visit my [portfolio](https://janesmith.dev) for more examples.
 
 ### Key Projects
 1. **E-commerce Platform**: Built using Django with 100% test coverage
-            """.strip()
-        }]
+            """.strip(),
+            }
+        ]
 
         cv_data = create_complete_cv_data(
             template="cv_no_bars",
             full_name="Jane Smith",
             description=markdown_description,
-            experience=markdown_experience
+            experience=markdown_experience,
         )
 
         test_input_dir = temp_dir / "input"
@@ -211,7 +221,7 @@ Visit my [portfolio](https://janesmith.dev) for more examples.
         # Act
         with patch("cv.utilities.PATH_INPUT", str(test_input_dir) + "/"):
             # Load and process markdown
-            content = get_content("markdown_test")
+            get_content("markdown_test")
 
             # Test web rendering with processed markdown
             with APP.test_client() as client:
@@ -228,7 +238,7 @@ Visit my [portfolio](https://janesmith.dev) for more examples.
         assert "<ul>" in response_text
         assert '<a href="https://janesmith.dev">portfolio</a>' in response_text
 
-    def test_error_handling_and_recovery_workflow(self, temp_dir: Path):
+    def test_error_handling_and_recovery_workflow(self, temp_dir: Path) -> None:
         """GREEN: Test error handling and recovery in complete workflow."""
         # Arrange
         test_input_dir = temp_dir / "input"
@@ -236,13 +246,9 @@ Visit my [portfolio](https://janesmith.dev) for more examples.
 
         # Create valid and test CVs using helper function
         valid_cv = create_complete_cv_data(
-            template="cv_no_bars",
-            full_name="Valid User"
+            template="cv_no_bars", full_name="Valid User"
         )
-        test_cv = create_complete_cv_data(
-            template="cv_no_bars",
-            full_name="Test User"
-        )
+        test_cv = create_complete_cv_data(template="cv_no_bars", full_name="Test User")
 
         with open(test_input_dir / "valid.yaml", "w") as f:
             yaml.dump(valid_cv, f)
@@ -269,7 +275,7 @@ Visit my [portfolio](https://janesmith.dev) for more examples.
                     response = client.get("/v/test")
                     assert response.status_code == 200
 
-    def test_performance_with_large_cv_dataset(self, temp_dir: Path):
+    def test_performance_with_large_cv_dataset(self, temp_dir: Path) -> None:
         """GREEN: Performance test with large number of CVs."""
         # Arrange - Create many CVs
         num_cvs = 20
@@ -286,17 +292,16 @@ Visit my [portfolio](https://janesmith.dev) for more examples.
                     {
                         "title": f"Job {j}",
                         "company": f"Company {j}",
-                        "description": f"Description {j} " * 5
-                    } for j in range(3)
-                ]
+                        "description": f"Description {j} " * 5,
+                    }
+                    for j in range(3)
+                ],
             )
             cv_file = test_input_dir / f"user_{i}.yaml"
             with open(cv_file, "w", encoding="utf-8") as f:
                 yaml.dump(cv_data, f)
 
         # Act - Test loading and rendering performance
-        import time
-
         with patch("cv.utilities.PATH_INPUT", str(test_input_dir) + "/"):
             start_time = time.time()
 
@@ -319,9 +324,11 @@ Visit my [portfolio](https://janesmith.dev) for more examples.
 
         # Assert - Performance requirements
         assert load_time < 5.0, f"Loading {num_cvs} CVs took too long: {load_time}s"
-        assert render_time < 10.0, f"Rendering {num_cvs} CVs took too long: {render_time}s"
+        assert (
+            render_time < 10.0
+        ), f"Rendering {num_cvs} CVs took too long: {render_time}s"
 
-    def test_concurrent_user_scenarios(self, temp_dir: Path):
+    def test_concurrent_user_scenarios(self, temp_dir: Path) -> None:
         """GREEN: Test concurrent access scenarios (multiple users)."""
         # Arrange - Create CVs for multiple users
         users = ["alice", "bob", "charlie", "diana", "eve"]
@@ -332,36 +339,35 @@ Visit my [portfolio](https://janesmith.dev) for more examples.
             cv_data = create_complete_cv_data(
                 template="cv_no_bars",
                 full_name=user.title(),
-                description=f"Professional description for {user}."
+                description=f"Professional description for {user}.",
             )
             cv_file = test_input_dir / f"{user}.yaml"
             with open(cv_file, "w", encoding="utf-8") as f:
                 yaml.dump(cv_data, f)
 
         # Act - Simulate concurrent access
-        import threading
-        import time
-
         results = {}
         errors = {}
 
-        def access_cv(user_name, request_id):
+        def access_cv(user_name: str, request_id: int) -> None:
             try:
                 with patch("cv.utilities.PATH_INPUT", str(test_input_dir) + "/"):
                     start_time = time.time()
                     content = get_content(user_name)
                     load_time = time.time() - start_time
 
-                    with APP.test_client() as client:
-                        with patch("cv.utilities.PATH_INPUT", str(test_input_dir) + "/"):
-                            response = client.get(f"/v/{user_name}")
-                            render_time = time.time() - start_time
+                    with (
+                        APP.test_client() as client,
+                        patch("cv.utilities.PATH_INPUT", str(test_input_dir) + "/"),
+                    ):
+                        response = client.get(f"/v/{user_name}")
+                        render_time = time.time() - start_time
 
                     results[f"{user_name}_{request_id}"] = {
                         "load_time": load_time,
                         "render_time": render_time,
                         "status_code": response.status_code,
-                        "content_loaded": content is not None
+                        "content_loaded": content is not None,
                     }
             except Exception as e:
                 errors[f"{user_name}_{request_id}"] = str(e)

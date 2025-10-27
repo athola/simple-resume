@@ -65,6 +65,14 @@ utils = [
 generate-pdf = "cv.generate_pdf:main"
 run-server = "cv.index:run_app"
 
+[dependency-groups]
+dev = [
+    "pre-commit>=4.3.0",
+    "pytest>=8.4.2",
+    "pytest-cov>=7.0.0",
+    "ty>=0.0.1a23",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/cv"]
 
@@ -106,27 +114,13 @@ extend-ignore = [
 [tool.ruff.lint.per-file-ignores]
 "**/__init__.py" = ["F401"]  # Allow unused imports in __init__.py
 "tests/**/*.py" = [
-    "C901",
-    "E501",
-    "PERF203",
-    "PERF401",
-    "PLR0911",
-    "PLR0912",
-    "PLR0913",
-    "PLR2004",
-    "PLW0603",
-    "PT009",
-    "PT011",
-    "PT012",
-    "PT017",
-    "PT019",
-    "RUF001",
-    "RUF002",
-    "RUF003",
-    "SIM102",
-    "SIM108",
-    "SIM115",
-    "SIM117",
+    "PLR2004",  # Allow magic numbers in tests (e.g., test data)
+    "PLR0913",  # Allow more arguments in test functions (many fixtures)
+    "PT009",    # Allow unittest-style assertions in pytest
+    "PT011",    # Allow pytest.raises without match
+    "RUF001",   # Allow unicode characters in test strings
+    "RUF002",   # Allow unicode characters in docstrings
+    "RUF003",   # Allow unicode characters in comments
 ]
 
 [tool.ruff.format]
@@ -160,3 +154,20 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "flask"
 ignore_missing_imports = true
+
+[tool.pyright]
+include = ["src/**"]
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.10"
+pythonPlatform = "Linux"
+pythonPath = ".venv/bin/python"
+
+[[tool.pyright.executionEnvironments]]
+root = "."
+venv = ".venv"
+venvPath = "."
+pythonVersion = "3.10"
+pythonPlatform = "Linux"
+pythonPath = ".venv/bin/python"
+extraPaths = ["src"]

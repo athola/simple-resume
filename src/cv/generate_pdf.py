@@ -50,7 +50,7 @@ def generate_pdf(data_dir: str | None = None) -> None:
 
         # Handle files with multiple dots properly
         parts = filename.split(".")
-        if len(parts) < 2:
+        if len(parts) < MIN_FILENAME_PARTS:
             continue
 
         extension = parts[-1].lower()
@@ -68,13 +68,19 @@ def generate_pdf(data_dir: str | None = None) -> None:
         HTML(input_file).write_pdf(output_file, stylesheets=[css])
 
 
+MIN_FILENAME_PARTS = 2  # filename must have at least name and extension
+
+
 def main() -> None:
     """Main entry point for command line interface."""
     parser = argparse.ArgumentParser(description="Generate PDF files from CV data")
     parser.add_argument(
         "--data-dir",
         type=str,
-        help="Path to data directory containing input/output folders (default: use config)",
+        help=(
+            "Path to data directory containing input/output folders "
+            "(default: use config)"
+        ),
     )
     args = parser.parse_args()
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Load CV as a webpage for testing purposes."""
 
+import os
 from threading import Thread
 
 from flask import Flask, render_template
@@ -90,7 +91,10 @@ def execute_app() -> None:
         None
 
     """
-    APP.run(debug=True, use_reloader=False)
+    APP.run(
+        debug=os.getenv("FLASK_DEBUG", "false").lower() == "true",
+        use_reloader=False,
+    )
 
 
 def run_app(daemon: bool = False) -> None:

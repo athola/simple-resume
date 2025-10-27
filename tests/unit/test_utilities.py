@@ -12,10 +12,10 @@ Tests follow extreme programming practices:
 - Single assertion per test where possible
 - Test isolation and independence
 """
-import tempfile
+
 from pathlib import Path
-from typing import Any, Dict
-from unittest.mock import mock_open, patch
+from typing import Any
+from unittest.mock import Mock, mock_open, patch
 
 import pytest
 import yaml
@@ -26,7 +26,7 @@ from cv.utilities import _read_yaml, _transform_from_markdown, get_content
 class TestReadYaml:
     """Test cases for _read_yaml function following TDD principles."""
 
-    def test_read_valid_yaml_file_returns_dict(self, temp_dir: Path):
+    def test_read_valid_yaml_file_returns_dict(self, temp_dir: Path) -> None:
         """RED: Test that reading a valid YAML file returns a dictionary."""
         # Arrange
         test_data = {"name": "John", "age": 30, "skills": ["Python", "Testing"]}
@@ -42,7 +42,7 @@ class TestReadYaml:
         assert result == test_data
         assert isinstance(result, dict)
 
-    def test_read_empty_yaml_file_returns_empty_dict(self, temp_dir: Path):
+    def test_read_empty_yaml_file_returns_empty_dict(self, temp_dir: Path) -> None:
         """RED: Test that reading an empty YAML file returns an empty dict."""
         # Arrange
         yaml_file = temp_dir / "empty.yaml"
@@ -55,7 +55,9 @@ class TestReadYaml:
         assert result == {}
         assert isinstance(result, dict)
 
-    def test_read_yaml_with_null_content_returns_empty_dict(self, temp_dir: Path):
+    def test_read_yaml_with_null_content_returns_empty_dict(
+        self, temp_dir: Path
+    ) -> None:
         """RED: Test that reading YAML with null content returns empty dict."""
         # Arrange
         yaml_file = temp_dir / "null.yaml"
@@ -68,7 +70,7 @@ class TestReadYaml:
         assert result == {}
         assert isinstance(result, dict)
 
-    def test_read_nonexistent_file_raises_file_not_found(self):
+    def test_read_nonexistent_file_raises_file_not_found(self) -> None:
         """RED: Test that reading a non-existent file raises FileNotFoundError."""
         # Arrange
         nonexistent_path = "/path/to/nonexistent/file.yaml"
@@ -77,7 +79,7 @@ class TestReadYaml:
         with pytest.raises(FileNotFoundError):
             _read_yaml(nonexistent_path)
 
-    def test_read_invalid_yaml_file_raises_exception(self, temp_dir: Path):
+    def test_read_invalid_yaml_file_raises_exception(self, temp_dir: Path) -> None:
         """RED: Test that reading invalid YAML raises appropriate exception."""
         # Arrange
         yaml_file = temp_dir / "invalid.yaml"
@@ -87,7 +89,7 @@ class TestReadYaml:
         with pytest.raises(yaml.YAMLError):
             _read_yaml(str(yaml_file))
 
-    def test_read_yaml_with_complex_nested_structure(self, temp_dir: Path):
+    def test_read_yaml_with_complex_nested_structure(self, temp_dir: Path) -> None:
         """RED: Test reading YAML with complex nested structure."""
         # Arrange
         complex_data = {
@@ -96,19 +98,16 @@ class TestReadYaml:
                 "contact": {
                     "email": "jane@example.com",
                     "phone": "555-1234",
-                    "social": {
-                        "linkedin": "in/janedoe",
-                        "github": "janedoe"
-                    }
-                }
+                    "social": {"linkedin": "in/janedoe", "github": "janedoe"},
+                },
             },
             "experience": [
                 {
                     "company": "Tech Corp",
                     "role": "Senior Developer",
-                    "duration": "2020-Present"
+                    "duration": "2020-Present",
                 }
-            ]
+            ],
         }
 
         yaml_file = temp_dir / "complex.yaml"
@@ -124,7 +123,7 @@ class TestReadYaml:
         assert len(result["experience"]) == 1
 
     @patch("builtins.open", new_callable=mock_open, read_data="key: value")
-    def test_read_yaml_file_encoding_handling(self, mock_file):
+    def test_read_yaml_file_encoding_handling(self, mock_file: Mock) -> None:
         """GREEN: Test that YAML files are read with UTF-8 encoding."""
         # Act
         result = _read_yaml("dummy_path.yaml")
@@ -137,12 +136,10 @@ class TestReadYaml:
 class TestTransformFromMarkdown:
     """Test cases for _transform_from_markdown function following TDD principles."""
 
-    def test_transform_markdown_in_description_field(self):
+    def test_transform_markdown_in_description_field(self) -> None:
         """RED: Test that markdown in description field is converted to HTML."""
         # Arrange
-        data = {
-            "description": "This is **bold** and *italic* text."
-        }
+        data = {"description": "This is **bold** and *italic* text."}
 
         # Act
         _transform_from_markdown(data)
@@ -151,24 +148,16 @@ class TestTransformFromMarkdown:
         expected_html = "<p>This is <strong>bold</strong> and <em>italic</em> text.</p>"
         assert data["description"] == expected_html
 
-    def test_transform_markdown_in_body_sections(self):
+    def test_transform_markdown_in_body_sections(self) -> None:
         """RED: Test that markdown in body sections is converted to HTML."""
         # Arrange
         data = {
             "body": {
                 "Experience": [
-                    {
-                        "description": "- Item 1\n- Item 2 with **bold** text"
-                    },
-                    {
-                        "description": "Regular text without markdown"
-                    }
+                    {"description": "- Item 1\n- Item 2 with **bold** text"},
+                    {"description": "Regular text without markdown"},
                 ],
-                "Education": [
-                    {
-                        "description": "# Header\nSome content"
-                    }
-                ]
+                "Education": [{"description": "# Header\nSome content"}],
             }
         }
 
@@ -179,18 +168,19 @@ class TestTransformFromMarkdown:
         # Check Experience section
         exp_desc = data["body"]["Experience"][0]["description"]
         assert "<strong>bold</strong>" in exp_desc
-        assert "<ul>" in exp_desc and "<li>" in exp_desc
+        assert "<ul>" in exp_desc
+        assert "<li>" in exp_desc
 
         # Check regular text is still processed
         regular_desc = data["body"]["Experience"][1]["description"]
-        assert "<p>Regular text without markdown</p>" == regular_desc
+        assert regular_desc == "<p>Regular text without markdown</p>"
 
         # Check Education section
         edu_desc = data["body"]["Education"][0]["description"]
         assert "<h1>" in edu_desc
         assert "<p>Some content</p>" in edu_desc
 
-    def test_transform_with_no_markdown_fields(self):
+    def test_transform_with_no_markdown_fields(self) -> None:
         """RED: Test that data without markdown fields is unchanged."""
         # Arrange
         data = {
@@ -200,11 +190,11 @@ class TestTransformFromMarkdown:
                 "Experience": [
                     {
                         "title": "Developer",
-                        "company": "Tech Corp"
+                        "company": "Tech Corp",
                         # No description field
                     }
                 ]
-            }
+            },
         }
 
         # Act
@@ -215,15 +205,10 @@ class TestTransformFromMarkdown:
         assert data["age"] == 30
         assert "description" not in data["body"]["Experience"][0]
 
-    def test_transform_with_empty_body_sections(self):
+    def test_transform_with_empty_body_sections(self) -> None:
         """RED: Test handling of empty body sections."""
         # Arrange
-        data = {
-            "body": {
-                "Experience": [],
-                "Education": []
-            }
-        }
+        data = {"body": {"Experience": [], "Education": []}}
 
         # Act
         _transform_from_markdown(data)
@@ -232,7 +217,7 @@ class TestTransformFromMarkdown:
         assert data["body"]["Experience"] == []
         assert data["body"]["Education"] == []
 
-    def test_transform_with_complex_markdown_content(self):
+    def test_transform_with_complex_markdown_content(self) -> None:
         """RED: Test transformation of complex markdown with links, lists, and formatting."""
         # Arrange
         data = {
@@ -256,10 +241,11 @@ Visit my [portfolio](https://example.com) for more details.
         result = data["description"]
         assert "<h1>Professional Summary</h1>" in result
         assert "<strong>senior developer</strong>" in result
-        assert "<ul>" in result and "<li>Python programming</li>" in result
+        assert "<ul>" in result
+        assert "<li>Python programming</li>" in result
         assert '<a href="https://example.com">portfolio</a>' in result
 
-    def test_transform_preserves_other_fields(self):
+    def test_transform_preserves_other_fields(self) -> None:
         """RED: Test that transformation preserves non-markdown fields."""
         # Arrange
         data = {
@@ -267,7 +253,7 @@ Visit my [portfolio](https://example.com) for more details.
             "email": "john@example.com",
             "description": "Simple description",
             "skills": ["Python", "Testing"],
-            "config": {"theme": "dark"}
+            "config": {"theme": "dark"},
         }
 
         # Act
@@ -279,9 +265,9 @@ Visit my [portfolio](https://example.com) for more details.
         assert data["skills"] == ["Python", "Testing"]
         assert data["config"]["theme"] == "dark"
         # Only description should be transformed
-        assert "<p>Simple description</p>" == data["description"]
+        assert data["description"] == "<p>Simple description</p>"
 
-    def test_transform_with_code_blocks_and_tables(self):
+    def test_transform_with_code_blocks_and_tables(self) -> None:
         """RED: Test transformation of markdown code blocks and tables."""
         # Arrange
         data = {
@@ -306,7 +292,7 @@ And a table:
         # Assert - Updated expectations for proper markdown rendering
         result = data["description"]
         # Code blocks should now render properly with syntax highlighting
-        assert "<div class=\"codehilite\">" in result
+        assert '<div class="codehilite">' in result
         assert "<pre><span></span><code>" in result
         assert "hello_world" in result
         assert "def" in result
@@ -316,7 +302,7 @@ And a table:
         assert "<th>Feature</th>" in result
         assert "<td>Testing</td>" in result
 
-    def test_enhanced_markdown_features_for_technical_cvs(self):
+    def test_enhanced_markdown_features_for_technical_cvs(self) -> None:
         """GREEN: Test that enhanced markdown features work for technical CVs."""
         # Arrange
         data = {
@@ -358,7 +344,7 @@ def get_data():
 | Kubernetes | Intermediate | 2 years | 3 clusters |
 | FastAPI | Advanced | 2 years | 8+ APIs"""
                     }
-                ]
+                ],
             }
         }
 
@@ -370,7 +356,7 @@ def get_data():
         skills_desc = data["body"]["Skills"][0]["description"]
 
         # Code blocks with syntax highlighting
-        assert "<div class=\"codehilite\">" in project_desc
+        assert '<div class="codehilite">' in project_desc
         assert "<pre><span></span><code>" in project_desc
         assert "get_data" in project_desc
         assert "def" in project_desc
@@ -388,7 +374,7 @@ def get_data():
         # Bullet points (they're in list items, not bold)
         assert "Used Redis caching for 10x speed improvement" in project_desc
 
-    def test_enhanced_markdown_features_for_business_cvs(self):
+    def test_enhanced_markdown_features_for_business_cvs(self) -> None:
         """GREEN: Test that enhanced markdown features work for business CVs."""
         # Arrange
         data = {
@@ -424,7 +410,7 @@ def get_data():
 | BSc Business | Stanford University | 2015 | Finance & Management |
 | Certificate | Wharton Executive | 2022 | Digital Transformation"""
                     }
-                ]
+                ],
             }
         }
 
@@ -462,7 +448,9 @@ class TestGetContent:
     @patch("cv.utilities._transform_from_markdown")
     @patch("cv.utilities.FILE_DEFAULT", "default_cv")
     @patch("cv.utilities.PATH_INPUT", "test_input/")
-    def test_get_content_with_empty_name_uses_default(self, mock_transform, mock_read):
+    def test_get_content_with_empty_name_uses_default(
+        self, mock_transform: Mock, mock_read
+    ) -> None:
         """RED: Test that empty name uses default file name."""
         # Arrange
         expected_data = {"name": "Default CV", "template": "default"}
@@ -480,7 +468,9 @@ class TestGetContent:
     @patch("cv.utilities._transform_from_markdown")
     @patch("cv.utilities.FILE_DEFAULT", "default_cv")
     @patch("cv.utilities.PATH_INPUT", "test_input/")
-    def test_get_content_with_specific_name(self, mock_transform, mock_read):
+    def test_get_content_with_specific_name(
+        self, mock_transform: Mock, mock_read: Mock
+    ) -> None:
         """RED: Test that specific name is used correctly."""
         # Arrange
         expected_data = {"name": "John Doe", "template": "modern"}
@@ -498,7 +488,9 @@ class TestGetContent:
     @patch("cv.utilities._transform_from_markdown")
     @patch("cv.utilities.FILE_DEFAULT", "default_cv")
     @patch("cv.utilities.PATH_INPUT", "test_input/")
-    def test_get_content_with_name_containing_dot(self, mock_transform, mock_read):
+    def test_get_content_with_name_containing_dot(
+        self, mock_transform: Mock, mock_read
+    ) -> None:
         """RED: Test that names with dots are handled correctly."""
         # Arrange
         expected_data = {"name": "Jane Smith", "template": "classic"}
@@ -508,7 +500,9 @@ class TestGetContent:
         result = get_content("jane.smith")
 
         # Assert - Function strips extension, so we pass name without extension
-        mock_read.assert_called_once_with("test_input/jane.yaml")  # Function strips dots and adds .yaml
+        mock_read.assert_called_once_with(
+            "test_input/jane.yaml"
+        )  # Function strips dots and adds .yaml
         mock_transform.assert_called_once_with(expected_data)
         assert result == expected_data
 
@@ -516,7 +510,9 @@ class TestGetContent:
     @patch("cv.utilities._transform_from_markdown")
     @patch("cv.utilities.FILE_DEFAULT", "default_cv")
     @patch("cv.utilities.PATH_INPUT", "test_input/")
-    def test_get_content_with_name_containing_multiple_dots(self, mock_transform, mock_read):
+    def test_get_content_with_name_containing_multiple_dots(
+        self, mock_transform: Mock, mock_read
+    ) -> None:
         """RED: Test that names with multiple dots are handled correctly."""
         # Arrange
         expected_data = {"name": "Bob Johnson", "template": "creative"}
@@ -534,7 +530,9 @@ class TestGetContent:
     @patch("cv.utilities._transform_from_markdown")
     @patch("cv.utilities.FILE_DEFAULT", "default_cv")
     @patch("cv.utilities.PATH_INPUT", "test_input/")
-    def test_get_content_with_yml_extension(self, mock_transform, mock_read):
+    def test_get_content_with_yml_extension(
+        self, mock_transform: Mock, mock_read: Mock
+    ) -> None:
         """RED: Test that .yml extension is handled correctly."""
         # Arrange
         expected_data = {"name": "Alice Brown", "template": "minimal"}
@@ -551,7 +549,7 @@ class TestGetContent:
     @patch("cv.utilities._read_yaml", side_effect=FileNotFoundError)
     @patch("cv.utilities.FILE_DEFAULT", "default_cv")
     @patch("cv.utilities.PATH_INPUT", "test_input/")
-    def test_get_content_file_not_found_raises_exception(self, mock_read):
+    def test_get_content_file_not_found_raises_exception(self, mock_read: Mock) -> None:
         """RED: Test that file not found error is properly raised."""
         # Act & Assert
         with pytest.raises(FileNotFoundError):
@@ -561,7 +559,9 @@ class TestGetContent:
     @patch("cv.utilities._transform_from_markdown")
     @patch("cv.utilities.FILE_DEFAULT", "default_cv")
     @patch("cv.utilities.PATH_INPUT", "test_input/")
-    def test_get_content_integration_with_markdown_transformation(self, mock_transform, mock_read):
+    def test_get_content_integration_with_markdown_transformation(
+        self, mock_transform: Mock, mock_read
+    ) -> None:
         """GREEN: Integration test for complete get_content workflow."""
         # Arrange
         raw_data = {
@@ -569,16 +569,14 @@ class TestGetContent:
             "description": "This is **bold** text",
             "body": {
                 "Experience": [
-                    {
-                        "description": "## Responsibilities\n- Task 1\n- Task 2"
-                    }
+                    {"description": "## Responsibilities\n- Task 1\n- Task 2"}
                 ]
-            }
+            },
         }
         mock_read.return_value = raw_data
 
         # The transform should actually modify the data in place
-        def actual_transform(data):
+        def actual_transform(data: dict[str, Any]) -> dict[str, Any]:
             data["description"] = "<p>This is <strong>bold</strong> text</p>"
             return data
 
@@ -593,7 +591,9 @@ class TestGetContent:
         assert result["description"] == "<p>This is <strong>bold</strong> text</p>"
         assert result["name"] == "Test User"
 
-    def test_get_content_business_logic_validation(self, sample_cv_file: Path, monkeypatch):
+    def test_get_content_business_logic_validation(
+        self, sample_cv_file: Path, monkeypatch
+    ) -> None:
         """GREEN: Business logic test for CV content structure validation."""
         # Arrange
         monkeypatch.setattr("cv.utilities.PATH_INPUT", str(sample_cv_file.parent) + "/")
@@ -616,13 +616,23 @@ class TestGetContent:
 
         # Name validation
         assert isinstance(result["full_name"], str), "Full name should be a string"
-        assert len(result["full_name"].strip()) > 1, "Full name must have at least 2 characters"
+        assert (
+            len(result["full_name"].strip()) > 1
+        ), "Full name must have at least 2 characters"
 
         # Contact info validation if present
         if "email" in result:
             assert "@" in result["email"], "Email should contain @"
-            assert "." in result["email"].split("@")[1], "Email should have valid domain"
+            assert (
+                "." in result["email"].split("@")[1]
+            ), "Email should have valid domain"
 
         if "phone" in result:
-            assert result["phone"].replace("-", "").replace(" ", "").replace(")", "").replace("(", "").isdigit(), \
-                "Phone should contain only digits, spaces, and standard phone characters"
+            assert (
+                result["phone"]
+                .replace("-", "")
+                .replace(" ", "")
+                .replace(")", "")
+                .replace("(", "")
+                .isdigit()
+            ), "Phone should contain only digits, spaces, and standard phone characters"
