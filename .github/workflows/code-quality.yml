@@ -40,7 +40,7 @@ jobs:
         safety check
 
     - name: Upload security reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: security-reports
@@ -82,7 +82,7 @@ jobs:
       run: xenon --max-absolute B --max-modules A --max-average A src/cv/ || true
 
     - name: Upload complexity reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: complexity-reports
@@ -110,8 +110,8 @@ jobs:
 
     - name: Check docstring coverage
       run: |
-        uv add --dev docstring-coverage
-        uv run docstring-coverage src/cv/ --fail-under=80 || true
+        uv add --dev interrogate
+        uv run interrogate src/cv/ --fail-under 80 --quiet || true
 
     - name: Check README links
       run: |

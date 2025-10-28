@@ -20,8 +20,6 @@ lint: ## Run linting with ruff
 format: ## Format code with ruff
 	uv run ruff format src/cv/
 
-lint-fix: ## Auto-fix linting issues with ruff
-	uv run ruff check --fix src/cv/
 
 typecheck: ## Run type checking with mypy and ty
 	@echo "Running mypy type checking..."
@@ -32,7 +30,8 @@ typecheck: ## Run type checking with mypy and ty
 
 check-all: lint typecheck ## Run all checks (lint and typecheck)
 
-fix-all: format lint-fix ## Format code and fix auto-fixable issues
+fix-all: format ## Format code and fix auto-fixable issues
+	uv run ruff check --fix src/cv/
 
 clean: ## Clean up cache and build files
 	rm -rf .venv

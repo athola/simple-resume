@@ -37,8 +37,10 @@ class TestCVBusinessRules:
     """Business logic tests for CV domain rules and constraints."""
 
     def test_user_story_professional_cv_creation(self, temp_dir: Path) -> None:
-        """User Story: As a professional, I want to create a polished CV
-        that highlights my experience."""
+        """User Story: As a professional, I want to create a polished CV.
+
+        that highlights my experience.
+        """
         # Business Rule: Professional CV must have complete contact information
         professional_cv_data = {
             "template": "cv_no_bars",
@@ -114,8 +116,10 @@ Led teams of 5-10 engineers in enterprise-scale projects.
         self._validate_professional_cv_business_rules(processed_cv)
 
     def test_user_story_student_cv_creation(self, temp_dir: Path) -> None:
-        """User Story: As a student, I want to create a CV that emphasizes my
-        education and projects."""
+        """User Story: As a student, I want to create a CV that emphasizes my.
+
+        education and projects.
+        """
         # Business Rule: Student CV should highlight education and potential
         # over experience
         student_cv_data = {
@@ -202,8 +206,10 @@ personalized study plans.
         self._validate_student_cv_business_rules(processed_cv)
 
     def test_user_story_career_change_cv(self, temp_dir: Path) -> None:
-        """User Story: As a career changer, I want to highlight transferable
-        skills and new certifications."""
+        """User Story: As a career changer, I want to highlight transferable.
+
+        skills and new certifications.
+        """
         # Business Rule: Career change CV must bridge past experience with new goals
         career_change_cv_data = {
             "template": "cv_with_bars",

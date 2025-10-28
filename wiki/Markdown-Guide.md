@@ -16,11 +16,12 @@ Use fenced code blocks with language identifiers for syntax highlighting.
 ```yaml
 description: |
   ```python
-  def fetch_data(url):
-      response = requests.get(url)
-      return response.json()
-  ```
+def fetch_data(url):
+    response = requests.get(url)
+    return response.json()
 ```
+
+```yaml
 
 ### Tables
 
@@ -50,15 +51,15 @@ description: |
 
 ### Technical CVs
 
-1.  **Code Blocks**: Use correct language identifiers (`python`, `javascript`, `bash`).
-2.  **Tables**: Include quantifiable metrics.
-3.  **Skills**: Be specific about expertise (e.g., "Expert: 5+ years, multiple production projects").
+1. **Code Blocks**: Use correct language identifiers (`python`, `javascript`, `bash`).
+2. **Tables**: Include quantifiable metrics.
+3. **Skills**: Be specific about expertise (e.g., "Expert: 5+ years, multiple production projects").
 
 ### Business CVs
 
-1.  **Quantify Results**: Use numbers and metrics (e.g., "+45%", "$200K savings").
-2.  **Action Verbs**: Start bullet points with strong verbs (e.g., "Managed," "Led," "Developed").
-3.  **Currency**: Use standard symbols (`$`, `€`, `£`).
+1. **Quantify Results**: Use numbers and metrics (e.g., "+45%", "$200K savings").
+2. **Action Verbs**: Start bullet points with strong verbs (e.g., "Managed," "Led," "Developed").
+3. **Currency**: Use standard symbols (`$`, `€`, `£`).
 
 ## Common Pitfalls
 
@@ -67,6 +68,7 @@ description: |
 A common mistake is forgetting the separator line for the last column.
 
 ❌ **Incorrect**:
+
 ```markdown
 | Feature | Status |
 |---------|
@@ -74,6 +76,7 @@ A common mistake is forgetting the separator line for the last column.
 ```
 
 ✅ **Correct**:
+
 ```markdown
 | Feature | Status |
 |---------|--------|
@@ -85,12 +88,14 @@ A common mistake is forgetting the separator line for the last column.
 Preserve indentation within code blocks.
 
 ❌ **Incorrect**:
+
 ```python
 def example():
-print("Mismatched indentation")
+    print("Mismatched indentation")
 ```
 
 ✅ **Correct**:
+
 ```python
 def example():
     print("Correct indentation")

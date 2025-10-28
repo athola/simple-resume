@@ -53,7 +53,8 @@ See `wiki/Workflows.md` for the full CI matrix and quality gates.
 
 ## Contributing
 
-Issues and pull requests are welcome. Please review the wiki guidelines and ensure all tests and linters pass before opening a PR.
+Issues and pull requests are welcome. Please review the wiki guidelines and ensure all tests
+and linters pass before opening a PR.
 
 ## License
 

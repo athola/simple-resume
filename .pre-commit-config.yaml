@@ -33,6 +33,7 @@ repos:
     hooks:
       - id: bandit
         args: [-r, src/]
+        exclude: tests/
 
   - repo: https://github.com/pycqa/isort
     rev: 7.0.0
@@ -52,6 +53,7 @@ repos:
     hooks:
       - id: blacken-docs
         args: [--line-length=88]
+        exclude: ^tests/
 
   - repo: https://github.com/DavidAnson/markdownlint-cli2
     rev: v0.18.1

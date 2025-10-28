@@ -3,7 +3,6 @@
 
 import os
 from threading import Thread
-from typing import Any, cast
 
 from flask import Flask, render_template
 
@@ -37,7 +36,7 @@ def show(name: str = "", preview: bool = True) -> str:
     if "config" in data:
         data["cv_config"] = data.pop("config")
 
-    return render_template(template, preview=preview, **data)
+    return render_template(template, preview=preview, **data)  # type: ignore[no-any-return]
 
 
 @APP.route("/print/<name>")
@@ -51,7 +50,7 @@ def mprint(name: str = "") -> str:
         str: The rendered HTML template as a string.
 
     """
-    return show(name, preview=False)
+    return show(name, preview=False)  # type: ignore[no-any-return]
 
 
 @APP.route("/print.html")
@@ -65,7 +64,7 @@ def print_sample() -> str:
         str: The rendered HTML template as a string.
 
     """
-    return mprint()
+    return mprint()  # type: ignore[no-any-return]
 
 
 @APP.route("/")
@@ -79,7 +78,7 @@ def show_sample() -> str:
         str: The rendered HTML template as a string.
 
     """
-    return show()
+    return show()  # type: ignore[no-any-return]
 
 
 def execute_app() -> None:

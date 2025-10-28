@@ -59,10 +59,10 @@ class TestGeneratePdf:
         expected_files = ["cv1.yaml", "cv2.yml"]
         assert mock_listdir.call_count == 1
 
-          # Verify both input and output directory checks
+        # Verify both input and output directory checks
         assert mock_exists.call_count == 2
-        mock_exists.assert_any_call('cv_private/input/')
-        mock_exists.assert_any_call('cv_private/output/')
+        mock_exists.assert_any_call("cv_private/input/")
+        mock_exists.assert_any_call("cv_private/output/")
 
         # Verify sleep is called for each file (WeasyPrint timing)
         assert mock_sleep.call_count == len(expected_files)
@@ -98,7 +98,7 @@ class TestGeneratePdf:
         mock_run_app.return_value = None
         mock_listdir.return_value = ["cv1.yaml"]
         # Input directory exists, output directory doesn't
-        mock_exists.side_effect = lambda path: path == 'cv_private/input/'
+        mock_exists.side_effect = lambda path: path == "cv_private/input/"
         mock_makedirs.return_value = None
         mock_css.return_value = Mock()
         mock_html_instance = Mock()
@@ -109,9 +109,9 @@ class TestGeneratePdf:
 
         # Assert
         assert mock_exists.call_count == 2
-        mock_exists.assert_any_call('cv_private/input/')
-        mock_exists.assert_any_call('cv_private/output/')
-        mock_makedirs.assert_called_once_with('cv_private/output/', exist_ok=True)
+        mock_exists.assert_any_call("cv_private/input/")
+        mock_exists.assert_any_call("cv_private/output/")
+        mock_makedirs.assert_called_once_with("cv_private/output/", exist_ok=True)
         mock_html_instance.write_pdf.assert_called_once()
 
     @patch("cv.generate_pdf.run_app")

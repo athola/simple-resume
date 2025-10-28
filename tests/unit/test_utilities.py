@@ -218,8 +218,10 @@ class TestTransformFromMarkdown:
         assert data["body"]["Education"] == []
 
     def test_transform_with_complex_markdown_content(self) -> None:
-        """RED: Test transformation of complex markdown with links, lists, and
-        formatting."""
+        """RED: Test transformation of complex markdown with links, lists, and.
+
+        formatting.
+        """
         # Arrange
         data: dict[str, Any] = {
             "description": """
