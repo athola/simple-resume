@@ -14,7 +14,7 @@ The full sample PDF lives in `assets/sample.pdf`.
 
 ## Documentation
 
-All project guides are maintained in the repo wiki (mirroring the GitHub wiki at <https://github.com/athola/importobot/wiki>):
+All project guides are maintained in the repo wiki (mirroring the GitHub wiki at <https://github.com/athola/cv/wiki>):
 
 - `wiki/Markdown-Guide.md` – author Markdown-rich CV content.
 - `wiki/Workflows.md` – understand the GitHub Actions pipeline.

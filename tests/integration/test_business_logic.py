@@ -350,15 +350,15 @@ in software development.
         processed_long = self._process_cv_with_business_logic(long_cv, temp_dir)
 
         # Assert business rules about CV length
-        assert (
-            self._get_cv_content_length(processed_short) < 100
-        ), "Short CV should be flagged as insufficient"
-        assert (
-            100 <= self._get_cv_content_length(processed_appropriate) <= 5000
-        ), "Appropriate CV should pass length validation"
-        assert (
-            self._get_cv_content_length(processed_long) > 5000
-        ), "Long CV should be flagged as excessive"
+        assert self._get_cv_content_length(processed_short) < 100, (
+            "Short CV should be flagged as insufficient"
+        )
+        assert 100 <= self._get_cv_content_length(processed_appropriate) <= 5000, (
+            "Appropriate CV should pass length validation"
+        )
+        assert self._get_cv_content_length(processed_long) > 5000, (
+            "Long CV should be flagged as excessive"
+        )
 
     def test_business_rule_contact_information_validation(self, temp_dir: Path) -> None:
         """Business Rule: Contact information must be valid and complete."""
@@ -407,13 +407,13 @@ in software development.
             )
 
             if test_case["should_be_valid"]:
-                assert self._validate_contact_information(
-                    processed_cv
-                ), f"Contact validation failed for {test_case['name']}"
+                assert self._validate_contact_information(processed_cv), (
+                    f"Contact validation failed for {test_case['name']}"
+                )
             else:
-                assert not self._validate_contact_information(
-                    processed_cv
-                ), f"Contact validation should fail for {test_case['name']}"
+                assert not self._validate_contact_information(processed_cv), (
+                    f"Contact validation should fail for {test_case['name']}"
+                )
 
     def test_business_rule_template_appropriateness(self, temp_dir: Path) -> None:
         """Business Rule: Template choice should match content type and profession."""
@@ -463,9 +463,9 @@ in software development.
             )
             template_appropriate = self._validate_template_choice(processed_cv)
 
-            assert (
-                template_appropriate == scenario["appropriate"]
-            ), f"Template validation mismatch for {scenario['name']}"
+            assert template_appropriate == scenario["appropriate"], (
+                f"Template validation mismatch for {scenario['name']}"
+            )
 
     # Helper methods for business logic validation
     def _validate_professional_cv_business_rules(self, cv_data: dict[str, Any]) -> None:
@@ -487,26 +487,26 @@ in software development.
             .replace("(", "")
             .replace(")", "")
         )
-        assert phone.replace(
-            "+", ""
-        ).isdigit(), "Phone must contain only digits and standard characters"
+        assert phone.replace("+", "").isdigit(), (
+            "Phone must contain only digits and standard characters"
+        )
 
         # Experience validation
-        assert (
-            "Experience" in cv_data["body"]
-        ), "Professional CV must have experience section"
-        assert (
-            len(cv_data["body"]["Experience"]) > 0
-        ), "Professional CV must have at least one experience entry"
+        assert "Experience" in cv_data["body"], (
+            "Professional CV must have experience section"
+        )
+        assert len(cv_data["body"]["Experience"]) > 0, (
+            "Professional CV must have at least one experience entry"
+        )
 
     def _validate_student_cv_business_rules(self, cv_data: dict[str, Any]) -> None:
         """Validate student CV business rules."""
         # Student CVs should emphasize education
         if "Education" in cv_data.get("body", {}):
             education_entries = cv_data["body"]["Education"]
-            assert (
-                len(education_entries) > 0
-            ), "Student CV should have education entries"
+            assert len(education_entries) > 0, (
+                "Student CV should have education entries"
+            )
 
         # Should have projects or extracurricular activities
         body_sections = cv_data.get("body", {})
@@ -517,9 +517,9 @@ in software development.
             "Experience" in body_sections and len(body_sections["Experience"]) > 0
         )
 
-        assert (
-            has_projects or has_experience
-        ), "Student CV should have projects or relevant experience"
+        assert has_projects or has_experience, (
+            "Student CV should have projects or relevant experience"
+        )
 
     def _validate_career_change_cv_business_rules(
         self, cv_data: dict[str, Any]
@@ -542,17 +542,17 @@ in software development.
             keyword.lower() in description.lower() for keyword in transition_keywords
         )
 
-        assert (
-            has_transition_narrative
-        ), "Career change CV should explain the transition"
+        assert has_transition_narrative, (
+            "Career change CV should explain the transition"
+        )
 
         # Should have certifications or education in new field
         has_certifications = "Certification" in body and len(body["Certification"]) > 0
         has_education = "Education" in body and len(body["Education"]) > 0
 
-        assert (
-            has_certifications or has_education
-        ), "Career change CV should show new qualifications"
+        assert has_certifications or has_education, (
+            "Career change CV should show new qualifications"
+        )
 
     def _validate_contact_information(self, cv_data: dict[str, Any]) -> bool:
         """Validate contact information format and completeness."""

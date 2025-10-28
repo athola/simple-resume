@@ -516,15 +516,15 @@ class TestGeneratePdf:
 
         # Validate CSS contains required page settings
         assert "size: Letter" in css_string, "Should use Letter page size"
-        assert (
-            "margin: 0in 0.44in 0.2in 0.44in" in css_string
-        ), "Should have correct margins"
+        assert "margin: 0in 0.44in 0.2in 0.44in" in css_string, (
+            "Should have correct margins"
+        )
 
         # Validate PDF generation parameters
         pdf_call_args = mock_html_instance.write_pdf.call_args
-        assert (
-            len(pdf_call_args[1]["stylesheets"]) == 1
-        ), "Should have exactly one stylesheet"
-        assert (
-            pdf_call_args[1]["stylesheets"][0] == mock_css_instance
-        ), "Should use created CSS instance"
+        assert len(pdf_call_args[1]["stylesheets"]) == 1, (
+            "Should have exactly one stylesheet"
+        )
+        assert pdf_call_args[1]["stylesheets"][0] == mock_css_instance, (
+            "Should use created CSS instance"
+        )

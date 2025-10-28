@@ -25,8 +25,9 @@ repos:
     rev: v1.18.2
     hooks:
       - id: mypy
-        additional_dependencies: [types-markdown]
-        args: [--strict]
+        additional_dependencies: [types-markdown, flask, oyaml, weasyprint]
+        args: [--strict, --config-file=pyproject.toml]
+        files: ^src/
 
   - repo: https://github.com/pycqa/bandit
     rev: 1.8.6
@@ -34,19 +35,6 @@ repos:
       - id: bandit
         args: [-r, src/]
         exclude: tests/
-
-  - repo: https://github.com/pycqa/isort
-    rev: 7.0.0
-    hooks:
-      - id: isort
-        args: [--profile, black]
-
-  - repo: https://github.com/psf/black
-    rev: 25.9.0
-    hooks:
-      - id: black
-        language_version: python3
-        args: [--line-length=88]
 
   - repo: https://github.com/asottile/blacken-docs
     rev: 1.20.0
@@ -60,6 +48,11 @@ repos:
     hooks:
       - id: markdownlint-cli2
         args: [--config, ".markdownlint.jsonc"]
+
+  - repo: https://github.com/tcort/markdown-link-check
+    rev: v3.13.6
+    hooks:
+      - id: markdown-link-check
 
   - repo: local
     hooks:

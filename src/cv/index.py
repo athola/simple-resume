@@ -36,7 +36,7 @@ def show(name: str = "", preview: bool = True) -> str:
     if "config" in data:
         data["cv_config"] = data.pop("config")
 
-    return render_template(template, preview=preview, **data)  # type: ignore[no-any-return]
+    return render_template(template, preview=preview, **data)
 
 
 @APP.route("/print/<name>")
@@ -50,7 +50,7 @@ def mprint(name: str = "") -> str:
         str: The rendered HTML template as a string.
 
     """
-    return show(name, preview=False)  # type: ignore[no-any-return]
+    return show(name, preview=False)
 
 
 @APP.route("/print.html")
@@ -64,7 +64,7 @@ def print_sample() -> str:
         str: The rendered HTML template as a string.
 
     """
-    return mprint()  # type: ignore[no-any-return]
+    return mprint()
 
 
 @APP.route("/")
@@ -78,7 +78,7 @@ def show_sample() -> str:
         str: The rendered HTML template as a string.
 
     """
-    return show()  # type: ignore[no-any-return]
+    return show()
 
 
 def execute_app() -> None:

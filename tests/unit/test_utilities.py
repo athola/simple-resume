@@ -619,16 +619,16 @@ class TestGetContent:
 
         # Name validation
         assert isinstance(result["full_name"], str), "Full name should be a string"
-        assert (
-            len(result["full_name"].strip()) > 1
-        ), "Full name must have at least 2 characters"
+        assert len(result["full_name"].strip()) > 1, (
+            "Full name must have at least 2 characters"
+        )
 
         # Contact info validation if present
         if "email" in result:
             assert "@" in result["email"], "Email should contain @"
-            assert (
-                "." in result["email"].split("@")[1]
-            ), "Email should have valid domain"
+            assert "." in result["email"].split("@")[1], (
+                "Email should have valid domain"
+            )
 
         if "phone" in result:
             assert (

@@ -325,9 +325,9 @@ Visit my [portfolio](https://janesmith.dev) for more examples.
 
         # Assert - Performance requirements
         assert load_time < 5.0, f"Loading {num_cvs} CVs took too long: {load_time}s"
-        assert (
-            render_time < 10.0
-        ), f"Rendering {num_cvs} CVs took too long: {render_time}s"
+        assert render_time < 10.0, (
+            f"Rendering {num_cvs} CVs took too long: {render_time}s"
+        )
 
     def test_concurrent_user_scenarios(self, temp_dir: Path) -> None:
         """GREEN: Test concurrent access scenarios (multiple users)."""
