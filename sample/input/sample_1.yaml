@@ -3,7 +3,7 @@ template: cv_no_bars
 full_name: John Doe
 
 # Address should be a list (with only one element if needed)
-address: 
+address:
   - False street
   - ZIP_NUM Country
 
@@ -25,9 +25,9 @@ titles:
 
 description: |
   This is where you can write your pitch. It is written using **Markdown**. You can include bold, italics, links...
-  
+
   Take a look at the [cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet).
-  
+
   If you don't want this section you can just comment it. The same applies for the profile picture.
 
 

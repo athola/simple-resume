@@ -23,6 +23,10 @@ __pycache__
 coverage.xml
 */coverage.xml
 
+# HTML coverage reports
+htmlcov/
+*/htmlcov/
+
 # Unit test report
 nosetests.xml
 */nosetests.xml
@@ -59,6 +63,12 @@ dist/
 */*/temp.md
 */temp.ipynb
 
+# Temporary test scripts
+test_*.py
+!tests/**/test_*.py
+!tests/unit/test_*.py
+!tests/integration/test_*.py
+
 # Hide images (except default)
 src/static/images/*
 !src/static/images/default_*
@@ -72,3 +82,4 @@ sample/output
 # Private Folders/Files
 cv_private/
 **/*/private_headshot.jpg
+*.txt

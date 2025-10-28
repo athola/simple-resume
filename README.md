@@ -1,66 +1,61 @@
 # Easy CV
 
-Create a `pdf` CV based on some `html` templates and data from `yaml`.
+Turn structured YAML into polished, print-ready resumes using Flask and WeasyPrint.
 
-Screenshot of the result:
-![home](assets/preview.jpg)
+![Generated resume preview](assets/preview.jpg)
 
-You can view the full pdf [here](assets/sample.pdf).
+The full sample PDF lives in `assets/sample.pdf`.
+
+## Highlights
+
+- Generate consistent PDFs from templated HTML with a single command.
+- Leverage Markdown inside YAML content for rich formatting.
+- Ship-ready automation: CI, type checking, and linting configured out of the box.
+
+## Documentation
+
+All project guides are maintained in the repo wiki (mirroring the GitHub wiki at <https://github.com/athola/cv/wiki>):
+
+- `wiki/Markdown-Guide.md` – author Markdown-rich CV content.
+- `wiki/Workflows.md` – understand the GitHub Actions pipeline.
 
 ## Installation
-1. Install all python packages with
 
-	pip install -r requirements.txt
+We use [uv](https://github.com/astral-sh/uv) for dependency management.
 
-2. Install [wkhtmltopdf](https://wkhtmltopdf.org/)
+```bash
+# Install dependencies
+uv sync
 
-## Usage
-
-### 0. Install with poetry
-
-```
-pip install poetry
-poetry install
+# (Optional) install tooling extras
+uv sync --group utils
 ```
 
-### 1. Create your CVs
+You also need a local copy of [wkhtmltopdf](https://wkhtmltopdf.org/).
 
-Copy `input/sample_1.yaml` and rename it to whatever you like. For example `input/cv1.yaml`.
+## Quick Start
 
-### 2. Start Flask
-Start the `flask` server from the root folder with:
+1. Copy `sample/input/sample_1.yaml` into your data directory and adjust the content.
+2. Start the preview server: `uv run python src/cv/index.py` then visit `http://localhost:5000/`.
+3. Generate PDFs for every YAML file: `uv run python src/cv/generate_pdf.py`.
 
-```
-poetry run python src/index.py
-```
+Configuration values (input/output locations, URLs) live in `src/cv/config.py`.
 
-### 3. Preview the result
-Open `http://localhost:5000/` to preview the result
+## Development
 
-You can also view any file (like `cv1.yml`) from the `input` folder with the url `http://localhost:5000/v/cv1`.
+- `make install` – install dependencies (including tooling extras).
+- `make test` – run the full pytest suite.
+- `make lint` / `make format` – lint and format with Ruff.
+- `make typecheck` – run mypy and ty.
+- `make generate-pdf` – create PDFs using the configured data directory.
 
-### 4. Create the pdf
+See `wiki/Workflows.md` for the full CI matrix and quality gates.
 
-To create the pdf for all `yaml` files inside the `input/` folder run from the main path:
+## Contributing
 
-```
-poetry run python src/do_all.py
-```
-
-> You should change the `wkhtmltopdf` path inside `config.py` and/or `create_sample.sh`.
-
-> Also you need to have `flask` running
-
-## Configuration
-There are two files to `input/sample_1.yaml` and `src/config.yaml`.
-
-The first one (`sample_1.yaml`) has the actual content of the CV.
-The second (`config.yaml`) allow users to change some parts of the template.
-
-If you want further configuration you can edit the templates (`src/templates/base.html` and `src/templates/cv.html`) directly or create your own templates (recommended).
-
-## Authors
-* [Arnau Villoro](villoro.com)
+Issues and pull requests are welcome. Please review the wiki guidelines and ensure all tests
+and linters pass before opening a PR.
 
 ## License
-The content of this repository is licensed under a [MIT](https://opensource.org/licenses/MIT).
+
+This project is released under the [MIT License](https://opensource.org/licenses/MIT).

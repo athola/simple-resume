@@ -116,7 +116,7 @@
       {{ description }}
     {% endautoescape %}
   </div>
-  {% endif %} 
+  {% endif %}
 
   {% for name, block_data in body.items() %}
     <h2> {{ name }}</h2>
@@ -134,25 +134,25 @@
             <p class="date2">
               {{ data["start"] }}
             </p>
-          {% endif %} 
+          {% endif %}
         </div>
 
         <!-- Content itself -->
         <div class="description-container">
 
           <!-- If there is description use h4, else regular text -->
-          {% if data["description"] %}<h4><b>{% else %}<p>{% endif %} 
+          {% if data["description"] %}<h4><b>{% else %}<p>{% endif %}
 
             <!-- Allows to add a link to the title -->
-            {% if data["title_link"] %}<a href="{{ data['title_link'] }}">{% endif %} 
+            {% if data["title_link"] %}<a href="{{ data['title_link'] }}">{% endif %}
               {{ data["title"] }}
-            {% if data["title_link"] %}</a>{% endif %} 
+            {% if data["title_link"] %}</a>{% endif %}
 
-          {% if data["description"] %}</b></h4>{% else %}</p>{% endif %} 
+          {% if data["description"] %}</b></h4>{% else %}</p>{% endif %}
 
           <h5>
             <!-- Allows to add a link to the company -->
-            {% if data["company_link"] %}<a href="{{ data['company_link'] }}">{% endif %} 
+            {% if data["company_link"] %}<a href="{{ data['company_link'] }}">{% endif %}
               {{ data["company"] }}
             {% if data["company_link"] %}</a>{% endif %}
           </h5>
@@ -163,7 +163,7 @@
                 {{ data["description"] }}
               {% endautoescape %}
             </div>
-          {% endif %} 
+          {% endif %}
 
         </div>
       </div>

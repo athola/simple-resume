@@ -1,0 +1,124 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security:
+    name: Security Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+      with:
+        version: "latest"
+
+    - name: Install dependencies
+      run: uv sync --extra utils
+
+    - name: Run Bandit (security linter)
+      run: |
+        pip install bandit
+        bandit -r src/cv/ -f json -o bandit-report.json || true
+        bandit -r src/cv/
+
+    - name: Run Safety (dependency security)
+      run: |
+        pip install safety
+        safety check --json --output safety-report.json || true
+        safety check
+
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+          safety-report.json
+
+  complexity:
+    name: Code Complexity Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+      with:
+        version: "latest"
+
+    - name: Install dependencies
+      run: uv sync --extra utils
+
+    - name: Install complexity tools
+      run: |
+        pip install radon xenon
+
+    - name: Run Radon (cyclomatic complexity)
+      run: |
+        radon cc src/cv/ --min B
+        radon mi src/cv/ --min B
+        radon cc src/cv/ --json > radon-report.json || true
+
+    - name: Run Xenon (complexity monitoring)
+      run: xenon --max-absolute B --max-modules A --max-average A src/cv/ || true
+
+    - name: Upload complexity reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: complexity-reports
+        path: radon-report.json
+
+  documentation:
+    name: Documentation Quality
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+      with:
+        version: "latest"
+
+    - name: Install dependencies
+      run: uv sync --extra utils
+
+    - name: Check docstring coverage
+      run: |
+        uv add --dev interrogate
+        uv run interrogate src/cv/ --fail-under 80 --quiet || true
+
+    - name: Check README links
+      run: |
+        npm install -g markdown-link-check
+        markdown-link-check README.md || true
+
+    - name: Validate Markdown files
+      run: |
+        uv add --dev markdown
+        find . -name "*.md" -not -path "./.git/*" -not -path "./.venv/*" -not -path "./htmlcov/*" -exec sh -c 'uv run python -c "import markdown; content=open(\"\\$1\").read(); markdown.markdown(content); echo \"✓ \\$1 is valid markdown\""' _ {} \;

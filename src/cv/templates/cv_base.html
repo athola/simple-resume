@@ -39,24 +39,24 @@
         margin: 0px;
       }
       h1, h2, h3, h5 {
-        color: {{ config["theme_color"] }};
+        color: {{ cv_config["theme_color"] }};
       }
       h1 {
         font-size: 30pt;
         font-family: 'Avenir 35';
         padding-top: 11mm;
         padding-bottom: 8.5mm;
-        padding-right: {{ config["padding"] }}mm;
+        padding-right: {{ cv_config["padding"] }}mm;
         text-align: center;
-        border-bottom: 3px solid {{ config["sidebar_color"] }};
+        border-bottom: 3px solid {{ cv_config["sidebar_color"] }};
       }
       h2 {
         font-size: 16pt;
         font-family: 'Avenir 55';
-        width: {{ config["page_width"] - config["sidebar_width"] - config["h2_padding_left"]}}mm;
+        width: {{ cv_config["page_width"] - cv_config["sidebar_width"] - cv_config["h2_padding_left"]}}mm;
         padding-top: 5mm;
         padding-bottom: 1mm;
-        padding-left: {{ config["h2_padding_left"] }}mm;
+        padding-left: {{ cv_config["h2_padding_left"] }}mm;
       }
       h3 {
         font-size: 14pt;
@@ -70,7 +70,7 @@
       h5 {
         font-size: 10pt;
         font-family: 'Avenir 55';
-        padding-right: {{ config["padding"] }}mm;
+        padding-right: {{ cv_config["padding"] }}mm;
         position:absolute;
         right:0px;
         top:0px;
@@ -91,43 +91,43 @@
 
       /* Layout styles */
       .frame {
-        padding-top: {{ config["frame_padding"] }}mm;
-        padding-bottom: {{ config["frame_padding"] }}mm;
-        padding-left: {{ config["frame_padding"] }}mm;
-        padding-right: {{ config["frame_padding"] }}mm;
-        background-color: {{ config["frame_color"] }};
+        padding-top: {{ cv_config["frame_padding"] }}mm;
+        padding-bottom: {{ cv_config["frame_padding"] }}mm;
+        padding-left: {{ cv_config["frame_padding"] }}mm;
+        padding-right: {{ cv_config["frame_padding"] }}mm;
+        background-color: {{ cv_config["frame_color"] }};
       }
       .page {
         page-break-after: always;
-        width: {{ config["page_width"] }}mm;
-        height: {{ config["page_height"] }}mm;
+        width: {{ cv_config["page_width"] }}mm;
+        height: {{ cv_config["page_height"] }}mm;
         background-color: white;
       }
       .sidebar-background {
         float: left;
-        width: {{ config["sidebar_width"] }}mm;
-        height: {{ config["page_height"] }}mm;
-        background-color: {{ config["sidebar_color"] }};
+        width: {{ cv_config["sidebar_width"] }}mm;
+        height: {{ cv_config["page_height"] }}mm;
+        background-color: {{ cv_config["sidebar_color"] }};
       }
       .sidebar {
-        padding-top: {{ config["padding"] }}mm;
-        padding-bottom: {{ config["padding"] }}mm;
-        padding-left: {{ config["padding"] }}mm;
-        padding-right: {{ config["padding"] }}mm;
+        padding-top: {{ cv_config["padding"] }}mm;
+        padding-bottom: {{ cv_config["padding"] }}mm;
+        padding-left: {{ cv_config["padding"] }}mm;
+        padding-right: {{ cv_config["padding"] }}mm;
       }
       .body {
         float: left;
-        width: {{ config["page_width"] - config["sidebar_width"] }}mm;
-        height: {{ config["page_height"] }}mm;
+        width: {{ cv_config["page_width"] - cv_config["sidebar_width"] }}mm;
+        height: {{ cv_config["page_height"] }}mm;
       }
 
       /* Content styles */
       .pitch {
-        padding-top: {{ config["pitch_padding_top"] }}mm;
-        padding-bottom: {{ config["pitch_padding_bottom"] }}mm;
-        padding-left: {{ config["pitch_padding_left"] }}mm;
-        padding-right: {{ config["padding"] }}mm;
-        border-bottom: 2px solid {{ config["sidebar_color"] }};
+        padding-top: {{ cv_config["pitch_padding_top"] }}mm;
+        padding-bottom: {{ cv_config["pitch_padding_bottom"] }}mm;
+        padding-left: {{ cv_config["pitch_padding_left"] }}mm;
+        padding-right: {{ cv_config["padding"] }}mm;
+        border-bottom: 2px solid {{ cv_config["sidebar_color"] }};
       }
       .skill-container {
         padding-top: 3mm;
@@ -148,7 +148,7 @@
       }
       .content {
         float: left;
-        width: {{ config["page_width"] - config["sidebar_width"] }}mm;
+        width: {{ cv_config["page_width"] - cv_config["sidebar_width"] }}mm;
         padding-top: 4mm;
       }
       .spacer {
@@ -157,7 +157,7 @@
       .date-container {
         float: left;
         padding-left: 8mm;
-        width: {{ config["date_container_width"] }}mm;
+        width: {{ cv_config["date_container_width"] }}mm;
       }
       .date2, .description {
         padding-top: 2mm;
@@ -167,19 +167,19 @@
       }
       .date2 {
         font-size: 8pt;
-        color: {{ config["date2_color"] }};
+        color: {{ cv_config["date2_color"] }};
       }
       .date1, .date2 {
         text-align: center;
-        width: {{ config["padding"] }}mm;
+        width: {{ cv_config["padding"] }}mm;
       }
       .description-container {
         float: left;
         position:relative;
-        width: {{ config["page_width"] - config["sidebar_width"] - config["padding"] - config["date_container_width"] - config["date_container_padding_left"] - config["description_container_padding_left"] - 1}}mm;
-        padding-left: {{ config["description_container_padding_left"] }}mm;
-        padding-right: {{ config["padding"] }}mm;
-        border-left: 2px solid {{ config["sidebar_color"] }};
+        width: {{ cv_config["page_width"] - cv_config["sidebar_width"] - cv_config["padding"] - cv_config["date_container_width"] - cv_config["date_container_padding_left"] - cv_config["description_container_padding_left"] - 1}}mm;
+        padding-left: {{ cv_config["description_container_padding_left"] }}mm;
+        padding-right: {{ cv_config["padding"] }}mm;
+        border-left: 2px solid {{ cv_config["sidebar_color"] }};
       }
       .description {
         line-height: 2;
@@ -204,10 +204,10 @@
         float: left;
       }
       .bar-grey {
-        background-color: {{ config["bar_background_color"] }};
+        background-color: {{ cv_config["bar_background_color"] }};
       }
       .bar-blue {
-        background-color: {{ config["theme_color"] }};
+        background-color: {{ cv_config["theme_color"] }};
       }
 
       /* Images */
@@ -217,17 +217,17 @@
         float: left;
       }
       .profile {
-        width: {{ config["sidebar_width"] - 2*config["padding"] }}mm;
-        height: {{ config["sidebar_width"] - 2*config["padding"] }}mm;
-        padding-bottom: {{ config["profile_image_padding_bottom"] }}mm;
+        width: {{ cv_config["sidebar_width"] - 2*cv_config["padding"] }}mm;
+        height: {{ cv_config["sidebar_width"] - 2*cv_config["padding"] }}mm;
+        padding-bottom: {{ cv_config["profile_image_padding_bottom"] }}mm;
       }
     </style>
   </head>
 
   <body>
-    
+
     <!-- This will add a nice frame when previewing but not when printing -->
-    {% if preview %}<div class="frame">{% endif %} 
+    {% if preview %}<div class="frame">{% endif %}
 
       <div class="page">
         <div class="sidebar-background">
