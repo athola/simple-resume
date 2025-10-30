@@ -34,9 +34,8 @@ jobs:
 
     - name: Run Safety (dependency security)
       run: |
-        uv pip install safety
-        safety check --json --output safety-report.json || true
-        safety check
+        uv run safety check --json --output safety-report.json || true
+        uv run safety check
 
     - name: Upload security reports
       uses: actions/upload-artifact@v4
@@ -72,12 +71,12 @@ jobs:
 
     - name: Run Radon (cyclomatic complexity)
       run: |
-        radon cc src/easyresume/ --min B
-        radon mi src/easyresume/ --min B
-        radon cc src/easyresume/ --json > radon-report.json || true
+        uv run radon cc src/easyresume/ --min B
+        uv run radon mi src/easyresume/ --min B
+        uv run radon cc src/easyresume/ --json > radon-report.json || true
 
     - name: Run Xenon (complexity monitoring)
-      run: xenon --max-absolute B --max-modules A --max-average A src/easyresume/ || true
+      run: uv run xenon --max-absolute B --max-modules A --max-average A src/easyresume/ || true
 
     - name: Upload complexity reports
       uses: actions/upload-artifact@v4
