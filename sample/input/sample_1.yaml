@@ -98,7 +98,6 @@ body:
         - Trained and deployed deep learning models using TensorFlow and PyTorch
         - Optimized model inference time by 60% through quantization and caching
         - **Tech Stack:** Python, TensorFlow, PyTorch, Redis, FastAPI, React
-
   Education:
     -
       start: 09/2010

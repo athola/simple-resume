@@ -1,0 +1,120 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security:
+    name: Security Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+      with:
+        version: "latest"
+
+    - name: Install dependencies
+      run: uv sync --extra utils --group dev
+
+    - name: Run Bandit (security linter)
+      run: |
+        uv run bandit -r src/easyresume/ -f json -o bandit-report.json || true
+        uv run bandit -r src/easyresume/
+
+    - name: Run Safety (dependency security)
+      run: |
+        uv pip install safety
+        safety check --json --output safety-report.json || true
+        safety check
+
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+          safety-report.json
+
+  complexity:
+    name: Code Complexity Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+      with:
+        version: "latest"
+
+    - name: Install dependencies
+      run: uv sync --extra utils --group dev
+
+    - name: Install complexity tools
+      run: uv pip install radon xenon
+
+    - name: Run Radon (cyclomatic complexity)
+      run: |
+        radon cc src/easyresume/ --min B
+        radon mi src/easyresume/ --min B
+        radon cc src/easyresume/ --json > radon-report.json || true
+
+    - name: Run Xenon (complexity monitoring)
+      run: xenon --max-absolute B --max-modules A --max-average A src/easyresume/ || true
+
+    - name: Upload complexity reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: complexity-reports
+        path: radon-report.json
+
+  documentation:
+    name: Documentation Quality
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+      with:
+        version: "latest"
+
+    - name: Install dependencies
+      run: uv sync --extra utils --group dev
+
+    - name: Check docstring coverage
+      run: |
+        uv run interrogate src/easyresume/ --fail-under 80 --quiet || true
+
+    - name: Check README links
+      run: |
+        npm install -g markdown-link-check
+        markdown-link-check README.md || true
+
+    - name: Validate Markdown files
+      run: |
+        find . -name "*.md" -not -path "./.git/*" -not -path "./.venv/*" -not -path "./htmlcov/*" -exec sh -c 'uv run python -c "import markdown; content=open(\"\\$1\").read(); markdown.markdown(content); print(\"✓ \\$1 is valid markdown\")"' _ {} \;

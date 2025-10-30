@@ -1,4 +1,4 @@
-.PHONY: help install lint format typecheck clean generate-pdf validate
+.PHONY: help install lint format typecheck check-all fix-all clean generate-pdf generate-pdf-sample view-sample dev-setup ci test test-coverage validate
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -19,7 +19,6 @@ lint: ## Run linting with ruff
 
 format: ## Format code with ruff
 	uv run ruff format src/easyresume/
-
 
 typecheck: ## Run type checking with mypy and ty
 	@echo "Running mypy type checking..."

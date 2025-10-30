@@ -10,11 +10,14 @@ This directory contains the modular stylesheets for the CV generator.
 
 ## CSS Custom Properties
 
-Theming is handled via CSS custom properties, which are injected by the template engine from the YAML configuration. See the top of `common.css` for a list of available variables.
+Theming is handled via CSS custom properties, which are injected by the template
+engine from the YAML configuration. See the top of `common.css` for a list of
+available variables.
 
 ## Implementation
 
-Currently, styles are inlined in `cv_base.html` for compatibility with WeasyPrint. The long-term goal is to link to these external stylesheets.
+Currently, styles are inlined in `cv_base.html` for compatibility with
+WeasyPrint. The long-term goal is to link to these external stylesheets.
 
 To do this, modify `cv_base.html` to conditionally load the appropriate CSS files:
 
@@ -40,8 +43,10 @@ To do this, modify `cv_base.html` to conditionally load the appropriate CSS file
 
 `print.css` contains workarounds for two main WeasyPrint issues:
 
-1.  **Z-index Bug**: A CSS gradient is used for the sidebar background instead of a `<div>` to prevent it from rendering on top of main content.
-2.  **Limited Flexbox Support**: Floats and absolute positioning are used for layout instead of flexbox.
+1. **Z-index Bug**: A CSS gradient is used for the sidebar background instead of a
+   `<div>` to prevent it from rendering on top of main content.
+2. **Limited Flexbox Support**: Floats and absolute positioning are used for
+   layout instead of flexbox.
 
 When migrating to a new renderer, these workarounds should be the first thing to remove.
 

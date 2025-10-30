@@ -1,22 +1,73 @@
-# Python bytecode
-__pycache__/
-*.py[cod]
+# --------------------- COMMON EXCLUSIONS -------------------------------------
+# Editor settings
+sublime.sublime-project
+sublime.sublime-workspace
+.idea
 
-# Tooling caches
+# Python bytecode and caches
+*.py[cod]
+*.pyc
+__pycache__/
+*/__pycache__
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-.coverage
-coverage.xml
-htmlcov/
 
+# Jupyter checkpoints
+/.ipynb_checkpoints
+*/.ipynb_checkpoints
+
+# Coverage and lint reports
+.coverage
+*/.coverage
+cover
+*/cover
+coverage.xml
+*/coverage.xml
+htmlcov/
+*/htmlcov/
+nosetests.xml
+*/nosetests.xml
+pylint.xml
+*/pylint.xml
+
+# Packaging / build output
+build/
+dist/
+*.egg-info
+poetry.lock
+*.exe
+
+# --------------------- PERSONAL EXCLUSIONS -----------------------------------
+/data
+*/data
+
+# --------------------- PROJECT EXCLUSIONS ------------------------------------
 # Local data that should stay private
 cv_private/
+**/*/private_headshot.jpg
 
 # Generated samples
 sample/output/
 
+# Playground notebooks and temporary files
+*/test.ipynb
+*/temp.md
+*/*/temp.md
+*/temp.ipynb
+utilities/**.ipynb
+
+# Temporary scripts
+test_*.py
+!tests/**/test_*.py
+!tests/unit/test_*.py
+!tests/integration/test_*.py
+
+# Static images (except defaults)
+src/static/images/*
+!src/static/images/default_*
+
 # Miscellaneous
-commit_msg.txt
 .DS_Store
 *.swp
+commit_msg.txt

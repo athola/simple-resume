@@ -44,8 +44,8 @@ repository = "https://github.com/athola/easyresume"
 requires-python = ">=3.10"
 dependencies = [
     "markdown>=3.7.0",
-    "oyaml>=1.0",
-    "weasyprint>=66.0",
+   "oyaml>=1.0",
+   "weasyprint>=66.0",
 ]
 
 [project.optional-dependencies]
