@@ -1,0 +1,22 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Local data that should stay private
+cv_private/
+
+# Generated samples
+sample/output/
+
+# Miscellaneous
+commit_msg.txt
+.DS_Store
+*.swp
