@@ -1,6 +1,8 @@
 # PDF Renderer Evaluation
 
-This document evaluates alternatives to WeasyPrint for PDF generation. WeasyPrint has served the project well but exhibits rendering quirks that require workarounds. This evaluation provides technical analysis to inform a future architectural decision.
+This document evaluates alternatives to WeasyPrint for PDF generation.
+WeasyPrint has served the project well but exhibits rendering quirks that require workarounds.
+This evaluation provides technical analysis to inform a future architectural decision.
 
 ## Current State: WeasyPrint
 
@@ -10,9 +12,12 @@ This document evaluates alternatives to WeasyPrint for PDF generation. WeasyPrin
 
 ### Known Issues
 
-1.  **Z-index and Positioned Elements**: Overlapping positioned elements render unpredictably. The sidebar background div sometimes renders on top of content. The current workaround is a CSS gradient on the page background (see `resume_base.html:107-112`).
-2.  **CSS Support Gaps**: Flexbox support is incomplete and Grid layout is not available.
-3.  **Performance**: Generation time for a single-page Resume is acceptable (~1–2s), but batch processing is not optimized.
+1. **Z-index and Positioned Elements**: Overlapping positioned elements render unpredictably.
+   The sidebar background div sometimes renders on top of content.
+   The current workaround is a CSS gradient on the page background (see `resume_base.html:107-112`).
+2. **CSS Support Gaps**: Flexbox support is incomplete and Grid layout is not available.
+3. **Performance**: Generation time for a single-page resume is acceptable (~1–2s),
+   but batch processing is not optimized.
 
 ### Strengths
 
@@ -24,21 +29,24 @@ This document evaluates alternatives to WeasyPrint for PDF generation. WeasyPrin
 ## Evaluation Criteria
 
 ### Requirements
-1.  **HTML/CSS Fidelity**: Accurately render existing templates.
-2.  **Python Integration**: Integrate cleanly with a Flask application.
-3.  **Maintenance**: Active project with regular updates.
-4.  **Installation**: Simple setup without complex external dependencies.
-5.  **Performance**: Generate a typical Resume in under 3 seconds.
+
+1. **HTML/CSS Fidelity**: Accurately render existing templates.
+2. **Python Integration**: Integrate cleanly with a Flask application.
+3. **Maintenance**: Active project with regular updates.
+4. **Installation**: Simple setup without complex external dependencies.
+5. **Performance**: Generate a typical resume in under 3 seconds.
 
 ### Other Considerations
-6.  **CSS Support**: Modern CSS features (flexbox, grid, custom properties).
-7.  **Cost**: Free for open-source use.
-8.  **Migration Effort**: Time required to migrate existing templates.
-9.  **Debugging**: Quality of error messages and debugging tools.
+
+1. **CSS Support**: Modern CSS features (flexbox, grid, custom properties).
+2. **Cost**: Free for open-source use.
+3. **Migration Effort**: Time required to migrate existing templates.
+4. **Debugging**: Quality of error messages and debugging tools.
 
 ## Alternative Solutions
 
 ### 1. Playwright/Puppeteer
+
 **Technology**: Headless Chromium browser automation.
 
 - **Rendering Quality**: ⭐⭐⭐⭐⭐ (Chromium)
@@ -50,6 +58,7 @@ This document evaluates alternatives to WeasyPrint for PDF generation. WeasyPrin
 **Recommendation: 8.5/10**. Best rendering quality, but with a heavy dependency.
 
 ### 2. ReportLab
+
 **Technology**: Programmatic PDF generation library.
 
 - **Performance**: ⭐⭐⭐⭐⭐ (Direct PDF generation, <500ms).
@@ -60,6 +69,7 @@ This document evaluates alternatives to WeasyPrint for PDF generation. WeasyPrin
 **Recommendation: 3/10**. A good library, but the migration cost is too high.
 
 ### 3. wkhtmltopdf
+
 **Technology**: WebKit-based HTML-to-PDF converter.
 
 - **CSS Support**: ⭐⭐⭐⭐ (WebKit rendering).
@@ -69,6 +79,7 @@ This document evaluates alternatives to WeasyPrint for PDF generation. WeasyPrin
 **Recommendation: 2/10**. Cannot recommend deprecated software.
 
 ### 4. Prince XML
+
 **Technology**: Commercial HTML-to-PDF converter.
 
 - **Rendering Quality**: ⭐⭐⭐⭐⭐ (Industry-leading).
@@ -78,6 +89,7 @@ This document evaluates alternatives to WeasyPrint for PDF generation. WeasyPrin
 **Recommendation: 4/10**. Excellent quality, but the cost is prohibitive.
 
 ### 5. Stay with WeasyPrint
+
 **Technology**: Continue with the current implementation.
 
 - **Migration Effort**: ⭐⭐⭐⭐⭐ (None).
@@ -101,13 +113,19 @@ This document evaluates alternatives to WeasyPrint for PDF generation. WeasyPrin
 ## Recommendations
 
 ### Short-term (0–12 months)
-**Stay with WeasyPrint**. The current implementation is stable and the workarounds are documented. This allows development effort to focus on features, not infrastructure.
+
+**Stay with WeasyPrint**. The current implementation is stable and the workarounds are documented.
+This allows development effort to focus on features, not infrastructure.
 
 ### Long-term (12+ months)
-**Migrate to Playwright**. Create a proof-of-concept to benchmark performance and document the migration steps. Execute the migration during a low-activity period.
+
+**Migrate to Playwright**. Create a proof-of-concept to benchmark performance and document the
+migration steps. Execute the migration during a low-activity period.
 
 ### Decision Triggers
+
 Migrate sooner if:
+
 - WeasyPrint becomes unmaintained.
 - A critical rendering bug blocks a feature.
 - Performance degrades below 5 seconds per Resume.
@@ -115,6 +133,7 @@ Migrate sooner if:
 ## Migration Checklist (Playwright)
 
 ### 1. Preparation
+
 - [ ] Install Playwright in a development environment.
 - [ ] Create a proof-of-concept for PDF generation.
 - [ ] Compare WeasyPrint vs. Playwright output quality.
@@ -122,6 +141,7 @@ Migrate sooner if:
 - [ ] Add Playwright to `requirements.txt` and document the installation.
 
 ### 2. Implementation
+
 - [ ] Replace WeasyPrint calls with Playwright in `generate_pdf.py`.
 - [ ] Update CSS for print media queries if needed.
 - [ ] Add browser lifecycle management (launch/close).
@@ -129,12 +149,14 @@ Migrate sooner if:
 - [ ] Update unit tests to mock Playwright.
 
 ### 3. Deployment
+
 - [ ] Deploy to a staging environment and verify output.
 - [ ] Monitor performance metrics.
 - [ ] Deploy to production with a rollback plan.
 - [ ] Keep WeasyPrint as a secondary option for one release cycle before removing it.
 
 ### 4. Cleanup
+
 - [ ] Remove WeasyPrint-specific workarounds (e.g., the gradient hack).
 - [ ] Simplify and modernize the CSS.
 - [ ] Update all related documentation.

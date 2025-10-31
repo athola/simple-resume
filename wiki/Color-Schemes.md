@@ -18,6 +18,7 @@ config:
 Copy a preset into your YAML `config` section.
 
 ### Professional Blue (Default)
+
 High-contrast blue for on-screen and print readability.
 
 ```yaml
@@ -30,6 +31,7 @@ config:
 ```
 
 ### Creative Purple
+
 Saturated purple, best for screen viewing.
 
 ```yaml
@@ -42,6 +44,7 @@ config:
 ```
 
 ### Minimal Dark
+
 Charcoal and neutral grays for reliable printing.
 
 ```yaml
@@ -54,6 +57,7 @@ config:
 ```
 
 ### Energetic Orange
+
 High-saturation orange. May lose detail on lower-quality paper.
 
 ```yaml
@@ -66,6 +70,7 @@ config:
 ```
 
 ### Modern Teal
+
 Medium saturation teal with good screen-to-print consistency.
 
 ```yaml
@@ -78,6 +83,7 @@ config:
 ```
 
 ### Classic Green
+
 WCAG AA compliant green for text on white backgrounds.
 
 ```yaml
@@ -92,28 +98,37 @@ config:
 ## Guidelines
 
 ### Color Format
+
 All colors must be quoted hexadecimal strings with a leading `#`.
 
--   `"#0395DE"` (Correct)
--   `"#000"` (Short form is valid)
--   `"0395DE"` (Invalid: missing `#`)
--   `"rgb(3, 149, 222)"` (Invalid: RGB not supported)
--   `"blue"` (Invalid: named colors not supported)
+- `"#0395DE"` (Correct)
+- `"#000"` (Short form is valid)
+- `"0395DE"` (Invalid: missing `#`)
+- `"rgb(3, 149, 222)"` (Invalid: RGB not supported)
+- `"blue"` (Invalid: named colors not supported)
 
 ### Testing
-1.  **Web Preview**: Run `uv run python src/easyresume/index.py` and open `http://localhost:5000/`.
-2.  **PDF Generation**: Run `uv run python src/easyresume/generate_pdf.py`.
-3.  **Print Test**: Print a sample page to check paper output.
+
+1. **Web Preview**: Run `uv run python src/easyresume/index.py` and open `http://localhost:5000/`.
+2. **PDF Generation**: Run `uv run python src/easyresume/generate_pdf.py`.
+3. **Print Test**: Print a sample page to check paper output.
 
 ## Template-Specific Colors
--   **`resume_no_bars`**: Uses `theme_color`, `sidebar_color`, and `date2_color`.
--   **`resume_with_bars`**: Uses all colors. `bar_background_color` sets the empty portion of skill bars.
--   **`frame_color`**: Only used in the web preview border.
+
+- **`resume_no_bars`**: Uses `theme_color`, `sidebar_color`, and `date2_color`.
+- **`resume_with_bars`**: Uses all colors.
+  `bar_background_color` sets the empty portion of skill bars.
+- **`frame_color`**: Only used in the web preview border.
 
 ## Creating Custom Schemes
-Start with a `theme_color`. Choose a neutral `sidebar_color`. Derive other colors from the primary, such as a desaturated `bar_background` or a darker `date2_color`. Tools like [Coolors.co](https://coolors.co) or [Adobe Color](https://color.adobe.com) can help build a palette.
+
+Start with a `theme_color`. Choose a neutral `sidebar_color`.
+Derive other colors from the primary, such as a desaturated `bar_background`
+or a darker `date2_color`. Tools like
+[Coolors.co](https://coolors.co) or [Adobe Color](https://color.adobe.com) can help build a palette.
 
 ## Troubleshooting
--   **Colors not appearing**: Ensure values are quoted strings with a leading `#`.
--   **Poor readability**: Check contrast between text and background colors.
--   **PDF color differences**: Colors can render differently in PDFs. Always generate a test PDF.
+
+- **Colors not appearing**: Ensure values are quoted strings with a leading `#`.
+- **Poor readability**: Check contrast between text and background colors.
+- **PDF color differences**: Colors can render differently in PDFs. Always generate a test PDF.

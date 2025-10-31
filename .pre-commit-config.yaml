@@ -48,7 +48,6 @@ repos:
     hooks:
       - id: markdownlint-cli2
         args: [--config, ".markdownlint.jsonc"]
-        exclude: ^wiki/
 
   - repo: https://github.com/tcort/markdown-link-check
     rev: v3.13.6
