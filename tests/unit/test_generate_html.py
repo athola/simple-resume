@@ -10,7 +10,7 @@ import yaml
 
 from easyresume import config, rendering
 from easyresume.generate_html import _inject_base_href, generate_html
-from tests.conftest import create_complete_cv_data
+from tests.conftest import create_complete_resume_data
 
 
 def test_inject_base_href_adds_base_tag(tmp_path: Path) -> None:
@@ -31,8 +31,8 @@ def test_generate_html_writes_files(render_resume_html: Mock, tmp_path: Path) ->
     input_dir.mkdir()
     output_dir.mkdir()
 
-    (input_dir / "cv1.yaml").write_text(
-        "template: cv_no_bars\nconfig: {}\n", encoding="utf-8"
+    (input_dir / "resume1.yaml").write_text(
+        "template: resume_no_bars\nconfig: {}\n", encoding="utf-8"
     )
 
     render_resume_html.return_value = (
@@ -43,13 +43,13 @@ def test_generate_html_writes_files(render_resume_html: Mock, tmp_path: Path) ->
 
     generate_html(data_dir=data_dir)
 
-    output_file = output_dir / "cv1.html"
+    output_file = output_dir / "resume1.html"
     assert output_file.exists()
     html = output_file.read_text(encoding="utf-8")
     assert "<base href=" in html
     render_resume_html.assert_called_once()
     args, kwargs = render_resume_html.call_args
-    assert args[0] == "cv1"
+    assert args[0] == "resume1"
     assert kwargs["preview"] is True
     assert "paths" in kwargs
     assert kwargs["paths"].input == input_dir
@@ -70,8 +70,8 @@ def test_generate_html_open_browser(
     output_dir = data_dir / "output"
     input_dir.mkdir()
     output_dir.mkdir()
-    (input_dir / "cv1.yaml").write_text(
-        "template: cv_no_bars\nconfig: {}\n", encoding="utf-8"
+    (input_dir / "resume1.yaml").write_text(
+        "template: resume_no_bars\nconfig: {}\n", encoding="utf-8"
     )
 
     mock_which.side_effect = lambda cmd: (
@@ -120,15 +120,15 @@ def _create_dataset(base_dir: Path, template_name: str, marker: str) -> config.P
     input_dir.mkdir(parents=True)
     output_dir.mkdir(parents=True)
 
-    cv_data = create_complete_cv_data(
+    resume_data = create_complete_resume_data(
         template=template_name,
         full_name=f"{marker} User",
     )
     for key in ("page_width", "page_height", "sidebar_width"):
-        cv_data["config"][key] = str(cv_data["config"][key])
+        resume_data["config"][key] = str(resume_data["config"][key])
 
     (input_dir / f"{template_name}.yaml").write_text(
-        yaml.dump(cv_data), encoding="utf-8"
+        yaml.dump(resume_data), encoding="utf-8"
     )
 
     return config.Paths(

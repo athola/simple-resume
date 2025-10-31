@@ -14,7 +14,7 @@ TEMPLATE_LOC = PACKAGE_ROOT / "templates"
 STATIC_LOC = PACKAGE_ROOT / "static"
 
 # Legacy string-based paths preserved for backwards compatibility.
-PATH_DATA = "cv_private"
+PATH_DATA = "resume_private"
 PATH_INPUT = f"{PATH_DATA}/input"
 PATH_OUTPUT = f"{PATH_DATA}/output"
 
@@ -45,8 +45,8 @@ def resolve_paths(
 
     Args:
         data_dir: Optional directory containing `input/` and `output/` folders.
-            When omitted, the CV_DATA_DIR environment variable is used. If
-            neither is provided, the default is ./cv_private relative to the
+            When omitted, the RESUME_DATA_DIR environment variable is used. If
+            neither is provided, the default is ./resume_private relative to the
             process working directory.
         content_dir: Optional override for the package content directory.
         templates_dir: Optional override for the templates directory.
@@ -56,7 +56,7 @@ def resolve_paths(
         A fully resolved Paths dataclass with data, template, and static paths.
 
     """
-    base = data_dir or os.environ.get("CV_DATA_DIR") or PATH_DATA
+    base = data_dir or os.environ.get("RESUME_DATA_DIR") or PATH_DATA
     base_path = Path(base)
 
     if data_dir is None:

@@ -33,17 +33,17 @@ class TemplateScenario(TypedDict):
     appropriate: bool
 
 
-class TestCVBusinessRules:
-    """Business logic tests for CV domain rules and constraints."""
+class TestResumeBusinessRules:
+    """Business logic tests for Resume domain rules and constraints."""
 
-    def test_user_story_professional_cv_creation(self, temp_dir: Path) -> None:
-        """User Story: As a professional, I want to create a polished CV.
+    def test_user_story_professional_resume_creation(self, temp_dir: Path) -> None:
+        """User Story: As a professional, I want to create a polished Resume.
 
         that highlights my experience.
         """
-        # Business Rule: Professional CV must have complete contact information
-        professional_cv_data = {
-            "template": "cv_no_bars",
+        # Business Rule: Professional Resume must have complete contact information
+        professional_resume_data = {
+            "template": "resume_no_bars",
             "full_name": "Dr. Sarah Chen",
             "email": "sarah.chen@techcorp.com",
             "phone": "+1 (555) 123-4567",
@@ -104,26 +104,26 @@ Led teams of 5-10 engineers in enterprise-scale projects.
             "config": {"theme_color": "#2563eb", "sidebar_color": "#f8fafc"},
         }
 
-        # Acceptance Criteria 1: CV must have complete professional information
-        self._validate_professional_cv_business_rules(professional_cv_data)
+        # Acceptance Criteria 1: Resume must have complete professional information
+        self._validate_professional_resume_business_rules(professional_resume_data)
 
-        # Acceptance Criteria 2: CV must render correctly with markdown processing
-        processed_cv = self._process_cv_with_business_logic(
-            professional_cv_data, temp_dir
+        # Acceptance Criteria 2: Resume must render correctly with markdown processing
+        processed_resume = self._process_resume_with_business_logic(
+            professional_resume_data, temp_dir
         )
 
-        # Acceptance Criteria 3: Business rules for professional CVs
-        self._validate_professional_cv_business_rules(processed_cv)
+        # Acceptance Criteria 3: Business rules for professional Resumes
+        self._validate_professional_resume_business_rules(processed_resume)
 
-    def test_user_story_student_cv_creation(self, temp_dir: Path) -> None:
-        """User Story: As a student, I want to create a CV that emphasizes my.
+    def test_user_story_student_resume_creation(self, temp_dir: Path) -> None:
+        """User Story: As a student, I want to create a Resume that emphasizes my.
 
         education and projects.
         """
-        # Business Rule: Student CV should highlight education and potential
+        # Business Rule: Student Resume should highlight education and potential
         # over experience
-        student_cv_data = {
-            "template": "cv_no_bars",
+        student_resume_data = {
+            "template": "resume_no_bars",
             "full_name": "Alex Johnson",
             "email": "alex.johnson@university.edu",
             "phone": "(555) 987-6543",
@@ -201,18 +201,20 @@ personalized study plans.
             },
         }
 
-        # Business Rule Validation for Student CVs
-        processed_cv = self._process_cv_with_business_logic(student_cv_data, temp_dir)
-        self._validate_student_cv_business_rules(processed_cv)
+        # Business Rule Validation for Student Resumes
+        processed_resume = self._process_resume_with_business_logic(
+            student_resume_data, temp_dir
+        )
+        self._validate_student_resume_business_rules(processed_resume)
 
-    def test_user_story_career_change_cv(self, temp_dir: Path) -> None:
+    def test_user_story_career_change_resume(self, temp_dir: Path) -> None:
         """User Story: As a career changer, I want to highlight transferable.
 
         skills and new certifications.
         """
-        # Business Rule: Career change CV must bridge past experience with new goals
-        career_change_cv_data = {
-            "template": "cv_with_bars",
+        # Business Rule: Career change Resume must bridge past experience with new goals
+        career_change_resume_data = {
+            "template": "resume_with_bars",
             "full_name": "Michael Rodriguez",
             "email": "michael.rodriguez@email.com",
             "phone": "(555) 456-7890",
@@ -293,23 +295,23 @@ in software development.
             },
         }
 
-        processed_cv = self._process_cv_with_business_logic(
-            career_change_cv_data, temp_dir
+        processed_resume = self._process_resume_with_business_logic(
+            career_change_resume_data, temp_dir
         )
-        self._validate_career_change_cv_business_rules(processed_cv)
+        self._validate_career_change_resume_business_rules(processed_resume)
 
-    def test_business_rule_cv_length_constraints(self, temp_dir: Path) -> None:
-        """Business Rule: CVs should maintain appropriate length for readability."""
-        # Test Case 1: CV too short (insufficient content)
-        short_cv = {
-            "template": "cv_no_bars",
+    def test_business_rule_resume_length_constraints(self, temp_dir: Path) -> None:
+        """Business Rule: Resumes should maintain appropriate length for readability."""
+        # Test Case 1: Resume too short (insufficient content)
+        short_resume = {
+            "template": "resume_no_bars",
             "full_name": "Minimal User",
             # Missing essential content
         }
 
-        # Test Case 2: CV appropriate length
-        appropriate_cv = {
-            "template": "cv_no_bars",
+        # Test Case 2: Resume appropriate length
+        appropriate_resume = {
+            "template": "resume_no_bars",
             "full_name": "Balanced User",
             "description": "Experienced professional with a diverse background",
             "expertise": ["Skill 1", "Skill 2", "Skill 3"],
@@ -324,9 +326,9 @@ in software development.
             },
         }
 
-        # Test Case 3: CV too long (excessive content)
-        long_cv = {
-            "template": "cv_no_bars",
+        # Test Case 3: Resume too long (excessive content)
+        long_resume = {
+            "template": "resume_no_bars",
             "full_name": "Verbose User",
             "description": "A" * 2000,  # Very long description
             "expertise": [f"Skill {i}" for i in range(50)],  # Too many skills
@@ -343,21 +345,23 @@ in software development.
         }
 
         # Business Rule Validation
-        processed_short = self._process_cv_with_business_logic(short_cv, temp_dir)
-        processed_appropriate = self._process_cv_with_business_logic(
-            appropriate_cv, temp_dir
+        processed_short = self._process_resume_with_business_logic(
+            short_resume, temp_dir
         )
-        processed_long = self._process_cv_with_business_logic(long_cv, temp_dir)
+        processed_appropriate = self._process_resume_with_business_logic(
+            appropriate_resume, temp_dir
+        )
+        processed_long = self._process_resume_with_business_logic(long_resume, temp_dir)
 
-        # Assert business rules about CV length
-        assert self._get_cv_content_length(processed_short) < 100, (
-            "Short CV should be flagged as insufficient"
+        # Assert business rules about Resume length
+        assert self._get_resume_content_length(processed_short) < 100, (
+            "Short Resume should be flagged as insufficient"
         )
-        assert 100 <= self._get_cv_content_length(processed_appropriate) <= 5000, (
-            "Appropriate CV should pass length validation"
+        assert 100 <= self._get_resume_content_length(processed_appropriate) <= 5000, (
+            "Appropriate Resume should pass length validation"
         )
-        assert self._get_cv_content_length(processed_long) > 5000, (
-            "Long CV should be flagged as excessive"
+        assert self._get_resume_content_length(processed_long) > 5000, (
+            "Long Resume should be flagged as excessive"
         )
 
     def test_business_rule_contact_information_validation(self, temp_dir: Path) -> None:
@@ -367,7 +371,7 @@ in software development.
             {
                 "name": "valid_contact",
                 "data": {
-                    "template": "cv_no_bars",
+                    "template": "resume_no_bars",
                     "full_name": "Valid User",
                     "email": "valid@example.com",
                     "phone": "+1 (555) 123-4567",
@@ -377,7 +381,7 @@ in software development.
             {
                 "name": "invalid_email",
                 "data": {
-                    "template": "cv_no_bars",
+                    "template": "resume_no_bars",
                     "full_name": "Invalid Email User",
                     "email": "invalid-email",
                     "phone": "+1 (555) 123-4567",
@@ -387,7 +391,7 @@ in software development.
             {
                 "name": "invalid_phone",
                 "data": {
-                    "template": "cv_no_bars",
+                    "template": "resume_no_bars",
                     "full_name": "Invalid Phone User",
                     "email": "valid@example.com",
                     "phone": "not-a-phone-number",
@@ -396,22 +400,22 @@ in software development.
             },
             {
                 "name": "missing_contact",
-                "data": {"template": "cv_no_bars", "full_name": "No Contact User"},
+                "data": {"template": "resume_no_bars", "full_name": "No Contact User"},
                 "should_be_valid": False,
             },
         ]
 
         for test_case in test_cases:
-            processed_cv = self._process_cv_with_business_logic(
+            processed_resume = self._process_resume_with_business_logic(
                 test_case["data"], temp_dir
             )
 
             if test_case["should_be_valid"]:
-                assert self._validate_contact_information(processed_cv), (
+                assert self._validate_contact_information(processed_resume), (
                     f"Contact validation failed for {test_case['name']}"
                 )
             else:
-                assert not self._validate_contact_information(processed_cv), (
+                assert not self._validate_contact_information(processed_resume), (
                     f"Contact validation should fail for {test_case['name']}"
                 )
 
@@ -422,7 +426,7 @@ in software development.
             {
                 "name": "technical_with_no_bars",
                 "data": {
-                    "template": "cv_no_bars",
+                    "template": "resume_no_bars",
                     "full_name": "Technical User",
                     "expertise": ["Python", "Docker", "Kubernetes"],
                     "body": {"Experience": [{"title": "Software Engineer"}]},
@@ -432,7 +436,7 @@ in software development.
             {
                 "name": "executive_with_bars",
                 "data": {
-                    "template": "cv_with_bars",
+                    "template": "resume_with_bars",
                     "full_name": "Executive User",
                     "expertise": ["Leadership", "Strategy", "Management"],
                     "body": {"Experience": [{"title": "CEO"}, {"title": "CTO"}]},
@@ -458,30 +462,32 @@ in software development.
         ]
 
         for scenario in test_scenarios:
-            processed_cv = self._process_cv_with_business_logic(
+            processed_resume = self._process_resume_with_business_logic(
                 scenario["data"], temp_dir
             )
-            template_appropriate = self._validate_template_choice(processed_cv)
+            template_appropriate = self._validate_template_choice(processed_resume)
 
             assert template_appropriate == scenario["appropriate"], (
                 f"Template validation mismatch for {scenario['name']}"
             )
 
     # Helper methods for business logic validation
-    def _validate_professional_cv_business_rules(self, cv_data: dict[str, Any]) -> None:
-        """Validate professional CV business rules."""
+    def _validate_professional_resume_business_rules(
+        self, resume_data: dict[str, Any]
+    ) -> None:
+        """Validate professional Resume business rules."""
         required_fields = ["full_name", "email", "phone", "description", "body"]
         for field in required_fields:
-            assert field in cv_data, f"Professional CV must have {field}"
-            assert cv_data[field], f"Professional CV {field} cannot be empty"
+            assert field in resume_data, f"Professional Resume must have {field}"
+            assert resume_data[field], f"Professional Resume {field} cannot be empty"
 
         # Email validation
-        assert "@" in cv_data["email"], "Email must contain '@'"
-        assert "." in cv_data["email"], "Email must contain '.'"
+        assert "@" in resume_data["email"], "Email must contain '@'"
+        assert "." in resume_data["email"], "Email must contain '.'"
 
         # Phone validation
         phone = (
-            cv_data["phone"]
+            resume_data["phone"]
             .replace(" ", "")
             .replace("-", "")
             .replace("(", "")
@@ -492,24 +498,26 @@ in software development.
         )
 
         # Experience validation
-        assert "Experience" in cv_data["body"], (
-            "Professional CV must have experience section"
+        assert "Experience" in resume_data["body"], (
+            "Professional Resume must have experience section"
         )
-        assert len(cv_data["body"]["Experience"]) > 0, (
-            "Professional CV must have at least one experience entry"
+        assert len(resume_data["body"]["Experience"]) > 0, (
+            "Professional Resume must have at least one experience entry"
         )
 
-    def _validate_student_cv_business_rules(self, cv_data: dict[str, Any]) -> None:
-        """Validate student CV business rules."""
-        # Student CVs should emphasize education
-        if "Education" in cv_data.get("body", {}):
-            education_entries = cv_data["body"]["Education"]
+    def _validate_student_resume_business_rules(
+        self, resume_data: dict[str, Any]
+    ) -> None:
+        """Validate student Resume business rules."""
+        # Student Resumes should emphasize education
+        if "Education" in resume_data.get("body", {}):
+            education_entries = resume_data["body"]["Education"]
             assert len(education_entries) > 0, (
-                "Student CV should have education entries"
+                "Student Resume should have education entries"
             )
 
         # Should have projects or extracurricular activities
-        body_sections = cv_data.get("body", {})
+        body_sections = resume_data.get("body", {})
         has_projects = (
             "Projects" in body_sections and len(body_sections["Projects"]) > 0
         )
@@ -518,18 +526,18 @@ in software development.
         )
 
         assert has_projects or has_experience, (
-            "Student CV should have projects or relevant experience"
+            "Student Resume should have projects or relevant experience"
         )
 
-    def _validate_career_change_cv_business_rules(
-        self, cv_data: dict[str, Any]
+    def _validate_career_change_resume_business_rules(
+        self, resume_data: dict[str, Any]
     ) -> None:
-        """Validate career change CV business rules."""
+        """Validate career change Resume business rules."""
         # Should have both past and new career elements
-        body = cv_data.get("body", {})
+        body = resume_data.get("body", {})
 
         # Should show narrative of career transition
-        description = cv_data.get("description", "")
+        description = resume_data.get("description", "")
         transition_keywords = [
             "transition",
             "career",
@@ -543,7 +551,7 @@ in software development.
         )
 
         assert has_transition_narrative, (
-            "Career change CV should explain the transition"
+            "Career change Resume should explain the transition"
         )
 
         # Should have certifications or education in new field
@@ -551,20 +559,20 @@ in software development.
         has_education = "Education" in body and len(body["Education"]) > 0
 
         assert has_certifications or has_education, (
-            "Career change CV should show new qualifications"
+            "Career change Resume should show new qualifications"
         )
 
-    def _validate_contact_information(self, cv_data: dict[str, Any]) -> bool:
+    def _validate_contact_information(self, resume_data: dict[str, Any]) -> bool:
         """Validate contact information format and completeness."""
         contact_methods = 0
 
-        if cv_data.get("email"):
-            email = cv_data["email"]
+        if resume_data.get("email"):
+            email = resume_data["email"]
             if "@" in email and "." in email.split("@")[1]:
                 contact_methods += 1
 
-        if cv_data.get("phone"):
-            phone = cv_data["phone"]
+        if resume_data.get("phone"):
+            phone = resume_data["phone"]
             clean_phone = (
                 phone.replace(" ", "")
                 .replace("-", "")
@@ -574,45 +582,47 @@ in software development.
             if clean_phone.replace("+", "").isdigit() and len(clean_phone) >= 10:
                 contact_methods += 1
 
-        if cv_data.get("web") and cv_data["web"].startswith(("http://", "https://")):
+        if resume_data.get("web") and resume_data["web"].startswith(
+            ("http://", "https://")
+        ):
             contact_methods += 1
 
-        if cv_data.get("linkedin") and (
-            "linkedin.com" in cv_data["linkedin"]
-            or cv_data["linkedin"].startswith("in/")
+        if resume_data.get("linkedin") and (
+            "linkedin.com" in resume_data["linkedin"]
+            or resume_data["linkedin"].startswith("in/")
         ):
             contact_methods += 1
 
         # Business Rule: Must have at least 2 valid contact methods
         return contact_methods >= 2
 
-    def _validate_template_choice(self, cv_data: dict[str, Any]) -> bool:
+    def _validate_template_choice(self, resume_data: dict[str, Any]) -> bool:
         """Validate template appropriateness for content type."""
-        template = cv_data.get("template", "")
-        body = cv_data.get("body", {})
+        template = resume_data.get("template", "")
+        body = resume_data.get("body", {})
 
-        if template == "cv_no_bars":
+        if template == "resume_no_bars":
             # Good for technical roles, minimal design
             return "Experience" in body or "Projects" in body
-        elif template == "cv_with_bars":
+        elif template == "resume_with_bars":
             # Good for executive/management roles
             return "Experience" in body and len(body["Experience"]) >= 2
         elif template == "cover":
             # Good for applications/cover letters
-            return len(cv_data.get("description", "")) > 100
+            return len(resume_data.get("description", "")) > 100
 
         return True  # Default to valid for unknown templates
 
-    def _get_cv_content_length(self, cv_data: dict[str, Any]) -> int:
-        """Calculate total content length of CV."""
+    def _get_resume_content_length(self, resume_data: dict[str, Any]) -> int:
+        """Calculate total content length of Resume."""
         content_parts = [
-            cv_data.get("description", ""),
-            cv_data.get("full_name", ""),
-            " ".join(cv_data.get("expertise", [])),
+            resume_data.get("description", ""),
+            resume_data.get("full_name", ""),
+            " ".join(resume_data.get("expertise", [])),
         ]
 
         # Add body content
-        body = cv_data.get("body", {})
+        body = resume_data.get("body", {})
         for section in body.values():
             for item in section:
                 content_parts.extend(
@@ -625,19 +635,19 @@ in software development.
 
         return len(" ".join(str(part) for part in content_parts))
 
-    def _process_cv_with_business_logic(
-        self, cv_data: dict[str, Any], temp_dir: Path
+    def _process_resume_with_business_logic(
+        self, resume_data: dict[str, Any], temp_dir: Path
     ) -> dict[str, Any]:
-        """Process CV through the actual business logic."""
-        # Create CV file
-        cv_file = temp_dir / "test_cv.yaml"
-        with open(cv_file, "w", encoding="utf-8") as f:
-            yaml.dump(cv_data, f)
+        """Process Resume through the actual business logic."""
+        # Create Resume file
+        resume_file = temp_dir / "test_resume.yaml"
+        with open(resume_file, "w", encoding="utf-8") as f:
+            yaml.dump(resume_data, f)
 
         # Test input directory
         test_input_dir = temp_dir / "input"
         test_input_dir.mkdir(exist_ok=True)
-        (test_input_dir / "test_cv.yaml").write_text(cv_file.read_text())
+        (test_input_dir / "test_resume.yaml").write_text(resume_file.read_text())
 
         # Process through business logic
 
@@ -645,7 +655,7 @@ in software development.
         easyresume.utilities.PATH_INPUT = str(test_input_dir) + "/"
 
         try:
-            processed_cv = get_content("test_cv")
-            return processed_cv
+            processed_resume = get_content("test_resume")
+            return processed_resume
         finally:
             easyresume.utilities.PATH_INPUT = original_path

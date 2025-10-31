@@ -38,16 +38,16 @@
         font-weight: normal;
       }
       h1, h2, h3, h5 {
-        color: {{ cv_config["theme_color"] }};
+        color: {{ resume_config["theme_color"] }};
       }
       h1 {
         font-size: 30pt;
         font-family: 'Avenir 35';
         padding-top: 11mm;
         padding-bottom: 8.5mm;
-        padding-right: {{ cv_config["padding"] }}mm;
+        padding-right: {{ resume_config["padding"] }}mm;
         text-align: center;
-        border-bottom: 3px solid {{ cv_config["sidebar_color"] }};
+        border-bottom: 3px solid {{ resume_config["sidebar_color"] }};
       }
       h2 {
         font-size: 16pt;
@@ -76,30 +76,30 @@
 
       /* Layout styles */
       .frame {
-        padding-top: {{ cv_config["frame_padding"] }}mm;
-        padding-bottom: {{ cv_config["frame_padding"] }}mm;
-        padding-left: {{ cv_config["frame_padding"] }}mm;
-        padding-right: {{ cv_config["frame_padding"] }}mm;
-        background-color: {{ cv_config["frame_color"] }};
+        padding-top: {{ resume_config["frame_padding"] }}mm;
+        padding-bottom: {{ resume_config["frame_padding"] }}mm;
+        padding-left: {{ resume_config["frame_padding"] }}mm;
+        padding-right: {{ resume_config["frame_padding"] }}mm;
+        background-color: {{ resume_config["frame_color"] }};
       }
       .page {
         page-break-after: always;
-        width: {{ cv_config["page_width"] }}mm;
-        height: {{ cv_config["page_height"] }}mm;
+        width: {{ resume_config["page_width"] }}mm;
+        height: {{ resume_config["page_height"] }}mm;
         background-color: white;
       }
       .body {
         float: left;
-        width: {{ cv_config["page_width"] }}mm;
-        height: {{ cv_config["page_height"] }}mm;
+        width: {{ resume_config["page_width"] }}mm;
+        height: {{ resume_config["page_height"] }}mm;
       }
 
       /* Content styles */
       .description {
-        padding-top: {{ cv_config["cover_padding_top"] }}mm;
-        padding-bottom: {{ cv_config["cover_padding_bottom"] }}mm;
-        padding-left: {{ cv_config["cover_padding_h"] }}mm;
-        padding-right: {{ cv_config["cover_padding_h"] }}mm;
+        padding-top: {{ resume_config["cover_padding_top"] }}mm;
+        padding-bottom: {{ resume_config["cover_padding_bottom"] }}mm;
+        padding-left: {{ resume_config["cover_padding_h"] }}mm;
+        padding-right: {{ resume_config["cover_padding_h"] }}mm;
       }
 
       code {

@@ -1,4 +1,4 @@
-{% extends "cv_base.html" %}
+{% extends "resume_base.html" %}
 
 {% block sidebar%}
 
@@ -16,7 +16,7 @@
 
   {% if address %}
     <div class="skill-container">
-      <img class="icon" src="{{ url_for('static', filename='icons/' + cv_config.get('theme_color_name', 'default') + '/address.jpg') }}">
+      <img class="icon" src="{{ url_for('static', filename='icons/' + resume_config.get('theme_color_name', 'default') + '/address.jpg') }}">
       <div class="contact-container">
         <div class="contact-text"> <!-- Allow multiline in address -->
           {% for x in address %}
@@ -30,7 +30,7 @@
 
   {% if phone %}
     <div class="skill-container">
-      <img class="icon" src="{{ url_for('static', filename='icons/' + cv_config.get('theme_color_name', 'default') + '/phone.jpg') }}">
+      <img class="icon" src="{{ url_for('static', filename='icons/' + resume_config.get('theme_color_name', 'default') + '/phone.jpg') }}">
       <div class="contact-container">
         <p class="contact-text">{{ phone }}</p>
       </div>
@@ -40,7 +40,7 @@
 
   {% if email %}
     <div class="skill-container">
-      <img class="icon" src="{{ url_for('static', filename='icons/' + cv_config.get('theme_color_name', 'default') + '/email.jpg') }}">
+      <img class="icon" src="{{ url_for('static', filename='icons/' + resume_config.get('theme_color_name', 'default') + '/email.jpg') }}">
       <div class="contact-container">
         <p class="contact-text">
           <a href="mailto:{{ email }}" style="display: block;">
@@ -54,7 +54,7 @@
 
   {% if web %}
     <div class="skill-container">
-      <img class="icon" src="{{ url_for('static', filename='icons/' + cv_config.get('theme_color_name', 'default') + '/web.jpg') }}">
+      <img class="icon" src="{{ url_for('static', filename='icons/' + resume_config.get('theme_color_name', 'default') + '/web.jpg') }}">
       <div class="contact-container">
         <p class="contact-text">
           <a href="{{ web }}">
@@ -68,7 +68,7 @@
 
   {% if linkedin %}
     <div class="skill-container">
-      <img class="icon" src="{{ url_for('static', filename='icons/' + cv_config.get('theme_color_name', 'default') + '/linkedin.jpg') }}">
+      <img class="icon" src="{{ url_for('static', filename='icons/' + resume_config.get('theme_color_name', 'default') + '/linkedin.jpg') }}">
       <div class="contact-container">
         <p class="contact-text">
           <a href="https://www.linkedin.com/{{ linkedin }}">
@@ -80,31 +80,55 @@
     <div class="spacer"></div>
   {% endif %}
 
-  <!-- Expertise -->
-  <h3>{{ titles["expertise"] }}</h3>
-  <div class="skill-container">
-    {% for name in expertise %}
-      <p style="margin-bottom: 5px">{{ name }}</p>
-      <div class="skill-spacer"></div>
-    {% endfor %}
-  </div>
-
   <!-- Certification -->
   <h3>{{ titles["certification"] }}</h3>
   <div class="skill-container">
-    {% for name in certification %}
-      <p style="margin-bottom: 5px">{{ name }}</p>
+
+    {% for name, value in certification.items() %}
+      <p style="margin-bottom: 0">
+        {{ name }}
+      </p>
+      <div class="bar-container">
+        <div class="bar-blue" style="width: {{ value }}mm"></div>
+        <div class="bar-grey" style="width: {{ resume_config['sidebar_width'] - 2*resume_config['padding'] - value }}mm"></div>
+      </div>
       <div class="skill-spacer"></div>
     {% endfor %}
+
   </div>
 
-  <!-- Key Skills -->
-  <h3>{{ titles["keyskills"] }}</h3>
+  <!-- Expertise -->
+  <h3>{{ titles["expertise"] }}</h3>
   <div class="skill-container">
-    {% for name in keyskills %}
-      <p style="margin-bottom: 5px">{{ name }}</p>
+
+    {% for name, value in expertise.items() %}
+      <p style="margin-bottom: 0">
+        {{ name }}
+      </p>
+      <div class="bar-container">
+        <div class="bar-blue" style="width: {{ value }}mm"></div>
+        <div class="bar-grey" style="width: {{ resume_config['sidebar_width'] - 2*resume_config['padding'] - value }}mm"></div>
+      </div>
       <div class="skill-spacer"></div>
     {% endfor %}
+
+  </div>
+
+  <!-- Programming -->
+  <h3>{{ titles["programming"] }}</h3>
+  <div class="skill-container">
+
+    {% for name, value in programming.items() %}
+      <p style="margin-bottom: 0">
+        {{ name }}
+      </p>
+      <div class="bar-container">
+        <div class="bar-blue" style="width: {{ value }}mm"></div>
+        <div class="bar-grey" style="width: {{ resume_config['sidebar_width'] - 2*resume_config['padding'] - value }}mm"></div>
+      </div>
+      <div class="skill-spacer"></div>
+    {% endfor %}
+
   </div>
 
 {% endblock %}

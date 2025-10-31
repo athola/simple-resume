@@ -1,0 +1,67 @@
+name: Publish to PyPI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "pyproject.toml"
+      - "src/easyresume/__init__.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Build package
+        run: uv build
+
+      - name: Detect PyPI token
+        id: detect-token
+        env:
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          if [ -z "$PYPI_API_TOKEN" ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to PyPI
+        if: ${{ github.ref == 'refs/heads/main' && steps.detect-token.outputs.present == 'true' }}
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          uv tool install twine
+          uv tool run twine upload dist/*
+
+      - name: PyPI Token Missing
+        if: ${{ github.ref == 'refs/heads/main' && steps.detect-token.outputs.present == 'false' }}
+        run: |
+          echo "⚠️  PYPI_API_TOKEN secret not configured"
+          echo "To enable PyPI publishing:"
+          echo "1. Visit https://pypi.org/manage/account/token/"
+          echo "2. Create an API token scoped to this project"
+          echo "3. Add it as PYPI_API_TOKEN in the repository secrets"
+          echo "4. Re-run this workflow or push a release commit"
+
+      - name: GitHub Packages Info
+        run: |
+          echo "ℹ️  Python packages are published to PyPI only."
+          echo "GitHub Packages does not host PyPI distributions for this project."
+          echo "See https://docs.github.com/en/packages for alternative package types."

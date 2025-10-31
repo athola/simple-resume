@@ -6,7 +6,7 @@ from typing import Any
 from unittest.mock import patch
 
 from easyresume.rendering import render_resume_html
-from tests.conftest import create_complete_cv_data
+from tests.conftest import create_complete_resume_data
 
 
 def _render(name: str) -> str:
@@ -22,10 +22,12 @@ class TestTemplateStructureChanges:
         self, mock_get_content: Any
     ) -> None:
         """Ensure legacy profile image markup stays removed."""
-        cv_data = create_complete_cv_data(template="cv_no_bars", full_name="John Doe")
-        cv_data["image_uri"] = "images/profile.jpg"
-        cv_data["image_link"] = "https://example.com"
-        mock_get_content.return_value = cv_data
+        resume_data = create_complete_resume_data(
+            template="resume_no_bars", full_name="John Doe"
+        )
+        resume_data["image_uri"] = "images/profile.jpg"
+        resume_data["image_link"] = "https://example.com"
+        mock_get_content.return_value = resume_data
 
         html = _render("john_doe")
         assert 'class="profile"' not in html
@@ -34,10 +36,10 @@ class TestTemplateStructureChanges:
     @patch("easyresume.rendering.get_content")
     def test_template_renders_name_in_sidebar(self, mock_get_content: Any) -> None:
         """Sidebar should include the full name heading."""
-        cv_data = create_complete_cv_data(
-            template="cv_no_bars", full_name="Alice Johnson"
+        resume_data = create_complete_resume_data(
+            template="resume_no_bars", full_name="Alice Johnson"
         )
-        mock_get_content.return_value = cv_data
+        mock_get_content.return_value = resume_data
 
         html = _render("alice_johnson")
         assert "Alice Johnson" in html
@@ -48,12 +50,12 @@ class TestTemplateStructureChanges:
         self, mock_get_content: Any
     ) -> None:
         """Markdown description renders as HTML in the sidebar."""
-        cv_data = create_complete_cv_data(
-            template="cv_no_bars",
+        resume_data = create_complete_resume_data(
+            template="resume_no_bars",
             full_name="Bob Smith",
             description="**Senior Software Engineer** with 10 years experience",
         )
-        mock_get_content.return_value = cv_data
+        mock_get_content.return_value = resume_data
 
         html = _render("bob_smith")
         assert "Senior Software Engineer" in html
@@ -61,12 +63,14 @@ class TestTemplateStructureChanges:
     @patch("easyresume.rendering.get_content")
     def test_both_templates_support_photo_removal(self, mock_get_content: Any) -> None:
         """Both templates ignore `image_uri` after removal."""
-        templates = ["cv_no_bars", "cv_with_bars"]
+        templates = ["resume_no_bars", "resume_with_bars"]
 
         for template in templates:
-            cv_data = create_complete_cv_data(template=template, full_name="Test User")
-            cv_data["image_uri"] = "images/test.jpg"
-            mock_get_content.return_value = cv_data
+            resume_data = create_complete_resume_data(
+                template=template, full_name="Test User"
+            )
+            resume_data["image_uri"] = "images/test.jpg"
+            mock_get_content.return_value = resume_data
 
             html = _render(f"test_{template}")
             assert 'class="profile"' not in html
@@ -74,10 +78,12 @@ class TestTemplateStructureChanges:
     @patch("easyresume.rendering.get_content")
     def test_template_works_without_image_fields(self, mock_get_content: Any) -> None:
         """Template renders even when image fields are absent."""
-        cv_data = create_complete_cv_data(template="cv_no_bars", full_name="Jane Doe")
-        cv_data.pop("image_uri", None)
-        cv_data.pop("image_link", None)
-        mock_get_content.return_value = cv_data
+        resume_data = create_complete_resume_data(
+            template="resume_no_bars", full_name="Jane Doe"
+        )
+        resume_data.pop("image_uri", None)
+        resume_data.pop("image_link", None)
+        mock_get_content.return_value = resume_data
 
         html = _render("jane_doe")
         assert "Jane Doe" in html
@@ -89,8 +95,10 @@ class TestProjectsSectionSupport:
     @patch("easyresume.rendering.get_content")
     def test_template_supports_projects_section(self, mock_get_content: Any) -> None:
         """Projects section displays the expected project details."""
-        cv_data = create_complete_cv_data(template="cv_no_bars", full_name="Dev User")
-        cv_data["body"]["Projects"] = [
+        resume_data = create_complete_resume_data(
+            template="resume_no_bars", full_name="Dev User"
+        )
+        resume_data["body"]["Projects"] = [
             {
                 "start": "",
                 "end": "2024",
@@ -105,7 +113,7 @@ class TestProjectsSectionSupport:
                 ),
             }
         ]
-        mock_get_content.return_value = cv_data
+        mock_get_content.return_value = resume_data
 
         html = _render("dev_user")
         assert "Projects" in html
@@ -115,8 +123,10 @@ class TestProjectsSectionSupport:
     @patch("easyresume.rendering.get_content")
     def test_projects_section_renders_github_links(self, mock_get_content: Any) -> None:
         """Project title links render as anchor tags."""
-        cv_data = create_complete_cv_data(template="cv_no_bars", full_name="Dev User")
-        cv_data["body"]["Projects"] = [
+        resume_data = create_complete_resume_data(
+            template="resume_no_bars", full_name="Dev User"
+        )
+        resume_data["body"]["Projects"] = [
             {
                 "start": "",
                 "end": "2023",
@@ -126,7 +136,7 @@ class TestProjectsSectionSupport:
                 "description": "Built recommendation system with TensorFlow",
             }
         ]
-        mock_get_content.return_value = cv_data
+        mock_get_content.return_value = resume_data
 
         html = _render("dev_user")
         assert "github.com/user/ml-engine" in html
@@ -137,8 +147,10 @@ class TestProjectsSectionSupport:
         self, mock_get_content: Any
     ) -> None:
         """Tech stack text appears when embedded in descriptions."""
-        cv_data = create_complete_cv_data(template="cv_no_bars", full_name="Dev User")
-        cv_data["body"]["Projects"] = [
+        resume_data = create_complete_resume_data(
+            template="resume_no_bars", full_name="Dev User"
+        )
+        resume_data["body"]["Projects"] = [
             {
                 "start": "",
                 "end": "2024",
@@ -150,7 +162,7 @@ class TestProjectsSectionSupport:
                 ),
             }
         ]
-        mock_get_content.return_value = cv_data
+        mock_get_content.return_value = resume_data
 
         html = _render("dev_user")
         assert "E-commerce Platform" in html
@@ -160,8 +172,10 @@ class TestProjectsSectionSupport:
     @patch("easyresume.rendering.get_content")
     def test_multiple_projects_render_correctly(self, mock_get_content: Any) -> None:
         """All provided projects render in the body."""
-        cv_data = create_complete_cv_data(template="cv_no_bars", full_name="Dev User")
-        cv_data["body"]["Projects"] = [
+        resume_data = create_complete_resume_data(
+            template="resume_no_bars", full_name="Dev User"
+        )
+        resume_data["body"]["Projects"] = [
             {
                 "start": "",
                 "end": "2024",
@@ -184,7 +198,7 @@ class TestProjectsSectionSupport:
                 "description": "Third project description",
             },
         ]
-        mock_get_content.return_value = cv_data
+        mock_get_content.return_value = resume_data
 
         html = _render("dev_user")
         assert "Project Alpha" in html
@@ -194,12 +208,14 @@ class TestProjectsSectionSupport:
     @patch("easyresume.rendering.get_content")
     def test_projects_section_ordering_in_body(self, mock_get_content: Any) -> None:
         """Projects section order precedes other sections when configured."""
-        cv_data = create_complete_cv_data(template="cv_no_bars", full_name="Dev User")
-        cv_data["body"] = {
+        resume_data = create_complete_resume_data(
+            template="resume_no_bars", full_name="Dev User"
+        )
+        resume_data["body"] = {
             "Projects": [{"title": "Project Alpha"}],
             "Experience": [{"title": "Job Alpha"}],
         }
-        mock_get_content.return_value = cv_data
+        mock_get_content.return_value = resume_data
 
         html = _render("dev_user")
         sections = html.split("<h2>")
@@ -213,12 +229,12 @@ class TestSidebarLayoutValidation:
     @patch("easyresume.rendering.get_content")
     def test_sidebar_contains_name_and_description(self, mock_get_content: Any) -> None:
         """Sidebar includes both name and description text."""
-        cv_data = create_complete_cv_data(
-            template="cv_no_bars",
+        resume_data = create_complete_resume_data(
+            template="resume_no_bars",
             full_name="Alice Johnson",
             description="Professional summary for Alice Johnson.",
         )
-        mock_get_content.return_value = cv_data
+        mock_get_content.return_value = resume_data
 
         html = _render("dev_user")
         assert "Alice Johnson" in html
@@ -227,13 +243,13 @@ class TestSidebarLayoutValidation:
     @patch("easyresume.rendering.get_content")
     def test_sidebar_layout_without_description(self, mock_get_content: Any) -> None:
         """Sidebar hides description when the field is empty."""
-        cv_data = create_complete_cv_data(
-            template="cv_no_bars",
+        resume_data = create_complete_resume_data(
+            template="resume_no_bars",
             full_name="Alice Johnson",
             description="Professional summary for Alice Johnson.",
         )
-        cv_data["description"] = ""
-        mock_get_content.return_value = cv_data
+        resume_data["description"] = ""
+        mock_get_content.return_value = resume_data
 
         html = _render("dev_user")
         assert "Professional summary for Alice Johnson." not in html
@@ -241,12 +257,12 @@ class TestSidebarLayoutValidation:
     @patch("easyresume.rendering.get_content")
     def test_sidebar_preserves_contact_section(self, mock_get_content: Any) -> None:
         """Sidebar retains contact details such as email."""
-        cv_data = create_complete_cv_data(
-            template="cv_no_bars",
+        resume_data = create_complete_resume_data(
+            template="resume_no_bars",
             full_name="Alice Johnson",
         )
-        cv_data["email"] = "alice@example.com"
-        mock_get_content.return_value = cv_data
+        resume_data["email"] = "alice@example.com"
+        mock_get_content.return_value = resume_data
 
         html = _render("dev_user")
         assert "alice@example.com" in html
@@ -256,13 +272,15 @@ class TestBackwardCompatibility:
     """Ensure templates still support legacy fields."""
 
     @patch("easyresume.rendering.get_content")
-    def test_cv_without_projects_section_still_works(
+    def test_resume_without_projects_section_still_works(
         self, mock_get_content: Any
     ) -> None:
         """Template renders when Projects section is removed."""
-        cv_data = create_complete_cv_data(template="cv_no_bars", full_name="Test User")
-        cv_data["body"].pop("Projects", None)
-        mock_get_content.return_value = cv_data
+        resume_data = create_complete_resume_data(
+            template="resume_no_bars", full_name="Test User"
+        )
+        resume_data["body"].pop("Projects", None)
+        mock_get_content.return_value = resume_data
 
         html = _render("test_user")
         assert "Test User" in html
@@ -270,13 +288,15 @@ class TestBackwardCompatibility:
     @patch("easyresume.rendering.get_content")
     def test_all_body_sections_render_dynamically(self, mock_get_content: Any) -> None:
         """All provided body sections appear in the rendered HTML."""
-        cv_data = create_complete_cv_data(template="cv_no_bars", full_name="Test User")
-        cv_data["body"] = {
+        resume_data = create_complete_resume_data(
+            template="resume_no_bars", full_name="Test User"
+        )
+        resume_data["body"] = {
             "Experience": [{"title": "Developer"}],
             "Education": [{"title": "BSc Computer Science"}],
             "Awards": [{"title": "Best Engineer"}],
         }
-        mock_get_content.return_value = cv_data
+        mock_get_content.return_value = resume_data
 
         html = _render("test_user")
         assert "Experience" in html

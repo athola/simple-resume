@@ -1,6 +1,6 @@
-# CV Stylesheet Architecture
+# Resume Stylesheet Architecture
 
-This directory contains the modular stylesheets for the CV generator.
+This directory contains the modular stylesheets for the Resume generator.
 
 ## File Structure
 
@@ -16,10 +16,10 @@ available variables.
 
 ## Implementation
 
-Currently, styles are inlined in `cv_base.html` for compatibility with
+Currently, styles are inlined in `resume_base.html` for compatibility with
 WeasyPrint. The long-term goal is to link to these external stylesheets.
 
-To do this, modify `cv_base.html` to conditionally load the appropriate CSS files:
+To do this, modify `resume_base.html` to conditionally load the appropriate CSS files:
 
 ```html
 <head>
@@ -32,7 +32,7 @@ To do this, modify `cv_base.html` to conditionally load the appropriate CSS file
 
   <style>
     :root {
-      --theme-color: {{ cv_config["theme_color"] }};
+      --theme-color: {{ resume_config["theme_color"] }};
       /* ... etc ... */
     }
   </style>

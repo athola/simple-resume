@@ -12,24 +12,24 @@ from easyresume.rendering import (
     load_resume,
     render_resume_html,
 )
-from tests.conftest import create_complete_cv_data
+from tests.conftest import create_complete_resume_data
 
 
 @patch("easyresume.rendering.get_content")
 def test_load_resume_returns_template_and_context(mock_get_content: Mock) -> None:
     """Return both template name and context data."""
     mock_get_content.return_value = {
-        "template": "cv_no_bars",
+        "template": "resume_no_bars",
         "full_name": "Test User",
         "config": {"page_width": 190, "page_height": 270},
     }
 
     template, context = load_resume("test", preview=False)
 
-    assert template == "cv_no_bars.html"
+    assert template == "resume_no_bars.html"
     assert context["full_name"] == "Test User"
     assert context["preview"] is False
-    assert context["cv_config"] == {"page_width": 190, "page_height": 270}
+    assert context["resume_config"] == {"page_width": 190, "page_height": 270}
     mock_get_content.assert_called_once()
     args, kwargs = mock_get_content.call_args
     assert args == ("test",)
@@ -40,7 +40,7 @@ def test_load_resume_returns_template_and_context(mock_get_content: Mock) -> Non
 def test_load_resume_uses_default_name(mock_get_content: Mock) -> None:
     """Default filename is used when none is provided."""
     mock_get_content.return_value = {
-        "template": "cv_no_bars",
+        "template": "resume_no_bars",
         "config": {"page_width": 190, "page_height": 270},
     }
 
@@ -48,7 +48,7 @@ def test_load_resume_uses_default_name(mock_get_content: Mock) -> None:
     mock_get_content.assert_called_once()
 
 
-@patch("easyresume.rendering.get_content", return_value={"template": "cv_no_bars"})
+@patch("easyresume.rendering.get_content", return_value={"template": "resume_no_bars"})
 def test_load_resume_requires_config(mock_get_content: Mock) -> None:
     """Raise an error when config section is absent."""
     with pytest.raises(ValueError):
@@ -58,8 +58,10 @@ def test_load_resume_requires_config(mock_get_content: Mock) -> None:
 @patch("easyresume.rendering.get_content")
 def test_render_resume_html_renders_template(mock_get_content: Mock) -> None:
     """Rendered HTML contains expected content for preview."""
-    cv_data = create_complete_cv_data(template="cv_no_bars", full_name="Render User")
-    mock_get_content.return_value = cv_data
+    resume_data = create_complete_resume_data(
+        template="resume_no_bars", full_name="Render User"
+    )
+    mock_get_content.return_value = resume_data
 
     html, base_url, context = render_resume_html("render", preview=True)
 

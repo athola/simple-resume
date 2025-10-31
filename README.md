@@ -16,7 +16,7 @@ The full sample PDF lives in `assets/sample.pdf`.
 
 All project guides live in the repo wiki (mirroring the GitHub wiki at <https://github.com/athola/easyresume/wiki>):
 
-- `wiki/Markdown-Guide.md` – author Markdown-rich CV content.
+- `wiki/Markdown-Guide.md` – author Markdown-rich Resume content.
 - `wiki/Color-Schemes.md` – customize colors with preset themes or create your own.
 - `wiki/Workflows.md` – understand the CI/CD pipeline and quality gates.
 
@@ -57,6 +57,14 @@ Configuration values (input/output locations, URLs) live in `src/easyresume/conf
 - `make typecheck` – run mypy and ty.
 - `make generate-pdf` – create PDFs using the configured data directory.
   - For HTML output, run `uv run generate-html`.
+
+### CI workflows
+
+This repository ships reusable GitHub Actions workflows for linting, testing,
+security, documentation, and publishing. To enable automatic wiki syncing, add a
+`WIKI_TOKEN` repository secret with access to the project wiki; the
+`wiki-sync.yml` workflow will mirror files under `wiki/` to the GitHub wiki on
+pushes to `main`.
 
 See `wiki/Workflows.md` for the full CI matrix and quality gates.
 

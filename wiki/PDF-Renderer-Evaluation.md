@@ -10,9 +10,9 @@ This document evaluates alternatives to WeasyPrint for PDF generation. WeasyPrin
 
 ### Known Issues
 
-1.  **Z-index and Positioned Elements**: Overlapping positioned elements render unpredictably. The sidebar background div sometimes renders on top of content. The current workaround is a CSS gradient on the page background (see `cv_base.html:107-112`).
+1.  **Z-index and Positioned Elements**: Overlapping positioned elements render unpredictably. The sidebar background div sometimes renders on top of content. The current workaround is a CSS gradient on the page background (see `resume_base.html:107-112`).
 2.  **CSS Support Gaps**: Flexbox support is incomplete and Grid layout is not available.
-3.  **Performance**: Generation time for a single-page CV is acceptable (~1–2s), but batch processing is not optimized.
+3.  **Performance**: Generation time for a single-page Resume is acceptable (~1–2s), but batch processing is not optimized.
 
 ### Strengths
 
@@ -28,7 +28,7 @@ This document evaluates alternatives to WeasyPrint for PDF generation. WeasyPrin
 2.  **Python Integration**: Integrate cleanly with a Flask application.
 3.  **Maintenance**: Active project with regular updates.
 4.  **Installation**: Simple setup without complex external dependencies.
-5.  **Performance**: Generate a typical CV in under 3 seconds.
+5.  **Performance**: Generate a typical Resume in under 3 seconds.
 
 ### Other Considerations
 6.  **CSS Support**: Modern CSS features (flexbox, grid, custom properties).
@@ -110,7 +110,7 @@ This document evaluates alternatives to WeasyPrint for PDF generation. WeasyPrin
 Migrate sooner if:
 - WeasyPrint becomes unmaintained.
 - A critical rendering bug blocks a feature.
-- Performance degrades below 5 seconds per CV.
+- Performance degrades below 5 seconds per Resume.
 
 ## Migration Checklist (Playwright)
 
@@ -118,7 +118,7 @@ Migrate sooner if:
 - [ ] Install Playwright in a development environment.
 - [ ] Create a proof-of-concept for PDF generation.
 - [ ] Compare WeasyPrint vs. Playwright output quality.
-- [ ] Benchmark performance on 100 test CVs.
+- [ ] Benchmark performance on 100 test Resumes.
 - [ ] Add Playwright to `requirements.txt` and document the installation.
 
 ### 2. Implementation

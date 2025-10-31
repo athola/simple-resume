@@ -51,27 +51,27 @@
         margin: 0px;
       }
       h1, h2, h3, h5 {
-        color: {{ cv_config["theme_color"] }};
+        color: {{ resume_config["theme_color"] }};
       }
       h1 {
         font-size: 30pt;
         font-family: 'Avenir 35';
         padding-top: 0;
         padding-bottom: 0;
-        padding-right: {{ cv_config["padding"] }}mm;
+        padding-right: {{ resume_config["padding"] }}mm;
         text-align: center;
         border-bottom: none;
       }
       h2 {
         font-size: 16pt;
         font-family: 'Avenir 55';
-        width: {{ cv_config["page_width"] - cv_config["sidebar_width"] - cv_config["h2_padding_left"]}}mm;
+        width: {{ resume_config["page_width"] - resume_config["sidebar_width"] - resume_config["h2_padding_left"]}}mm;
         padding-top: 8mm;
         padding-bottom: 1mm;
-        padding-left: {{ cv_config["h2_padding_left"] }}mm;
+        padding-left: {{ resume_config["h2_padding_left"] }}mm;
       }
       h2:first-of-type {
-        padding-top: {{ cv_config["padding"] }}mm;
+        padding-top: {{ resume_config["padding"] }}mm;
       }
       h3 {
         font-size: 14pt;
@@ -85,7 +85,7 @@
       h5 {
         font-size: 10pt;
         font-family: 'Avenir 55';
-        padding-right: {{ cv_config["padding"] }}mm;
+        padding-right: {{ resume_config["padding"] }}mm;
         position:absolute;
         right:0px;
         top:0px;
@@ -106,22 +106,22 @@
 
       /* Layout styles */
       .frame {
-        padding-top: {{ cv_config["frame_padding"] }}mm;
-        padding-bottom: {{ cv_config["frame_padding"] }}mm;
-        padding-left: {{ cv_config["frame_padding"] }}mm;
-        padding-right: {{ cv_config["frame_padding"] }}mm;
-        background-color: {{ cv_config["frame_color"] }};
+        padding-top: {{ resume_config["frame_padding"] }}mm;
+        padding-bottom: {{ resume_config["frame_padding"] }}mm;
+        padding-left: {{ resume_config["frame_padding"] }}mm;
+        padding-right: {{ resume_config["frame_padding"] }}mm;
+        background-color: {{ resume_config["frame_color"] }};
       }
       .page {
         page-break-after: always;
-        width: {{ cv_config["page_width"] }}mm;
-        height: {{ cv_config["page_height"] }}mm;
+        width: {{ resume_config["page_width"] }}mm;
+        height: {{ resume_config["page_height"] }}mm;
         /* WeasyPrint rendering workaround: Use CSS gradient for sidebar background
          * instead of a positioned div. WeasyPrint has quirks with overlapping
          * positioned elements and z-index, causing the sidebar background to
          * sometimes render on top of content. Using a page background gradient
          * ensures consistent rendering across all PDF outputs. */
-        background: linear-gradient(to right, {{ cv_config["sidebar_color"] }} {{ cv_config["sidebar_width"] }}mm, white {{ cv_config["sidebar_width"] }}mm);
+        background: linear-gradient(to right, {{ resume_config["sidebar_color"] }} {{ resume_config["sidebar_width"] }}mm, white {{ resume_config["sidebar_width"] }}mm);
         margin: 0;
         padding: 0;
         position: relative;
@@ -132,31 +132,31 @@
         left: 0;
         top: 0;
         bottom: 0;
-        width: {{ cv_config["sidebar_width"] }}mm;
+        width: {{ resume_config["sidebar_width"] }}mm;
         margin: 0;
         padding: 0;
       }
       .sidebar {
-        padding-top: {{ cv_config["padding"] }}mm;
-        padding-bottom: {{ cv_config["padding"] }}mm;
-        padding-left: {{ cv_config["padding"] }}mm;
-        padding-right: {{ cv_config["padding"] }}mm;
+        padding-top: {{ resume_config["padding"] }}mm;
+        padding-bottom: {{ resume_config["padding"] }}mm;
+        padding-left: {{ resume_config["padding"] }}mm;
+        padding-right: {{ resume_config["padding"] }}mm;
       }
       .body {
         position: absolute;
-        left: {{ cv_config["sidebar_width"] }}mm;
+        left: {{ resume_config["sidebar_width"] }}mm;
         top: 0;
-        width: {{ cv_config["page_width"] - cv_config["sidebar_width"] }}mm;
-        height: {{ cv_config["page_height"] }}mm;
+        width: {{ resume_config["page_width"] - resume_config["sidebar_width"] }}mm;
+        height: {{ resume_config["page_height"] }}mm;
       }
 
       /* Content styles */
       .pitch {
-        padding-top: {{ cv_config["pitch_padding_top"] }}mm;
-        padding-bottom: {{ cv_config["pitch_padding_bottom"] }}mm;
-        padding-left: {{ cv_config["pitch_padding_left"] }}mm;
-        padding-right: {{ cv_config["padding"] }}mm;
-        border-bottom: 2px solid {{ cv_config["sidebar_color"] }};
+        padding-top: {{ resume_config["pitch_padding_top"] }}mm;
+        padding-bottom: {{ resume_config["pitch_padding_bottom"] }}mm;
+        padding-left: {{ resume_config["pitch_padding_left"] }}mm;
+        padding-right: {{ resume_config["padding"] }}mm;
+        border-bottom: 2px solid {{ resume_config["sidebar_color"] }};
       }
       .skill-container {
         padding-top: 3mm;
@@ -177,7 +177,7 @@
       }
       .content {
         float: left;
-        width: {{ cv_config["page_width"] - cv_config["sidebar_width"] }}mm;
+        width: {{ resume_config["page_width"] - resume_config["sidebar_width"] }}mm;
         padding-top: 4mm;
       }
       .spacer {
@@ -186,7 +186,7 @@
       .date-container {
         float: left;
         padding-left: 8mm;
-        width: {{ cv_config["date_container_width"] }}mm;
+        width: {{ resume_config["date_container_width"] }}mm;
       }
       .date2, .description {
         padding-top: 2mm;
@@ -196,19 +196,19 @@
       }
       .date2 {
         font-size: 8pt;
-        color: {{ cv_config["date2_color"] }};
+        color: {{ resume_config["date2_color"] }};
       }
       .date1, .date2 {
         text-align: center;
-        width: {{ cv_config["padding"] }}mm;
+        width: {{ resume_config["padding"] }}mm;
       }
       .description-container {
         float: left;
         position:relative;
-        width: {{ cv_config["page_width"] - cv_config["sidebar_width"] - cv_config["padding"] - cv_config["date_container_width"] - cv_config["date_container_padding_left"] - cv_config["description_container_padding_left"] - 1}}mm;
-        padding-left: {{ cv_config["description_container_padding_left"] }}mm;
-        padding-right: {{ cv_config["padding"] }}mm;
-        border-left: 2px solid {{ cv_config["sidebar_color"] }};
+        width: {{ resume_config["page_width"] - resume_config["sidebar_width"] - resume_config["padding"] - resume_config["date_container_width"] - resume_config["date_container_padding_left"] - resume_config["description_container_padding_left"] - 1}}mm;
+        padding-left: {{ resume_config["description_container_padding_left"] }}mm;
+        padding-right: {{ resume_config["padding"] }}mm;
+        border-left: 2px solid {{ resume_config["sidebar_color"] }};
       }
       .description {
         line-height: 2;
@@ -233,10 +233,10 @@
         float: left;
       }
       .bar-grey {
-        background-color: {{ cv_config["bar_background_color"] }};
+        background-color: {{ resume_config["bar_background_color"] }};
       }
       .bar-blue {
-        background-color: {{ cv_config["theme_color"] }};
+        background-color: {{ resume_config["theme_color"] }};
       }
 
       /* Images */
@@ -246,9 +246,9 @@
         float: left;
       }
       .profile {
-        width: {{ cv_config["sidebar_width"] - 2*cv_config["padding"] }}mm;
-        height: {{ cv_config["sidebar_width"] - 2*cv_config["padding"] }}mm;
-        padding-bottom: {{ cv_config["profile_image_padding_bottom"] }}mm;
+        width: {{ resume_config["sidebar_width"] - 2*resume_config["padding"] }}mm;
+        height: {{ resume_config["sidebar_width"] - 2*resume_config["padding"] }}mm;
+        padding-bottom: {{ resume_config["profile_image_padding_bottom"] }}mm;
       }
     </style>
   </head>

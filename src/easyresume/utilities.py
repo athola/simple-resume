@@ -68,7 +68,7 @@ def _coerce_number(value: Any, *, field: str, prefix: str) -> float | int | None
 
 
 def validate_config(config: dict[str, Any], filename: str = "") -> None:
-    """Validate CV configuration for common errors.
+    """Validate resume configuration for common errors.
 
     Args:
         config: Configuration dict from YAML file
@@ -145,7 +145,7 @@ def validate_config(config: dict[str, Any], filename: str = "") -> None:
 
 
 def _transform_from_markdown(data: dict[str, Any]) -> None:
-    """Convert Markdown fields in a CV data dictionary to HTML in-place."""
+    """Convert Markdown fields in a resume data dictionary to HTML in-place."""
     # Markdown extensions for enhanced formatting
     extensions = [
         "fenced_code",  # For ```code blocks
@@ -168,7 +168,7 @@ def _transform_from_markdown(data: dict[str, Any]) -> None:
 
 
 def get_content(name: str = "", *, paths: Paths | None = None) -> dict[str, Any]:
-    """Read and parse a CV from a YAML file."""
+    """Read and parse a resume from a YAML file."""
     if not name:
         name = FILE_DEFAULT
 

@@ -57,7 +57,7 @@
  * Dark Mode Preview (Optional Enhancement)
  *
  * Improves preview visibility in dark development environments.
- * Only affects the frame, not the CV content itself.
+ * Only affects the frame, not the Resume content itself.
  */
 @media (prefers-color-scheme: dark) {
   .frame {

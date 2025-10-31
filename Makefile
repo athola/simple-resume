@@ -42,15 +42,15 @@ clean: ## Clean up cache and build files
 	find . -type d -name "*.egg-info" -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
 
-generate-pdf: ## Generate PDF for all CV files (uses default config directory)
+generate-pdf: ## Generate PDF for all Resume files (uses default config directory)
 	uv run generate-pdf
 
-generate-pdf-sample: ## Generate PDF for all CV files in sample directory
+generate-pdf-sample: ## Generate PDF for all Resume files in sample directory
 	uv run generate-pdf --data-dir sample
 
 view-sample: generate-pdf-sample ## Generate and view sample PDF output
 	@echo "=========================================="
-	@echo "Sample CV PDFs Generated"
+	@echo "Sample Resume PDFs Generated"
 	@echo "=========================================="
 	@echo ""
 	@echo "Generated files:"

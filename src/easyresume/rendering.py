@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared helpers for rendering CV templates without relying on Flask."""
+"""Shared helpers for rendering resume templates without relying on Flask."""
 
 from __future__ import annotations
 
@@ -19,22 +19,22 @@ def load_resume(
     preview: bool = True,
     paths: config.Paths | None = None,
 ) -> tuple[str, dict[str, Any]]:
-    """Return the template name and render context for a CV."""
+    """Return the template name and render context for a resume."""
     resume_name = name or FILE_DEFAULT
     resolved_paths = paths or config.resolve_paths()
     data = get_content(resume_name, paths=resolved_paths)
 
-    template_name = data.get("template", "cv_no_bars")
+    template_name = data.get("template", "resume_no_bars")
 
     context = dict(data)
-    cv_config = context.pop("config", None)
-    if cv_config is None:
+    resume_config = context.pop("config", None)
+    if resume_config is None:
         raise ValueError(
             f"Missing 'config' section in resume data for {resume_name}. "
             "Add a config block with page dimensions and colors."
         )
 
-    context["cv_config"] = cv_config
+    context["resume_config"] = resume_config
     context["preview"] = preview
 
     return f"{template_name}.html", context

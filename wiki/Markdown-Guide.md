@@ -1,6 +1,6 @@
-# Markdown Guide for CV Content
+# Markdown Guide for Resume Content
 
-Use Markdown to format the content of your CV YAML files.
+Use Markdown to format the content of your Resume YAML files.
 
 ## Supported Features
 
@@ -56,5 +56,5 @@ Projects:
 
 ## Implementation
 
-The CV generator uses Python's `markdown` library with extensions for fenced
+The Resume generator uses Python's `markdown` library with extensions for fenced
 code blocks, tables, and syntax highlighting.

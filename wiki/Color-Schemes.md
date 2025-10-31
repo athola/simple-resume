@@ -1,6 +1,6 @@
 # Color Scheme Guide
 
-Customize CV colors by defining them in your YAML `config` section.
+Customize Resume colors by defining them in your YAML `config` section.
 
 ## Color Properties
 
@@ -8,7 +8,7 @@ Customize CV colors by defining them in your YAML `config` section.
 config:
   theme_color: "#0395DE"          # Headings, icons, and accents
   sidebar_color: "#F6F6F6"        # Sidebar background
-  bar_background_color: "#DFDFDF"  # Progress bar background (in `cv_with_bars` template)
+  bar_background_color: "#DFDFDF"  # Progress bar background (in `resume_with_bars` template)
   date2_color: "#616161"          # Secondary date text
   frame_color: "#757575"          # Preview frame (web preview only)
 ```
@@ -106,8 +106,8 @@ All colors must be quoted hexadecimal strings with a leading `#`.
 3.  **Print Test**: Print a sample page to check paper output.
 
 ## Template-Specific Colors
--   **`cv_no_bars`**: Uses `theme_color`, `sidebar_color`, and `date2_color`.
--   **`cv_with_bars`**: Uses all colors. `bar_background_color` sets the empty portion of skill bars.
+-   **`resume_no_bars`**: Uses `theme_color`, `sidebar_color`, and `date2_color`.
+-   **`resume_with_bars`**: Uses all colors. `bar_background_color` sets the empty portion of skill bars.
 -   **`frame_color`**: Only used in the web preview border.
 
 ## Creating Custom Schemes

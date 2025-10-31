@@ -1,4 +1,4 @@
-"""Integration tests for CV generation without a web server."""
+"""Integration tests for Resume generation without a web server."""
 
 from __future__ import annotations
 
@@ -12,31 +12,31 @@ import yaml
 from easyresume import config
 from easyresume.rendering import render_resume_html
 from easyresume.utilities import get_content
-from tests.conftest import create_complete_cv_data
+from tests.conftest import create_complete_resume_data
 
 
 class ValidationScenario(TypedDict):
-    """Typed scenario definition for CV validation tests."""
+    """Typed scenario definition for Resume validation tests."""
 
     name: str
     data: dict[str, Any]
     should_be_valid: bool
 
 
-class TestCVWorkflowIntegration:
-    """Integration tests for complete CV generation workflow."""
+class TestResumeWorkflowIntegration:
+    """Integration tests for complete Resume generation workflow."""
 
-    def test_end_to_end_cv_creation_workflow(
-        self, temp_dir: Path, sample_cv_data: dict[str, Any]
+    def test_end_to_end_resume_creation_workflow(
+        self, temp_dir: Path, sample_resume_data: dict[str, Any]
     ) -> None:
         """Validate loading YAML and rendering HTML."""
-        cv_file = temp_dir / "john_doe.yaml"
-        cv_file.write_text(yaml.dump(sample_cv_data), encoding="utf-8")
+        resume_file = temp_dir / "john_doe.yaml"
+        resume_file.write_text(yaml.dump(sample_resume_data), encoding="utf-8")
 
         test_input_dir = temp_dir / "input"
         test_input_dir.mkdir()
         (test_input_dir / "john_doe.yaml").write_text(
-            cv_file.read_text(encoding="utf-8"), encoding="utf-8"
+            resume_file.read_text(encoding="utf-8"), encoding="utf-8"
         )
 
         paths = config.Paths(
@@ -45,22 +45,22 @@ class TestCVWorkflowIntegration:
             output=temp_dir / "output",
         )
 
-        cv_content = get_content("john_doe", paths=paths)
-        assert cv_content["full_name"] == "John Doe"
+        resume_content = get_content("john_doe", paths=paths)
+        assert resume_content["full_name"] == "John Doe"
 
         html, _, _ = render_resume_html("john_doe", paths=paths)
         assert "John Doe" in html
 
-    def test_multiple_cv_management_workflow(self, temp_dir: Path) -> None:
-        """Handle multiple CV variants in a single directory."""
-        cv_variants = {
-            "technical_cv": create_complete_cv_data(
-                template="cv_no_bars",
+    def test_multiple_resume_management_workflow(self, temp_dir: Path) -> None:
+        """Handle multiple Resume variants in a single directory."""
+        resume_variants = {
+            "technical_resume": create_complete_resume_data(
+                template="resume_no_bars",
                 full_name="Alice Johnson",
                 expertise=["Python", "Docker", "Kubernetes", "CI/CD"],
             ),
-            "managerial_cv": create_complete_cv_data(
-                template="cv_with_bars",
+            "managerial_resume": create_complete_resume_data(
+                template="resume_with_bars",
                 full_name="Alice Johnson",
                 expertise={
                     "Team Leadership": 90,
@@ -73,9 +73,9 @@ class TestCVWorkflowIntegration:
         test_input_dir = temp_dir / "input"
         test_input_dir.mkdir()
 
-        for cv_name, cv_data in cv_variants.items():
-            (test_input_dir / f"{cv_name}.yaml").write_text(
-                yaml.dump(cv_data), encoding="utf-8"
+        for resume_name, resume_data in resume_variants.items():
+            (test_input_dir / f"{resume_name}.yaml").write_text(
+                yaml.dump(resume_data), encoding="utf-8"
             )
 
         paths = config.Paths(
@@ -84,30 +84,30 @@ class TestCVWorkflowIntegration:
             output=temp_dir / "output",
         )
 
-        for cv_name, expected_data in cv_variants.items():
-            content = get_content(cv_name, paths=paths)
+        for resume_name, expected_data in resume_variants.items():
+            content = get_content(resume_name, paths=paths)
             assert content["template"] == expected_data["template"]
             assert content["full_name"] == expected_data["full_name"]
 
-            html, _, _ = render_resume_html(cv_name, paths=paths)
+            html, _, _ = render_resume_html(resume_name, paths=paths)
             assert expected_data["full_name"] in html
 
-    def test_cv_content_validation_workflow(self, temp_dir: Path) -> None:
-        """Verify validation for different CV scenarios."""
+    def test_resume_content_validation_workflow(self, temp_dir: Path) -> None:
+        """Verify validation for different Resume scenarios."""
         scenarios: list[ValidationScenario] = [
             {
-                "name": "complete_cv",
-                "data": create_complete_cv_data(
-                    template="cv_no_bars",
+                "name": "complete_resume",
+                "data": create_complete_resume_data(
+                    template="resume_no_bars",
                     full_name="Complete User",
-                    description="Complete CV description",
+                    description="Complete Resume description",
                 ),
                 "should_be_valid": True,
             },
             {
-                "name": "minimal_cv",
-                "data": create_complete_cv_data(
-                    template="cv_no_bars",
+                "name": "minimal_resume",
+                "data": create_complete_resume_data(
+                    template="resume_no_bars",
                     full_name="Minimal User",
                 ),
                 "should_be_valid": True,
@@ -147,8 +147,8 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
 - Implemented TDD across all projects
         """.strip()
 
-        cv_data = create_complete_cv_data(
-            template="cv_no_bars",
+        resume_data = create_complete_resume_data(
+            template="resume_no_bars",
             full_name="Jane Smith",
             description=markdown_description,
         )
@@ -156,7 +156,7 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
         test_input_dir = temp_dir / "input"
         test_input_dir.mkdir()
         (test_input_dir / "markdown_test.yaml").write_text(
-            yaml.dump(cv_data), encoding="utf-8"
+            yaml.dump(resume_data), encoding="utf-8"
         )
 
         paths = config.Paths(
@@ -176,15 +176,19 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
         test_input_dir = temp_dir / "input"
         test_input_dir.mkdir()
 
-        valid_cv = create_complete_cv_data(
-            template="cv_no_bars", full_name="Valid User"
+        valid_resume = create_complete_resume_data(
+            template="resume_no_bars", full_name="Valid User"
         )
-        test_cv = create_complete_cv_data(template="cv_no_bars", full_name="Test User")
+        test_resume = create_complete_resume_data(
+            template="resume_no_bars", full_name="Test User"
+        )
 
         (test_input_dir / "valid.yaml").write_text(
-            yaml.dump(valid_cv), encoding="utf-8"
+            yaml.dump(valid_resume), encoding="utf-8"
         )
-        (test_input_dir / "test.yaml").write_text(yaml.dump(test_cv), encoding="utf-8")
+        (test_input_dir / "test.yaml").write_text(
+            yaml.dump(test_resume), encoding="utf-8"
+        )
 
         paths = config.Paths(
             data=temp_dir,
@@ -202,20 +206,20 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
         html, _, _ = render_resume_html("test", paths=paths)
         assert "Test User" in html
 
-    def test_performance_with_large_cv_dataset(self, temp_dir: Path) -> None:
+    def test_performance_with_large_resume_dataset(self, temp_dir: Path) -> None:
         """Basic performance sanity check for bulk rendering."""
-        num_cvs = 20
+        num_resumes = 20
         test_input_dir = temp_dir / "input"
         test_input_dir.mkdir()
 
-        for i in range(num_cvs):
-            cv_data = create_complete_cv_data(
-                template="cv_no_bars",
+        for i in range(num_resumes):
+            resume_data = create_complete_resume_data(
+                template="resume_no_bars",
                 full_name=f"User {i}",
                 description=f"Description for user {i} " * 5,
             )
             (test_input_dir / f"user_{i}.yaml").write_text(
-                yaml.dump(cv_data), encoding="utf-8"
+                yaml.dump(resume_data), encoding="utf-8"
             )
 
         paths = config.Paths(
@@ -225,13 +229,13 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
         )
 
         start_time = time.time()
-        for i in range(num_cvs):
+        for i in range(num_resumes):
             content = get_content(f"user_{i}", paths=paths)
             assert content["full_name"] == f"User {i}"
         load_time = time.time() - start_time
 
         start_time = time.time()
-        for i in range(num_cvs):
+        for i in range(num_resumes):
             html, _, _ = render_resume_html(f"user_{i}", paths=paths)
             assert f"User {i}" in html
         render_time = time.time() - start_time
@@ -246,13 +250,13 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
         test_input_dir.mkdir()
 
         for user in users:
-            cv_data = create_complete_cv_data(
-                template="cv_no_bars",
+            resume_data = create_complete_resume_data(
+                template="resume_no_bars",
                 full_name=user.title(),
                 description=f"Professional description for {user}.",
             )
             (test_input_dir / f"{user}.yaml").write_text(
-                yaml.dump(cv_data), encoding="utf-8"
+                yaml.dump(resume_data), encoding="utf-8"
             )
 
         results: dict[str, dict[str, float | bool]] = {}
@@ -264,7 +268,7 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
             output=temp_dir / "output",
         )
 
-        def access_cv(user_name: str, request_id: int) -> None:
+        def access_resume(user_name: str, request_id: int) -> None:
             try:
                 start = time.time()
                 content = get_content(user_name, paths=paths)
@@ -285,7 +289,7 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
                 errors[f"{user_name}_{request_id}"] = str(exc)
 
         threads = [
-            threading.Thread(target=access_cv, args=(user, i))
+            threading.Thread(target=access_resume, args=(user, i))
             for user in users
             for i in range(3)
         ]
