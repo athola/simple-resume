@@ -1,4 +1,4 @@
-"""Unit tests for cv.utilities module following TDD principles.
+"""Unit tests for easyresume.utilities module following TDD principles.
 
 These tests follow the Red-Green-Refactor cycle:
 1. RED: Write failing tests for desired functionality
@@ -20,7 +20,13 @@ from unittest.mock import Mock, mock_open, patch
 import pytest
 import yaml
 
-from cv.utilities import _read_yaml, _transform_from_markdown, get_content
+from easyresume import config
+from easyresume.utilities import (
+    _read_yaml,
+    _transform_from_markdown,
+    get_content,
+    validate_config,
+)
 
 
 class TestReadYaml:
@@ -305,8 +311,8 @@ And a table:
         assert "<th>Feature</th>" in result
         assert "<td>Testing</td>" in result
 
-    def test_enhanced_markdown_features_for_technical_cvs(self) -> None:
-        """GREEN: Test that enhanced markdown features work for technical CVs."""
+    def test_enhanced_markdown_features_for_technical_resumes(self) -> None:
+        """GREEN: Test that enhanced markdown features work for technical Resumes."""
         # Arrange
         data: dict[str, Any] = {
             "body": {
@@ -354,7 +360,7 @@ def get_data():
         # Act
         _transform_from_markdown(data)
 
-        # Assert - Technical CV markdown features
+        # Assert - Technical Resume markdown features
         project_desc = data["body"]["Projects"][0]["description"]
         skills_desc = data["body"]["Skills"][0]["description"]
 
@@ -377,8 +383,8 @@ def get_data():
         # Bullet points (they're in list items, not bold)
         assert "Used Redis caching for 10x speed improvement" in project_desc
 
-    def test_enhanced_markdown_features_for_business_cvs(self) -> None:
-        """GREEN: Test that enhanced markdown features work for business CVs."""
+    def test_enhanced_markdown_features_for_business_resumes(self) -> None:
+        """GREEN: Test that enhanced markdown features work for business Resumes."""
         # Arrange
         data = {
             "body": {
@@ -420,7 +426,7 @@ def get_data():
         # Act
         _transform_from_markdown(data)
 
-        # Assert - Business CV markdown features
+        # Assert - Business Resume markdown features
         exp_desc = data["body"]["Experience"][0]["description"]
         edu_desc = data["body"]["Education"][0]["description"]
 
@@ -447,30 +453,33 @@ def get_data():
 class TestGetContent:
     """Test cases for get_content function following TDD principles."""
 
-    @patch("cv.utilities._read_yaml")
-    @patch("cv.utilities._transform_from_markdown")
-    @patch("cv.utilities.FILE_DEFAULT", "default_cv")
-    @patch("cv.utilities.PATH_INPUT", "test_input/")
+    @patch("easyresume.utilities._read_yaml")
+    @patch("easyresume.utilities._transform_from_markdown")
+    @patch("easyresume.utilities.FILE_DEFAULT", "default_resume")
     def test_get_content_with_empty_name_uses_default(
         self, mock_transform: Mock, mock_read: Mock
     ) -> None:
         """RED: Test that empty name uses default file name."""
         # Arrange
-        expected_data = {"name": "Default CV", "template": "default"}
+        expected_data = {"name": "Default Resume", "template": "default"}
         mock_read.return_value = expected_data
+        paths = config.Paths(
+            data=Path("data_dir"),
+            input=Path("test_input"),
+            output=Path("test_output"),
+        )
 
         # Act
-        result = get_content()
+        result = get_content(paths=paths)
 
         # Assert
-        mock_read.assert_called_once_with("test_input/default_cv.yaml")
+        mock_read.assert_called_once_with(paths.input / "default_resume.yaml")
         mock_transform.assert_called_once_with(expected_data)
         assert result == expected_data
 
-    @patch("cv.utilities._read_yaml")
-    @patch("cv.utilities._transform_from_markdown")
-    @patch("cv.utilities.FILE_DEFAULT", "default_cv")
-    @patch("cv.utilities.PATH_INPUT", "test_input/")
+    @patch("easyresume.utilities._read_yaml")
+    @patch("easyresume.utilities._transform_from_markdown")
+    @patch("easyresume.utilities.FILE_DEFAULT", "default_resume")
     def test_get_content_with_specific_name(
         self, mock_transform: Mock, mock_read: Mock
     ) -> None:
@@ -478,19 +487,23 @@ class TestGetContent:
         # Arrange
         expected_data = {"name": "John Doe", "template": "modern"}
         mock_read.return_value = expected_data
+        paths = config.Paths(
+            data=Path("data_dir"),
+            input=Path("test_input"),
+            output=Path("test_output"),
+        )
 
         # Act
-        result = get_content("john_doe")
+        result = get_content("john_doe", paths=paths)
 
         # Assert
-        mock_read.assert_called_once_with("test_input/john_doe.yaml")
+        mock_read.assert_called_once_with(paths.input / "john_doe.yaml")
         mock_transform.assert_called_once_with(expected_data)
         assert result == expected_data
 
-    @patch("cv.utilities._read_yaml")
-    @patch("cv.utilities._transform_from_markdown")
-    @patch("cv.utilities.FILE_DEFAULT", "default_cv")
-    @patch("cv.utilities.PATH_INPUT", "test_input/")
+    @patch("easyresume.utilities._read_yaml")
+    @patch("easyresume.utilities._transform_from_markdown")
+    @patch("easyresume.utilities.FILE_DEFAULT", "default_resume")
     def test_get_content_with_name_containing_dot(
         self, mock_transform: Mock, mock_read: Mock
     ) -> None:
@@ -498,21 +511,23 @@ class TestGetContent:
         # Arrange
         expected_data = {"name": "Jane Smith", "template": "classic"}
         mock_read.return_value = expected_data
+        paths = config.Paths(
+            data=Path("data_dir"),
+            input=Path("test_input"),
+            output=Path("test_output"),
+        )
 
         # Act
-        result = get_content("jane.smith")
+        result = get_content("jane.smith", paths=paths)
 
         # Assert - Function strips extension, so we pass name without extension
-        mock_read.assert_called_once_with(
-            "test_input/jane.yaml"
-        )  # Function strips dots and adds .yaml
+        mock_read.assert_called_once_with(paths.input / "jane.yaml")
         mock_transform.assert_called_once_with(expected_data)
         assert result == expected_data
 
-    @patch("cv.utilities._read_yaml")
-    @patch("cv.utilities._transform_from_markdown")
-    @patch("cv.utilities.FILE_DEFAULT", "default_cv")
-    @patch("cv.utilities.PATH_INPUT", "test_input/")
+    @patch("easyresume.utilities._read_yaml")
+    @patch("easyresume.utilities._transform_from_markdown")
+    @patch("easyresume.utilities.FILE_DEFAULT", "default_resume")
     def test_get_content_with_name_containing_multiple_dots(
         self, mock_transform: Mock, mock_read: Mock
     ) -> None:
@@ -520,19 +535,23 @@ class TestGetContent:
         # Arrange
         expected_data = {"name": "Bob Johnson", "template": "creative"}
         mock_read.return_value = expected_data
+        paths = config.Paths(
+            data=Path("data_dir"),
+            input=Path("test_input"),
+            output=Path("test_output"),
+        )
 
         # Act
-        result = get_content("bob.johnson")
+        result = get_content("bob.johnson", paths=paths)
 
         # Assert - Function strips dots and adds .yaml
-        mock_read.assert_called_once_with("test_input/bob.yaml")
+        mock_read.assert_called_once_with(paths.input / "bob.yaml")
         mock_transform.assert_called_once_with(expected_data)
         assert result == expected_data
 
-    @patch("cv.utilities._read_yaml")
-    @patch("cv.utilities._transform_from_markdown")
-    @patch("cv.utilities.FILE_DEFAULT", "default_cv")
-    @patch("cv.utilities.PATH_INPUT", "test_input/")
+    @patch("easyresume.utilities._read_yaml")
+    @patch("easyresume.utilities._transform_from_markdown")
+    @patch("easyresume.utilities.FILE_DEFAULT", "default_resume")
     def test_get_content_with_yml_extension(
         self, mock_transform: Mock, mock_read: Mock
     ) -> None:
@@ -540,28 +559,37 @@ class TestGetContent:
         # Arrange
         expected_data = {"name": "Alice Brown", "template": "minimal"}
         mock_read.return_value = expected_data
+        paths = config.Paths(
+            data=Path("data_dir"),
+            input=Path("test_input"),
+            output=Path("test_output"),
+        )
 
         # Act
-        result = get_content("alice_brown")
+        result = get_content("alice_brown", paths=paths)
 
         # Assert - Function strips extension and adds .yaml
-        mock_read.assert_called_once_with("test_input/alice_brown.yaml")
+        mock_read.assert_called_once_with(paths.input / "alice_brown.yaml")
         mock_transform.assert_called_once_with(expected_data)
         assert result == expected_data
 
-    @patch("cv.utilities._read_yaml", side_effect=FileNotFoundError)
-    @patch("cv.utilities.FILE_DEFAULT", "default_cv")
-    @patch("cv.utilities.PATH_INPUT", "test_input/")
+    @patch("easyresume.utilities._read_yaml", side_effect=FileNotFoundError)
+    @patch("easyresume.utilities.FILE_DEFAULT", "default_resume")
     def test_get_content_file_not_found_raises_exception(self, mock_read: Mock) -> None:
         """RED: Test that file not found error is properly raised."""
+        paths = config.Paths(
+            data=Path("data_dir"),
+            input=Path("test_input"),
+            output=Path("test_output"),
+        )
+
         # Act & Assert
         with pytest.raises(FileNotFoundError):
-            get_content("nonexistent_file")
+            get_content("nonexistent_file", paths=paths)
 
-    @patch("cv.utilities._read_yaml")
-    @patch("cv.utilities._transform_from_markdown")
-    @patch("cv.utilities.FILE_DEFAULT", "default_cv")
-    @patch("cv.utilities.PATH_INPUT", "test_input/")
+    @patch("easyresume.utilities._read_yaml")
+    @patch("easyresume.utilities._transform_from_markdown")
+    @patch("easyresume.utilities.FILE_DEFAULT", "default_resume")
     def test_get_content_integration_with_markdown_transformation(
         self, mock_transform: Mock, mock_read: Mock
     ) -> None:
@@ -577,6 +605,11 @@ class TestGetContent:
             },
         }
         mock_read.return_value = raw_data
+        paths = config.Paths(
+            data=Path("data_dir"),
+            input=Path("test_input"),
+            output=Path("test_output"),
+        )
 
         # The transform should actually modify the data in place
         def actual_transform(data: dict[str, Any]) -> dict[str, Any]:
@@ -586,31 +619,37 @@ class TestGetContent:
         mock_transform.side_effect = actual_transform
 
         # Act
-        result = get_content("test_user")
+        result = get_content("test_user", paths=paths)
 
         # Assert
-        mock_read.assert_called_once_with("test_input/test_user.yaml")
+        mock_read.assert_called_once_with(paths.input / "test_user.yaml")
         mock_transform.assert_called_once_with(raw_data)
         assert result["description"] == "<p>This is <strong>bold</strong> text</p>"
         assert result["name"] == "Test User"
 
     def test_get_content_business_logic_validation(
-        self, sample_cv_file: Path, monkeypatch: pytest.MonkeyPatch
+        self, sample_resume_file: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """GREEN: Business logic test for CV content structure validation."""
+        """GREEN: Business logic test for Resume content structure validation."""
         # Arrange
-        monkeypatch.setattr("cv.utilities.PATH_INPUT", str(sample_cv_file.parent) + "/")
+        paths = config.Paths(
+            data=sample_resume_file.parent.parent,
+            input=sample_resume_file.parent,
+            output=sample_resume_file.parent / "output",
+        )
 
         # Act
-        result = get_content(sample_cv_file.stem)
+        result = get_content(sample_resume_file.stem, paths=paths)
 
         # Assert - Business logic validations
-        assert isinstance(result, dict), "CV content should be a dictionary"
+        assert isinstance(result, dict), "Resume content should be a dictionary"
 
         # Required fields validation
         required_fields = ["template", "full_name"]
         for field in required_fields:
-            assert field in result, f"Required field '{field}' is missing from CV data"
+            assert field in result, (
+                f"Required field '{field}' is missing from Resume data"
+            )
             assert result[field], f"Required field '{field}' cannot be empty"
 
         # Template validation
@@ -639,3 +678,91 @@ class TestGetContent:
                 .replace("(", "")
                 .isdigit()
             ), "Phone should contain only digits, spaces, and standard phone characters"
+
+
+class TestValidateConfig:
+    """Test cases for validate_config function."""
+
+    def test_valid_config_passes_validation(self) -> None:
+        """Valid config with correct dimensions and colors should pass."""
+        config = {
+            "page_width": 190,
+            "page_height": 270,
+            "sidebar_width": 60,
+            "theme_color": "#0395DE",
+            "sidebar_color": "#F6F6F6",
+        }
+        # Should not raise any exception
+        validate_config(config)
+
+    def test_sidebar_width_equals_page_width_fails(self) -> None:
+        """Sidebar width equal to page width should fail validation."""
+        config = {
+            "page_width": 190,
+            "page_height": 270,
+            "sidebar_width": 190,
+        }
+        with pytest.raises(ValueError, match="must be less than"):
+            validate_config(config)
+
+    def test_sidebar_width_greater_than_page_width_fails(self) -> None:
+        """Sidebar width greater than page width should fail validation."""
+        config = {
+            "page_width": 190,
+            "page_height": 270,
+            "sidebar_width": 200,
+        }
+        with pytest.raises(ValueError, match="must be less than"):
+            validate_config(config)
+
+    def test_negative_page_width_fails(self) -> None:
+        """Negative page dimensions should fail validation."""
+        config = {
+            "page_width": -190,
+            "page_height": 270,
+        }
+        with pytest.raises(ValueError, match="must be positive"):
+            validate_config(config)
+
+    def test_invalid_color_format_fails(self) -> None:
+        """Invalid hex color format should fail validation."""
+        config = {
+            "theme_color": "blue",
+        }
+        with pytest.raises(ValueError, match="Invalid color format"):
+            validate_config(config)
+
+    def test_validate_config_coerces_string_numbers(self) -> None:
+        """Quoted numeric values should be coerced to numeric types."""
+        config_map = {
+            "page_width": "190",
+            "page_height": "270",
+            "sidebar_width": "60",
+        }
+        validate_config(config_map)
+        assert config_map["page_width"] == 190
+        assert config_map["page_height"] == 270
+        assert config_map["sidebar_width"] == 60
+        for key in ("page_width", "page_height", "sidebar_width"):
+            assert isinstance(config_map[key], int)
+
+    def test_validate_config_rejects_non_numeric_strings(self) -> None:
+        """Non-numeric strings should produce a descriptive ValueError."""
+        config_map = {
+            "page_width": "not-a-number",
+            "page_height": "270",
+        }
+        with pytest.raises(ValueError, match="page_width.*numeric"):
+            validate_config(config_map, filename="sample.yaml")
+
+    def test_short_hex_color_passes(self) -> None:
+        """Short hex color format (#RGB) should pass validation."""
+        config = {
+            "theme_color": "#FFF",
+            "sidebar_color": "#000",
+        }
+        validate_config(config)
+
+    def test_empty_config_passes(self) -> None:
+        """Empty config should pass validation (no-op)."""
+        validate_config({})

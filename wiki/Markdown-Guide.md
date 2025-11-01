@@ -1,112 +1,60 @@
-# Markdown Guide for CV Content
+# Markdown Guide for Resume Content
 
-This guide explains how to use Markdown in your CV YAML files.
+Use Markdown to format the content of your Resume YAML files.
 
 ## Supported Features
 
 - **Bold**: `**text**`
 - *Italic*: `*text*`
 - Links: `[text](url)`
-- Headers: `# h1`, `## h2`, etc.
+- Headers: `# h1`, `## h2`
+- Fenced code blocks (e.g., ` ```python `)
+- Tables
+- Bulleted lists
 
-### Code Blocks
+## Projects Section
 
-Use fenced code blocks with language identifiers for syntax highlighting.
+Use the `Projects` section for personal or open-source work.
 
-```yaml
-description: |
-  ```python
-def fetch_data(url):
-    response = requests.get(url)
-    return response.json()
-```
+### Structure
 
 ```yaml
+Projects:
+  -
+    start: ""
+    end: 2024
+    title: Project Name
+    title_link: https://github.com/username/repo-name
+    company: Personal Project
+    company_link: https://github.com/username
+    description: |
+      Reduced latency by 75% by implementing a caching layer.
 
-### Tables
-
-Use tables for skills, experience, or other structured data.
-
-```yaml
-description: |
-  | Technology | Level | Experience |
-  |------------|-------|------------|
-  | Python     | Expert| 5+ years   |
-  | Docker     | Expert| 4 years    |
+      - Developed a Python script to process and aggregate data.
+      - Deployed the application using Docker and Kubernetes.
+      - **Tech Stack:** Python, Docker, Kubernetes
 ```
 
-**Note**: Table separator lines (`---`) must be present for all columns.
+### Guidelines
 
-### Lists
+- Start with measurable results (e.g., "Reduced latency by 75%")
+- Link to repositories or live demos
+- Use a "Tech Stack" line to list key technologies
+- Choose projects relevant to your target role
 
-Use bulleted lists for achievements and responsibilities.
+## Formatting Tips
 
-```yaml
-description: |
-  - Increased sales by 45% through strategic partnerships.
-  - Reduced operational costs by 30% by optimizing processes.
-```
+- **Code Blocks**: Use language identifiers (e.g., `python`, `javascript`) for syntax highlighting.
+- **Tables**: Use for structured data like benchmarks.
+- **Metrics**: Quantify results with numbers (e.g., "+45%", "$200K savings").
+- **Action Verbs**: Start bullet points with strong verbs (e.g., "Managed," "Led").
 
-## Best Practices
+## Common Issues
 
-### Technical CVs
+- **Table Formatting**: Ensure the separator line (`---`) is present for all columns.
+- **Indentation**: Preserve indentation within code blocks.
 
-1. **Code Blocks**: Use correct language identifiers (`python`, `javascript`, `bash`).
-2. **Tables**: Include quantifiable metrics.
-3. **Skills**: Be specific about expertise (e.g., "Expert: 5+ years, multiple production projects").
+## Implementation
 
-### Business CVs
-
-1. **Quantify Results**: Use numbers and metrics (e.g., "+45%", "$200K savings").
-2. **Action Verbs**: Start bullet points with strong verbs (e.g., "Managed," "Led," "Developed").
-3. **Currency**: Use standard symbols (`$`, `€`, `£`).
-
-## Common Pitfalls
-
-### Table Formatting
-
-A common mistake is forgetting the separator line for the last column.
-
-❌ **Incorrect**:
-
-```markdown
-| Feature | Status |
-|---------|
-| Testing | Complete |
-```
-
-✅ **Correct**:
-
-```markdown
-| Feature | Status |
-|---------|--------|
-| Testing | Complete |
-```
-
-### Indentation
-
-Preserve indentation within code blocks.
-
-❌ **Incorrect**:
-
-```python
-def example():
-    print("Mismatched indentation")
-```
-
-✅ **Correct**:
-
-```python
-def example():
-    print("Correct indentation")
-```
-
-## Markdown Implementation
-
-The CV generator uses Python's `markdown` library with the following extensions:
-
-- `fenced_code`
-- `tables`
-- `codehilite`
-- `nl2br`
-- `attr_list`
+The Resume generator uses Python's `markdown` library with extensions for fenced
+code blocks, tables, and syntax highlighting.

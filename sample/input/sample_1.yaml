@@ -1,4 +1,4 @@
-template: cv_no_bars
+template: resume_no_bars
 
 full_name: John Doe
 
@@ -72,6 +72,32 @@ body:
 
         Take a look at the [cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet).
 
+  Projects:
+    -
+      start: ""
+      end: 2024
+      title: Real-Time Data Pipeline
+      title_link: https://github.com/username/data-pipeline
+      company: Personal Project
+      company_link: https://github.com/username
+      description: |
+        Developed a scalable real-time data processing pipeline using Apache Kafka and Spark, reducing data latency by 75% and processing 500K events per second.
+
+        - Built fault-tolerant microservices architecture with Docker and Kubernetes
+        - Implemented automated CI/CD pipeline with GitHub Actions
+        - **Tech Stack:** Python, Apache Kafka, Spark, Docker, Kubernetes, PostgreSQL
+    -
+      start: ""
+      end: 2023
+      title: ML-Powered Recommendation Engine
+      title_link: https://github.com/username/recommendation-engine
+      company: Open Source
+      description: |
+        Created a collaborative filtering recommendation system that improved user engagement by 40% in beta testing with 10K+ users.
+
+        - Trained and deployed deep learning models using TensorFlow and PyTorch
+        - Optimized model inference time by 60% through quantization and caching
+        - **Tech Stack:** Python, TensorFlow, PyTorch, Redis, FastAPI, React
   Education:
     -
       start: 09/2010

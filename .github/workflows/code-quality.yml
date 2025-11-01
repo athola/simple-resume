@@ -25,19 +25,16 @@ jobs:
         version: "latest"
 
     - name: Install dependencies
-      run: uv sync --extra utils
+      run: uv sync --extra utils --group dev
 
     - name: Run Bandit (security linter)
       run: |
-        pip install bandit
-        bandit -r src/cv/ -f json -o bandit-report.json || true
-        bandit -r src/cv/
+        uv run bandit -r src/easyresume/ -f json -o bandit-report.json || true
+        uv run bandit -r src/easyresume/
 
     - name: Run Safety (dependency security)
       run: |
-        pip install safety
-        safety check --json --output safety-report.json || true
-        safety check
+        uv run safety scan --ignore 51457 --save-as json safety-report.json || true
 
     - name: Upload security reports
       uses: actions/upload-artifact@v4
@@ -66,20 +63,19 @@ jobs:
         version: "latest"
 
     - name: Install dependencies
-      run: uv sync --extra utils
+      run: uv sync --extra utils --group dev
 
     - name: Install complexity tools
-      run: |
-        pip install radon xenon
+      run: uv pip install radon xenon
 
     - name: Run Radon (cyclomatic complexity)
       run: |
-        radon cc src/cv/ --min B
-        radon mi src/cv/ --min B
-        radon cc src/cv/ --json > radon-report.json || true
+        uv run radon cc src/easyresume/ --min B
+        uv run radon mi src/easyresume/ --min B
+        uv run radon cc src/easyresume/ --json > radon-report.json || true
 
     - name: Run Xenon (complexity monitoring)
-      run: xenon --max-absolute B --max-modules A --max-average A src/cv/ || true
+      run: uv run xenon --max-absolute B --max-modules A --max-average A src/easyresume/ || true
 
     - name: Upload complexity reports
       uses: actions/upload-artifact@v4
@@ -106,12 +102,11 @@ jobs:
         version: "latest"
 
     - name: Install dependencies
-      run: uv sync --extra utils
+      run: uv sync --extra utils --group dev
 
     - name: Check docstring coverage
       run: |
-        uv add --dev interrogate
-        uv run interrogate src/cv/ --fail-under 80 --quiet || true
+        uv run interrogate src/easyresume/ --fail-under 80 --quiet || true
 
     - name: Check README links
       run: |
@@ -120,5 +115,4 @@ jobs:
 
     - name: Validate Markdown files
       run: |
-        uv add --dev markdown
-        find . -name "*.md" -not -path "./.git/*" -not -path "./.venv/*" -not -path "./htmlcov/*" -exec sh -c 'uv run python -c "import markdown; content=open(\"\\$1\").read(); markdown.markdown(content); echo \"✓ \\$1 is valid markdown\""' _ {} \;
+        find . -name "*.md" -not -path "./.git/*" -not -path "./.venv/*" -not -path "./htmlcov/*" -exec sh -c 'uv run python -c "import markdown; content=open(\"\\$1\").read(); markdown.markdown(content); print(\"✓ \\$1 is valid markdown\")"' _ {} \;

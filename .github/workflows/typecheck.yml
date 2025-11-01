@@ -25,10 +25,10 @@ jobs:
         version: "latest"
 
     - name: Install dependencies
-      run: uv sync --extra utils
+      run: uv sync --extra utils --group dev
 
     - name: Run MyPy
-      run: uv run mypy src/cv/ --strict
+      run: uv run mypy src/easyresume/ --strict
 
   ty:
     name: Ty Type Checking
@@ -48,10 +48,10 @@ jobs:
         version: "latest"
 
     - name: Install dependencies
-      run: uv sync --extra utils
+      run: uv sync --extra utils --group dev
 
     - name: Run Ty
-      run: uv run ty check src/cv/
+      run: uv run ty check src/easyresume/
 
   pyright:
     name: Pyright Type Checking
@@ -71,14 +71,14 @@ jobs:
         version: "latest"
 
     - name: Install dependencies
-      run: uv sync --extra utils
+      run: uv sync --extra utils --group dev
 
     - name: Install Pyright
       run: npm install -g pyright
 
     - name: Run Pyright
       run: |
-        pyright src/cv/
+        pyright src/easyresume/
 
   pytype:
     name: Pytype Type Checking
@@ -98,7 +98,7 @@ jobs:
         version: "latest"
 
     - name: Install dependencies
-      run: uv sync --extra utils
+      run: uv sync --extra utils --group dev
 
     - name: Run Pytype
-      run: uv run pytype src/cv/
+      run: uv run pytype src/easyresume/

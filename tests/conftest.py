@@ -1,4 +1,4 @@
-"""Pytest configuration and fixtures for CV project tests."""
+"""Pytest configuration and fixtures for Resume project tests."""
 
 import tempfile
 from collections.abc import Iterator
@@ -18,10 +18,10 @@ def temp_dir() -> Iterator[Path]:
 
 
 @pytest.fixture
-def sample_cv_data() -> dict[str, Any]:
-    """Sample CV data for testing."""
+def sample_resume_data() -> dict[str, Any]:
+    """Sample Resume data for testing."""
     return {
-        "template": "cv_no_bars",
+        "template": "resume_no_bars",
         "full_name": "John Doe",
         "address": ["123 Test St", "Test City, TC 12345"],
         "titles": {
@@ -89,22 +89,22 @@ def sample_cv_data() -> dict[str, Any]:
 
 
 @pytest.fixture
-def sample_cv_file(temp_dir: Path, sample_cv_data: dict[str, Any]) -> Path:
-    """Create a sample CV YAML file for testing."""
-    cv_file = temp_dir / "test_cv.yaml"
-    with open(cv_file, "w", encoding="utf-8") as f:
-        yaml.dump(sample_cv_data, f, default_flow_style=False, allow_unicode=True)
-    return cv_file
+def sample_resume_file(temp_dir: Path, sample_resume_data: dict[str, Any]) -> Path:
+    """Create a sample Resume YAML file for testing."""
+    resume_file = temp_dir / "test_resume.yaml"
+    with open(resume_file, "w", encoding="utf-8") as f:
+        yaml.dump(sample_resume_data, f, default_flow_style=False, allow_unicode=True)
+    return resume_file
 
 
-def create_complete_cv_data(
-    template: str = "cv_no_bars",
+def create_complete_resume_data(
+    template: str = "resume_no_bars",
     full_name: str = "Test User",
     experience: list[dict[str, Any]] | None = None,
     expertise: list[str] | dict[str, int] | None = None,
     description: str = "This is a **test** description.",
 ) -> dict[str, Any]:
-    """Create a complete CV data structure with all required fields."""
+    """Create a complete Resume data structure with all required fields."""
     if experience is None:
         experience = [
             {
@@ -119,7 +119,7 @@ def create_complete_cv_data(
     # Different templates expect different data formats
     certification: list[str] | dict[str, int]
 
-    if template == "cv_with_bars":
+    if template == "resume_with_bars":
         if expertise is None:
             expertise = {"Python": 95, "Testing": 90, "TDD": 85}
         certification = {"Test Certification": 90, "Another Certificate": 85}
@@ -148,7 +148,7 @@ def create_complete_cv_data(
         "keyskills": ["Skill 1", "Skill 2", "Skill 3"],
         "programming": (
             {"Python": 90, "JavaScript": 80, "React": 75}
-            if template == "cv_with_bars"
+            if template == "resume_with_bars"
             else []
         ),
         "body": {
@@ -190,10 +190,10 @@ def create_complete_cv_data(
 
 
 @pytest.fixture
-def sample_cv_with_markdown() -> dict[str, Any]:
-    """Sample CV data with markdown content for testing."""
+def sample_resume_with_markdown() -> dict[str, Any]:
+    """Sample Resume data with markdown content for testing."""
     return {
-        "template": "cv_no_bars",
+        "template": "resume_no_bars",
         "full_name": "Jane Smith",
         "description": """
 # Professional Summary
@@ -238,14 +238,6 @@ Visit my [portfolio](https://janesmith.dev) for more examples.
 
 
 @pytest.fixture
-def mock_flask_app() -> Mock:
-    """Create a mock Flask app for testing."""
-    app = Mock()
-    app.config = {"TESTING": True}
-    return app
-
-
-@pytest.fixture
 def mock_weasyprint() -> dict[str, Mock]:
     """Create mock WeasyPrint objects for testing."""
     mock_css = Mock()
@@ -266,9 +258,7 @@ def mock_environment(monkeypatch: pytest.MonkeyPatch) -> None:
         "PATH_INPUT": "test_data/input/",
         "PATH_OUTPUT": "test_data/output/",
         "FILE_DEFAULT": "test_default",
-        "URL_PRINT": "localhost:5000/print/",
-        "URL_VIEW": "localhost:5000/v/",
     }
 
     for key, value in test_paths.items():
-        monkeypatch.setattr(f"cv.config.{key}", value)
+        monkeypatch.setattr(f"easyresume.config.{key}", value)

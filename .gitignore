@@ -1,85 +1,73 @@
 # --------------------- COMMON EXCLUSIONS -------------------------------------
-# Sublime settings
+# Editor settings
 sublime.sublime-project
 sublime.sublime-workspace
-
-# Pycharm files
 .idea
 
-# Python temporal files
+# Python bytecode and caches
+*.py[cod]
 *.pyc
-__pycache__
+__pycache__/
 */__pycache__
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
-# Jupyter temporal files
+# Jupyter checkpoints
 /.ipynb_checkpoints
 */.ipynb_checkpoints
 
-# Coverage info
+# Coverage and lint reports
 .coverage
-/cover
 */.coverage
+cover
 */cover
 coverage.xml
 */coverage.xml
-
-# HTML coverage reports
 htmlcov/
 */htmlcov/
-
-# Unit test report
 nosetests.xml
 */nosetests.xml
-
-# Pylint ouput
 pylint.xml
 */pylint.xml
 
-# Poetry Lock
-poetry.lock
-
-# Package files
+# Packaging / build output
 build/
 dist/
 *.egg-info
-
-# Executables
+poetry.lock
 *.exe
 
-
 # --------------------- PERSONAL EXCLUSIONS -----------------------------------
-# Data folders
 /data
 */data
 
-
 # --------------------- PROJECT EXCLUSIONS ------------------------------------
+# Local data that should stay private
+resume_private/
+**/*/private_headshot.jpg
 
-# Playground notebooks
+# Generated samples
+sample/output/
+
+# Playground notebooks and temporary files
 */test.ipynb
-
-# Temp files
 */temp.md
 */*/temp.md
 */temp.ipynb
+utilities/**.ipynb
 
-# Temporary test scripts
+# Temporary scripts
 test_*.py
 !tests/**/test_*.py
 !tests/unit/test_*.py
 !tests/integration/test_*.py
 
-# Hide images (except default)
+# Static images (except defaults)
 src/static/images/*
 !src/static/images/default_*
 
-# Notebooks for images
-utilities/**.ipynb
-
-# Generated pdf
-sample/output
-
-# Private Folders/Files
-cv_private/
-**/*/private_headshot.jpg
-*.txt
+# Miscellaneous
+.DS_Store
+*.swp
+commit_msg.txt

@@ -25,7 +25,7 @@ jobs:
         version: "latest"
 
     - name: Install dependencies
-      run: uv sync --extra utils
+      run: uv sync --extra utils --group dev
 
     - name: Install pre-commit
       run: |
@@ -61,7 +61,7 @@ jobs:
     - name: Test make commands
       run: |
         # Install dependencies
-        uv sync --extra utils
+        uv sync --extra utils --group dev
 
         # Test make commands (if Makefile exists)
         if [ -f "Makefile" ]; then
@@ -97,10 +97,10 @@ jobs:
           uv run ruff check src/
           echo "✓ uv run ruff check works"
 
-          uv run mypy src/cv/
+          uv run mypy src/easyresume/
           echo "✓ uv run mypy works"
 
-          uv run ty check src/cv/
+          uv run ty check src/easyresume/
           echo "✓ uv run ty works"
 
           uv run pytest
@@ -120,5 +120,5 @@ jobs:
         echo "✓ All development tools are available"
 
         # Test imports work correctly
-        uv run python -c "import cv.utilities; print('✓ cv.utilities imports correctly')"
-        uv run python -c "from cv.utilities import get_content; print('✓ get_content imports correctly')"
+        uv run python -c "import easyresume.utilities; print('✓ easyresume.utilities imports correctly')"
+        uv run python -c "from easyresume.utilities import get_content; print('✓ get_content imports correctly')"

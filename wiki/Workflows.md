@@ -1,81 +1,35 @@
 # GitHub Actions Workflows
 
-This document covers the GitHub Actions workflows used in this project.
+We use GitHub Actions to automate code quality checks on every push and pull
+request to `main`. This guide explains what each workflow does and how to run
+the checks locally.
 
-## Overview
+## CI/CD Workflows
 
-The following workflows are configured to run on pushes and pull requests to `main`:
-
-- **Test Suite** (`test.yml`)
-- **Linting** (`lint.yml`)
-- **Type Checking** (`typecheck.yml`)
-- **Code Quality** (`code-quality.yml`)
-- **Pre-commit** (`pre-commit.yml`)
-
-## Workflows
-
-### Test Suite (`test.yml`)
-
-Runs the full test and linting suite.
-
-- Sets up Python 3.10
-- Installs dependencies with `uv`
-- Runs `pytest`, `mypy`, `ty`, and `ruff`
-
-### Linting (`lint.yml`)
-
-Runs formatters and linters.
-
-- `ruff` (linting and formatting)
-- `flake8`
-- `pylint`
-
-### Type Checking (`typecheck.yml`)
-
-Runs a matrix of type checkers.
-
-- `mypy`
-- `ty`
-- `pyright`
-- `pytype`
-
-### Code Quality (`code-quality.yml`)
-
-Runs static analysis and documentation checks.
-
-- **code-quality**: Aggregates reports from other jobs.
-- **security**: Runs `Bandit` and `Safety`.
-- **complexity**: Runs `Radon` and `Xenon`.
-- **documentation**: Checks docstring coverage and Markdown links.
-
-### Pre-commit (`pre-commit.yml`)
-
-Validates `pre-commit` hooks and the local development setup.
-
-- **pre-commit**: Runs all hooks defined in `.pre-commit-config.yaml`.
-- **local-dev-setup**: Validates `Makefile` and `uv` commands.
+- **`test.yml`**: Runs the `pytest` suite and performs static analysis with
+  `mypy`, `ty`, and `ruff`. This is the main quality gate.
+- **`lint.yml`**: Enforces code style and catches common errors using `ruff`,
+  `flake8`, and `pylint`.
+- **`typecheck.yml`**: Validates type hints using a matrix of checkers:
+  `mypy`, `ty`, `pyright`, and `pytype`.
+- **`code-quality.yml`**: Scans for security vulnerabilities and cyclomatic
+  complexity with `Bandit`, `Safety`, `Radon`, and `Xenon`.
+- **`pre-commit.yml`**: Validates the `.pre-commit-config.yaml` file itself.
 
 ## Local Development
 
-### Pre-commit
+### Pre-commit Hooks
 
-To run all hooks automatically on each commit:
+Hooks run `ruff`, `mypy`, and security checks automatically on every commit.
 
 ```bash
-# Install dependencies and pre-commit
-uv sync --extra utils
-pip install pre-commit
-
-# Install hooks
-pre-commit install
-
-# Optional: run on all files
-pre-commit run --all-files
+pre-commit install                # Install hooks
+pre-commit run --all-files        # Run hooks on all files
 ```
 
-### Manual Checks
+### Manual Execution
 
-To run tools manually:
+To run checks manually:
 
 ```bash
 # Linting and formatting
@@ -83,8 +37,8 @@ uv run ruff check src/ tests/
 uv run ruff format src/ tests/
 
 # Type checking
-uv run mypy src/cv/ --strict
-uv run ty check src/cv/
+uv run mypy src/easyresume/ --strict
+uv run ty check src/easyresume/
 
 # Testing
 uv run pytest
@@ -92,6 +46,4 @@ uv run pytest
 
 ## Configuration
 
-- **Python**: 3.10 (matches Ubuntu 22.04 LTS)
-- **Dependencies**: `uv`
-- **Artifacts**: Security and complexity reports are uploaded from their respective jobs.
+All workflows use Python 3.10 and `uv`. Security and complexity reports are stored as build artifacts.

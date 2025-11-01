@@ -1,0 +1,102 @@
+/**
+ * Web Preview Styles
+ *
+ * Enhancements specifically for the web preview interface.
+ * These styles improve the development/preview experience but are
+ * not used in PDF generation.
+ */
+
+/* Preview Frame - Adds visual context when viewing in browser */
+.frame {
+  padding-top: var(--frame-padding, 10mm);
+  padding-bottom: var(--frame-padding, 10mm);
+  padding-left: var(--frame-padding, 10mm);
+  padding-right: var(--frame-padding, 10mm);
+  background-color: var(--frame-color, #757575);
+}
+
+/* Smooth Transitions for Interactive Preview */
+@media screen {
+  /* Subtle hover effects for links in preview mode */
+  a:hover {
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+  }
+
+  /* Page shadow for depth perception in preview */
+  .page {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Optional: Add edit indicators for development */
+  .page[contenteditable="true"]:focus {
+    outline: 2px dashed #0395DE;
+    outline-offset: 4px;
+  }
+}
+
+/**
+ * Responsive Preview (Optional Enhancement)
+ *
+ * Makes the preview more usable on smaller screens during development.
+ * Not used in PDF generation since PDFs have fixed dimensions.
+ */
+@media screen and (max-width: 768px) {
+  .frame {
+    padding: 5mm;
+  }
+
+  .page {
+    /* Scale down on mobile for better preview */
+    transform: scale(0.8);
+    transform-origin: top center;
+  }
+}
+
+/**
+ * Dark Mode Preview (Optional Enhancement)
+ *
+ * Improves preview visibility in dark development environments.
+ * Only affects the frame, not the Resume content itself.
+ */
+@media (prefers-color-scheme: dark) {
+  .frame {
+    background-color: #2d2d2d;
+  }
+}
+
+/**
+ * Print Preview Override
+ *
+ * When printing from the browser (not PDF generation), hide the frame.
+ */
+@media print {
+  .frame {
+    padding: 0;
+    background-color: white;
+  }
+
+  /* Remove page shadow for clean printing */
+  .page {
+    box-shadow: none;
+  }
+}
+
+/**
+ * Development Helpers (Optional)
+ *
+ * Uncomment these during template development to visualize layout boxes.
+ */
+/*
+.debug-mode .sidebar-container {
+  outline: 2px solid red;
+}
+
+.debug-mode .body {
+  outline: 2px solid blue;
+}
+
+.debug-mode .content {
+  outline: 1px dashed green;
+}
+*/

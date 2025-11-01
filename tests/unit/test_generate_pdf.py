@@ -1,530 +1,516 @@
-"""Unit tests for cv.generate_pdf module following TDD principles.
+"""Unit tests for easyresume.generate_pdf module."""
 
-These tests follow the Red-Green-Refactor cycle and extreme programming practices:
-- File system operations testing
-- PDF generation workflow validation
-- Error handling and edge cases
-- Business logic for CV processing
-- Integration with external dependencies
-"""
+from __future__ import annotations
 
-import time
+import subprocess
+from pathlib import Path
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
+import yaml
 
-from cv.config import PATH_OUTPUT
-from cv.generate_pdf import generate_pdf
+from easyresume import config, rendering
+from easyresume.generate_pdf import (
+    LocalFileSystem,
+    PageSpec,
+    PdfGenerationDeps,
+    PdfLogger,
+    PdfWriter,
+    _open_file,
+    generate_pdf,
+    main,
+)
+from tests.conftest import create_complete_resume_data
+
+
+class StubRenderer:
+    """Record renderer invocations and return canned responses."""
+
+    def __init__(self, *, resume_config: dict[str, Any] | None = None) -> None:
+        """Store render calls and optional resume configuration overrides."""
+        self.calls: list[tuple[str, bool, config.Paths | None]] = []
+        self.resume_config = resume_config or {"page_width": 190, "page_height": 270}
+
+    def __call__(
+        self, name: str, *, preview: bool, paths: config.Paths | None
+    ) -> tuple[str, str, dict[str, Any]]:
+        """Return deterministic HTML payload with default resume config."""
+        self.calls.append((name, preview, paths))
+        return "<html></html>", "/base", {"resume_config": dict(self.resume_config)}
+
+
+class RecordingWriter(PdfWriter):
+    """PdfWriter that stores each write call for assertions."""
+
+    def __init__(self) -> None:
+        """Initialize empty call log."""
+        self.calls: list[dict[str, Any]] = []
+
+    def write(
+        self,
+        *,
+        output_path: Path,
+        html: str,
+        base_url: str,
+        page: PageSpec,
+    ) -> None:
+        """Record each invocation for later verification."""
+        self.calls.append(
+            {
+                "output_path": output_path,
+                "html": html,
+                "base_url": base_url,
+                "page": page,
+            }
+        )
+
+
+class RecordingLogger(PdfLogger):
+    """Logger that records lifecycle events rather than printing."""
+
+    def __init__(self) -> None:
+        """Initialize tracking containers."""
+        self.started: list[tuple[str, Path]] = []
+        self.succeeded_events: list[tuple[str, Path]] = []
+        self.failed_events: list[tuple[str, Path, Exception]] = []
+
+    def starting(self, name: str, output_path: Path) -> None:
+        """Track resume generation start."""
+        self.started.append((name, output_path))
+
+    def succeeded(self, name: str, output_path: Path) -> None:
+        """Track completed resume generation."""
+        self.succeeded_events.append((name, output_path))
+
+    def failed(self, name: str, output_path: Path, error: Exception) -> None:
+        """Track failed resume generation attempts."""
+        self.failed_events.append((name, output_path, error))
+
+
+class RecordingViewer:
+    """Viewer stub that captures requested paths."""
+
+    def __init__(self) -> None:
+        """Initialize list to store requested file paths."""
+        self.paths: list[str] = []
+
+    def __call__(self, path: str) -> None:
+        """Record a path that would have been opened."""
+        self.paths.append(path)
 
 
 class TestGeneratePdf:
     """Test cases for PDF generation functionality."""
 
-    @patch("cv.generate_pdf.run_app")
-    @patch("cv.generate_pdf.os.listdir")
-    @patch("cv.generate_pdf.os.path.exists")
-    @patch("cv.generate_pdf.os.makedirs")
-    @patch("cv.generate_pdf.time.sleep")
-    @patch("cv.generate_pdf.print")
-    @patch("cv.generate_pdf.HTML")
-    @patch("cv.generate_pdf.CSS")
-    def test_generate_pdf_success_workflow(
+    def _paths(self, tmp_path: Path) -> config.Paths:
+        return config.Paths(
+            data=tmp_path,
+            input=tmp_path / "input",
+            output=tmp_path / "output",
+        )
+
+    def _deps(
         self,
-        mock_css: Mock,
-        mock_html: Mock,
-        mock_print: Mock,
-        mock_sleep: Mock,
-        mock_makedirs: Mock,
-        mock_exists: Mock,
-        mock_listdir: Mock,
-        mock_run_app: Mock,
-    ) -> None:
-        """RED: Test complete PDF generation workflow."""
-        # Arrange
-        mock_run_app.return_value = None
-        mock_listdir.return_value = ["cv1.yaml", "cv2.yml", "readme.txt", "image.png"]
-        mock_exists.return_value = True  # Output directory exists
-        mock_css.return_value = Mock()
-        mock_html_instance = Mock()
-        mock_html.return_value = mock_html_instance
+        *,
+        resume_config: dict[str, Any] | None = None,
+    ) -> tuple[
+        StubRenderer,
+        RecordingWriter,
+        RecordingLogger,
+        RecordingViewer,
+        PdfGenerationDeps,
+    ]:
+        renderer = StubRenderer(resume_config=resume_config)
+        writer = RecordingWriter()
+        logger = RecordingLogger()
+        viewer = RecordingViewer()
+        deps = PdfGenerationDeps(
+            renderer=renderer,
+            writer=writer,
+            logger=logger,
+            viewer=viewer,
+        )
+        return renderer, writer, logger, viewer, deps
 
-        # Act
-        generate_pdf()
+    def test_generate_pdf_success_workflow(self, tmp_path: Path) -> None:
+        """Verify standard PDF generation path."""
+        paths = self._paths(tmp_path)
+        paths.input.mkdir()
+        paths.output.mkdir()
 
-        # Assert
-        # Verify app is started in daemon mode
-        mock_run_app.assert_called_once_with(True)
+        (paths.input / "resume1.yaml").write_text(
+            "template: a\nconfig: {}\n", encoding="utf-8"
+        )
+        (paths.input / "notes.txt").write_text("skip", encoding="utf-8")
+        (paths.input / "resume2.yml").write_text(
+            "template: b\nconfig: {}\n", encoding="utf-8"
+        )
 
-        # Verify only YAML files are processed
-        expected_files = ["cv1.yaml", "cv2.yml"]
-        assert mock_listdir.call_count == 1
+        renderer, writer, logger, viewer, deps = self._deps()
 
-        # Verify both input and output directory checks
-        assert mock_exists.call_count == 2
-        mock_exists.assert_any_call("cv_private/input/")
-        mock_exists.assert_any_call("cv_private/output/")
+        generate_pdf(
+            paths=paths,
+            deps=deps,
+            filesystem=LocalFileSystem(),
+        )
 
-        # Verify sleep is called for each file (WeasyPrint timing)
-        assert mock_sleep.call_count == len(expected_files)
+        assert {call[0] for call in renderer.calls} == {"resume1", "resume2"}
+        assert all(preview is False for _, preview, _ in renderer.calls)
+        assert len(writer.calls) == 2
+        assert {entry["output_path"].name for entry in writer.calls} == {
+            "resume1.pdf",
+            "resume2.pdf",
+        }
+        assert {event[0] for event in logger.succeeded_events} == {"resume1", "resume2"}
+        assert not logger.failed_events
+        assert viewer.paths == []
 
-        # Verify PDF generation for each YAML file
-        assert mock_html.call_count == len(expected_files)
-        assert mock_html_instance.write_pdf.call_count == len(expected_files)
+    def test_generate_pdf_creates_output_directory(self, tmp_path: Path) -> None:
+        """Output directory is created when missing."""
+        paths = self._paths(tmp_path)
+        paths.input.mkdir()
 
-        # Verify CSS is created for each file
-        assert mock_css.call_count == len(expected_files)
+        (paths.input / "resume1.yaml").write_text(
+            "template: x\nconfig: {}\n", encoding="utf-8"
+        )
 
-    @patch("cv.generate_pdf.run_app")
-    @patch("cv.generate_pdf.os.listdir")
-    @patch("cv.generate_pdf.os.path.exists")
-    @patch("cv.generate_pdf.os.makedirs")
-    @patch("cv.generate_pdf.time.sleep")
-    @patch("cv.generate_pdf.print")
-    @patch("cv.generate_pdf.HTML")
-    @patch("cv.generate_pdf.CSS")
-    def test_generate_pdf_creates_output_directory(
-        self,
-        mock_css: Mock,
-        mock_html: Mock,
-        mock_print: Mock,
-        mock_sleep: Mock,
-        mock_makedirs: Mock,
-        mock_exists: Mock,
-        mock_listdir: Mock,
-        mock_run_app: Mock,
-    ) -> None:
-        """RED: Test that output directory is created when it doesn't exist."""
-        # Arrange
-        mock_run_app.return_value = None
-        mock_listdir.return_value = ["cv1.yaml"]
-        # Input directory exists, output directory doesn't
-        mock_exists.side_effect = lambda path: path == "cv_private/input/"
-        mock_makedirs.return_value = None
-        mock_css.return_value = Mock()
-        mock_html_instance = Mock()
-        mock_html.return_value = mock_html_instance
+        renderer, writer, logger, viewer, deps = self._deps()
 
-        # Act
-        generate_pdf()
+        assert not paths.output.exists()
 
-        # Assert
-        assert mock_exists.call_count == 2
-        mock_exists.assert_any_call("cv_private/input/")
-        mock_exists.assert_any_call("cv_private/output/")
-        mock_makedirs.assert_called_once_with("cv_private/output/", exist_ok=True)
-        mock_html_instance.write_pdf.assert_called_once()
+        generate_pdf(
+            paths=paths,
+            deps=deps,
+            filesystem=LocalFileSystem(),
+        )
 
-    @patch("cv.generate_pdf.run_app")
-    @patch("cv.generate_pdf.os.listdir")
-    def test_generate_pdf_filters_non_yaml_files(
-        self, mock_listdir: Mock, mock_run_app: Mock
-    ) -> None:
-        """RED: Test that only YAML and YML files are processed."""
-        # Arrange
-        mock_run_app.return_value = None
-        mock_listdir.return_value = [
-            "document.pdf",
-            "image.jpg",
-            "readme.txt",
-            "script.py",
-            "config.json",
-            "style.css",
-        ]
+        assert paths.output.exists()
+        assert len(writer.calls) == 1
 
-        # Act
-        generate_pdf()
+    def test_generate_pdf_filters_non_yaml_files(self, tmp_path: Path) -> None:
+        """Fail when no YAML files are discovered."""
+        paths = self._paths(tmp_path)
+        paths.input.mkdir()
+        paths.output.mkdir()
+        (paths.input / "notes.txt").write_text("skip", encoding="utf-8")
 
-        # Assert
-        mock_run_app.assert_called_once_with(True)
-        mock_listdir.assert_called_once()
-        # HTML should not be called for any non-YAML files
-        # (verified by lack of patch for HTML/HTML.write_pdf)
+        renderer, writer, logger, viewer, deps = self._deps()
 
-    @patch("cv.generate_pdf.run_app")
-    @patch("cv.generate_pdf.os.listdir")
-    @patch("cv.generate_pdf.os.path.exists")
-    @patch("cv.generate_pdf.os.makedirs")
-    @patch("cv.generate_pdf.time.sleep")
-    @patch("cv.generate_pdf.print")
-    @patch("cv.generate_pdf.HTML")
-    @patch("cv.generate_pdf.CSS")
+        with pytest.raises(FileNotFoundError, match="No YAML files found"):
+            generate_pdf(
+                paths=paths,
+                deps=deps,
+                filesystem=LocalFileSystem(),
+            )
+
+        assert renderer.calls == []
+        assert writer.calls == []
+
     def test_generate_pdf_css_configuration(
         self,
-        mock_css: Mock,
-        mock_html: Mock,
-        mock_print: Mock,
-        mock_sleep: Mock,
-        mock_makedirs: Mock,
-        mock_exists: Mock,
-        mock_listdir: Mock,
-        mock_run_app: Mock,
+        tmp_path: Path,
     ) -> None:
-        """RED: Test that CSS is configured correctly for PDF generation."""
-        # Arrange
-        mock_run_app.return_value = None
-        mock_listdir.return_value = ["test_cv.yaml"]
-        mock_exists.return_value = True
-        mock_css_instance = Mock()
-        mock_css.return_value = mock_css_instance
-        mock_html_instance = Mock()
-        mock_html.return_value = mock_html_instance
-
-        # Act
-        generate_pdf()
-
-        # Assert
-        mock_css.assert_called_once_with(
-            string=" @page {size: Letter; margin: 0in 0.44in 0.2in 0.44in;} "
-        )
-        mock_html_instance.write_pdf.assert_called_once_with(
-            f"{PATH_OUTPUT}test_cv.pdf", stylesheets=[mock_css_instance]
+        """Ensure CSS page size matches YAML config."""
+        paths = self._paths(tmp_path)
+        paths.input.mkdir()
+        paths.output.mkdir()
+        (paths.input / "test_resume.yaml").write_text(
+            "template: x\nconfig: {}\n",
+            encoding="utf-8",
         )
 
-    @patch("cv.generate_pdf.run_app")
-    @patch("cv.generate_pdf.os.listdir")
+        renderer = StubRenderer(
+            resume_config={"page_width": "210", "page_height": "297"}
+        )
+        writer = RecordingWriter()
+        logger = RecordingLogger()
+        viewer = RecordingViewer()
+        deps = PdfGenerationDeps(
+            renderer=renderer,
+            writer=writer,
+            logger=logger,
+            viewer=viewer,
+        )
+
+        generate_pdf(paths=paths, deps=deps, filesystem=LocalFileSystem())
+
+        assert len(writer.calls) == 1
+        page_spec = writer.calls[0]["page"]
+        assert page_spec.width_mm == 210
+        assert page_spec.height_mm == 297
+
     def test_generate_pdf_with_mixed_extensions(
-        self, mock_listdir: Mock, mock_run_app: Mock
+        self,
+        tmp_path: Path,
     ) -> None:
-        """RED: Test handling of mixed file extensions."""
-        # Arrange
-        mock_run_app.return_value = None
-        mock_listdir.return_value = [
-            "cv1.yaml",
-            "cv2.yml",
-            "cv3.YAML",  # Upper case
-            "cv4.YML",  # Upper case
+        """Handle YAML/YML extensions regardless of case."""
+        paths = self._paths(tmp_path)
+        paths.input.mkdir()
+        paths.output.mkdir()
+        for filename in [
+            "resume1.yaml",
+            "resume2.yml",
+            "resume3.YAML",
+            "resume4.YML",
             "document.txt",
-            "image.png",
-        ]
+        ]:
+            (paths.input / filename).write_text(
+                "template: x\nconfig: {}\n",
+                encoding="utf-8",
+            )
+
+        renderer, writer, logger, viewer, deps = self._deps()
+
+        generate_pdf(paths=paths, deps=deps, filesystem=LocalFileSystem())
+
+        assert len(writer.calls) == 4
+        assert {entry["output_path"].name for entry in writer.calls} == {
+            "resume1.pdf",
+            "resume2.pdf",
+            "resume3.pdf",
+            "resume4.pdf",
+        }
+
+    def test_generate_pdf_empty_directory(self, tmp_path: Path) -> None:
+        """Raise when directory is empty."""
+        paths = self._paths(tmp_path)
+        paths.input.mkdir()
+        paths.output.mkdir()
+
+        renderer, writer, logger, viewer, deps = self._deps()
+
+        with pytest.raises(FileNotFoundError, match="No YAML files found"):
+            generate_pdf(
+                paths=paths,
+                deps=deps,
+                filesystem=LocalFileSystem(),
+            )
+
+
+def _create_dataset(base_dir: Path, template_name: str, marker: str) -> config.Paths:
+    """Create isolated content/input/output directories for PDF regression tests."""
+    content_dir = base_dir / "package"
+    templates_dir = content_dir / "templates"
+    static_dir = content_dir / "static"
+    templates_dir.mkdir(parents=True)
+    static_dir.mkdir(parents=True)
+
+    (templates_dir / f"{template_name}.html").write_text(
+        f"<html><body><p>{marker}</p>{{{{ full_name }}}}</body></html>",
+        encoding="utf-8",
+    )
+
+    data_dir = base_dir / "data"
+    input_dir = data_dir / "input"
+    output_dir = data_dir / "output"
+    input_dir.mkdir(parents=True)
+    output_dir.mkdir(parents=True)
+
+    resume_data = create_complete_resume_data(
+        template=template_name,
+        full_name=f"{marker} User",
+    )
+    for key in ("page_width", "page_height", "sidebar_width"):
+        resume_data["config"][key] = str(resume_data["config"][key])
+
+    (input_dir / f"{template_name}.yaml").write_text(
+        yaml.dump(resume_data), encoding="utf-8"
+    )
+
+    return config.Paths(
+        data=data_dir,
+        input=input_dir,
+        output=output_dir,
+        content=content_dir,
+        templates=templates_dir,
+        static=static_dir,
+    )
+
+
+class _FileWritingWriter(PdfWriter):
+    """PdfWriter that writes HTML payloads to disk for regression checks."""
+
+    def write(
+        self,
+        *,
+        output_path: Path,
+        html: str,
+        base_url: str,
+        page: PageSpec,
+    ) -> None:
+        output_path.write_text(html, encoding="utf-8")
+
+
+def test_generate_pdf_across_multiple_directories(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """Regression: invoking generate_pdf twice respects per-call path configuration."""
+    rendering.get_template_environment.cache_clear()
+    base_one = tmp_path_factory.mktemp("pdf_dataset_one")
+    base_two = tmp_path_factory.mktemp("pdf_dataset_two")
+
+    paths_one = _create_dataset(base_one, "pdf_one", "PDF_ONE")
+    paths_two = _create_dataset(base_two, "pdf_two", "PDF_TWO")
+
+    writer = _FileWritingWriter()
+    logger = RecordingLogger()
+    viewer = RecordingViewer()
+    deps = PdfGenerationDeps(
+        renderer=rendering.render_resume_html,
+        writer=writer,
+        logger=logger,
+        viewer=viewer,
+    )
+    fs = LocalFileSystem()
+
+    generate_pdf(paths=paths_one, deps=deps, filesystem=fs)
+    generate_pdf(paths=paths_two, deps=deps, filesystem=fs)
+
+    pdf_one = (paths_one.output / "pdf_one.pdf").read_text(encoding="utf-8")
+    pdf_two = (paths_two.output / "pdf_two.pdf").read_text(encoding="utf-8")
+
+    assert "PDF_ONE" in pdf_one
+    assert "PDF_TWO" not in pdf_one
+    assert "PDF_TWO" in pdf_two
+    assert "PDF_ONE" not in pdf_two
+
+
+def test_generate_pdf_error_handling(tmp_path: Path) -> None:
+    """Errors from the writer are caught and reported."""
+    paths = config.Paths(
+        data=tmp_path,
+        input=tmp_path / "input",
+        output=tmp_path / "output",
+    )
+    paths.input.mkdir()
+    paths.output.mkdir()
+    (paths.input / "resume1.yaml").write_text(
+        "template: x\nconfig: {}\n", encoding="utf-8"
+    )
+
+    renderer = StubRenderer()
+    logger = RecordingLogger()
+    viewer = RecordingViewer()
+
+    class FailingWriter(PdfWriter):
+        def write(
+            self,
+            *,
+            output_path: Path,
+            html: str,
+            base_url: str,
+            page: PageSpec,
+        ) -> None:
+            raise RuntimeError("render failed")
+
+    deps = PdfGenerationDeps(
+        renderer=renderer,
+        writer=FailingWriter(),
+        logger=logger,
+        viewer=viewer,
+    )
+
+    generate_pdf(paths=paths, deps=deps, filesystem=LocalFileSystem())
+
+    assert len(logger.failed_events) == 1
+    failure = logger.failed_events[0]
+    assert failure[0] == "resume1"
+    assert isinstance(failure[2], RuntimeError)
+
+
+def test_generate_pdf_open_flag(tmp_path: Path) -> None:
+    """Open viewer when open_after flag is set."""
+    paths = config.Paths(
+        data=tmp_path,
+        input=tmp_path / "input",
+        output=tmp_path / "output",
+    )
+    paths.input.mkdir()
+    paths.output.mkdir()
+    (paths.input / "resume1.yaml").write_text(
+        "template: x\nconfig: {}\n", encoding="utf-8"
+    )
+
+    renderer = StubRenderer()
+    writer = RecordingWriter()
+    logger = RecordingLogger()
+    viewer = RecordingViewer()
+    deps = PdfGenerationDeps(
+        renderer=renderer,
+        writer=writer,
+        logger=logger,
+        viewer=viewer,
+    )
+
+    generate_pdf(open_after=True, paths=paths, deps=deps, filesystem=LocalFileSystem())
+
+    assert viewer.paths == [str(paths.output / "resume1.pdf")]
+
+
+def test_generate_pdf_invalid_data_dir() -> None:
+    """Invalid data directory raises ValueError."""
+    with pytest.raises(ValueError):
+        generate_pdf(data_dir="does/not/exist")
+
+
+class TestOpenFile:
+    """Tests for the PDF viewer helper."""
+
+    def test_open_file_linux(self, tmp_path: Path) -> None:
+        """Open the Linux viewer when xdg-open is available."""
+        temp_file = tmp_path / "output.pdf"
 
         with (
-            patch("cv.generate_pdf.os.path.exists", return_value=True),
-            patch("cv.generate_pdf.time.sleep"),
-            patch("cv.generate_pdf.print"),
-            patch("cv.generate_pdf.HTML") as mock_html,
-            patch("cv.generate_pdf.CSS") as mock_css,
+            patch("easyresume.generate_pdf.sys.platform", "linux"),
+            patch("easyresume.generate_pdf.os.name", "posix"),
+            patch(
+                "easyresume.generate_pdf.shutil.which",
+                return_value="/usr/bin/xdg-open",
+            ),
+            patch("easyresume.generate_pdf.subprocess.Popen") as mock_popen,
         ):
-            mock_html_instance = Mock()
-            mock_html.return_value = mock_html_instance
-            mock_css.return_value = Mock()
+            _open_file(str(temp_file))
 
-            # Act
-            generate_pdf()
+        mock_popen.assert_called_once()
+        args, kwargs = mock_popen.call_args
+        assert args[0][0] == "/usr/bin/xdg-open"
+        assert args[0][1] == str(temp_file)
+        assert kwargs["stdout"] == subprocess.DEVNULL
 
-            # Assert
-            # Should process 4 YAML files (2 .yaml + 2 .yml + 2 uppercase variants)
-            assert mock_html.call_count == 4
-            assert mock_html_instance.write_pdf.call_count == 4
-
-    @patch("cv.generate_pdf.run_app")
-    @patch("cv.generate_pdf.os.listdir")
-    def test_generate_pdf_empty_directory(
-        self, mock_listdir: Mock, mock_run_app: Mock
-    ) -> None:
-        """RED: Test handling of empty input directory."""
-        # Arrange
-        mock_run_app.return_value = None
-        mock_listdir.return_value = []
-
-        # Act
-        generate_pdf()
-
-        # Assert
-        mock_run_app.assert_called_once_with(True)
-        mock_listdir.assert_called_once()
-
-    @patch("cv.generate_pdf.run_app")
-    @patch("cv.generate_pdf.os.listdir")
-    @patch("cv.generate_pdf.os.path.exists")
-    @patch("cv.generate_pdf.os.makedirs")
-    @patch("cv.generate_pdf.time.sleep")
-    @patch("cv.generate_pdf.print")
-    @patch("cv.generate_pdf.HTML")
-    @patch("cv.generate_pdf.CSS")
-    def test_generate_pdf_error_handling(
-        self,
-        mock_css: Mock,
-        mock_html: Mock,
-        mock_print: Mock,
-        mock_sleep: Mock,
-        mock_makedirs: Mock,
-        mock_exists: Mock,
-        mock_listdir: Mock,
-        mock_run_app: Mock,
-    ) -> None:
-        """RED: Test error handling during PDF generation."""
-        # Arrange
-        mock_run_app.return_value = None
-        mock_listdir.return_value = ["cv1.yaml", "cv2.yaml"]
-        mock_exists.return_value = True
-        mock_css.return_value = Mock()
-        mock_html_instance = Mock()
-        mock_html.return_value = mock_html_instance
-
-        # Make the second PDF generation fail
-        mock_html_instance.write_pdf.side_effect = [
-            None,
-            Exception("PDF generation failed"),
-        ]
-
-        # Act & Assert
-        with pytest.raises(Exception, match="PDF generation failed"):
-            generate_pdf()
-
-        # Verify that both PDFs were attempted (first succeeds, second fails)
-        assert mock_html_instance.write_pdf.call_count == 2
-
-    @patch("cv.generate_pdf.run_app")
-    @patch("cv.generate_pdf.os.listdir")
-    @patch("cv.generate_pdf.os.path.exists")
-    @patch("cv.generate_pdf.os.makedirs")
-    @patch("cv.generate_pdf.time.sleep")
-    @patch("cv.generate_pdf.print")
-    @patch("cv.generate_pdf.HTML")
-    @patch("cv.generate_pdf.CSS")
-    def test_generate_pdf_file_naming_logic(
-        self,
-        mock_css: Mock,
-        mock_html: Mock,
-        mock_print: Mock,
-        mock_sleep: Mock,
-        mock_makedirs: Mock,
-        mock_exists: Mock,
-        mock_listdir: Mock,
-        mock_run_app: Mock,
-    ) -> None:
-        """RED: Test file naming and path logic."""
-        # Arrange
-        mock_run_app.return_value = None
-        mock_listdir.return_value = ["john_doe.yaml", "jane_smith.yml"]
-        mock_exists.return_value = True
-        mock_css.return_value = Mock()
-        mock_html_instance = Mock()
-        mock_html.return_value = mock_html_instance
-
-        # Act
-        generate_pdf()
-
-        # Assert
-        # Check that HTML was called with correct URLs
-        expected_html_calls = [
-            ("http://localhost:5000/print/john_doe",),
-            ("http://localhost:5000/print/jane_smith",),
-        ]
-        actual_html_calls = [call.args for call in mock_html.call_args_list]
-        assert actual_html_calls == expected_html_calls
-
-        # Check that write_pdf was called with correct output files
-        expected_write_calls = [
-            (f"{PATH_OUTPUT}john_doe.pdf",),
-            (f"{PATH_OUTPUT}jane_smith.pdf",),
-        ]
-        actual_write_calls = [
-            call.args for call in mock_html_instance.write_pdf.call_args_list
-        ]
-        assert actual_write_calls == expected_write_calls
-
-    @patch("cv.generate_pdf.run_app")
-    @patch("cv.generate_pdf.os.listdir")
-    def test_generate_pdf_business_logic_validation(
-        self, mock_listdir: Mock, mock_run_app: Mock
-    ) -> None:
-        """GREEN: Business logic test for PDF generation workflow."""
-        # Arrange
-        mock_run_app.return_value = None
-        mock_listdir.return_value = ["invalid_file.txt"]
-
-        # Act
-        generate_pdf()
-
-        # Assert - Business logic validations
-        mock_run_app.assert_called_once_with(True)  # App must be started in daemon mode
-
-        # Verify directory scanning
-        mock_listdir.assert_called_once()
-
-        # The function should not process non-YAML files
-        # This is verified by the fact that no HTML/CSS operations would be called
-
-    @patch("cv.generate_pdf.run_app")
-    @patch("cv.generate_pdf.os.listdir")
-    @patch("cv.generate_pdf.os.path.exists")
-    @patch("cv.generate_pdf.os.makedirs")
-    @patch("cv.generate_pdf.time.sleep")
-    @patch("cv.generate_pdf.print")
-    @patch("cv.generate_pdf.HTML")
-    @patch("cv.generate_pdf.CSS")
-    def test_generate_pdf_performance_considerations(
-        self,
-        mock_css: Mock,
-        mock_html: Mock,
-        mock_print: Mock,
-        mock_sleep: Mock,
-        mock_makedirs: Mock,
-        mock_exists: Mock,
-        mock_listdir: Mock,
-        mock_run_app: Mock,
-    ) -> None:
-        """GREEN: Performance test for PDF generation."""
-        # Arrange
-        mock_run_app.return_value = None
-        mock_listdir.return_value = [f"cv_{i}.yaml" for i in range(50)]  # 50 CV files
-        mock_exists.return_value = True
-        mock_css.return_value = Mock()
-        mock_html_instance = Mock()
-        mock_html.return_value = mock_html_instance
-
-        # Act
-        start_time = time.time()
-        generate_pdf()
-        end_time = time.time()
-
-        # Assert
-        # Should complete quickly since sleep is mocked
-        assert end_time - start_time < 1  # Should be very fast with mocked sleep
-
-        # Verify all files were processed
-        assert mock_html.call_count == 50
-        assert mock_html_instance.write_pdf.call_count == 50
-        assert mock_sleep.call_count == 50
-
-    @patch("cv.generate_pdf.run_app")
-    @patch(
-        "cv.generate_pdf.os.listdir", side_effect=PermissionError("Permission denied")
-    )
-    def test_generate_pdf_permission_error_handling(
-        self, mock_listdir: Mock, mock_run_app: Mock
-    ) -> None:
-        """GREEN: Test handling of permission errors."""
-        # Act & Assert
-        with pytest.raises(PermissionError, match="Permission denied"):
-            generate_pdf()
-
-        mock_run_app.assert_called_once_with(True)
-        mock_listdir.assert_called_once()
-
-    @patch("cv.generate_pdf.run_app")
-    @patch("cv.generate_pdf.os.listdir")
-    @patch("cv.generate_pdf.os.path.exists")
-    @patch(
-        "cv.generate_pdf.os.makedirs", side_effect=OSError("Directory creation failed")
-    )
-    @patch("cv.generate_pdf.time.sleep")
-    @patch("cv.generate_pdf.print")
-    @patch("cv.generate_pdf.HTML")
-    @patch("cv.generate_pdf.CSS")
-    def test_generate_pdf_directory_creation_error(
-        self,
-        mock_css: Mock,
-        mock_html: Mock,
-        mock_print: Mock,
-        mock_sleep: Mock,
-        mock_makedirs: Mock,
-        mock_exists: Mock,
-        mock_listdir: Mock,
-        mock_run_app: Mock,
-    ) -> None:
-        """GREEN: Test handling of directory creation errors."""
-        # Arrange
-        mock_run_app.return_value = None
-        mock_listdir.return_value = ["test_cv.yaml"]
-        mock_exists.return_value = False  # Directory doesn't exist
-        mock_css.return_value = Mock()
-        mock_html_instance = Mock()
-        mock_html.return_value = mock_html_instance
-
-        # Act & Assert
-        with pytest.raises(OSError, match="Directory creation failed"):
-            generate_pdf()
-
-        mock_exists.assert_called_once()
-        mock_makedirs.assert_called_once()
-
-    def test_generate_pdf_url_formatting(self) -> None:
-        """GREEN: Test URL formatting for different CV names."""
-        # Test data with various naming patterns
-        test_cases = [
-            ("john_doe", "http://localhost:5000/print/john_doe"),
-            ("jane.smith", "http://localhost:5000/print/jane.smith"),
-            ("user123", "http://localhost:5000/print/user123"),
-            ("cv-with-dashes", "http://localhost:5000/print/cv-with-dashes"),
-            ("CamelCase", "http://localhost:5000/print/CamelCase"),
-        ]
+    def test_open_file_error_logs_warning(self, tmp_path: Path) -> None:
+        """Log a warning when launching the viewer fails."""
+        failing_path = tmp_path / "missing.pdf"
 
         with (
-            patch("cv.generate_pdf.run_app"),
-            patch("cv.generate_pdf.os.listdir") as mock_listdir,
-            patch("cv.generate_pdf.os.path.exists", return_value=True),
-            patch("cv.generate_pdf.os.makedirs"),
-            patch("cv.generate_pdf.time.sleep"),
-            patch("cv.generate_pdf.print"),
-            patch("cv.generate_pdf.HTML") as mock_html,
-            patch("cv.generate_pdf.CSS") as mock_css,
+            patch("easyresume.generate_pdf.sys.platform", "linux"),
+            patch("easyresume.generate_pdf.os.name", "posix"),
+            patch(
+                "easyresume.generate_pdf.shutil.which",
+                return_value="/usr/bin/xdg-open",
+            ),
+            patch(
+                "easyresume.generate_pdf.subprocess.Popen",
+                side_effect=FileNotFoundError("missing"),
+            ),
+            patch("easyresume.generate_pdf.sys.stderr") as mock_stderr,
         ):
-            mock_html_instance = Mock()
-            mock_html.return_value = mock_html_instance
-            mock_css.return_value = Mock()
+            _open_file(str(failing_path))
 
-            for cv_name, expected_url in test_cases:
-                # Arrange
-                mock_listdir.return_value = [f"{cv_name}.yaml"]
+        mock_stderr.write.assert_called()
 
-                # Act
-                generate_pdf()
 
-                # Assert
-                mock_html.assert_called_with(expected_url)
+class TestGeneratePdfMain:
+    """Command-line interface behaviour."""
 
-                # Reset mocks for next iteration
-                mock_html.reset_mock()
-
-    @patch("cv.generate_pdf.run_app")
-    @patch("cv.generate_pdf.os.listdir")
-    @patch("cv.generate_pdf.os.path.exists")
-    @patch("cv.generate_pdf.os.makedirs")
-    @patch("cv.generate_pdf.time.sleep")
-    @patch("cv.generate_pdf.print")
-    @patch("cv.generate_pdf.HTML")
-    @patch("cv.generate_pdf.CSS")
-    def test_generate_pdf_css_styling_validation(
-        self,
-        mock_css: Mock,
-        mock_html: Mock,
-        mock_print: Mock,
-        mock_sleep: Mock,
-        mock_makedirs: Mock,
-        mock_exists: Mock,
-        mock_listdir: Mock,
-        mock_run_app: Mock,
+    @patch("easyresume.generate_pdf.generate_pdf")
+    @patch("easyresume.generate_pdf.argparse.ArgumentParser.parse_args")
+    def test_main_with_arguments(
+        self, mock_parse_args: Mock, mock_generate: Mock
     ) -> None:
-        """GREEN: Business logic validation for CSS styling."""
-        # Arrange
-        mock_run_app.return_value = None
-        mock_listdir.return_value = ["test_cv.yaml"]
-        mock_exists.return_value = True
-        mock_css_instance = Mock()
-        mock_css.return_value = mock_css_instance
-        mock_html_instance = Mock()
-        mock_html.return_value = mock_html_instance
+        """main() forwards CLI arguments."""
+        mock_parse_args.return_value = Mock(data_dir="sample", open=True)
 
-        # Act
-        generate_pdf()
+        main()
 
-        # Assert - CSS styling business rules
-        mock_css.assert_called_once()
-        css_string = mock_css.call_args[1]["string"]
-
-        # Validate CSS contains required page settings
-        assert "size: Letter" in css_string, "Should use Letter page size"
-        assert "margin: 0in 0.44in 0.2in 0.44in" in css_string, (
-            "Should have correct margins"
-        )
-
-        # Validate PDF generation parameters
-        pdf_call_args = mock_html_instance.write_pdf.call_args
-        assert len(pdf_call_args[1]["stylesheets"]) == 1, (
-            "Should have exactly one stylesheet"
-        )
-        assert pdf_call_args[1]["stylesheets"][0] == mock_css_instance, (
-            "Should use created CSS instance"
-        )
+        mock_generate.assert_called_once_with(data_dir="sample", open_after=True)

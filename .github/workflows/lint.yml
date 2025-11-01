@@ -25,7 +25,7 @@ jobs:
         version: "latest"
 
     - name: Install dependencies
-      run: uv sync --extra utils
+      run: uv sync --extra utils --group dev
 
     - name: Run Ruff linting
       run: uv run ruff check src/ tests/

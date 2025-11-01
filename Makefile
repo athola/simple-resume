@@ -1,4 +1,4 @@
-.PHONY: help install lint format typecheck clean run-server generate-pdf validate
+.PHONY: help install lint format typecheck check-all fix-all clean generate-pdf generate-pdf-sample view-sample dev-setup ci test test-coverage validate
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -15,23 +15,22 @@ install: ## Install all dependencies including dev tools
 	@echo "  make check-all    # Run all checks"
 
 lint: ## Run linting with ruff
-	uv run ruff check src/cv/
+	uv run ruff check src/easyresume/
 
 format: ## Format code with ruff
-	uv run ruff format src/cv/
-
+	uv run ruff format src/easyresume/
 
 typecheck: ## Run type checking with mypy and ty
 	@echo "Running mypy type checking..."
-	@uv run mypy src/cv/ || (echo "mypy not found. Run 'make install' first." && exit 1)
+	@uv run mypy src/easyresume/ || (echo "mypy not found. Run 'make install' first." && exit 1)
 	@echo ""
 	@echo "Running ty type checking..."
-	@uv run ty check src/cv/ || (echo "ty not found. Run 'make install' first." && exit 1)
+	@uv run ty check src/easyresume/ || (echo "ty not found. Run 'make install' first." && exit 1)
 
 check-all: lint typecheck ## Run all checks (lint and typecheck)
 
 fix-all: format ## Format code and fix auto-fixable issues
-	uv run ruff check --fix src/cv/
+	uv run ruff check --fix src/easyresume/
 
 clean: ## Clean up cache and build files
 	rm -rf .venv
@@ -43,14 +42,37 @@ clean: ## Clean up cache and build files
 	find . -type d -name "*.egg-info" -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
 
-run-server: ## Run the Flask development server
-	uv run run-server
-
-generate-pdf: ## Generate PDF for all CV files (uses default config directory)
+generate-pdf: ## Generate PDF for all Resume files (uses default config directory)
 	uv run generate-pdf
 
-generate-pdf-sample: ## Generate PDF for all CV files in sample directory
+generate-pdf-sample: ## Generate PDF for all Resume files in sample directory
 	uv run generate-pdf --data-dir sample
+
+view-sample: generate-pdf-sample ## Generate and view sample PDF output
+	@echo "=========================================="
+	@echo "Sample Resume PDFs Generated"
+	@echo "=========================================="
+	@echo ""
+	@echo "Generated files:"
+	@ls -1h sample/output/*.pdf 2>/dev/null || echo "No PDFs found"
+	@echo ""
+	@echo "To view the PDFs:"
+	@echo "  - Linux: xdg-open sample/output/sample_1.pdf"
+	@echo "  - macOS: open sample/output/sample_1.pdf"
+	@echo "  - Windows: start sample/output/sample_1.pdf"
+	@echo ""
+	@if command -v wslview >/dev/null 2>&1; then \
+		echo "Opening sample_1.pdf..."; \
+		wslview sample/output/sample_1.pdf 2>/dev/null || true; \
+	elif command -v xdg-open >/dev/null 2>&1; then \
+		echo "Opening sample_1.pdf..."; \
+		xdg-open sample/output/sample_1.pdf 2>/dev/null || true; \
+	elif command -v open >/dev/null 2>&1; then \
+		echo "Opening sample_1.pdf..."; \
+		open sample/output/sample_1.pdf 2>/dev/null || true; \
+	else \
+		echo "Please open sample/output/sample_1.pdf manually"; \
+	fi
 
 dev-setup: install ## Set up development environment
 	@echo "Development environment setup complete!"
@@ -61,7 +83,7 @@ test: ## Run all tests
 	uv run pytest
 
 test-coverage: ## Run tests with coverage report
-	uv run pytest --cov=src/cv --cov-report=term-missing
+	uv run pytest --cov=src/easyresume --cov-report=term-missing
 
 validate: ## Validate current commit is ready for PR (runs ALL workflow checks)
 	@echo "=========================================="
@@ -83,21 +105,21 @@ validate: ## Validate current commit is ready for PR (runs ALL workflow checks)
 	@echo ""
 	@echo "[4/8] Running type checking..."
 	@echo "  - MyPy (strict mode)..."
-	uv run mypy src/cv/ --strict || (echo "❌ MyPy type checking failed" && exit 1)
+	uv run mypy src/easyresume/ --strict || (echo "❌ MyPy type checking failed" && exit 1)
 	@echo "  - Ty..."
-	uv run ty check src/cv/ || (echo "❌ Ty type checking failed" && exit 1)
+	uv run ty check src/easyresume/ || (echo "❌ Ty type checking failed" && exit 1)
 	@echo "  - Pyright..."
-	npx --yes pyright src/cv/ || (echo "❌ Pyright type checking failed" && exit 1)
+	npx --yes pyright src/easyresume/ || (echo "❌ Pyright type checking failed" && exit 1)
 	@echo "  - Pytype..."
-	uv run pytype src/cv/ || (echo "❌ Pytype type checking failed" && exit 1)
+	uv run pytype src/easyresume/ || (echo "❌ Pytype type checking failed" && exit 1)
 	@echo "✅ All type checkers passed"
 	@echo ""
 	@echo "[5/8] Running Pylint rules via Ruff..."
-	uv run ruff check src/cv/ --select=PL || (echo "❌ Ruff Pylint rules failed" && exit 1)
+	uv run ruff check src/easyresume/ --select=PL || (echo "❌ Ruff Pylint rules failed" && exit 1)
 	@echo "✅ Pylint rules passed"
 	@echo ""
 	@echo "[6/8] Running security analysis..."
-	uv run bandit -r src/cv/ || (echo "❌ Bandit security check failed" && exit 1)
+	uv run bandit -r src/easyresume/ || (echo "❌ Bandit security check failed" && exit 1)
 	@echo "✅ Security analysis passed"
 	@echo ""
 	@echo "[7/8] Running pre-commit hooks on all files..."
@@ -105,8 +127,8 @@ validate: ## Validate current commit is ready for PR (runs ALL workflow checks)
 	@echo "✅ Pre-commit hooks passed"
 	@echo ""
 	@echo "[8/8] Validating development environment..."
-	@uv run python -c "import cv.utilities; print('  ✓ cv.utilities imports correctly')"
-	@uv run python -c "from cv.utilities import get_content; print('  ✓ get_content imports correctly')"
+	@uv run python -c "import easyresume.utilities; print('  ✓ easyresume.utilities imports correctly')"
+	@uv run python -c "from easyresume.utilities import get_content; print('  ✓ get_content imports correctly')"
 	@echo "✅ Development environment validated"
 	@echo ""
 	@echo "=========================================="

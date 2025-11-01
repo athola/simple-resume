@@ -13,7 +13,7 @@ addopts = [
     "--strict-config",
     "--verbose",
     "--tb=short",
-    "--cov=src/cv",
+    "--cov=src/easyresume",
     "--cov-report=term-missing",
     "--cov-report=html:htmlcov",
     "--cov-report=xml",
@@ -29,9 +29,9 @@ markers = [
 ]
 
 [project]
-name = "cv"
-version = "2.0.1"
-description = "Programatically create CVs"
+name = "easyresume"
+version = "0.1.0"
+description = "Generate PDF resumes from YAML data using HTML templates"
 authors = [
     {name = "Alex Thola", email = "alexthola@gmail.com"}
 ]
@@ -40,13 +40,12 @@ maintainers = [
 ]
 license = {text = "MIT"}
 readme = "README.md"
-repository = "https://github.com/athola/cv"
+repository = "https://github.com/athola/easyresume"
 requires-python = ">=3.10"
 dependencies = [
-    "flask>=3.1.0",
     "markdown>=3.7.0",
-    "oyaml>=1.0",
-    "weasyprint>=66.0",
+   "oyaml>=1.0",
+   "weasyprint>=66.0",
 ]
 
 [project.optional-dependencies]
@@ -62,8 +61,14 @@ utils = [
 ]
 
 [project.scripts]
-generate-pdf = "cv.generate_pdf:main"
-run-server = "cv.index:run_app"
+generate-pdf = "easyresume.generate_pdf:main"
+generate-html = "easyresume.generate_html:main"
+
+[tool.hatch.build]
+include = [
+    "src/easyresume/templates/**/*",
+    "src/easyresume/static/**/*",
+]
 
 [dependency-groups]
 dev = [
@@ -74,15 +79,16 @@ dev = [
     "pytest>=8.4.2",
     "pytest-cov>=7.0.0",
     "ty>=0.0.1a23",
+    "safety>=3.6.2",
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/cv"]
+packages = ["src/easyresume"]
 
 [tool.ruff]
 line-length = 88
 target-version = "py310"
-exclude = [".venv", ".uv-cache", "src/cv/static", "src/cv/templates"]
+exclude = [".venv", ".uv-cache", "src/easyresume/static", "src/easyresume/templates"]
 
 [tool.ruff.lint]
 # Rules: https://docs.astral.sh/ruff/rules/
@@ -151,10 +157,6 @@ module = "weasyprint"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "flask"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
 module = "pytest"
 ignore_missing_imports = true
 
@@ -165,24 +167,3 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_decorators = false
-
-[[tool.mypy.overrides]]
-module = "cv.index"
-disallow_untyped_decorators = false
-
-[tool.pyright]
-include = ["src/**"]
-venvPath = "."
-venv = ".venv"
-pythonVersion = "3.10"
-pythonPlatform = "Linux"
-pythonPath = ".venv/bin/python"
-
-[[tool.pyright.executionEnvironments]]
-root = "."
-venv = ".venv"
-venvPath = "."
-pythonVersion = "3.10"
-pythonPlatform = "Linux"
-pythonPath = ".venv/bin/python"
-extraPaths = ["src"]

@@ -1,0 +1,26 @@
+name: Wiki Sync
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'wiki/**'
+  workflow_dispatch:
+
+jobs:
+  sync-wiki:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Sync repository wiki pages
+        uses: Andrew-Chen-Wang/github-wiki-action@v5
+        with:
+          token: ${{ secrets.WIKI_TOKEN }}
+          path: wiki
+          repository: ${{ github.repository }}

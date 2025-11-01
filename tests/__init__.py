@@ -1,1 +1,1 @@
-"""Test package for CV project."""
+"""Test package for Resume project."""
