@@ -3,12 +3,21 @@
 
 from __future__ import annotations
 
+import atexit
 import os
+from contextlib import ExitStack
 from dataclasses import dataclass
+from importlib import resources
 from pathlib import Path
 
-# Paths relative to the installed package location
-PACKAGE_ROOT = Path(__file__).resolve().parent
+# Keep an open handle to package resources so they're available even when the
+# distribution is zipped (e.g., installed from a wheel).
+_asset_stack = ExitStack()
+PACKAGE_ROOT = _asset_stack.enter_context(
+    resources.as_file(resources.files("easyresume"))
+)
+atexit.register(_asset_stack.close)
+
 PATH_CONTENT = PACKAGE_ROOT
 TEMPLATE_LOC = PACKAGE_ROOT / "templates"
 STATIC_LOC = PACKAGE_ROOT / "static"

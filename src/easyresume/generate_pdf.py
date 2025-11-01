@@ -12,14 +12,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol, TextIO, cast
 
-# TODO (long-term): Consider alternatives to WeasyPrint for PDF generation.
-# WeasyPrint has rendering quirks (z-index issues, positioned elements) that require
-# workarounds like the gradient hack in resume_base.html. Potential alternatives:
-# 1. Playwright/Puppeteer: Better CSS support, more predictable rendering
-# 2. ReportLab: More control but requires rewriting templates
-# 3. wkhtmltopdf: Better compatibility but deprecated
-# 4. prince: Commercial but excellent CSS support
-# Evaluate based on: rendering quality, CSS support, maintenance burden, cost.
+# TODO (long-term): Evaluate PDF rendering alternatives.
+# WeasyPrint has rendering quirks (z-index, positioning) that require workarounds.
+#
+# Alternatives:
+# 1. Playwright: Best rendering quality, but adds a heavy browser dependency.
+# 2. ReportLab: Fast and precise, but requires a full template rewrite.
+# 3. wkhtmltopdf: Good compatibility, but deprecated and unmaintained.
+# 4. Prince: Excellent quality, but commercial licensing is expensive.
+#
+# See PDF-Renderer-Evaluation.md in the wiki for a detailed comparison.
 from weasyprint import CSS, HTML
 
 from . import config
@@ -380,7 +382,8 @@ def main() -> None:
         "--open",
         action="store_true",
         help=(
-            "Open each generated PDF with the system viewer (uses xdg-open/open/start)."
+            "⚠️ TRIGGERS SUBPROCESS - Open each generated PDF with the system viewer. "
+            "Executes: xdg-open (Linux), open (macOS), or start (Windows)."
         ),
     )
     args = parser.parse_args()

@@ -11,6 +11,8 @@ from pathlib import Path
 
 import pytest
 
+from easyresume import config
+
 
 def _checked_call(
     command: Sequence[str],
@@ -33,7 +35,7 @@ def test_generate_html_cli_after_editable_install(
     tmp_path_factory: pytest.TempPathFactory,
 ) -> None:
     """Ensure the CLI runs from a fresh working directory post `pip install -e ..`."""
-    repo_root = Path(__file__).resolve().parents[2]
+    repo_root = config.PACKAGE_ROOT.parent.parent
     work_dir = Path(tempfile.mkdtemp(dir=repo_root))
     try:
         try:

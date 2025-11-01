@@ -1,44 +1,12 @@
-/**
- * PDF Generation Styles
- *
- * PDF-specific styles and WeasyPrint rendering workarounds.
- * These styles address known quirks in WeasyPrint's rendering engine.
- *
- * IMPORTANT: When migrating to another PDF renderer (e.g., Playwright),
- * review each workaround to see if it's still needed.
- *
- * See: wiki/PDF-Renderer-Evaluation.md for migration planning
- */
+/* PDF-specific styles and WeasyPrint workarounds */
 
-/* Page Layout for PDF */
 .page {
   page-break-after: always;
   width: var(--page-width, 190mm);
   height: var(--page-height, 270mm);
 
-  /**
-   * WEASYPRINT WORKAROUND: Gradient hack for sidebar background
-   *
-   * Problem: WeasyPrint has quirks with overlapping positioned elements and z-index.
-   * The .sidebar-container div (positioned absolute) sometimes renders on top of
-   * content in the .body div, despite correct z-index values.
-   *
-   * Solution: Use CSS gradient on page background instead of a positioned div.
-   * This ensures the sidebar color renders behind content consistently.
-   *
-   * Why it works: Gradients are part of the background layer, which is always
-   * behind positioned content, regardless of z-index.
-   *
-   * Migration note: If switching to Playwright/Puppeteer, this workaround can
-   * be removed - Chromium handles z-index and positioned elements correctly.
-   * You can use a simple positioned div with background-color instead.
-   *
-   * Alternative (for Chromium-based renderers):
-   *   .sidebar-container {
-   *     background-color: var(--sidebar-color);
-   *     z-index: -1;
-   *   }
-   */
+  /* WeasyPrint z-index workaround: use gradient for sidebar background
+     instead of positioned div with background-color */
   background: linear-gradient(
     to right,
     var(--sidebar-color, #F6F6F6) var(--sidebar-width, 60mm),
@@ -51,7 +19,6 @@
   overflow: hidden;
 }
 
-/* Sidebar Container - Currently just structural */
 .sidebar-container {
   position: absolute;
   left: 0;
@@ -61,8 +28,7 @@
   margin: 0;
   padding: 0;
 
-  /* NOTE: background-color removed due to WeasyPrint z-index bug
-   * Background is handled by .page gradient above */
+  /* Background removed due to WeasyPrint z-index bug - handled by .page gradient */
 }
 
 /* Sidebar Content */
@@ -82,37 +48,21 @@
   height: var(--page-height, 270mm);
 }
 
-/**
- * Print-specific CSS rules
- * These ensure consistent rendering in PDF output
- */
 @media print {
-  /* Prevent page breaks inside important elements */
   .content, .skill-container, .contact-container {
     page-break-inside: avoid;
   }
 
-  /* Ensure backgrounds print */
   * {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 }
 
-/**
- * Known WeasyPrint Limitations (as of 2024)
- *
- * 1. Z-index Issues: Fixed with gradient workaround above
- * 2. Flexbox: Limited support, avoid complex flex layouts
- * 3. CSS Grid: Not supported, use floats/positioning instead
- * 4. CSS Custom Properties: Supported but can be buggy in calc()
- * 5. Modern selectors: :has(), :where(), :is() not supported
- *
- * Migration Checklist for Future PDF Renderer:
- * [ ] Test .sidebar-container with background-color (remove gradient hack)
- * [ ] Test flexbox layouts (can simplify .content, .date-container)
- * [ ] Test CSS Grid for layout (potential replacement for floats)
- * [ ] Test modern CSS features (custom properties in calc, modern selectors)
- * [ ] Verify print media queries work correctly
- * [ ] Check rendering of positioned elements and z-index
- */
+/* WeasyPrint limitations (2024):
+   - Z-index issues (fixed with gradient workaround)
+   - Limited flexbox support
+   - No CSS Grid support
+   - Custom properties can be buggy in calc()
+   - :has(), :where(), :is() not supported
+*/

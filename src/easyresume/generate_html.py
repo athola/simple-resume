@@ -170,16 +170,16 @@ def main() -> None:
         "--open",
         action="store_true",
         help=(
-            "Open each generated HTML file in a browser "
-            "(prefers Firefox, fallback to Chromium)."
+            "⚠️ TRIGGERS SUBPROCESS - Open HTML files in a browser. "
+            "Executes browser commands (Firefox preferred, Chromium secondary)."
         ),
     )
     parser.add_argument(
         "--browser",
         type=str,
         help=(
-            "Explicit browser command to launch when using --open "
-            "(e.g., firefox, chromium)."
+            "Explicit browser command when using --open. "
+            "Triggers subprocess only with --open flag (e.g., firefox, chromium)."
         ),
     )
     args = parser.parse_args()

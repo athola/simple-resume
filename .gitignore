@@ -44,7 +44,7 @@ poetry.lock
 
 # --------------------- PROJECT EXCLUSIONS ------------------------------------
 # Local data that should stay private
-cv_private/
+resume_private/
 **/*/private_headshot.jpg
 
 # Generated samples

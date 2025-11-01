@@ -32,7 +32,7 @@ config:
 
 ### Creative Purple
 
-Saturated purple, best for screen viewing.
+A saturated purple that is optimized for screen viewing.
 
 ```yaml
 config:
@@ -109,7 +109,8 @@ All colors must be quoted hexadecimal strings with a leading `#`.
 
 ### Testing
 
-1. **Web Preview**: Run `uv run python src/easyresume/index.py` and open `http://localhost:5000/`.
+1. **Web Preview**: Run `uv run python src/easyresume/index.py`. Follow the walkthrough in
+   [../README.md#quick-start](../README.md#quick-start).
 2. **PDF Generation**: Run `uv run python src/easyresume/generate_pdf.py`.
 3. **Print Test**: Print a sample page to check paper output.
 
@@ -124,8 +125,9 @@ All colors must be quoted hexadecimal strings with a leading `#`.
 
 Start with a `theme_color`. Choose a neutral `sidebar_color`.
 Derive other colors from the primary, such as a desaturated `bar_background`
-or a darker `date2_color`. Tools like
-[Coolors.co](https://coolors.co) or [Adobe Color](https://color.adobe.com) can help build a palette.
+or a darker `date2_color`. See the sample palettes in
+[../sample/input/sample_1.yaml](../sample/input/sample_1.yaml) and
+[../sample/input/sample_2.yaml](../sample/input/sample_2.yaml) for examples.
 
 ## Troubleshooting
 

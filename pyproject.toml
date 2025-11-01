@@ -31,7 +31,7 @@ markers = [
 [project]
 name = "easyresume"
 version = "0.1.0"
-description = "Programmatically generate polished resumes from YAML data"
+description = "Generate PDF resumes from YAML data using HTML templates"
 authors = [
     {name = "Alex Thola", email = "alexthola@gmail.com"}
 ]
@@ -63,6 +63,12 @@ utils = [
 [project.scripts]
 generate-pdf = "easyresume.generate_pdf:main"
 generate-html = "easyresume.generate_html:main"
+
+[tool.hatch.build]
+include = [
+    "src/easyresume/templates/**/*",
+    "src/easyresume/static/**/*",
+]
 
 [dependency-groups]
 dev = [

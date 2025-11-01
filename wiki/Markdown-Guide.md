@@ -37,10 +37,10 @@ Projects:
 
 ### Guidelines
 
-- **Lead with impact:** Start with a measurable result (e.g., "Reduced latency by 75%").
-- **Link to your work:** Provide links to repositories or live demos.
-- **Specify technologies:** Use a "Tech Stack" line to list key technologies.
-- **Focus on relevant work:** Prioritize projects that demonstrate advanced skills and solve real problems.
+- Start with measurable results (e.g., "Reduced latency by 75%")
+- Link to repositories or live demos
+- Use a "Tech Stack" line to list key technologies
+- Choose projects relevant to your target role
 
 ## Formatting Tips
 

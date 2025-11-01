@@ -1,6 +1,6 @@
 # EasyResume
 
-Turn structured YAML into polished, print-ready resumes using pure Python and WeasyPrint.
+Turn structured YAML into print-ready resumes using Python and WeasyPrint.
 
 ![Generated resume preview](assets/preview.jpg)
 
@@ -9,12 +9,12 @@ The full sample PDF lives in `assets/sample.pdf`.
 ## Highlights
 
 - Generate PDFs from templated HTML with a single command.
-- Leverage Markdown inside YAML entries for rich formatting (bold, links, tables, code blocks).
-- Ship-ready automation: CI, type checking, linting, and security scans are wired up out of the box.
+- Use Markdown inside YAML entries for rich formatting (bold, links, tables, code blocks).
+- Includes CI workflows for type checking, linting, and security scans.
 
 ## Documentation
 
-All project guides live in the repo wiki (mirroring the GitHub wiki at <https://github.com/athola/easyresume/wiki>):
+All project guides are stored in the repo [wiki](wiki/) (mirroring the GitHub wiki):
 
 - `wiki/Markdown-Guide.md` – author Markdown-rich Resume content.
 - `wiki/Color-Schemes.md` – customize colors with preset themes or create your own.
@@ -41,11 +41,41 @@ You also need a local copy of [wkhtmltopdf](https://wkhtmltopdf.org/).
 2. Customize colors by editing the `config` section in your YAML file (see
    `wiki/Color-Schemes.md` for preset themes).
 3. Generate HTML resumes: `uv run python src/easyresume/generate_html.py`.
-   - Pass `--open` (optionally `--browser firefox`) to launch in Firefox or Chromium.
+   - **⚠️ Subprocess Warning**: The `--open` flag triggers subprocess calls to launch external browsers
 4. Generate PDFs for every YAML file:
    `uv run python src/easyresume/generate_pdf.py`.
-   - Pass `--open` to launch each PDF with your system viewer
-     (`xdg-open`/`open`/`start`).
+   - **⚠️ Subprocess Warning**: The `--open` flag triggers subprocess calls to launch system PDF viewers
+
+## Command Line Interface
+
+### generate-pdf
+
+```bash
+generate-pdf [--data-dir PATH] [--open]
+```
+
+**Flags:**
+
+- `--data-dir PATH`: Specify custom input/output directory locations
+- `--open`: ⚠️ **TRIGGERS SUBPROCESS** - Opens each generated PDF with system viewer
+  - macOS: Launches PDF viewer via `open` command
+  - Linux: Launches PDF viewer via `xdg-open` command
+  - Windows: Uses system file association via `start`
+
+### generate-html
+
+```bash
+generate-html [--data-dir PATH] [--open] [--browser BROWSER]
+```
+
+**Flags:**
+
+- `--data-dir PATH`: Specify custom input/output directory locations
+- `--open`: ⚠️ **TRIGGERS SUBPROCESS** - Opens each HTML file in default browser
+  - Detects and prefers Firefox, with Chromium as a secondary option
+  - Uses subprocess to launch external browser process
+- `--browser BROWSER`: Specify explicit browser command (e.g., "firefox", "chromium")
+  - Note: This option triggers subprocess only when used with `--open`
 
 Configuration values (input/output locations, URLs) live in `src/easyresume/config.py`.
 
