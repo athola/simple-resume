@@ -41,10 +41,10 @@ You also need a local copy of [wkhtmltopdf](https://wkhtmltopdf.org/).
 2. Customize colors by editing the `config` section in your YAML file (see
    `wiki/Color-Schemes.md` for preset themes).
 3. Generate HTML resumes: `uv run python src/easyresume/generate_html.py`.
-   - **⚠️ Subprocess Warning**: The `--open` flag triggers subprocess calls to launch external browsers
+   - **Note**: The `--open` flag launches external browsers via subprocess calls
 4. Generate PDFs for every YAML file:
    `uv run python src/easyresume/generate_pdf.py`.
-   - **⚠️ Subprocess Warning**: The `--open` flag triggers subprocess calls to launch system PDF viewers
+   - **Note**: The `--open` flag launches system PDF viewers via subprocess calls
 
 ## Command Line Interface
 
@@ -57,7 +57,7 @@ generate-pdf [--data-dir PATH] [--open]
 **Flags:**
 
 - `--data-dir PATH`: Specify custom input/output directory locations
-- `--open`: ⚠️ **TRIGGERS SUBPROCESS** - Opens each generated PDF with system viewer
+- `--open`: Opens each generated PDF with system viewer via subprocess
   - macOS: Launches PDF viewer via `open` command
   - Linux: Launches PDF viewer via `xdg-open` command
   - Windows: Uses system file association via `start`
@@ -71,7 +71,7 @@ generate-html [--data-dir PATH] [--open] [--browser BROWSER]
 **Flags:**
 
 - `--data-dir PATH`: Specify custom input/output directory locations
-- `--open`: ⚠️ **TRIGGERS SUBPROCESS** - Opens each HTML file in default browser
+- `--open`: Opens each HTML file in default browser via subprocess
   - Detects and prefers Firefox, with Chromium as a secondary option
   - Uses subprocess to launch external browser process
 - `--browser BROWSER`: Specify explicit browser command (e.g., "firefox", "chromium")
