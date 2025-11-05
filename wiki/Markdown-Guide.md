@@ -1,32 +1,32 @@
 # Markdown Guide for Resume Content
 
-Use Markdown to format the content of your Resume YAML files.
+This guide explains how to use Markdown to add rich formatting to the content of your resume.
 
 ## Supported Features
 
-- **Bold**: `**text**`
-- *Italic*: `*text*`
-- Links: `[text](url)`
-- Headers: `# h1`, `## h2`
-- Fenced code blocks (e.g., ` ```python `)
-- Tables
-- Bulleted lists
+-   **Bold**: `**text**`
+-   *Italic*: `*text*`
+-   Links: `[text](url)`
+-   Headers: `# h1`, `## h2`
+-   Fenced code blocks: ` ```python `
+-   Tables
+-   Bulleted lists
 
-## Projects Section
+## Formatting Your Projects
 
-Use the `Projects` section for personal or open-source work.
+The `Projects` section is a great place to showcase your personal or open-source work.
 
-### Structure
+### Example
 
 ```yaml
 Projects:
   -
     start: ""
     end: 2024
-    title: Project Name
-    title_link: https://github.com/username/repo-name
-    company: Personal Project
-    company_link: https://github.com/username
+    title: "My Awesome Project"
+    title_link: "https://github.com/username/repo-name"
+    company: "Personal Project"
+    company_link: "https://github.com/username"
     description: |
       Reduced latency by 75% by implementing a caching layer.
 
@@ -35,26 +35,18 @@ Projects:
       - **Tech Stack:** Python, Docker, Kubernetes
 ```
 
-### Guidelines
+### Tips for Writing Great Project Descriptions
 
-- Start with measurable results (e.g., "Reduced latency by 75%")
-- Link to repositories or live demos
-- Use a "Tech Stack" line to list key technologies
-- Choose projects relevant to your target role
+-   Lead with measurable results (e.g., "Reduced latency by 75%").
+-   Link to your code or a live demo.
+-   Include a "Tech Stack" line to highlight the technologies you used.
 
-## Formatting Tips
+## General Formatting Tips
 
-- **Code Blocks**: Use language identifiers (e.g., `python`, `javascript`) for syntax highlighting.
-- **Tables**: Use for structured data like benchmarks.
-- **Metrics**: Quantify results with numbers (e.g., "+45%", "$200K savings").
-- **Action Verbs**: Start bullet points with strong verbs (e.g., "Managed," "Led").
+-   **Use code blocks** with language identifiers (e.g., `python`, `javascript`) to get syntax highlighting in the HTML version of your resume.
+-   **Quantify your accomplishments** with specific numbers (e.g., "Reduced latency by 45%", "Increased revenue by $200K").
+-   **Start bullet points with action verbs** that describe the outcome of your work (e.g., "Automated testing, which reduced bug reports by 20%").
 
-## Common Issues
+## How It Works
 
-- **Table Formatting**: Ensure the separator line (`---`) is present for all columns.
-- **Indentation**: Preserve indentation within code blocks.
-
-## Implementation
-
-The Resume generator uses Python's `markdown` library with extensions for fenced
-code blocks, tables, and syntax highlighting.
+We use the `markdown` Python library with extensions for fenced code blocks, tables, and syntax highlighting to render your Markdown content.

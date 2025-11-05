@@ -1,0 +1,357 @@
+{% extends "resume_base.html" %}
+
+{% block sidebar%}
+
+  <!-- Name and title moved to sidebar -->
+  <h1 style="font-size: 22pt; padding: 0; border: none; text-align: left; margin-bottom: 3mm;">{{ full_name }}</h1>
+  {% if description %}
+    <div style="font-size: 9pt; font-family: 'Avenir 35'; margin-bottom: 2mm; line-height: 1.3;">
+      {% autoescape false %}
+        {{ description }}
+      {% endautoescape %}
+    </div>
+  {% endif %}
+
+  <h3 style="padding-top: 2mm;">{{ titles["contact"] }}</h3>
+
+  {% if address %}
+    <div class="skill-container contact-block">
+      {{ contact_icon("address") }}
+      <div class="contact-container">
+        <div class="contact-text"> <!-- Allow multiline in address -->
+          {% for x in address %}
+            <p>{{ x }}</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  {% endif %}
+
+  {% if phone %}
+    <div class="skill-container contact-block">
+      {{ contact_icon("phone") }}
+      <div class="contact-container">
+        {% set available_width = resume_config['sidebar_width'] - resume_config['sidebar_padding_left'] - resume_config['sidebar_padding_right'] - 6 %}
+        {% set font_size = dynamic_font_size(phone, available_width) %}
+        <p class="contact-text"{% if font_size %} style="font-size: {{ font_size }};"{% endif %}>{{ phone }}</p>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  {% endif %}
+
+  {% if email %}
+    <div class="skill-container contact-block">
+      {{ contact_icon("email") }}
+      <div class="contact-container">
+        {% set available_width = resume_config['sidebar_width'] - resume_config['sidebar_padding_left'] - resume_config['sidebar_padding_right'] - 6 %}
+        {% set font_size = dynamic_font_size(email, available_width) %}
+        <p class="contact-text"{% if font_size %} style="font-size: {{ font_size }};"{% endif %}>
+          <a href="mailto:{{ email }}" style="display: block;">
+            {{ email }}
+          </a>
+        </p>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  {% endif %}
+
+  {% if web %}
+    <div class="skill-container contact-block">
+      {{ contact_icon("web") }}
+      <div class="contact-container">
+        {% set available_width = resume_config['sidebar_width'] - resume_config['sidebar_padding_left'] - resume_config['sidebar_padding_right'] - 6 %}
+        {% set font_size = dynamic_font_size(web, available_width) %}
+        <p class="contact-text"{% if font_size %} style="font-size: {{ font_size }};"{% endif %}>
+          <a href="{{ web }}">
+            {{ web }}
+          </a>
+        </p>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  {% endif %}
+
+  {% if linkedin %}
+    <div class="skill-container contact-block">
+      {{ contact_icon("linkedin") }}
+      <div class="contact-container">
+        {% set available_width = resume_config['sidebar_width'] - resume_config['sidebar_padding_left'] - resume_config['sidebar_padding_right'] - 6 %}
+        {% set font_size = dynamic_font_size(linkedin, available_width) %}
+        <p class="contact-text"{% if font_size %} style="font-size: {{ font_size }};"{% endif %}>
+          <a href="https://www.linkedin.com/{{ linkedin }}">
+            {{ linkedin }}
+          </a>
+        </p>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  {% endif %}
+
+  {% if github %}
+    <div class="skill-container contact-block">
+      {{ contact_icon("github") }}
+      <div class="contact-container">
+        {% set available_width = resume_config['sidebar_width'] - resume_config['sidebar_padding_left'] - resume_config['sidebar_padding_right'] - 6 %}
+        {% set font_size = dynamic_font_size(github, available_width) %}
+        <p class="contact-text"{% if font_size %} style="font-size: {{ font_size }};"{% endif %}>
+          <a href="https://github.com/{{ github }}">
+            {{ github }}
+          </a>
+        </p>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  {% endif %}
+  <div class="skill-spacer"></div>
+
+  <!-- Skills Section with Horizontal Bar Charts -->
+  {% if skills %}
+  <h3>{{ titles["skills"] or "Skills" }}</h3>
+  <div class="skill-container">
+    {% for name, value in skills.items() %}
+      {% set normalized_value = (value / 100.0) * (resume_config['sidebar_width'] - 2*resume_config['padding']) %}
+      {% set available_width = resume_config['sidebar_width'] - resume_config['sidebar_padding_left'] - resume_config['sidebar_padding_right'] %}
+      {% set font_size = dynamic_font_size(name, available_width, 9, 7) %}
+      <p style="margin-bottom: 0;{% if font_size %} font-size: {{ font_size }};{% endif %}">
+        {{ name }}
+      </p>
+      <div class="bar-container">
+        <div class="bar-blue" style="width: {{ normalized_value }}mm"></div>
+        <div class="bar-grey" style="width: {{ resume_config['sidebar_width'] - 2*resume_config['padding'] - normalized_value }}mm"></div>
+      </div>
+      <div class="skill-spacer"></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Certification -->
+  {% if certification %}
+    <h3>{{ titles["certification"] }}</h3>
+    <div class="skill-container">
+      {% set available_width = resume_config['sidebar_width'] - resume_config['sidebar_padding_left'] - resume_config['sidebar_padding_right'] %}
+      {{ render_sidebar_entries(certification, available_width, 9, 7) }}
+    </div>
+  {% endif %}
+
+  <!-- Languages Section -->
+  {% if languages %}
+    <h3>{{ titles["languages"] or "Languages" }}</h3>
+    <div class="skill-container">
+      {% for name, value in languages.items() %}
+        {% set normalized_value = (value / 100.0) * (resume_config['sidebar_width'] - 2*resume_config['padding']) %}
+        {% set available_width = resume_config['sidebar_width'] - resume_config['sidebar_padding_left'] - resume_config['sidebar_padding_right'] %}
+        {% set font_size = dynamic_font_size(name, available_width, 9, 7) %}
+        <p style="margin-bottom: 0;{% if font_size %} font-size: {{ font_size }};{% endif %}">
+          {{ name }}
+        </p>
+        <div class="bar-container">
+          <div class="bar-blue" style="width: {{ normalized_value }}mm"></div>
+          <div class="bar-grey" style="width: {{ resume_config['sidebar_width'] - 2*resume_config['padding'] - normalized_value }}mm"></div>
+        </div>
+        <div class="skill-spacer"></div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Expertise -->
+  {% if expertise_groups %}
+    <h3>{{ titles["expertise"] }}</h3>
+    <div class="skill-container">
+      {% for group in expertise_groups %}
+        {% if group.title %}
+          <h4 style="margin: 2px 0; font-size: 9pt; font-weight: 600; color: {{ resume_config['sidebar_text_color'] }};">{{ group.title }}</h4>
+        {% endif %}
+        {% for item in group["items"] %}
+          <p style="margin-bottom: 2px; margin-left: 0.5mm; position: relative; padding-left: 2mm;">
+            <span style="position: absolute; left: 0; top: 0; color: {{ resume_config['sidebar_text_color'] }}; opacity: 0.6;">•</span>
+            {{ item }}
+          </p>
+        {% endfor %}
+        <div class="skill-spacer"></div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Programming -->
+  {% if programming_groups %}
+    <h3>{{ titles["programming"] }}</h3>
+    <div class="skill-container">
+      {% for group in programming_groups %}
+        {% if group.title %}
+          <h4 style="margin: 2px 0; font-size: 9pt; font-weight: 600; color: {{ resume_config['sidebar_text_color'] }};">{{ group.title }}</h4>
+        {% endif %}
+        {% set available_width = resume_config['sidebar_width'] - resume_config['sidebar_padding_left'] - resume_config['sidebar_padding_right'] %}
+        {{ render_sidebar_entries(group["items"], available_width, 9, 7) }}
+        <div class="skill-spacer"></div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Key Skills -->
+  {% if keyskills_groups %}
+    <h3>{{ titles["keyskills"] }}</h3>
+    <div class="skill-container">
+      {% for group in keyskills_groups %}
+        {% if group.title %}
+          <h4 style="margin: 2px 0; font-size: 9pt; font-weight: 600; color: {{ resume_config['sidebar_text_color'] }};">{{ group.title }}</h4>
+        {% endif %}
+        {% for item in group["items"] %}
+          <p style="margin-bottom: 2px; margin-left: 0.5mm; position: relative; padding-left: 2mm;">
+            <span style="position: absolute; left: 0; top: 0; color: {{ resume_config['sidebar_text_color'] }}; opacity: 0.6;">•</span>
+            {{ item }}
+          </p>
+        {% endfor %}
+        <div class="skill-spacer"></div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+{% endblock %}
+
+
+{% block body%}
+  {% for name, block_data in body.items() %}
+    <h2 class="section-heading">
+      <span class="section-heading-marker">
+        <span class="section-heading-icon">
+          {{ section_icon_inline(name) }}
+        </span>
+      </span>
+      <span class="section-heading-text">{{ name }}</span>
+    </h2>
+
+    {% for data in block_data %}
+      <div class="content">
+
+        <!-- Date Sidebar -->
+        <div class="date-container">
+          <p class="date1">
+            {{ data["end"] }}
+          </p>
+
+          {% if data["start"] %}
+            <p class="date-separator" style="text-align: center; font-size: 8pt; padding-top: 1mm; color: {{ resume_config['date2_color'] }};">—</p>
+            <p class="date2">
+              {{ data["start"] }}
+            </p>
+          {% endif %}
+        </div>
+
+        <!-- Content itself -->
+        <div class="description-container">
+
+          <!-- Calculate font size based on combined length of title and company -->
+          {% set heading_width_mm = resume_config["page_width"] - resume_config["sidebar_width"] - resume_config["padding"] - resume_config["date_container_width"] - 3 - resume_config["description_container_padding_left"] - 1 %}
+          {% set title_text = data["title"] | default("", true) %}
+          {% set company_text = data["company"] | default("", true) %}
+          {% set title_font_size = dynamic_font_size(title_text, heading_width_mm * 0.62, 11, 9) or "11pt" %}
+          {% set company_font_size = dynamic_font_size(company_text, heading_width_mm * 0.45, 11, 7) or "11pt" %}
+          {% set title_font_numeric = (title_font_size | replace("pt", "") | float) %}
+          {% set title_line_height = "1.2" %}
+          {% set margin_bottom = "2px" %}
+          {% if title_font_numeric <= 9 %}
+            {% set title_line_height = "1.1" %}
+            {% set margin_bottom = "0px" %}
+          {% endif %}
+
+          <!-- Smart color selection based on luminance analysis -->
+          {% set theme_color = resume_config["theme_color"] %}
+          {% set company_color = theme_color %}
+          {% set company_link_color = theme_color %}
+
+          {% if theme_color.startswith('#') %}
+            {% set hex_color = theme_color[1:] %}
+            {% if hex_color|length == 3 %}
+              {% set r = (hex_color[0:1] * 2) | int(base=16) %}
+              {% set g = (hex_color[1:2] * 2) | int(base=16) %}
+              {% set b = (hex_color[2:3] * 2) | int(base=16) %}
+            {% elif hex_color|length == 6 %}
+              {% set r = hex_color[0:2] | int(base=16) %}
+              {% set g = hex_color[2:4] | int(base=16) %}
+              {% set b = hex_color[4:6] | int(base=16) %}
+            {% else %}
+              {% set r = 0 %}
+              {% set g = 0 %}
+              {% set b = 0 %}
+            {% endif %}
+
+            {% set luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255 %}
+            {% if luminance >= 0.5 %}
+              {% set company_color = "#2c3e50" %}
+              {% set company_link_color = "#2c3e50" %}
+            {% endif %}
+          {% else %}
+            {# Fallback for non-hex colors #}
+            {% set company_color = "#2c3e50" %}
+            {% set company_link_color = "#2c3e50" %}
+          {% endif %}
+
+          <div class="heading-row">
+            <div class="heading-title">
+              <!-- If there is description use h4, else regular text -->
+              {% if data["description"] %}<h4 style="font-size: {{ title_font_size }} !important; line-height: {{ title_line_height }} !important; margin-bottom: {{ margin_bottom }} !important; word-wrap: break-word; overflow-wrap: break-word; font-family: 'Avenir 45' !important; font-weight: normal !important; color: var(--text-color, #000000) !important;"><b>{% else %}<p style="font-size: {{ title_font_size }} !important; line-height: {{ title_line_height }} !important; margin-bottom: {{ margin_bottom }} !important; word-wrap: break-word; overflow-wrap: break-word; font-family: 'Avenir 45' !important; font-weight: normal !important; color: var(--text-color, #000000) !important;">{% endif %}
+
+                <!-- Allows to add a link to the title -->
+                {% if data["title_link"] %}<a href="{{ data['title_link'] }}" style="font-size: {{ title_font_size }} !important; word-wrap: break-word; overflow-wrap: break-word; font-family: 'Avenir 45' !important; font-weight: normal !important; color: var(--text-color, #000000) !important;">{% endif %}
+                  {{ data["title"] }}
+                {% if data["title_link"] %}</a>{% endif %}
+
+              {% if data["description"] %}</b></h4>{% else %}</p>{% endif %}
+            </div>
+
+            {% if company_text %}
+              <div class="heading-company">
+                <h5 style="font-size: {{ company_font_size }} !important; line-height: {{ title_line_height }} !important; font-family: 'Avenir 45' !important; font-weight: normal !important; color: {{ company_color }} !important; margin: 0px !important;">
+                  <!-- Allows to add a link to the company -->
+                  {% if data["company_link"] %}<a href="{{ data['company_link'] }}" style="font-size: {{ company_font_size }} !important; font-family: 'Avenir 45' !important; font-weight: normal !important; color: {{ company_link_color }} !important;">{% endif %}
+                    {{ data["company"] }}
+                  {% if data["company_link"] %}</a>{% endif %}
+                </h5>
+              </div>
+            {% endif %}
+          </div>
+
+          {% if data["description"] %}
+            <div class="description">
+              {% autoescape false %}
+                {{ data["description"] }}
+              {% endautoescape %}
+            </div>
+          {% endif %}
+
+        </div>
+
+        {% if data.get("tech_stack") %}
+          <div class="date-container tech-stack-label-container">
+            <p class="tech-stack-label">Tech Stack</p>
+          </div>
+          <div class="description-container tech-stack-value-container">
+            <p class="tech-stack-value">{{ data["tech_stack"] }}</p>
+          </div>
+        {% endif %}
+
+        {% set activities = data.get("activities") %}
+        {% if name | lower == "education" and activities %}
+          <!-- Activities Row -->
+          <div class="date-container" style="padding-top: 3mm;">
+            <p style="font-size: 8pt; font-family: 'Avenir 45'; color: {{ resume_config['date2_color'] }}; text-align: center; width: {{ resume_config["padding"] }}mm;">Activities</p>
+          </div>
+          <div class="description-container" style="padding-top: 3mm;">
+            <p style="font-size: 8pt; font-family: 'Avenir 45'; line-height: 1.4; margin: 0;">
+              {% if activities is string %}
+                {{ activities }}
+              {% else %}
+                {{ activities | join(", ") }}
+              {% endif %}
+            </p>
+          </div>
+        {% endif %}
+
+      </div>
+    {% endfor %}
+
+    <div class="spacer"></div>
+  {% endfor %}
+
+{% endblock %}

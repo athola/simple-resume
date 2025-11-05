@@ -1,0 +1,30 @@
+[
+  {
+    "name": "default",
+    "colors": [
+      "#0395DE",
+      "#F6F6F6",
+      "#DFDFDF",
+      "#616161",
+      "#757575"
+    ],
+    "source": "default",
+    "metadata": {
+      "description": "Professional blue default palette"
+    }
+  },
+  {
+    "name": "modern_teal",
+    "colors": [
+      "#0891B2",
+      "#F0FDFA",
+      "#CCFBF1",
+      "#134E4A",
+      "#0E7490"
+    ],
+    "source": "default",
+    "metadata": {
+      "description": "Default teal palette"
+    }
+  }
+]

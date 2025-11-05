@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from easyresume import config
+from simple_resume import config
 
 
 def _checked_call(
@@ -55,9 +55,9 @@ def test_generate_html_cli_after_editable_install(
             cwd=work_dir,
         )
 
-        cli_path = Path(sys.executable).parent / "generate-html"
+        cli_path = Path(sys.executable).parent / "simple-resume"
         assert cli_path.exists(), (
-            "generate-html entry point not found after installation"
+            "simple-resume entry point not found after installation"
         )
 
         data_dir = work_dir / "data"
@@ -72,7 +72,14 @@ def test_generate_html_cli_after_editable_install(
         )
 
         _checked_call(
-            [str(cli_path), "--data-dir", str(data_dir)],
+            [
+                str(cli_path),
+                "generate",
+                "--format",
+                "html",
+                "--data-dir",
+                str(data_dir),
+            ],
             cwd=work_dir,
         )
 

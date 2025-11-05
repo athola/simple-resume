@@ -7,11 +7,14 @@ import time
 from pathlib import Path
 from typing import Any, TypedDict
 
+import pytest
 import yaml
+from bs4 import BeautifulSoup
 
-from easyresume import config
-from easyresume.rendering import render_resume_html
-from easyresume.utilities import get_content
+from simple_resume import config
+from simple_resume.rendering import render_resume_html
+from simple_resume.utilities import get_content
+from tests.bdd import scenario
 from tests.conftest import create_complete_resume_data
 
 
@@ -30,6 +33,9 @@ class TestResumeWorkflowIntegration:
         self, temp_dir: Path, sample_resume_data: dict[str, Any]
     ) -> None:
         """Validate loading YAML and rendering HTML."""
+        story = scenario("end-to-end resume creation")
+        story.given("a YAML resume stored in the input directory")
+
         resume_file = temp_dir / "john_doe.yaml"
         resume_file.write_text(yaml.dump(sample_resume_data), encoding="utf-8")
 
@@ -45,14 +51,26 @@ class TestResumeWorkflowIntegration:
             output=temp_dir / "output",
         )
 
+        story.when("the resume content is hydrated and rendered to HTML")
         resume_content = get_content("john_doe", paths=paths)
+        html, _, _ = render_resume_html("john_doe", paths=paths)
+
+        story.then("the hydrated content preserves metadata")
         assert resume_content["full_name"] == "John Doe"
 
-        html, _, _ = render_resume_html("john_doe", paths=paths)
-        assert "John Doe" in html
+        story.then("the rendered HTML includes semantic sections")
+        soup = BeautifulSoup(html, "html.parser")
+        header = soup.find("h1")
+        assert header and header.text.strip() == "John Doe"
+        assert soup.find(string="Contact"), "Contact section missing from HTML"
 
     def test_multiple_resume_management_workflow(self, temp_dir: Path) -> None:
         """Handle multiple Resume variants in a single directory."""
+        story = scenario("manage multiple resume variants")
+        story.given(
+            "technical and managerial resume inputs placed in the input directory"
+        )
+
         resume_variants = {
             "technical_resume": create_complete_resume_data(
                 template="resume_no_bars",
@@ -84,16 +102,25 @@ class TestResumeWorkflowIntegration:
             output=temp_dir / "output",
         )
 
+        story.when("each resume is hydrated and rendered")
         for resume_name, expected_data in resume_variants.items():
             content = get_content(resume_name, paths=paths)
+            html, _, _ = render_resume_html(resume_name, paths=paths)
+
+            story.then("the hydrated content matches the source data")
             assert content["template"] == expected_data["template"]
             assert content["full_name"] == expected_data["full_name"]
 
-            html, _, _ = render_resume_html(resume_name, paths=paths)
-            assert expected_data["full_name"] in html
+            story.then("rendered HTML contains key headings for the resume")
+            soup = BeautifulSoup(html, "html.parser")
+            assert soup.find(string=expected_data["full_name"]) is not None
+            assert soup.find_all("h2"), "Expected headings in HTML output"
 
     def test_resume_content_validation_workflow(self, temp_dir: Path) -> None:
         """Verify validation for different Resume scenarios."""
+        story = scenario("validate multiple resume scenarios")
+        story.given("complete and minimal resume payloads written to disk")
+
         scenarios: list[ValidationScenario] = [
             {
                 "name": "complete_resume",
@@ -117,9 +144,9 @@ class TestResumeWorkflowIntegration:
         test_input_dir = temp_dir / "input"
         test_input_dir.mkdir()
 
-        for scenario in scenarios:
-            (test_input_dir / f"{scenario['name']}.yaml").write_text(
-                yaml.dump(scenario["data"]), encoding="utf-8"
+        for case in scenarios:
+            (test_input_dir / f"{case['name']}.yaml").write_text(
+                yaml.dump(case["data"]), encoding="utf-8"
             )
 
         paths = config.Paths(
@@ -128,12 +155,16 @@ class TestResumeWorkflowIntegration:
             output=temp_dir / "output",
         )
 
-        for scenario in scenarios:
-            content = get_content(scenario["name"], paths=paths)
-            assert content["full_name"]
+        story.when("each scenario is hydrated and rendered")
+        for scenario_case in scenarios:
+            content = get_content(scenario_case["name"], paths=paths)
+            assert content["full_name"], "full_name should be present after hydration"
 
-            html, _, _ = render_resume_html(scenario["name"], paths=paths)
-            assert scenario["data"]["full_name"] in html
+            html, _, _ = render_resume_html(scenario_case["name"], paths=paths)
+            soup = BeautifulSoup(html, "html.parser")
+            assert soup.find(string=scenario_case["data"]["full_name"]) is not None
+
+        story.then("all scenarios render without validation errors")
 
     def test_markdown_processing_integration(self, temp_dir: Path) -> None:
         """Ensure markdown fields render as HTML."""
@@ -165,29 +196,61 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
             output=temp_dir / "output",
         )
 
-        html, _, _ = render_resume_html("markdown_test", paths=paths)
+        story = scenario("markdown fields render to HTML")
+        story.given("a resume whose description and body contain markdown")
 
-        assert "<h1>Professional Summary</h1>" in html
-        assert "<strong>bold text</strong>" in html
-        assert '<a href="https://example.com">links</a>' in html
+        html, _, _ = render_resume_html("markdown_test", paths=paths)
+        soup = BeautifulSoup(html, "html.parser")
+
+        story.then("markdown headings and emphasis are converted to semantic HTML")
+        assert soup.find("h1", string="Professional Summary") is not None
+        assert soup.find("strong", string="bold text") is not None
+        link = soup.find("a", string="links")
+        assert link and link.get("href") == "https://example.com"
 
     def test_error_handling_and_recovery_workflow(self, temp_dir: Path) -> None:
         """Continue processing after encountering errors."""
+        story = scenario("error handling when processing multiple resumes")
+        story.given("a directory with one valid resume and one malformed YAML file")
+
         test_input_dir = temp_dir / "input"
         test_input_dir.mkdir()
 
         valid_resume = create_complete_resume_data(
             template="resume_no_bars", full_name="Valid User"
         )
-        test_resume = create_complete_resume_data(
-            template="resume_no_bars", full_name="Test User"
-        )
+        malformed_yaml = "invalid: [unterminated"
 
         (test_input_dir / "valid.yaml").write_text(
             yaml.dump(valid_resume), encoding="utf-8"
         )
-        (test_input_dir / "test.yaml").write_text(
-            yaml.dump(test_resume), encoding="utf-8"
+        (test_input_dir / "broken.yaml").write_text(malformed_yaml, encoding="utf-8")
+
+        paths = config.Paths(
+            data=temp_dir,
+            input=test_input_dir,
+            output=temp_dir / "output",
+        )
+
+        story.when("content is requested for the valid resume and broken resume")
+        valid_content = get_content("valid", paths=paths)
+        with pytest.raises(yaml.YAMLError):
+            get_content("broken", paths=paths)
+
+        story.then("valid resume still hydrates correctly despite neighbour failures")
+        assert valid_content["full_name"] == "Valid User"
+
+    def test_missing_template_yields_error(self, temp_dir: Path) -> None:
+        """Ensure the workflow surfaces errors when a template cannot be found."""
+
+        story = scenario("missing template failure")
+        story.given("resume references a non-existent template")
+
+        resume_data = create_complete_resume_data(template="missing_template")
+        test_input_dir = temp_dir / "input"
+        test_input_dir.mkdir()
+        (test_input_dir / "missing.yaml").write_text(
+            yaml.dump(resume_data), encoding="utf-8"
         )
 
         paths = config.Paths(
@@ -196,18 +259,16 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
             output=temp_dir / "output",
         )
 
-        content = get_content("valid", paths=paths)
-        assert content["full_name"] == "Valid User"
-        html, _, _ = render_resume_html("valid", paths=paths)
-        assert "Valid User" in html
+        story.when("render_resume_html is invoked")
+        with pytest.raises(Exception) as exc:
+            render_resume_html("missing", paths=paths)
 
-        content = get_content("test", paths=paths)
-        assert content["full_name"] == "Test User"
-        html, _, _ = render_resume_html("test", paths=paths)
-        assert "Test User" in html
+        story.then("the error message references the missing template")
+        assert "missing_template" in str(exc.value)
 
     def test_performance_with_large_resume_dataset(self, temp_dir: Path) -> None:
         """Basic performance sanity check for bulk rendering."""
+        story = scenario("bulk rendering performance")
         num_resumes = 20
         test_input_dir = temp_dir / "input"
         test_input_dir.mkdir()
@@ -228,6 +289,7 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
             output=temp_dir / "output",
         )
 
+        story.when("loading and rendering a batch of resumes")
         start_time = time.time()
         for i in range(num_resumes):
             content = get_content(f"user_{i}", paths=paths)
@@ -240,11 +302,13 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
             assert f"User {i}" in html
         render_time = time.time() - start_time
 
+        story.then("loading and rendering stay within expected timing budgets")
         assert load_time < 5.0, f"Loading took too long: {load_time}s"
         assert render_time < 10.0, f"Rendering took too long: {render_time}s"
 
     def test_concurrent_user_scenarios(self, temp_dir: Path) -> None:
         """Simulate concurrent rendering requests."""
+        story = scenario("concurrent resume rendering")
         users = ["alice", "bob", "charlie", "diana", "eve"]
         test_input_dir = temp_dir / "input"
         test_input_dir.mkdir()
@@ -298,6 +362,7 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
         for thread in threads:
             thread.join()
 
+        story.then("no rendering errors occur and latency stays bounded")
         assert not errors, f"Errors occurred: {errors}"
         assert len(results) == len(users) * 3
         for data in results.values():

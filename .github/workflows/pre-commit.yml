@@ -70,41 +70,41 @@ jobs:
 
           # Test lint command
           if make -n lint 2>/dev/null; then
-            echo "✓ make lint command exists"
+            echo "make lint command exists"
             make lint
           else
-            echo "✗ make lint command not found"
+            echo "make lint command not found"
           fi
 
           # Test typecheck command
           if make -n typecheck 2>/dev/null; then
-            echo "✓ make typecheck command exists"
+            echo "make typecheck command exists"
             make typecheck
           else
-            echo "✗ make typecheck command not found"
+            echo "make typecheck command not found"
           fi
 
           # Test test command
           if make -n test 2>/dev/null; then
-            echo "✓ make test command exists"
+            echo "make test command exists"
           else
-            echo "✗ make test command not found"
+            echo "make test command not found"
           fi
         else
           echo "No Makefile found, testing direct uv commands..."
 
           # Test direct uv commands
           uv run ruff check src/
-          echo "✓ uv run ruff check works"
+          echo "uv run ruff check works"
 
-          uv run mypy src/easyresume/
-          echo "✓ uv run mypy works"
+          uv run mypy src/simple_resume/
+          echo "uv run mypy works"
 
-          uv run ty check src/easyresume/
-          echo "✓ uv run ty works"
+          uv run ty check src/simple_resume/
+          echo "uv run ty works"
 
           uv run pytest
-          echo "✓ uv run pytest works"
+          echo "uv run pytest works"
         fi
 
     - name: Validate development environment
@@ -117,8 +117,8 @@ jobs:
         uv run ty --version
         uv run pytest --version
 
-        echo "✓ All development tools are available"
+        echo "All development tools are available"
 
         # Test imports work correctly
-        uv run python -c "import easyresume.utilities; print('✓ easyresume.utilities imports correctly')"
-        uv run python -c "from easyresume.utilities import get_content; print('✓ get_content imports correctly')"
+        uv run python -c "import simple_resume.utilities; print('simple_resume.utilities imports correctly')"
+        uv run python -c "from simple_resume.utilities import get_content; print('get_content imports correctly')"

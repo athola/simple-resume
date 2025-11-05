@@ -1,4 +1,4 @@
-"""Unit tests for easyresume.rendering helpers."""
+"""Unit tests for simple_resume.rendering helpers."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from easyresume.rendering import (
+from simple_resume.rendering import (
     get_template_environment,
     load_resume,
     render_resume_html,
@@ -15,7 +15,7 @@ from easyresume.rendering import (
 from tests.conftest import create_complete_resume_data
 
 
-@patch("easyresume.rendering.get_content")
+@patch("simple_resume.rendering.get_content")
 def test_load_resume_returns_template_and_context(mock_get_content: Mock) -> None:
     """Return both template name and context data."""
     mock_get_content.return_value = {
@@ -36,7 +36,7 @@ def test_load_resume_returns_template_and_context(mock_get_content: Mock) -> Non
     assert "paths" in kwargs
 
 
-@patch("easyresume.rendering.get_content")
+@patch("simple_resume.rendering.get_content")
 def test_load_resume_uses_default_name(mock_get_content: Mock) -> None:
     """Default filename is used when none is provided."""
     mock_get_content.return_value = {
@@ -48,14 +48,16 @@ def test_load_resume_uses_default_name(mock_get_content: Mock) -> None:
     mock_get_content.assert_called_once()
 
 
-@patch("easyresume.rendering.get_content", return_value={"template": "resume_no_bars"})
+@patch(
+    "simple_resume.rendering.get_content", return_value={"template": "resume_no_bars"}
+)
 def test_load_resume_requires_config(mock_get_content: Mock) -> None:
     """Raise an error when config section is absent."""
     with pytest.raises(ValueError):
         load_resume("broken")
 
 
-@patch("easyresume.rendering.get_content")
+@patch("simple_resume.rendering.get_content")
 def test_render_resume_html_renders_template(mock_get_content: Mock) -> None:
     """Rendered HTML contains expected content for preview."""
     resume_data = create_complete_resume_data(
@@ -67,7 +69,7 @@ def test_render_resume_html_renders_template(mock_get_content: Mock) -> None:
 
     assert "Render User" in html
     assert context["preview"] is True
-    assert Path(base_url).match("*/src/easyresume")
+    assert Path(base_url).match("*/src/simple_resume")
 
 
 def test_get_template_environment_url_for_static() -> None:

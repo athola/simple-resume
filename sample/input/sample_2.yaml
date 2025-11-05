@@ -111,17 +111,19 @@ config:
 
   # Sizes
   padding: 12
-  page_width: 190
-  page_height: 270
+  page_width: 210
+  page_height: 297
 
   sidebar_width: 60
+  sidebar_padding_top: 0
   profile_image_padding_bottom: 6
 
-  pitch_padding_top: 4
+  pitch_padding_top: 0
   pitch_padding_bottom: 4
   pitch_padding_left: 4
 
   h2_padding_left: 4
+  h3_padding_top: 5
   date_container_width: 13
   date_container_padding_left: 8
   description_container_padding_left: 3

@@ -9,6 +9,8 @@ from unittest.mock import Mock
 import pytest
 import yaml
 
+from .bdd import scenario as make_scenario
+
 
 @pytest.fixture
 def temp_dir() -> Iterator[Path]:
@@ -46,7 +48,7 @@ def sample_resume_data() -> dict[str, Any]:
                     "title": "Senior Developer",
                     "company": "Test Company",
                     "description": (
-                        "- Developed **amazing** features\n"
+                        "- Developed core features\n"
                         "- Wrote tests\n"
                         "- Followed TDD principles"
                     ),
@@ -84,6 +86,18 @@ def sample_resume_data() -> dict[str, Any]:
             "cover_padding_top": 10,
             "cover_padding_bottom": 20,
             "cover_padding_h": 25,
+            # Sidebar padding defaults (matching _apply_config_defaults)
+            "sidebar_padding_left": 10,  # base_padding - 2
+            "sidebar_padding_right": 10,  # base_padding - 2
+            "sidebar_padding_top": 0,
+            "sidebar_padding_bottom": 12,  # base_padding
+            # Spacing defaults (matching _apply_config_defaults)
+            "skill_container_padding_top": 3,
+            "skill_spacer_padding_top": 3,
+            "h3_padding_top": 7,
+            "h2_padding_top": 8,
+            "section_heading_margin_top": 4,
+            "section_heading_margin_bottom": 2,
         },
     }
 
@@ -112,7 +126,7 @@ def create_complete_resume_data(
                 "end": "Present",
                 "title": "Test Developer",
                 "company": "Test Company",
-                "description": ("- Developed **amazing** features\n- Wrote tests"),
+                "description": ("- Developed core features\n- Wrote tests"),
             }
         ]
 
@@ -140,6 +154,7 @@ def create_complete_resume_data(
         },
         "phone": "555-123-4567",
         "email": f"{full_name.lower().replace(' ', '.')}@example.com",
+        "github": full_name.lower().replace(" ", ""),
         "web": "https://example.com",
         "linkedin": "in/testuser",
         "description": description,
@@ -185,8 +200,49 @@ def create_complete_resume_data(
             "cover_padding_top": 10,
             "cover_padding_bottom": 20,
             "cover_padding_h": 25,
+            # Sidebar padding defaults (matching _apply_config_defaults)
+            "sidebar_padding_left": 10,  # base_padding - 2
+            "sidebar_padding_right": 10,  # base_padding - 2
+            "sidebar_padding_top": 0,
+            "sidebar_padding_bottom": 12,  # base_padding
+            # Spacing defaults (matching _apply_config_defaults)
+            "skill_container_padding_top": 3,
+            "skill_spacer_padding_top": 3,
+            "h3_padding_top": 7,
+            "h2_padding_top": 8,
+            "section_heading_margin_top": 4,
+            "section_heading_margin_bottom": 2,
         },
     }
+
+
+def make_resume_missing_contact(
+    full_name: str = "User Without Contact",
+) -> dict[str, Any]:
+    """Return resume data stripped of contact details for negative-path tests."""
+
+    data = create_complete_resume_data(full_name=full_name)
+    for key in ("address", "phone", "email", "github", "web", "linkedin"):
+        data.pop(key, None)
+    return data
+
+
+def make_resume_with_projects(full_name: str = "Project User") -> dict[str, Any]:
+    """Resume data that includes a Projects section for scenario-based tests."""
+
+    data = create_complete_resume_data(full_name=full_name)
+    data.setdefault("body", {})["Projects"] = [
+        {
+            "start": "2023",
+            "end": "2024",
+            "title": "ML Platform",
+            "title_link": "https://example.com/ml",
+            "company": "Side Project",
+            "company_link": "https://example.com",
+            "description": "Built ML platform with reproducible pipelines.",
+        }
+    ]
+    return data
 
 
 @pytest.fixture
@@ -261,4 +317,11 @@ def mock_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     }
 
     for key, value in test_paths.items():
-        monkeypatch.setattr(f"easyresume.config.{key}", value)
+        monkeypatch.setattr(f"simple_resume.config.{key}", value)
+
+
+@pytest.fixture
+def story(request: pytest.FixtureRequest):
+    """Provide a Scenario helper tied to the current test node."""
+
+    return make_scenario(request.node.nodeid)

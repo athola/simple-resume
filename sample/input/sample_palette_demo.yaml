@@ -1,0 +1,221 @@
+template: resume_with_bars
+
+full_name: Casey Palette
+job_title: Product Design Technologist
+
+address:
+  - 101 Color Way
+  - Austin, TX
+
+phone: "(512) 555-2025"
+email: casey.palette.person.with.a.very.long.email.address+resume@example.com
+web: https://caseypalette.dev
+linkedin: in/casey-palette-demo
+github: caseypalette
+
+titles:
+  contact: Contact
+  skills: Skills
+  expertise: Strengths
+  certification: Certifications
+  programming: Technical Tooling
+  keyskills: Key Skills
+  languages: Languages
+
+description: |
+  Demonstration resume highlighting the **palette** configuration block and
+  every major resume section supported by Simple-Resume. Colors below come from 
+  the built-in palette generator, so you can tweak hue, chroma, and luminance
+  directly from YAML.
+
+skills:
+  UI/UX Design: 55
+  Frontend Development: 48
+  Design Systems: 52
+  Prototyping: 46
+  User Research: 42
+  Data Visualization: 38
+
+expertise:
+  Product Strategy:
+    - Journey mapping
+    - Experiment design
+  Delivery:
+    - Design systems
+    - Rapid prototyping
+  Research & Analytics:
+    - Field studies
+    - Accessibility audits
+
+certification:
+  - DesignOps Professional
+  - Accessibility Auditor
+  - ScrumMaster (PSM I)
+
+programming:
+  Prototyping:
+    - TypeScript
+    - React
+    - WebGL
+  Data & Automation:
+    - Python
+    - dbt
+    - SQL
+  Infrastructure:
+    - Terraform
+    - GitHub Actions
+    - Docker
+
+keyskills:
+  - Service blueprints
+  - Usability testing
+  - Domain modeling
+  - API design
+  - Accessibility audits
+  - Stakeholder facilitation
+  - Experiment analysis
+
+languages:
+  English: 60
+  Spanish: 35
+  French: 25
+
+body:
+  Experience:
+    -
+      start: 2022
+      end: Present
+      title: Principal Design Technologist
+      title_link: https://spectrumlabs.design/systems
+      company: Spectrum Labs
+      company_link: https://spectrumlabs.design
+      description: |
+        - Led a multi-brand design system spanning **9 product surfaces**, cutting duplicated UI components by 63%.
+        - Delivered adaptive palette tokens tied to WCAG rules and experiment dashboards measuring real-time impact.
+      tech_stack: TypeScript, React, Styled Components, Figma API, Python, PostgreSQL
+    -
+      start: 2018
+      end: 2022
+      title: Senior UX Engineer
+      company: Aurora Analytics
+      company_link: https://auroraanalytics.io
+      description: |
+        - Built a prototyping toolkit that shipped production-ready React components in under a day.
+        - Codified reviews for **12 product squads** and removed 140+ accessibility violations with automated testing.
+      tech_stack: React, TypeScript, Jest, Storybook, Webpack, Node.js
+  Projects:
+    -
+      start: 2024
+      end: 2024
+      title: Adaptive Palette Generator
+      title_link: https://github.com/caseypalette/adaptive-palettes
+      company: Personal Project
+      description: |
+        - Built theme variants that auto-adjust contrast from ambient light with a CLI + Figma plugin used by 500+ designers.
+        - **Tech Stack:** Python, FastAPI, TypeScript, WebGL, Figma Plugin API
+    -
+      start: 2023
+      end: 2023
+      title: Voice of Customer Pipeline
+      company: Open Source Collective
+      company_link: https://github.com/caseypalette/voc-pipeline
+      description: |
+        - Created a text analytics pipeline processing 1.2M support tickets with topic modeling and sentiment scoring.
+        - **Tech Stack:** Python, spaCy, dbt, BigQuery, Looker.
+  "Awards & Honors":
+    -
+      start: 2023
+      end: 2023
+      title: UX Awards — Best Systems Initiative
+      company: DesignOps Summit
+      description: |
+        - Recognized for establishing Spectrum Labs' cross-product design system and measurable governance model.
+    -
+      start: 2022
+      end: 2022
+      title: Webby Awards — People’s Voice (Productivity)
+      company: The Webby Awards
+      description: |
+        - Led design technology efforts for Aurora Analytics' workspace, earning top community honors.
+  Publications:
+    -
+      start: 2022
+      end: 2022
+      title: Designing Color Systems for Accessibility
+      title_link: https://medium.com/@caseypalette/color-systems-accessibility
+      company: Medium
+      description: |
+        - Published article on measurable palette contrast testing with live token previews.
+    -
+      start: 2021
+      end: 2021
+      title: Measuring Design Impact with Product Analytics
+      company: Design Leadership Forum
+      description: |
+        - Authored a community whitepaper on design impact metrics adopted by 10+ SaaS organizations.
+  "Speaking Engagements":
+    -
+      start: 2024
+      end: 2024
+      title: Keynote — Measuring Design Impact
+      company: ColorConf
+      description: |
+        - Presented a playbook linking palette ops to product analytics with adoption metrics.
+    -
+      start: 2023
+      end: 2023
+      title: Workshop — Accessible Theming in Practice
+      company: Config by Figma
+      description: |
+        - Led a 3-hour lab on evaluating color tokens with live code sandboxes.
+  "Volunteer Service":
+    -
+      start: 2021
+      end: Present
+      title: Mentor — Inclusive Design
+      company: ADPList
+      description: |
+        - Mentored 60+ early-career designers on accessibility-first workflows and storytelling.
+    -
+      start: 2020
+      end: Present
+      title: Organizer — Civic Tech Nights
+      company: Austin Design Week
+      description: |
+        - Coordinate quarterly hack nights delivering pro-bono UX for local nonprofits.
+  Education:
+    -
+      start: 2014
+      end: 2018
+      title: B.S. Human-Centered Design
+      company: University of Texas at Austin
+      description: |
+        - Capstone on adaptive interfaces and inclusive research practices.
+
+config:
+  color_scheme: generator dusk
+  palette:
+    source: generator
+    type: hcl
+    size: 5
+    seed: 1957
+    hue_range: [260, 330]
+    luminance_range: [0.25, 0.78]
+    chroma: 0.18
+
+  padding: 12 
+  page_width: 210
+  page_height: 297
+  sidebar_width: 60
+  sidebar_padding_top: 5
+  profile_image_padding_bottom: 6
+  pitch_padding_top: 0
+  pitch_padding_bottom: 4
+  pitch_padding_left: 4
+  h2_padding_left: 4
+  h3_padding_top: 5
+  date_container_width: 12
+  date_container_padding_left: 6
+  description_container_padding_left: 2
+  frame_padding: 10
+  frame_color: "#757575"

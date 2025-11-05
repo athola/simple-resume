@@ -1,0 +1,120 @@
+/* PDF-specific styles and WeasyPrint workarounds */
+
+/* Define page size and margins for WeasyPrint with sidebar support */
+@page {
+  size: var(--page-width, 210mm) var(--page-height, 297mm);
+  margin: 0;
+  margin-left: var(--sidebar-width, 60mm);
+
+  /* Place sidebar content in left margin box on every page */
+  @left-middle {
+    content: element(sidebar);
+    width: var(--sidebar-width, 60mm);
+    background-color: var(--sidebar-color, #F6F6F6);
+  }
+}
+
+.page {
+  width: var(--page-width, 210mm);
+  min-height: var(--page-height, 297mm);
+
+  /* WeasyPrint z-index workaround: use gradient for sidebar background
+     instead of positioned div with background-color */
+  background: linear-gradient(
+    to right,
+    var(--sidebar-color, #F6F6F6) var(--sidebar-width, 60mm),
+    white var(--sidebar-width, 60mm)
+  );
+
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+.sidebar-container {
+  /* Use running element to repeat sidebar on every page */
+  position: running(sidebar);
+  width: var(--sidebar-width, 60mm);
+  margin: 0;
+  padding: 0;
+}
+
+/* Sidebar Content */
+.sidebar {
+  padding-top: var(--padding, 12mm);
+  padding-bottom: var(--padding, 12mm);
+  padding-left: var(--padding, 12mm);
+  padding-right: var(--padding, 12mm);
+  overflow: visible;
+  background-color: var(--sidebar-color, #F6F6F6);
+}
+
+/* Body Content Area - uses margin to avoid sidebar, flows naturally */
+.body {
+  margin-left: var(--sidebar-width, 60mm);
+  width: calc(var(--page-width, 210mm) - var(--sidebar-width, 60mm));
+  min-height: var(--page-height, 297mm);
+  position: relative;
+}
+
+/* Create vertical edge line extending to bottom of each page */
+.body::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--date-container-width, 13mm) + var(--date-container-padding-left, 8mm) + var(--description-container-padding-left, 3mm));
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--sidebar-color, #F6F6F6);
+  z-index: -1;
+}
+
+/* Body spacers don't need to clear anything since sidebar is absolutely positioned */
+.body .spacer {
+  clear: left;
+}
+
+@media print {
+  /* Allow content to break naturally across pages, but keep logical groupings together */
+  .skill-container, .contact-container {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Allow section headings to break from their content if needed for better flow */
+  h2.section-heading {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  /* Keep description blocks together when possible, but allow breaking if necessary */
+  .description {
+    orphans: 2;
+    widows: 2;
+  }
+
+  /* Prevent awkward breaks in the middle of heading rows */
+  .heading-row {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Keep date and description containers on the same page when reasonable */
+  .content {
+    page-break-inside: auto;
+    break-inside: auto;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+/* WeasyPrint limitations (2024):
+   - Z-index issues (fixed with gradient workaround)
+   - Limited flexbox support
+   - No CSS Grid support
+   - Custom properties can be buggy in calc()
+   - :has(), :where(), :is() not supported
+*/

@@ -1,0 +1,232 @@
+template: resume_with_bars
+full_name: Casey Twhpl
+job_title: Product Strategist
+address:
+- 101 Color Way
+- Austin, TX
+phone: (512) 555-7405
+email: casey.twhpl.ean9dbvf@example.com
+web: https://caseytwhpl.dev
+linkedin: in/casey-twhpl-qwow
+github: caseytwhpl
+titles:
+  contact: Contact
+  skills: Skills
+  expertise: Strengths
+  certification: Certifications
+  programming: Technical Tooling
+  keyskills: Key Skills
+  languages: Languages
+description: 'Cndvbh yzzqzu cljjow lmygfl gmoslw gdqzzx dghgjm bgpvsk. Cfqmxp qwvybm
+  kaxgcg qmfzlo gaohac kqhres ldtkeb iuojrf tmccib mghvgk knfqnd wwowze.
+
+
+  Fcxenl bjgaau klskab gzffgh vmphxa hqtipr ikcawa jwsgwe dkhxdp vkbfvr floztl zpezfn
+  tggbdw. Zrqqvv jxdnau fyphub mxxdqm slhzgd tvldyu nphrvp rbiaud kghher dkwrep tttlye.'
+skills:
+  UI/UX Design: 55
+  Frontend Development: 48
+  Design Systems: 52
+  Prototyping: 46
+  User Research: 42
+  Data Visualization: 38
+expertise:
+  Product Strategy:
+  - Journey mapping
+  - Experiment design
+  - Outcome-based roadmaps
+  Delivery:
+  - Design systems
+  - Rapid prototyping
+  - Continuous discovery
+  Research & Analytics:
+  - Field studies
+  - Accessibility audits
+  - Funnel analytics
+  - Funnel analytics
+certification:
+- Certified DesignOps Professional
+- Accessibility Auditor (Level II)
+- ScrumMaster (PSM I)
+programming:
+  Prototyping:
+  - TypeScript
+  - React
+  - WebGL
+  Data & Automation:
+  - Python
+  - dbt
+  - SQL
+  Infrastructure:
+  - Terraform
+  - GitHub Actions
+  - Docker
+keyskills:
+- Service blueprints
+- Usability testing
+- Domain modeling
+- API design
+- Accessibility audits
+- Stakeholder facilitation
+- Experiment analysis
+languages:
+  English: 60
+  Spanish: 35
+  French: 25
+body:
+  Experience:
+  - start: 2022
+    end: Present
+    title: Principal Design Technologist
+    title_link: https://spectrumlabs.design/systems
+    company: Spectrum Labs
+    company_link: https://spectrumlabs.design
+    description: '- Xgojwi zfccbc pcvjue zlolxw lztqdw asiqva bdwctf hxgwsl fgoyge.
+
+      - Ndyyei pfastn rwdntm atdthm fxambp ptkfqd ttfjlk conrne.
+
+      - Gzrpkw rxjssq gqhxgw mwutwk bpfflh brldof hvorib fnlqgu.'
+    tech_stack: TypeScript, React, Styled Components, Figma API, Python, PostgreSQL
+  - start: 2018
+    end: 2022
+    title: Senior UX Engineer
+    company: Aurora Analytics
+    company_link: https://auroraanalytics.io
+    description: '- Xtawqc vrfjbf xwpkaa iktkzp kgfira qutmky gfbsmy ngljtj.
+
+      - Nwylgy ndukqg oyqiix gkwbdw tbuqod rwwtot.
+
+      - Oobxqj kngmaw vqzebj jlduer jmkvug zqjbrt.'
+    tech_stack: React, TypeScript, Jest, Storybook, Webpack, Node.js
+  Projects:
+  - start: 2024
+    end: 2024
+    title: Adaptive Palette Generator
+    title_link: https://github.com/caseypalette/adaptive-palettes
+    company: Personal Project
+    description: '- Igorvs fsvebe afqrel snrnly sgvdun vylzbn vuoxne.
+
+      - Ydoaxi qijbmb mgsjvd mxzqgd bfqavn bwibcm vnelxn npkrhc.'
+  - start: 2023
+    end: 2023
+    title: Voice of Customer Pipeline
+    company: Open Source Collective
+    company_link: https://github.com/caseypalette/voc-pipeline
+    description: '- Fgozqv gbxqii fabanm epmcoe xswlri yburje pctcsf keoxny pmpyxi.
+
+      - Nyilga pbtkny xkzbdu aipwhg phtpkw vsjiou vthjjc.'
+  Awards & Honors:
+  - start: 2023
+    end: 2023
+    title: "UX Awards \u2014 Best Systems Initiative"
+    company: DesignOps Summit
+    description: '- Axxvnd odsebe dxmpaq grqwij apdegl fxrhqf fjvjtc.
+
+      - Xlyzet zejwcv vtzzps ccvhsl ligwnm pjmhum.
+
+      - Brmucc aorors ufezob fypmam zyvugl oitbec.'
+  - start: 2022
+    end: 2022
+    title: "Webby Awards \u2014 People\u2019s Voice (Productivity)"
+    company: The Webby Awards
+    description: '- Kgcmba tjyiuz cjjums afdomu kklnvd oyhtic vfuphv.
+
+      - Fyzzou hrwhbi jrxoik kandgl slztyo epikst wvnflz vtziup.
+
+      - Clyksg weemph pnbhca abnhrj jrfsrc hptcqe.'
+  Publications:
+  - start: 2022
+    end: 2022
+    title: Designing Color Systems for Accessibility
+    title_link: https://medium.com/@caseypalette/color-systems-accessibility
+    company: Medium
+    description: '- Rsfshd ycwsqy yicome rxetds mpadij llypsq.
+
+      - Jsfyyt rpkspx apvqvr kdxejj bnshjc rdayof avdgfj vmfbet.'
+  - start: 2021
+    end: 2021
+    title: Measuring Design Impact with Product Analytics
+    company: Design Leadership Forum
+    description: '- Pzpouk ywbhlc itcdwy cquvqv jwkgbv hsivwu jutvur btaiwl vcckjg.
+
+      - Avxqfn ibmnid gzhaca tyamru popbdw yqkrzz hfebdz yjguzs.
+
+      - Vtctit hawmet cjqzyp xxnstg wdipev jjrjgn zlpnzb.'
+  Speaking Engagements:
+  - start: 2024
+    end: 2024
+    title: "Keynote \u2014 Measuring Design Impact"
+    company: ColorConf
+    description: '- Dbkwzr lujnqr mkgczj ipmatx vrmjjo mxjfyk.
+
+      - Uxmgsa wckduk togimw avhglv kblyvp cmylro urrbch.'
+  - start: 2023
+    end: 2023
+    title: "Workshop \u2014 Accessible Theming in Practice"
+    company: Config by Figma
+    description: '- Pxsgff iinumz iaamob jwxcud qedbyp fioowf eygxyl gzvhbg imtoll.
+
+      - Eccxlh yqautl vdctae apcjir uwemdz nqahin imysfl ctesva eclfnu.
+
+      - Obeuud pgmeli yywicl msawcd nbvary szkuil dzipec cwvplr onswey.'
+  Volunteer Service:
+  - start: 2021
+    end: Present
+    title: "Mentor \u2014 Inclusive Design"
+    company: ADPList
+    description: '- Lxjowe edncob icffgp vyegyj noxrtc xgfofj lpjlpr gsfzyh gwsend.
+
+      - Hnaeho pziszs hjudfv xusqvz syihzw lkfgwb lhkwnz ktexct ktdgli.'
+  - start: 2020
+    end: Present
+    title: "Organizer \u2014 Civic Tech Nights"
+    company: Austin Design Week
+    description: '- Rjzhxd ybrnwe nhpvce onbqvy bkhdsi rvzfkc ebhaeb rnyjkg dirmki.
+
+      - Iwlaiu hmvdfb ihtnhp dqbjba buwpvx iowral.
+
+      - Byltoz kfcgcu ofdwfs oluntz ptrlgn nuvlkq jthugt.'
+  Education:
+  - start: 2014
+    end: 2018
+    title: B.S. Human-Centered Design
+    company: University of Texas at Austin
+    description: '- Emsowp iizsze yjipss qlcnxs lnvzdu mzdyuw vmpzyv mdutnl kgjqve.
+
+      - Qinrcp udtszh ykiegg qzwnpt zjffoz pqfkzv vwqlzg oowlzg.'
+config:
+  color_scheme: GrayC_11
+  palette:
+    source: generator
+    type: hcl
+    size: 5
+    seed: 1957
+    hue_range:
+    - 260
+    - 330
+    luminance_range:
+    - 0.25
+    - 0.78
+    chroma: 0.18
+  padding: 12
+  page_width: 210
+  page_height: 297
+  sidebar_width: 60
+  sidebar_padding_top: 6
+  profile_image_padding_bottom: 6
+  pitch_padding_top: 0
+  pitch_padding_bottom: 4
+  pitch_padding_left: 4
+  h2_padding_left: 4
+  h3_padding_top: 5
+  date_container_width: 13
+  date_container_padding_left: 8
+  description_container_padding_left: 3
+  frame_padding: 10
+  frame_color: '#767676'
+  output_mode: markdown
+  theme_color: '#FFFFFF'
+  sidebar_color: '#E2E2E2'
+  sidebar_text_color: '#C6C6C6'
+  bar_background_color: '#ACACAC'
+  date2_color: '#919191'

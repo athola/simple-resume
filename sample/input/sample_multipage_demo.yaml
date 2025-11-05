@@ -1,0 +1,404 @@
+template: resume_with_bars
+
+full_name: Jordan Multipage
+job_title: Principal Solutions Architect
+
+address:
+  - 500 Dual Page Way
+  - Portland, OR 97201
+
+phone: "(503) 555-4404"
+email: jordan.multipage@example.com
+web: https://jordanmultipage.dev
+linkedin: in/jordan-multipage
+github: jordanmultipage
+
+image_uri: images/default_profile_1.jpg
+image_link: https://jordanmultipage.dev
+
+titles:
+  contact: Contact
+  skills: Skills
+  expertise: Focus Areas
+  certification: Certifications
+  programming: Technical Depth
+  keyskills: Core Strengths
+  languages: Languages
+
+description: |
+  **Multi-page demo resume** showcasing how Simple-Resume flows content across multiple
+  pages with comprehensive sections including experience, projects, publications, speaking
+  engagements, awards, and community contributions. This demo validates *all supported
+  features*: profile images, skill bars, nested lists, Markdown formatting, hyperlinks,
+  tech stacks, and custom color schemes. Perfect for testing page breaks, spacing, and
+  CLI metadata reporting.
+
+skills:
+  Cloud Architecture: 55
+  Platform Engineering: 52
+  Product Strategy: 50
+  Data Platforms: 48
+  Developer Experience: 45
+  Technical Writing: 42
+  Reliability Engineering: 44
+  Security Architecture: 46
+
+expertise:
+  Platform Foundations:
+    - Multi-region tenancy patterns
+    - Reliability architecture
+    - Incident response programs
+  Product Scaling:
+    - Usage analytics
+    - Pricing migrations
+    - Rollout experimentation
+  Leadership:
+    - Staff augmentation plans
+    - Engineering ladders
+    - Coaching guilds
+    - Architecture councils
+  Community Enablement:
+    - Internal conferences
+    - Documentation guilds
+    - Enablement roadshows
+
+certification:
+  Cloud Architecture:
+    - AWS Solutions Architect Pro
+    - GCP Cloud Architect Pro
+  Platform Strategy:
+    - Pragmatic Product Strategy
+    - FinOps Certified Practitioner
+    - SRE Practitioner
+  Coaching:
+    - ICF Associate Certified Coach
+
+programming:
+  Platform:
+    - Go
+    - Rust
+    - Python
+  Frontend:
+    - TypeScript
+    - React
+    - Astro
+    - Vue
+  Data:
+    - SQL
+    - dbt
+    - Spark
+    - Dagster
+  Automation:
+    - Terraform
+    - Pulumi
+    - Ansible
+  Scripting:
+    - Bash
+    - Ruby
+    - PowerShell
+
+keyskills:
+  - Multi-cloud governance
+  - Cost optimization playbooks
+  - Observability platform design
+  - Executive storytelling
+  - Internal developer platforms
+  - API lifecycle management
+  - Migration runbooks
+  - Remote-first team building
+  - Compliance partnerships
+  - Incident retrospectives
+
+languages:
+  English: 60
+  Spanish: 35
+  Portuguese: 25
+  French: 22
+  German: 18
+
+body:
+  Experience:
+    -
+      start: 2021
+      end: Present
+      title: Principal Solutions Architect
+      title_link: https://northwindcloud.example.com/platform
+      company: Northwind Cloud
+      company_link: https://northwindcloud.example.com
+      description: |
+        - Defined the **five-year platform roadmap** spanning provisioning, observability, and compliance guardrails while shipping quarterly milestones
+        - Partnered with finance to build FinOps dashboards, cutting wasteful spend by **22%** without slowing delivery or experimentation velocity
+        - Led cross-functional initiatives coordinating 8 product teams and 60+ engineers across cloud infrastructure modernization efforts
+        - Established platform SLOs achieving **99.95% uptime** across 12 critical services supporting 2M+ daily active users
+        - Architected multi-region disaster recovery strategy reducing RTO from 4 hours to 15 minutes and RPO from 1 hour to 5 minutes
+        - Championed developer experience improvements decreasing average PR cycle time by **40%** through automated testing and deployment pipelines
+
+      tech_stack: Go, Terraform, Kubernetes, Argo CD, Python, BigQuery, Looker, Datadog, PagerDuty
+    -
+      start: 2018
+      end: 2021
+      title: Senior Platform Lead
+      company: Meridian Analytics
+      company_link: https://meridian-analytics.example.com
+      description: |
+        - Modernized the ingestion mesh handling **1.8B events/day** with zero unplanned downtime post-launch
+        - Introduced staged feature flags and automated change windows, cutting rollback incidents by **68%** while scaling the team from 4 to 19 engineers
+        - Built real-time data quality monitoring detecting anomalies within 30 seconds, preventing **$2.3M** in potential data loss incidents
+        - Drove migration from monolithic batch processing to event-driven streaming architecture improving data freshness from hours to seconds
+        - Implemented comprehensive observability stack providing end-to-end visibility across 200+ microservices and data pipelines
+        - Mentored 6 engineers to senior+ levels through structured career development plans and technical leadership opportunities
+
+      tech_stack: Python, Rust, Kafka, Kubernetes, Helm, dbt, Terraform, Apache Flink, Prometheus, Grafana
+    -
+      start: 2015
+      end: 2018
+      title: Staff Software Engineer
+      company: Vector Labs
+      company_link: https://vectorlabs.example.com
+      description: |
+        - Architected a unified customer identity graph with contract testing across **60+ services**, improving deployment success to 99.3%
+        - Built a developer curriculum focused on platform primitives and secure defaults adopted by 11 product teams serving 5M+ customers
+        - Designed and implemented distributed caching layer reducing API response times by **85%** and database load by 70%
+        - Led technical interviews and established engineering leveling framework scaling hiring from 20 to 80 engineers over 3 years
+        - Pioneered chaos engineering practices and game day exercises improving incident response times by **55%**
+
+      tech_stack: Go, gRPC, PostgreSQL, Redis, Jenkins, Vault, Consul, Elasticsearch
+    -
+      start: 2013
+      end: 2015
+      title: Senior Software Engineer
+      company: CloudScale Systems
+      description: |
+        - Developed core billing and metering infrastructure processing **$45M ARR** across 1,200+ enterprise customers
+        - Implemented automated reconciliation system reducing billing discrepancies by **92%** and saving 200+ hours monthly in manual reviews
+        - Built RESTful APIs and webhooks enabling seamless integration with Salesforce, NetSuite, and custom enterprise systems
+        - Optimized database queries and indexes reducing report generation time from 15 minutes to under 30 seconds
+
+      tech_stack: Ruby on Rails, PostgreSQL, Redis, Sidekiq, AWS, Docker
+  Strategic Initiatives:
+    -
+      start: 2024
+      end: 2024
+      title: Unified Access Platform
+      company: Northwind Cloud
+      description: |
+        - Consolidated IAM, policy, and network segmentation into a centrally managed platform adopted by every product BU
+        - Authored control objectives, architecture decision records, and a **security champion program** for 16 teams with a **41%** reduction in audit findings
+        - Implemented zero-trust architecture principles reducing attack surface and achieving SOC 2 Type II compliance
+        - Established automated policy-as-code framework enabling self-service access management for 200+ engineering teams
+
+      tech_stack: Go, Open Policy Agent, Vault, AWS IAM, Terraform, PostgreSQL
+    -
+      start: 2023
+      end: 2023
+      title: Consumption Pricing Migration
+      company: Northwind Cloud
+      description: |
+        - Guided product, finance, and engineering leaders through scenario modeling for migrating ten SKUs to usage-based billing
+        - Led the cross-functional tiger team delivering meter aggregation, entitlement APIs, and customer dashboards to enable a net-new **$18M ARR** stream
+        - Built real-time usage tracking and billing preview system processing 500M+ metering events daily with sub-second latency
+        - Designed customer-facing analytics dashboards providing cost forecasting and optimization recommendations
+
+      tech_stack: Python, Kafka, PostgreSQL, TimescaleDB, React, D3.js, Stripe API
+
+  Projects:
+    -
+      start: ""
+      end: 2024
+      title: CloudConfig - Multi-Cloud Configuration Manager
+      title_link: https://github.com/jordanmultipage/cloudconfig
+      company: Open Source
+      company_link: https://github.com/jordanmultipage
+      description: |
+        Created a unified configuration management tool supporting AWS, GCP, and Azure with **2,500+ GitHub stars** and active community of 50+ contributors.
+
+        - Designed declarative YAML-based config format enabling infrastructure-as-code practices across cloud providers
+        - Implemented drift detection and auto-remediation reducing configuration inconsistencies by **95%**
+        - Built plugin architecture supporting custom validators and compliance rules
+        - Achieved **92% test coverage** with comprehensive integration testing across all major cloud providers
+
+        **Tech Stack:** Go, Terraform, AWS SDK, GCP SDK, Azure SDK, GitHub Actions, Docker
+    -
+      start: ""
+      end: 2023
+      title: MetricsFlow - Time-Series Data Pipeline
+      title_link: https://github.com/jordanmultipage/metricsflow
+      company: Personal Project
+      description: |
+        Developed high-performance time-series data pipeline processing **10M+ metrics per second** with automated anomaly detection.
+
+        - Implemented custom storage engine optimized for time-series data reducing storage costs by **70%**
+        - Built ML-powered anomaly detection using isolation forests and LSTM networks achieving 94% accuracy
+        - Created intuitive query DSL and REST API enabling seamless integration with visualization tools
+        - Deployed on Kubernetes with horizontal auto-scaling supporting elastic workload patterns
+
+        **Tech Stack:** Rust, Python, PostgreSQL, Redis, TensorFlow, Kubernetes, Grafana
+    -
+      start: ""
+      end: 2022
+      title: DevPortal - Internal Developer Platform
+      company: Collaboration with Meridian Analytics
+      description: |
+        Co-created internal developer portal streamlining service creation, deployment, and lifecycle management for **19 engineering teams**.
+
+        - Built service catalog with automated dependency tracking and impact analysis
+        - Integrated with CI/CD pipelines providing one-click deployment to staging and production environments
+        - Developed self-service APIs enabling teams to provision databases, queues, and other infrastructure in under 5 minutes
+
+        **Tech Stack:** React, TypeScript, Node.js, GraphQL, Kubernetes, Helm, ArgoCD
+
+  Publications:
+    -
+      start: 2024
+      end: 2024
+      title: Beyond the First Page — Designing Sustainable Platform Programs
+      title_link: https://jordanmultipage.dev/beyond-the-first-page
+      company: Platform Futures Journal
+      description: |
+        Long-form essay on balancing discovery, delivery, and enablement tracks as platform teams scale past 100 engineers. Featured in *InfoQ* and discussed across 50+ engineering leader Slack channels reaching 10,000+ readers.
+
+        - Introduced the "Platform Product Triad" framework adopted by 8 Fortune 500 companies
+        - Provided actionable metrics for measuring platform adoption, developer satisfaction, and business impact
+    -
+      start: 2024
+      end: 2024
+      title: From Monolith to Mesh — A Pragmatic Migration Strategy
+      title_link: https://jordanmultipage.dev/monolith-to-mesh
+      company: Software Architecture Quarterly
+      description: |
+        Technical deep-dive on incremental modernization strategies combining strangler fig patterns, feature flags, and data synchronization.
+
+        - Case study showing **70% reduction** in deployment risk through phased rollout approach
+        - Includes practical decision trees for service boundary identification
+    -
+      start: 2023
+      end: 2023
+      title: Measuring Developer Experience with Outcome Metrics
+      company: Pragmatic DX
+      company_link: https://pragmaticdx.example.com
+      description: |
+        Research-backed article synthesizing survey data from 500+ developers, qualitative interviews, and product telemetry patterns to establish concrete DX measurement frameworks.
+
+        - Proposed DORA-inspired metrics specifically tailored for platform engineering teams
+        - Cited in 25+ engineering blogs and used as training material at major tech companies
+
+  Speaking:
+    -
+      start: 2024
+      end: 2024
+      title: Keynote — Sustaining Platform Bets
+      company: Platform Practitioners Summit
+      company_link: https://platformpractitioners.example.com
+      description: |
+        Shared case studies on aligning executive sponsorship, engineering throughput, and developer delight metrics with **450+ attendees** from platform teams at Stripe, Shopify, Netflix, and others.
+
+        - Demonstrated practical ROI models for platform investments
+        - Provided templates for stakeholder communication and quarterly planning
+    -
+      start: 2024
+      end: 2024
+      title: Workshop — FinOps for Platform Engineers
+      company: Cloud Cost Summit
+      description: |
+        Led hands-on 3-hour workshop teaching cost optimization techniques achieving **30-50%** cloud spend reductions without performance degradation.
+
+        - Covered practical strategies for resource rightsizing, spot instance adoption, and reservation planning
+        - Provided attendees with custom tooling and dashboard templates
+    -
+      start: 2023
+      end: 2023
+      title: Panel — Building Resilient Multi-Cloud Architectures
+      company: ResilienceCon
+      description: |
+        Discussed capacity planning, cost controls, and resilient design patterns with peers from global SaaS providers serving 100M+ users.
+
+  Awards & Recognition:
+    -
+      start: ""
+      end: 2024
+      title: Technical Leadership Award
+      company: Northwind Cloud
+      description: |
+        Recognized for outstanding contributions to platform engineering excellence and cross-team collaboration impacting 200+ engineers and 5M+ end users.
+    -
+      start: ""
+      end: 2023
+      title: Top 50 Platform Engineering Voices
+      company: DevOps Institute
+      description: |
+        Selected as one of 50 influential voices advancing the practice and profession of platform engineering globally.
+    -
+      start: ""
+      end: 2022
+      title: Innovation Excellence Award
+      company: Meridian Analytics
+      description: |
+        Awarded for pioneering event-driven architecture transformation reducing data latency by **95%** and enabling new real-time analytics products.
+
+  Community & Volunteering:
+    -
+      start: 2022
+      end: Present
+      title: Technical Mentor
+      company: Code2040
+      company_link: https://code2040.org
+      description: |
+        Mentored **12 early-career engineers** from underrepresented backgrounds in software architecture, career development, and technical leadership through structured 6-month programs.
+
+        - Guided mentees through system design challenges, code reviews, and interview preparation
+        - 10 of 12 mentees successfully transitioned to senior engineering roles or tech lead positions
+    -
+      start: 2021
+      end: Present
+      title: Conference Program Committee Member
+      company: Platform Engineering Conference
+      description: |
+        Reviewed 200+ talk proposals and helped curate technical programming for annual conference attracting 2,000+ platform practitioners worldwide.
+
+        - Championed diversity in speaker selection achieving 40% representation from underrepresented groups
+        - Provided detailed feedback to speakers improving talk quality and attendee satisfaction scores by **25%**
+    -
+      start: 2020
+      end: 2023
+      title: Open Source Maintainer
+      company: Cloud Native Computing Foundation
+      description: |
+        Contributed 500+ commits to CNCF projects including Kubernetes, Prometheus, and Envoy focusing on observability and platform tooling improvements.
+
+        - Implemented feature enhancements adopted by 10,000+ organizations
+        - Triaged and resolved 150+ community-reported issues
+
+  Education:
+    -
+      start: 2005
+      end: 2009
+      title: B.S. Computer Science
+      company: Oregon State University
+      description: Magna Cum Laude, Honors College, Human-Computer Interaction minor.
+    -
+      start: 2011
+      end: 2012
+      title: Graduate Certificate, Systems Engineering
+      company: MIT xPro
+      description: Focus on large-scale systems design, resilience, and risk analysis.
+
+config:
+  theme_color: "#3652F3"
+  sidebar_color: "#F4F6FD"
+  bar_background_color: "#E0E3F8"
+  sidebar_width: 58
+  padding: 12
+  page_width: 210
+  page_height: 297
+  sidebar_padding_top: 5
+  profile_image_padding_bottom: 6
+  pitch_padding_top: 0
+  pitch_padding_bottom: 4
+  pitch_padding_left: 4
+  h2_padding_left: 4
+  h3_padding_top: 5
+  date_container_width: 13
+  date_container_padding_left: 8
+  description_container_padding_left: 3
+  frame_padding: 10
+  frame_color: "#4A4A4A"

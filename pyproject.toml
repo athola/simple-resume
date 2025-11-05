@@ -13,7 +13,7 @@ addopts = [
     "--strict-config",
     "--verbose",
     "--tb=short",
-    "--cov=src/easyresume",
+    "--cov=src/simple_resume",
     "--cov-report=term-missing",
     "--cov-report=html:htmlcov",
     "--cov-report=xml",
@@ -29,7 +29,7 @@ markers = [
 ]
 
 [project]
-name = "easyresume"
+name = "simple-resume"
 version = "0.1.0"
 description = "Generate PDF resumes from YAML data using HTML templates"
 authors = [
@@ -40,12 +40,13 @@ maintainers = [
 ]
 license = {text = "MIT"}
 readme = "README.md"
-repository = "https://github.com/athola/easyresume"
+repository = "https://github.com/athola/simple-resume"
 requires-python = ">=3.10"
 dependencies = [
     "markdown>=3.7.0",
-   "oyaml>=1.0",
-   "weasyprint>=66.0",
+    "oyaml>=1.0",
+    "weasyprint>=66.0",
+    "palettable>=3.3.3",
 ]
 
 [project.optional-dependencies]
@@ -61,13 +62,18 @@ utils = [
 ]
 
 [project.scripts]
-generate-pdf = "easyresume.generate_pdf:main"
-generate-html = "easyresume.generate_html:main"
+simple-resume = "simple_resume.cli:main"
+
+# Palette utilities
+palette-snapshot = "simple_resume.palettes.cli:snapshot"
+palette-list = "simple_resume.palettes.cli:list"
+generate-random-palette-demo = "simple_resume.cli_random_palette_demo:main"
 
 [tool.hatch.build]
 include = [
-    "src/easyresume/templates/**/*",
-    "src/easyresume/static/**/*",
+    "src/simple_resume/templates/**/*",
+    "src/simple_resume/static/**/*",
+    "src/simple_resume/palettes/**/*",
 ]
 
 [dependency-groups]
@@ -78,17 +84,19 @@ dev = [
     "pre-commit>=4.3.0",
     "pytest>=8.4.2",
     "pytest-cov>=7.0.0",
+    "beautifulsoup4>=4.12.3",
     "ty>=0.0.1a23",
     "safety>=3.6.2",
+    "pdf2image>=1.17.0",
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/easyresume"]
+packages = ["src/simple_resume"]
 
 [tool.ruff]
 line-length = 88
 target-version = "py310"
-exclude = [".venv", ".uv-cache", "src/easyresume/static", "src/easyresume/templates"]
+exclude = [".venv", ".uv-cache", "src/simple_resume/static", "src/simple_resume/templates"]
 
 [tool.ruff.lint]
 # Rules: https://docs.astral.sh/ruff/rules/
@@ -126,6 +134,12 @@ extend-ignore = [
     "RUF002",   # Allow unicode characters in docstrings
     "RUF003",   # Allow unicode characters in comments
     "S101",     # Allow assert statements in tests
+    "D100",     # Relax docstring requirements for test modules
+    "D101",     # Relax docstring requirements for test classes
+    "D102",     # Relax docstring requirements for test methods
+    "D103",     # Relax docstring requirements for test functions
+    "D107",     # Relax docstring requirements for test __init__
+    "D202",     # Allow blank lines after docstrings in tests
 ]
 
 [tool.ruff.format]
