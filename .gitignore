@@ -60,6 +60,7 @@ resume_private/output/
 *.html
 *.tex
 !src/simple_resume/templates/*.html
+!src/simple_resume/templates/latex/*.tex
 
 # Preview images (but keep main preview.jpg/png for README)
 *preview_new*
