@@ -4,36 +4,35 @@ This guide outlines the process for preparing, building, and publishing Simple-R
 
 ## Prerequisites
 
--   Python 3.12
--   `uv` installed globally
--   A PyPI account with access to the project
--   A clean git status
+- Python 3.12
+- `uv` (globally installed)
+- PyPI account with project access
+- Clean git status
 
 ## Versioning
 
-We use [Semantic Versioning](https://semver.org/). Before a release, update the version in `pyproject.toml` and `CHANGELOG.md`.
+We use [Semantic Versioning](https://semver.org/). Before a release, update the
+version in `pyproject.toml` and `CHANGELOG.md`.
 
 ## Release Checklist
 
-1.  **Freeze features**: Merge the release branch.
-2.  **Update artifacts**:
-    -   `CHANGELOG.md`
-    -   `README.md`
-    -   `assets/preview.jpg` (if the UI has changed)
-3.  **Bump the version**:
-    ```bash
-    # You can do this manually in pyproject.toml
-    # or with a script if we add one.
-    ```
-4.  **Regenerate the lockfile** (if dependencies have changed):
+1. **Freeze features**: Merge the release branch.
+2. **Update artifacts**: `CHANGELOG.md`, `README.md`, `assets/preview.jpg` (if UI changed).
+3. **Bump the version**: Manually update `pyproject.toml`.
+4. **Regenerate the lockfile** (if dependencies changed):
+
     ```bash
     uv lock --upgrade
     ```
-5.  **Run quality checks**:
+
+5. **Run quality checks**:
+
     ```bash
     make validate
     ```
-6.  **Commit and tag**:
+
+6. **Commit and tag**:
+
     ```bash
     git commit -am "chore: release vX.Y.Z"
     git tag vX.Y.Z
@@ -48,13 +47,13 @@ Build the sdist and wheel:
 uv build
 ```
 
-Check the built packages:
+Check built packages:
 
 ```bash
 uv run twine check dist/*
 ```
 
-Install the wheel in a clean virtual environment and test it:
+Install the wheel in a clean virtual environment and test:
 
 ```bash
 uv venv --python 3.12 --name packaging-smoke
@@ -66,11 +65,11 @@ uv run --venv packaging-smoke simple-resume --help
 
 ### Trusted Publishing (Preferred)
 
-Our GitHub Actions workflow will automatically build and publish the release to PyPI when a new tag is pushed.
+Our GitHub Actions workflow automatically builds and publishes releases to PyPI when a new tag is pushed.
 
 ### Manual Publishing
 
-If you need to publish manually:
+To publish manually:
 
 ```bash
 # Publish to PyPI
@@ -83,14 +82,14 @@ pip install --index-url https://test.pypi.org/simple/ simple-resume==X.Y.Z
 
 ## Post-release Tasks
 
--   Create a GitHub release for the new tag.
--   Close the current milestone and create a new one for the next release.
--   Verify the package metadata on PyPI.
+- Create a GitHub release for the new tag.
+- Close the current milestone; create a new one for the next release.
+- Verify package metadata on PyPI.
 
 ## Automating Future Releases
 
-We plan to automate the release process further by:
+We plan to further automate the release process by:
 
--   Creating a `release` GitHub workflow that triggers on new tags.
--   Configuring trusted publishing in PyPI.
--   Using `uv publish` in the CI pipeline.
+- Creating a `release` GitHub workflow triggered by new tags.
+- Configuring trusted publishing in PyPI.
+- Using `uv publish` in the CI pipeline.

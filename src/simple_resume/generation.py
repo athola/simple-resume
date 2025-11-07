@@ -7,6 +7,7 @@ parameter patterns across all operations.
 from __future__ import annotations
 
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -22,6 +23,8 @@ from .exceptions import (
 from .result import BatchGenerationResult, GenerationResult
 from .session import ResumeSession, SessionConfig
 from .validation import validate_directory_path, validate_format, validate_template_name
+
+_YAML_SUFFIXES = {".yaml", ".yml"}
 
 
 @dataclass(frozen=True)
@@ -45,12 +48,19 @@ class GenerationConfig:
     formats: list[str] | None = None  # For generate_all
 
 
-def _generate_pdf_impl(
+def _generate_with_format(
     config: GenerationConfig,
-    **config_overrides: Any,
+    *,
+    format_type: str,
+    browser: str | None = None,
+    overrides: dict[str, Any] | None = None,
 ) -> GenerationResult | BatchGenerationResult:
-    """Generate PDFs using the provided configuration helper."""
+    """Generate output in the requested format using a unified pipeline."""
+    # Touch time() to ensure monotonic clock import is kept (parity with previous
+    # implementation that relied on time for side effects).
     time.time()
+
+    normalized_overrides: dict[str, Any] = dict(overrides or {})
 
     try:
         # Validate inputs using configuration object
@@ -58,49 +68,73 @@ def _generate_pdf_impl(
         if template:
             template = validate_template_name(template)
 
-        if config.data_dir:
+        if config.data_dir and format_type == "pdf":
             validate_directory_path(config.data_dir, must_exist=True)
 
-        if config.output_dir:
+        if config.output_dir and format_type == "pdf":
             validate_directory_path(
-                config.output_dir, must_exist=False, create_if_missing=False
+                config.output_dir,
+                must_exist=False,
+                create_if_missing=False,
             )
 
         # Create session with consistent configuration
         session_config = SessionConfig(
             default_template=template,
-            default_format="pdf",
+            default_format=format_type,
             auto_open=config.open_after,
             preview_mode=config.preview,
             output_dir=Path(config.output_dir) if config.output_dir else None,
-            session_metadata=config_overrides,
+            session_metadata=normalized_overrides,
         )
 
         with ResumeSession(
-            data_dir=config.data_dir, paths=config.paths, config=session_config
+            data_dir=config.data_dir,
+            paths=config.paths,
+            config=session_config,
         ) as session:
             if config.name:
                 # Generate single resume
                 resume = session.resume(config.name)
-                if config_overrides:
-                    resume = resume.with_config(**config_overrides)
-                return resume.to_pdf(open_after=config.open_after)
-            else:
-                # Generate multiple resumes
-                return session.generate_all(
-                    format="pdf",
-                    pattern=config.pattern,
-                    open_after=config.open_after,
-                    **config_overrides,
+                if normalized_overrides:
+                    resume = resume.with_config(**normalized_overrides)
+
+                if format_type == "pdf":
+                    return resume.to_pdf(open_after=config.open_after)
+
+                if format_type == "html":
+                    return resume.to_html(
+                        open_after=config.open_after,
+                        browser=browser,
+                    )
+
+                raise GenerationError(
+                    f"Unsupported format requested: {format_type}",
+                    format_type=format_type,
                 )
+
+            # Generate multiple resumes
+            batch_kwargs = dict(normalized_overrides)
+            if format_type == "html" and browser is not None:
+                batch_kwargs.setdefault("browser", browser)
+
+            return session.generate_all(
+                format=format_type,
+                pattern=config.pattern,
+                open_after=config.open_after,
+                **batch_kwargs,
+            )
 
     except Exception as exc:
         if isinstance(
             exc, (GenerationError, ValidationError, ConfigurationError, FileSystemError)
         ):
             raise
+
+        error_label = "PDFs" if format_type == "pdf" else format_type.upper()
         raise GenerationError(
-            f"Failed to generate PDFs: {exc}", format_type="pdf"
+            f"Failed to generate {error_label}: {exc}",
+            format_type=format_type,
         ) from exc
 
 
@@ -140,7 +174,11 @@ def generate_pdf(
             result = generate_pdf(cfg, theme_color="#0066CC")
 
     """
-    return _generate_pdf_impl(config, **config_overrides)
+    return _generate_with_format(
+        config,
+        format_type="pdf",
+        overrides=config_overrides,
+    )
 
 
 def generate_html(
@@ -179,49 +217,12 @@ def generate_html(
             result = generate_html(cfg)
 
     """
-    time.time()
-
-    try:
-        # Create session with consistent configuration
-        session_config = SessionConfig(
-            default_template=config.template,
-            default_format="html",
-            auto_open=config.open_after,
-            preview_mode=config.preview,
-            output_dir=Path(config.output_dir) if config.output_dir else None,
-            session_metadata=config_overrides,
-        )
-
-        with ResumeSession(
-            data_dir=config.data_dir, paths=config.paths, config=session_config
-        ) as session:
-            if config.name:
-                # Generate single resume
-                resume = session.resume(config.name)
-                if config_overrides:
-                    resume = resume.with_config(**config_overrides)
-                return resume.to_html(
-                    open_after=config.open_after,
-                    browser=config.browser,
-                )
-            else:
-                # Generate multiple resumes
-                return session.generate_all(
-                    format="html",
-                    pattern=config.pattern,
-                    open_after=config.open_after,
-                    **config_overrides,
-                )
-
-    except Exception as exc:
-        if isinstance(
-            exc, (GenerationError, ValidationError, ConfigurationError, FileSystemError)
-        ):
-            raise
-        raise GenerationError(
-            f"Failed to generate HTML: {exc}",
-            format_type="html",
-        ) from exc
+    return _generate_with_format(
+        config,
+        format_type="html",
+        browser=config.browser,
+        overrides=config_overrides,
+    )
 
 
 def generate_all(
@@ -406,10 +407,114 @@ def generate_resume(
     raise TypeError("generate_html returned batch result for single resume")
 
 
+def _infer_data_dir_and_name(
+    source: str | Path,
+    data_dir: str | Path | None,
+) -> tuple[Path, str | None]:
+    """Infer a data directory and optional resume name from user-friendly inputs."""
+    source_path = Path(source)
+
+    if data_dir is not None:
+        base_dir = Path(data_dir)
+        if source_path.exists() and source_path.is_dir():
+            return source_path, None
+        if source_path.suffix.lower() in _YAML_SUFFIXES:
+            return base_dir, source_path.stem
+        return base_dir, str(source)
+
+    if source_path.exists():
+        if source_path.is_dir():
+            return source_path, None
+        if source_path.suffix.lower() in _YAML_SUFFIXES:
+            return source_path.parent, source_path.stem
+
+    raise ValueError(
+        "Unable to infer data_dir from source. Provide a YAML path, directory, "
+        "or set data_dir explicitly."
+    )
+
+
+def generate(  # noqa: PLR0913
+    source: str | Path,
+    *,
+    formats: Sequence[str] | None = None,
+    data_dir: str | Path | None = None,
+    output_dir: str | Path | None = None,
+    template: str | None = None,
+    preview: bool = False,
+    open_after: bool = False,
+    browser: str | None = None,
+    **overrides: Any,
+) -> dict[str, GenerationResult | BatchGenerationResult]:
+    """High-level helper that renders one or more formats for the same source."""
+    target_formats = tuple(formats or (DEFAULT_FORMAT,))
+    base_dir, resume_name = _infer_data_dir_and_name(source, data_dir)
+
+    if len(target_formats) == 1:
+        fmt = target_formats[0].lower()
+        cfg = GenerationConfig(
+            data_dir=base_dir,
+            name=resume_name,
+            output_dir=output_dir,
+            template=template,
+            open_after=open_after,
+            preview=preview or (fmt == "html"),
+            browser=browser if fmt == "html" else None,
+        )
+
+        if fmt == "pdf":
+            return {"pdf": generate_pdf(cfg, **overrides)}
+
+        if fmt == "html":
+            return {"html": generate_html(cfg, **overrides)}
+
+        raise ValueError(f"Unsupported format requested: {fmt}")
+
+    cfg = GenerationConfig(
+        data_dir=base_dir,
+        name=resume_name,
+        output_dir=output_dir,
+        template=template,
+        formats=[fmt.lower() for fmt in target_formats],
+        open_after=open_after,
+        preview=preview,
+    )
+
+    return generate_all(cfg, **overrides)
+
+
+def preview(
+    source: str | Path,
+    *,
+    data_dir: str | Path | None = None,
+    template: str | None = None,
+    browser: str | None = None,
+    open_after: bool = True,
+    **overrides: Any,
+) -> GenerationResult | BatchGenerationResult:
+    """Render a single resume to HTML with preview defaults."""
+    base_dir, resume_name = _infer_data_dir_and_name(source, data_dir)
+    if resume_name is None:
+        raise ValueError("preview() requires a specific resume name or YAML path.")
+
+    cfg = GenerationConfig(
+        data_dir=base_dir,
+        name=resume_name,
+        template=template,
+        browser=browser,
+        preview=True,
+        open_after=open_after,
+    )
+
+    return generate_html(cfg, **overrides)
+
+
 __all__ = [
     "GenerationConfig",
     "generate_pdf",
     "generate_html",
     "generate_all",
     "generate_resume",
+    "generate",
+    "preview",
 ]

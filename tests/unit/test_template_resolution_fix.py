@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+from jinja2.loaders import FileSystemLoader
 
 from simple_resume.config import TEMPLATE_LOC, resolve_paths
 from simple_resume.core.resume import RenderPlan, Resume, ResumeConfig
@@ -339,14 +340,10 @@ class TestTemplateResolutionFix:
 
         # Verify that the loader's search path contains the templates directory
         loader = env.loader
-        assert hasattr(loader, "searchpath"), (
-            "Template loader should have searchpath attribute"
-        )
+        assert isinstance(loader, FileSystemLoader)
 
         # The search path should contain the templates directory
-        search_paths = (
-            loader.searchpath if hasattr(loader, "searchpath") else [loader.searchpath]
-        )
+        search_paths = list(loader.searchpath)
         assert str(TEMPLATE_LOC) in search_paths, (
             f"Template directory {TEMPLATE_LOC} should be in search path"
         )
@@ -426,7 +423,9 @@ class TestTemplateResolutionRegression:
 
         # Verify template can be loaded
         env = get_template_environment(str(TEMPLATE_LOC))
-        template = env.get_template(render_plan.template_name)
+        template_name = render_plan.template_name
+        assert template_name is not None
+        template = env.get_template(template_name)
         assert template is not None
 
         # Add any missing config fields to prevent template errors
@@ -591,7 +590,9 @@ class TestFullTemplateResolution:
 
         # Act: Load template from correct location (the fix)
         env = get_template_environment(str(TEMPLATE_LOC))
-        template = env.get_template(render_plan.template_name)
+        template_name = render_plan.template_name
+        assert template_name is not None
+        template = env.get_template(template_name)
 
         # Assert: Template loads without error (the main fix)
         assert template is not None
@@ -675,9 +676,12 @@ class TestFullTemplateResolution:
 
         # Successful rendering proves templates load from TEMPLATE_LOC, not base_path.
 
+        assert render_plan.context is not None
+        context = render_plan.context
+
         # Ensure render_plan.context has complete config for template
-        if "resume_config" in render_plan.context:
-            resume_config = render_plan.context["resume_config"]
+        if "resume_config" in context:
+            resume_config = context["resume_config"]
             # Add required missing fields
             resume_config.setdefault("sidebar_width", 60)
             resume_config.setdefault("h2_padding_left", 4)
@@ -701,12 +705,14 @@ class TestFullTemplateResolution:
             resume_config.setdefault("cover_padding_h", 25)
 
         # Ensure required fields exist
-        if "titles" not in render_plan.context:
-            render_plan.context["titles"] = {"contact": "Contact"}
-        if "body" not in render_plan.context:
-            render_plan.context["body"] = {"experience": []}
+        if "titles" not in context:
+            context["titles"] = {"contact": "Contact"}
+        if "body" not in context:
+            context["body"] = {"experience": []}
 
         env = get_template_environment(str(TEMPLATE_LOC))
-        template = env.get_template(render_plan.template_name)
-        output = template.render(**render_plan.context)
+        template_name = render_plan.template_name
+        assert template_name is not None
+        template = env.get_template(template_name)
+        output = template.render(**context)
         assert "Path Test User" in output

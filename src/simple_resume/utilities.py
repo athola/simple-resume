@@ -31,13 +31,16 @@ PATH_OUTPUT = str(config_module.PATH_OUTPUT)
 HEX_COLOR_SHORT_LENGTH = 3
 HEX_COLOR_FULL_LENGTH = 6
 
-# Luminance constants for contrast ratio calculations
+# WCAG 2.1 relative luminance constants (see
+# https://www.w3.org/TR/WCAG21/#dfn-relative-luminance). These values are used to
+# linearize sRGB inputs before applying the standard luminance weights.
 LINEARIZATION_THRESHOLD = 0.03928
 LINEARIZATION_DIVISOR = 12.92
 LINEARIZATION_EXPONENT = 2.4
 LINEARIZATION_OFFSET = 0.055
 
-# Luminance thresholds for text color selection
+# Empirical luminance buckets—derived from the WCAG contrast guidance—to decide
+# which text color offers sufficient readability for a given background.
 VERY_DARK_THRESHOLD = 0.15
 DARK_THRESHOLD = 0.5
 VERY_LIGHT_THRESHOLD = 0.8
@@ -54,6 +57,8 @@ __all__ = [
     "get_content",
     "validate_config",
     "render_markdown_content",
+    "apply_external_palette",
+    "load_palette_from_file",
 ]
 
 
@@ -131,11 +136,26 @@ def _get_contrasting_text_color(background_color: str) -> str:
 
 
 def _read_yaml(uri: str | Path) -> dict[str, Any]:
-    """Read a YAML file and return its content."""
+    """Read a YAML file and return its content as a dictionary.
+
+    Raises:
+        ValueError: If the YAML file does not contain a dictionary at the root level.
+
+    """
     path = Path(uri)
     with open(str(path), encoding="utf-8") as file:
         content = safe_load(file)
-        return content if content is not None else {}
+
+    if content is None:
+        return {}
+
+    if not isinstance(content, dict):
+        raise ValueError(
+            f"YAML file must contain a dictionary at the root level, "
+            f"but found {type(content).__name__}: {path}"
+        )
+
+    return content
 
 
 def _is_valid_color(color: str) -> bool:
@@ -177,6 +197,7 @@ DEFAULT_COLOR_SCHEME = {
     "bar_background_color": "#DFDFDF",
     "date2_color": "#616161",
     "frame_color": "#757575",
+    "heading_icon_color": "#0395DE",  # Defaults to theme_color
 }
 
 COLOR_FIELD_ORDER = [
@@ -186,6 +207,7 @@ COLOR_FIELD_ORDER = [
     "bar_background_color",
     "date2_color",
     "frame_color",
+    "heading_icon_color",  # Icon color for section headings
 ]
 
 
@@ -196,6 +218,47 @@ def normalize_config(
     working = copy.deepcopy(raw_config)
     palette_meta = _validate_config_inplace(working, filename=filename)
     return working, palette_meta
+
+
+def load_palette_from_file(palette_file: str | Path) -> dict[str, Any]:
+    """Load and return palette configuration from an external YAML file."""
+    path = Path(palette_file)
+
+    if not path.exists():
+        raise FileNotFoundError(f"Palette file not found: {path}")
+
+    if path.suffix.lower() not in {".yaml", ".yml"}:
+        raise ValueError("Palette file must be a YAML file")
+
+    content = _read_yaml(path)
+
+    palette_data: Any = content.get("palette", content)
+
+    # Support palette files that wrap color settings under a `config` block
+    # (common in legacy palette snippets and alternate format specs).
+    if isinstance(palette_data, dict) and "config" in palette_data:
+        config_block = palette_data["config"]
+        if isinstance(config_block, dict):
+            nested_palette = config_block.get("palette")
+            if isinstance(nested_palette, dict):
+                palette_data = nested_palette
+            else:
+                palette_data = config_block
+
+    if not isinstance(palette_data, dict):
+        raise ValueError("Palette configuration must be a dictionary")
+
+    return {"palette": copy.deepcopy(palette_data)}
+
+
+def apply_external_palette(
+    config: dict[str, Any], palette_file: str | Path
+) -> dict[str, Any]:
+    """Return a new configuration dictionary with palette data applied."""
+    palette_payload = load_palette_from_file(palette_file)
+    updated = copy.deepcopy(config)
+    updated["palette"] = palette_payload["palette"]
+    return updated
 
 
 def validate_config(config: dict[str, Any], filename: str = "") -> None:
@@ -415,11 +478,49 @@ def _apply_palette_block(config: dict[str, Any]) -> dict[str, Any] | None:
     if not isinstance(block, dict):
         return None
 
+    # Check if this is a direct color definition block (contains color field keys)
+    # vs a palette block (contains source/name/generator config)
+    has_direct_colors = any(field in block for field in COLOR_FIELD_ORDER)
+    palette_block_keys = {
+        "source",
+        "name",
+        "colors",
+        "size",
+        "seed",
+        "hue_range",
+        "luminance_range",
+        "chroma",
+        "keywords",
+        "num_results",
+        "order_by",
+    }
+    has_palette_config = any(key in block for key in palette_block_keys)
+
+    if has_direct_colors and not has_palette_config:
+        # Direct color definitions - merge them into config directly
+        for field in COLOR_FIELD_ORDER:
+            if field in block:
+                config[field] = block[field]
+
+        # Automatically calculate sidebar text color based on sidebar background
+        if config.get("sidebar_color"):
+            config["sidebar_text_color"] = _get_contrasting_text_color(
+                config["sidebar_color"]
+            )
+
+        # Return metadata indicating this was a direct color definition
+        return {
+            "source": "direct",
+            "fields": [f for f in COLOR_FIELD_ORDER if f in block],
+        }
+
+    # Otherwise, treat as a palette block that needs resolution
     try:
         swatches, palette_meta = _resolve_palette_block(block)
     except PaletteError:
         raise
-    except Exception as exc:  # noqa: BLE001
+    except (TypeError, ValueError, KeyError, AttributeError) as exc:
+        # These are common errors when palette configuration is malformed
         raise PaletteGenerationError(f"Invalid palette block: {exc}") from exc
 
     if not swatches:
@@ -508,20 +609,22 @@ def _resolve_palette_block(block: dict[str, Any]) -> tuple[list[str], dict[str, 
     raise PaletteLookupError(f"Unsupported palette source: {source}")
 
 
-def _coerce_items(value: Any) -> list[str]:
+def _coerce_items(raw_input: Any) -> list[str]:
     """Return a list of trimmed string items from arbitrary input."""
-    if value is None:
+    if raw_input is None:
         return []
-    if isinstance(value, (list, tuple, set)):
-        return [str(item).strip() for item in value if str(item).strip()]
-    return [str(value).strip()]
+    if isinstance(raw_input, (list, tuple, set)):
+        return [str(element).strip() for element in raw_input if str(element).strip()]
+    return [str(raw_input).strip()]
 
 
-def format_skill_groups(value: Any) -> list[dict[str, list[str] | str | None]]:
+def format_skill_groups(
+    skill_data: Any,
+) -> list[dict[str, list[str] | str | None]]:
     """Normalize skill data into titled groups with string entries."""
     groups: list[dict[str, list[str] | str | None]] = []
 
-    if value is None:
+    if skill_data is None:
         return groups
 
     def add_group(title: str | None, items: Any) -> None:
@@ -535,41 +638,49 @@ def format_skill_groups(value: Any) -> list[dict[str, list[str] | str | None]]:
             }
         )
 
-    if isinstance(value, dict):
-        for key, items in value.items():
-            add_group(str(key), items)
+    if isinstance(skill_data, dict):
+        for category_name, items in skill_data.items():
+            add_group(str(category_name), items)
         return groups
 
-    if isinstance(value, (list, tuple, set)):
+    if isinstance(skill_data, (list, tuple, set)):
         # Check if all entries are simple strings (not dicts)
-        all_simple = all(not isinstance(entry, dict) for entry in value)
+        all_simple = all(not isinstance(entry, dict) for entry in skill_data)
 
         if all_simple:
             # Create a single group with all items
-            add_group(None, list(value))
+            add_group(None, list(skill_data))
         else:
             # Mixed content: process each entry separately
-            for entry in value:
+            for entry in skill_data:
                 if isinstance(entry, dict):
-                    for key, items in entry.items():
-                        add_group(str(key), items)
+                    for category_name, items in entry.items():
+                        add_group(str(category_name), items)
                 else:
                     add_group(None, entry)
         return groups
 
-    add_group(None, value)
+    add_group(None, skill_data)
     return groups
 
 
-def render_markdown_content(data: dict[str, Any]) -> dict[str, Any]:
+def render_markdown_content(resume_data: dict[str, Any]) -> dict[str, Any]:
     """Return a copy of the resume data with Markdown transformed to HTML."""
-    cloned = copy.deepcopy(data)
-    _transform_from_markdown(cloned)
-    cloned["expertise_groups"] = format_skill_groups(cloned.get("expertise"))
-    cloned["programming_groups"] = format_skill_groups(cloned.get("programming"))
-    cloned["keyskills_groups"] = format_skill_groups(cloned.get("keyskills"))
-    cloned["certification_groups"] = format_skill_groups(cloned.get("certification"))
-    return cloned
+    transformed_resume = copy.deepcopy(resume_data)
+    _transform_from_markdown(transformed_resume)
+    transformed_resume["expertise_groups"] = format_skill_groups(
+        transformed_resume.get("expertise")
+    )
+    transformed_resume["programming_groups"] = format_skill_groups(
+        transformed_resume.get("programming")
+    )
+    transformed_resume["keyskills_groups"] = format_skill_groups(
+        transformed_resume.get("keyskills")
+    )
+    transformed_resume["certification_groups"] = format_skill_groups(
+        transformed_resume.get("certification")
+    )
+    return transformed_resume
 
 
 def _transform_from_markdown(data: dict[str, Any]) -> None:

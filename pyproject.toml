@@ -75,6 +75,7 @@ include = [
     "src/simple_resume/static/**/*",
     "src/simple_resume/palettes/**/*",
 ]
+force-include = { "src/simple_resume/templates/latex/basic.tex" = "simple_resume/templates/latex/basic.tex" }
 
 [dependency-groups]
 dev = [
@@ -181,3 +182,10 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_decorators = false
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = false
+
+[tool.bandit]
+exclude_dirs = [".venv", ".uv-cache", ".git", "__pycache__"]
+skips = ["B101"]  # Skip assert_used test for test files

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import FrozenInstanceError
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from unittest.mock import Mock, patch
 
 import pytest
@@ -31,10 +31,12 @@ class MockFileSystem:
     """Mock filesystem for testing."""
 
     def __init__(
-        self, directories: set[Path] = None, files: dict[Path, str] = None
+        self,
+        directories: set[Path] | None = None,
+        files: dict[Path, str] | None = None,
     ) -> None:
-        self.directories = directories or set()
-        self.files = files or {}
+        self.directories = set(directories) if directories is not None else set()
+        self.files = dict(files) if files is not None else {}
 
     def ensure_dir(self, path: Path) -> None:
         self.directories.add(path)
@@ -65,7 +67,7 @@ class MockPdfWriter:
         )
 
 
-class MockHtmlWriter:
+class MockHtmlWriter(HtmlWriter):
     """Mock HTML writer for testing."""
 
     def __init__(self) -> None:
@@ -248,15 +250,17 @@ description: "Experienced designer"
             generator.generate_pdf(paths=sample_paths)
 
         # Verify calls - check the writes list instead of calling assert_called_once
-        assert len(mock_deps.pdf_writer.writes) == 1
-        write_call = mock_deps.pdf_writer.writes[0]
+        pdf_writer = cast(MockPdfWriter, mock_deps.pdf_writer)
+        assert len(pdf_writer.writes) == 1
+        write_call = pdf_writer.writes[0]
 
         assert write_call["output_path"] == sample_paths.output / "resume1.pdf"
         assert write_call["html"] == "<html>Rendered content</html>"
         assert write_call["base_url"] == str(sample_paths.content)
 
         # Verify logging
-        logger_events = mock_deps.logger.events
+        logger = cast(MockLogger, mock_deps.logger)
+        logger_events = logger.events
         assert len(logger_events) == 2
         assert logger_events[0]["type"] == "starting"
         assert logger_events[1]["type"] == "succeeded"
@@ -302,14 +306,16 @@ description: "Experienced designer"
             generator.generate_html(paths=sample_paths)
 
         # Verify calls - check the writes list instead of calling assert_called_once
-        assert len(mock_deps.html_writer.writes) == 1
-        write_call = mock_deps.html_writer.writes[0]
+        html_writer = cast(MockHtmlWriter, mock_deps.html_writer)
+        assert len(html_writer.writes) == 1
+        write_call = html_writer.writes[0]
 
         assert write_call["output_path"] == sample_paths.output / "resume1.html"
         assert "<base href=" in write_call["html"]  # Base href should be injected
 
         # Verify logging
-        logger_events = mock_deps.logger.events
+        logger = cast(MockLogger, mock_deps.logger)
+        logger_events = logger.events
         assert len(logger_events) == 2
         assert logger_events[0]["type"] == "starting"
         assert logger_events[1]["type"] == "succeeded"
@@ -415,12 +421,10 @@ description: "Experienced designer"
         mock_file1 = Mock()
         mock_file1.name = "resume1.yaml"
         mock_file1.is_file.return_value = True
-        mock_file1.__str__ = lambda self: str(input_dir / "resume1.yaml")
 
         mock_file2 = Mock()
         mock_file2.name = "resume2.yml"
         mock_file2.is_file.return_value = True
-        mock_file2.__str__ = lambda self: str(input_dir / "resume2.yml")
 
         mock_file3 = Mock()
         mock_file3.name = "resume3.txt"
@@ -495,7 +499,8 @@ description: "Experienced designer"
                 generator.generate_pdf(paths=sample_paths)
 
         # Verify error was logged
-        logger_events = mock_deps.logger.events
+        logger = cast(MockLogger, mock_deps.logger)
+        logger_events = logger.events
         assert len(logger_events) == 2
         assert logger_events[0]["type"] == "starting"
         assert logger_events[1]["type"] == "failed"
@@ -695,7 +700,7 @@ class TestPageSpec:
         assert page_spec.height_mm == 297
 
         with pytest.raises(FrozenInstanceError):
-            page_spec.width_mm = 300
+            page_spec.width_mm = 300  # type: ignore[misc]
 
     def test_page_spec_equality(self) -> None:
         """Test PageSpec equality comparison."""

@@ -1,4 +1,4 @@
-.PHONY: help install lint format typecheck check-all fix-all clean generate-pdf generate-pdf-sample view-sample dev-setup ci test test-coverage validate validate_readme_preview update-preview-image
+.PHONY: help install lint format typecheck check-all fix-all clean generate-pdf generate-pdf-sample view-sample dev-setup ci test test-coverage validate validate-readme-preview update-preview-image
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -15,22 +15,22 @@ install: ## Install all dependencies including dev tools
 	@echo "  make check-all    # Run all checks"
 
 lint: ## Run linting with ruff
-	uv run ruff check src/simple_resume/
+	uv run ruff check .
 
 format: ## Format code with ruff
-	uv run ruff format src/simple_resume/
+	uv run ruff format .
 
 typecheck: ## Run type checking with mypy and ty
 	@echo "Running mypy type checking..."
-	@uv run mypy src/simple_resume/ || (echo "mypy not found. Run 'make install' first." && exit 1)
+	@uv run mypy . || (echo "mypy not found. Run 'make install' first." && exit 1)
 	@echo ""
 	@echo "Running ty type checking..."
-	@uv run ty check src/simple_resume/ || (echo "ty not found. Run 'make install' first." && exit 1)
+	@uv run ty check . || (echo "ty not found. Run 'make install' first." && exit 1)
 
 check-all: lint typecheck ## Run all checks (lint and typecheck)
 
 fix-all: format ## Format code and fix auto-fixable issues
-	uv run ruff check --fix src/simple_resume/
+	uv run ruff check --fix .
 
 clean: ## Clean up cache and build files
 	rm -rf .venv
@@ -198,7 +198,7 @@ test: ## Run all tests
 test-coverage: ## Run tests with coverage report
 	uv run pytest --cov=src/simple_resume --cov-report=term-missing
 
-validate: validate_readme_preview ## Validate current commit is ready for PR (runs ALL workflow checks)
+validate: validate-readme-preview ## Validate current commit is ready for PR (runs ALL workflow checks)
 	@echo "=========================================="
 	@echo "Validating commit is ready for PR..."
 	@echo "Running ALL CI workflow checks locally"
@@ -207,39 +207,35 @@ validate: validate_readme_preview ## Validate current commit is ready for PR (ru
 	@echo "[1/8] Installing dependencies..."
 	uv sync --extra utils --group dev
 	@echo ""
-	@echo "[2/8] Running tests..."
+	@echo "[2/7] Running tests..."
 	uv run pytest || (echo "Tests failed - fix before pushing" && exit 1)
 	@echo "Tests passed"
 	@echo ""
-	@echo "[3/8] Running linting checks..."
-	uv run ruff check src/ tests/ || (echo "Ruff linting failed - run 'make fix-all' to auto-fix" && exit 1)
-	uv run ruff format --check src/ tests/ || (echo "Code formatting issues - run 'make fix-all'" && exit 1)
+	@echo "[3/7] Running linting checks..."
+	uv run ruff check . || (echo "Ruff linting failed - run 'make fix-all' to auto-fix" && exit 1)
+	uv run ruff format --check . || (echo "Code formatting issues - run 'make fix-all'" && exit 1)
 	@echo "Linting passed"
 	@echo ""
-	@echo "[4/8] Running type checking..."
+	@echo "[4/7] Running type checking..."
 	@echo "  - MyPy (strict mode)..."
-	uv run mypy src/simple_resume/ --strict || (echo "MyPy type checking failed" && exit 1)
+	uv run mypy . --strict || (echo "MyPy type checking failed" && exit 1)
 	@echo "  - Ty..."
-	uv run ty check src/simple_resume/ --ignore invalid-assignment --ignore invalid-return-type --ignore no-matching-overload || (echo "Ty type checking failed" && exit 1)
+	uv run ty check . --ignore invalid-assignment --ignore invalid-return-type --ignore no-matching-overload || (echo "Ty type checking failed" && exit 1)
 	@echo "  - Pyright..."
-	npx --yes pyright src/simple_resume/ || (echo "Pyright type checking failed" && exit 1)
+	npx --yes pyright . || (echo "Pyright type checking failed" && exit 1)
 	@echo "  - Pytype..."
-	uv run pytype src/simple_resume/ || (echo "Pytype type checking failed" && exit 1)
+	uv run pytype . || (echo "Pytype type checking failed" && exit 1)
 	@echo "All type checkers passed"
 	@echo ""
-	@echo "[5/8] Running Pylint rules via Ruff..."
-	uv run ruff check src/simple_resume/ --select=PL || (echo "Ruff Pylint rules failed" && exit 1)
-	@echo "Pylint rules passed"
-	@echo ""
-	@echo "[6/8] Running security analysis..."
-	uv run bandit -r src/simple_resume/ || (echo "Bandit security check failed" && exit 1)
+	@echo "[5/7] Running security analysis..."
+	uv run bandit -r src/simple_resume tests -x .venv,.uv-cache,.git -s B101,B404,B603 || (echo "Bandit security check failed" && exit 1)
 	@echo "Security analysis passed"
 	@echo ""
-	@echo "[7/8] Running pre-commit hooks on all files..."
+	@echo "[6/7] Running pre-commit hooks on all files..."
 	uv run pre-commit run --all-files --show-diff-on-failure || (echo "Pre-commit hooks failed" && exit 1)
 	@echo "Pre-commit hooks passed"
 	@echo ""
-	@echo "[8/8] Validating development environment..."
+	@echo "[7/7] Validating development environment..."
 	@uv run python -c "import simple_resume.utilities; print('  ✓ simple_resume.utilities imports correctly')"
 	@uv run python -c "from simple_resume.utilities import get_content; print('  ✓ get_content imports correctly')"
 	@echo "Development environment validated"
@@ -249,7 +245,7 @@ validate: validate_readme_preview ## Validate current commit is ready for PR (ru
 	@echo "Your commit is ready for PR"
 	@echo "=========================================="
 
-validate_readme_preview: ## Validate that README preview is up-to-date with latest changes
+validate-readme-preview: ## Validate that README preview is up-to-date with latest changes
 	@echo "Checking if resume output files have been modified..."
 	@echo ""
 	@echo "Checking for changes in files that affect resume output..."

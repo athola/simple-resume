@@ -8,6 +8,10 @@ import pytest
 import yaml
 
 from simple_resume import config, utilities
+from simple_resume.palettes.exceptions import (
+    PaletteGenerationError,
+    PaletteLookupError,
+)
 from simple_resume.palettes.registry import Palette
 from simple_resume.utilities import (
     _read_yaml,
@@ -81,6 +85,49 @@ class TestReadYaml:
 
         # Act & Assert
         with pytest.raises(yaml.YAMLError):
+            _read_yaml(str(yaml_file))
+
+    def test_read_yaml_with_list_root_raises_value_error(self, temp_dir: Path) -> None:
+        """RED: Test that reading YAML with list root raises ValueError."""
+        # Arrange
+        yaml_file = temp_dir / "list_root.yaml"
+        yaml_file.write_text("- item1\n- item2\n- item3", encoding="utf-8")
+
+        # Act & Assert
+        with pytest.raises(
+            ValueError,
+            match="YAML file must contain a dictionary at the root level",
+        ):
+            _read_yaml(str(yaml_file))
+
+    def test_read_yaml_with_string_root_raises_value_error(
+        self, temp_dir: Path
+    ) -> None:
+        """RED: Test that reading YAML with string root raises ValueError."""
+        # Arrange
+        yaml_file = temp_dir / "string_root.yaml"
+        yaml_file.write_text('"just a string"', encoding="utf-8")
+
+        # Act & Assert
+        with pytest.raises(
+            ValueError,
+            match="YAML file must contain a dictionary at the root level",
+        ):
+            _read_yaml(str(yaml_file))
+
+    def test_read_yaml_with_number_root_raises_value_error(
+        self, temp_dir: Path
+    ) -> None:
+        """RED: Test that reading YAML with number root raises ValueError."""
+        # Arrange
+        yaml_file = temp_dir / "number_root.yaml"
+        yaml_file.write_text("42", encoding="utf-8")
+
+        # Act & Assert
+        with pytest.raises(
+            ValueError,
+            match="YAML file must contain a dictionary at the root level",
+        ):
             _read_yaml(str(yaml_file))
 
     def test_read_yaml_with_complex_nested_structure(self, temp_dir: Path) -> None:
@@ -197,7 +244,13 @@ class TestTransformFromMarkdown:
         # Assert
         assert data["name"] == "John Doe"
         assert data["age"] == 30
-        assert "description" not in data["body"]["Experience"][0]
+        body = data["body"]
+        assert isinstance(body, dict)
+        experience = body["Experience"]
+        assert isinstance(experience, list)
+        first_entry = experience[0]
+        assert isinstance(first_entry, dict)
+        assert "description" not in first_entry
 
     def test_transform_with_empty_body_sections(self) -> None:
         """RED: Test handling of empty body sections."""
@@ -260,7 +313,9 @@ Visit my [portfolio](https://example.com) for more details.
         assert data["name"] == "John Doe"
         assert data["email"] == "john@example.com"
         assert data["skills"] == ["Python", "Testing"]
-        assert data["config"]["theme"] == "dark"
+        config_section = data["config"]
+        assert isinstance(config_section, dict)
+        assert config_section["theme"] == "dark"
         # Only description should be transformed
         assert data["description"] == "<p>Simple description</p>"
 
@@ -766,8 +821,9 @@ class TestValidateConfig:
             "heading_icon_color",
         ):
             assert field in config_map
-            assert isinstance(config_map[field], str)
-            assert config_map[field].startswith("#")
+            value = config_map[field]
+            assert isinstance(value, str)
+            assert value.startswith("#")
 
     def test_sidebar_text_color_derives_from_sidebar_color(self) -> None:
         """Sidebar text should contrast with automatically computed values."""
@@ -797,9 +853,16 @@ class TestValidateConfig:
             "palette": {"source": "registry", "name": "demo"},
         }
         validate_config(config_map)
-        assert config_map["theme_color"] == "#111111"
-        assert config_map["color_scheme"] == "demo"
-        assert config_map["heading_icon_color"] == config_map["sidebar_text_color"]
+        theme_color = config_map["theme_color"]
+        color_scheme = config_map["color_scheme"]
+        heading_icon_color = config_map["heading_icon_color"]
+        assert isinstance(theme_color, str)
+        assert isinstance(color_scheme, str)
+        assert isinstance(heading_icon_color, str)
+        assert theme_color == "#111111"
+        assert color_scheme == "demo"
+        # heading_icon_color cycles through palette; after 6 fields, it picks index 1.
+        assert heading_icon_color == "#222222"  # Cycles to sidebar_color
 
     def test_palette_generator_block(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(
@@ -818,12 +881,22 @@ class TestValidateConfig:
         }
 
         validate_config(config_map)
-        assert config_map["theme_color"] == "#AAAAAA"
-        assert config_map["sidebar_color"] == "#BBBBBB"
+        theme_color = config_map["theme_color"]
+        sidebar_color = config_map["sidebar_color"]
+        bar_background_color = config_map["bar_background_color"]
+        heading_icon_color = config_map["heading_icon_color"]
+        assert isinstance(theme_color, str)
+        assert isinstance(sidebar_color, str)
+        assert isinstance(bar_background_color, str)
+        assert isinstance(heading_icon_color, str)
+        assert theme_color == "#AAAAAA"
+        assert sidebar_color == "#BBBBBB"
         # bar_background_color cycles to the first color (theme, sidebar,
         # sidebar_text, bar_background, ...).
-        assert config_map["bar_background_color"] == "#AAAAAA"
-        assert config_map["heading_icon_color"] == config_map["sidebar_text_color"]
+        assert bar_background_color == "#AAAAAA"
+        # heading_icon_color is the 7th field, so it cycles to index 0
+        # (3 colors, 6 % 3 = 0).
+        assert heading_icon_color == "#AAAAAA"  # Cycles to theme_color
 
     def test_validate_config_coerces_string_numbers(self) -> None:
         """Quoted numeric values should be coerced to numeric types."""
@@ -833,11 +906,15 @@ class TestValidateConfig:
             "sidebar_width": "60",
         }
         validate_config(config_map)
-        assert config_map["page_width"] == 190
-        assert config_map["page_height"] == 270
-        assert config_map["sidebar_width"] == 60
-        for key in ("page_width", "page_height", "sidebar_width"):
-            assert isinstance(config_map[key], int)
+        width = config_map["page_width"]
+        height = config_map["page_height"]
+        sidebar = config_map["sidebar_width"]
+        assert isinstance(width, int)
+        assert isinstance(height, int)
+        assert isinstance(sidebar, int)
+        assert width == 190
+        assert height == 270
+        assert sidebar == 60
 
     def test_validate_config_rejects_non_numeric_strings(self) -> None:
         """Non-numeric strings should produce a descriptive ValueError."""
@@ -960,22 +1037,42 @@ class TestNormalizeConfigEdgeCases:
 class TestPaletteHandling:
     """Ensure palette helpers handle error and success scenarios."""
 
-    def test_apply_palette_block_wraps_unexpected_errors(
+    def test_apply_palette_block_wraps_expected_errors(
         self,
         monkeypatch: pytest.MonkeyPatch,
         story,
     ) -> None:
-        """Unexpected exceptions are wrapped in PaletteGenerationError."""
+        """Expected exceptions are wrapped in PaletteGenerationError."""
+
+        def type_error(_: dict[str, Any]) -> tuple[list[str], dict[str, Any]]:
+            raise TypeError("Invalid type")
+
+        monkeypatch.setattr(utilities, "_resolve_palette_block", type_error)
+        config_data = {"palette": {"source": "registry", "name": "modern"}}
+        story.given("palette resolution raises a TypeError")
+        with pytest.raises(
+            PaletteGenerationError,
+            match="Invalid palette block: Invalid type",
+        ):
+            utilities._apply_palette_block(config_data)
+        story.then("the TypeError is wrapped in PaletteGenerationError")
+
+    def test_apply_palette_block_does_not_wrap_unexpected_errors(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        story,
+    ) -> None:
+        """Unexpected exceptions (like RuntimeError) are not caught and propagate."""
 
         def boom(_: dict[str, Any]) -> tuple[list[str], dict[str, Any]]:
             raise RuntimeError("boom")
 
         monkeypatch.setattr(utilities, "_resolve_palette_block", boom)
         config_data = {"palette": {"source": "registry", "name": "modern"}}
-        story.given("palette resolution raises an unexpected runtime error")
-        with pytest.raises(utilities.PaletteGenerationError):
+        story.given("palette resolution raises an unexpected RuntimeError")
+        with pytest.raises(RuntimeError, match="boom"):
             utilities._apply_palette_block(config_data)
-        story.then("the wrapper re-raises a PaletteGenerationError")
+        story.then("the RuntimeError propagates without being wrapped")
 
     def test_apply_palette_block_returns_none_for_empty_swatches(
         self,
@@ -998,7 +1095,7 @@ class TestPaletteHandling:
     def test_resolve_palette_block_requires_registry_name(self, story) -> None:
         """Registry source without a palette name raises PaletteLookupError."""
         story.given("a palette block specifies registry source without a name")
-        with pytest.raises(utilities.PaletteLookupError):
+        with pytest.raises(PaletteLookupError):
             utilities._resolve_palette_block({"source": "registry"})
         story.then("palette lookup errors to inform missing name")
 
@@ -1010,7 +1107,7 @@ class TestPaletteHandling:
             "luminance_range": (0.2, 0.8),
         }
         story.given("generator palette block has malformed hue_range")
-        with pytest.raises(utilities.PaletteGenerationError):
+        with pytest.raises(PaletteGenerationError):
             utilities._resolve_palette_block(block)
         story.then("palette generation errors to highlight invalid ranges")
 
@@ -1052,7 +1149,7 @@ class TestPaletteHandling:
 
         monkeypatch.setattr(utilities, "ColourLoversClient", lambda: DummyClient())
         story.given("the remote provider returns no palettes")
-        with pytest.raises(utilities.PaletteLookupError):
+        with pytest.raises(PaletteLookupError):
             utilities._resolve_palette_block({"source": "remote"})
         story.then("a PaletteLookupError communicates missing palettes")
 
@@ -1090,9 +1187,13 @@ class TestSkillFormatting:
         result = utilities.format_skill_groups(payload)
         story.then("groups reflect nested structure with proper titles")
         assert result[0]["title"] == "Frameworks"
-        assert "FastAPI" in result[0]["items"]
+        first_items = result[0]["items"]
+        assert isinstance(first_items, list)
+        assert "FastAPI" in first_items
         assert result[1]["title"] is None
-        assert result[1]["items"] == ["Docker"]
+        second_items = result[1]["items"]
+        assert isinstance(second_items, list)
+        assert second_items == ["Docker"]
 
     def test_format_skill_groups_simple_string(self, story) -> None:
         """Simple strings become untitled groups."""

@@ -7,6 +7,7 @@ all business logic transformations are deterministic and fast to execute.
 from __future__ import annotations
 
 import sys
+import tempfile
 from dataclasses import FrozenInstanceError
 from pathlib import Path
 from types import SimpleNamespace
@@ -15,6 +16,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+import simple_resume.core.resume as resume_module
+from simple_resume.config import Paths
 from simple_resume.core.resume import (
     RenderMode,
     RenderPlan,
@@ -27,8 +30,26 @@ from simple_resume.exceptions import (
     FileSystemError,
     GenerationError,
     TemplateError,
+    ValidationError,
 )
 from simple_resume.latex_renderer import LatexCompilationError
+from simple_resume.palettes.exceptions import PaletteGenerationError
+
+
+def _make_paths(base: Path) -> Paths:
+    """Create a Paths instance rooted at the provided base directory."""
+    input_dir = base / "input"
+    output_dir = base / "output"
+    input_dir.mkdir(exist_ok=True)
+    output_dir.mkdir(exist_ok=True)
+    return Paths(
+        data=base,
+        input=input_dir,
+        output=output_dir,
+        content=base,
+        templates=base,
+        static=base,
+    )
 
 
 class TestResumeValidation:
@@ -96,7 +117,7 @@ class TestResumeValidation:
 
     def test_validate_config_defaults_filling(self) -> None:
         """Test that missing required fields are filled with defaults."""
-        raw_config = {}
+        raw_config: dict[str, Any] = {}
 
         result = Resume.validate_config(raw_config)
 
@@ -137,12 +158,258 @@ class TestResumeValidation:
         assert result.is_valid is False
         assert any(filename in error for error in result.errors)
 
+    def test_validate_or_raise_success(self) -> None:
+        """Test validate_or_raise with valid resume data."""
+        raw_data = {
+            "full_name": "John Doe",
+            "email": "john@example.com",
+            "config": {
+                "page_width": 210,
+                "page_height": 297,
+                "sidebar_width": 60,
+                "theme_color": "#0395DE",
+                "sidebar_color": "#F6F6F6",
+            },
+        }
+
+        resume = Resume.from_data(raw_data)
+        resume._filename = "test_resume.yaml"
+
+        # Should not raise any exception
+        resume.validate_or_raise()  # Should pass silently
+
+    def test_validate_or_raise_failure(self) -> None:
+        """Test validate_or_raise with invalid resume data."""
+        raw_data = {
+            "full_name": "John Doe",
+            "email": "john@example.com",
+            "config": {
+                "page_width": -100,  # Invalid negative width
+                "page_height": 297,
+                "sidebar_width": 60,
+                "theme_color": "#0395DE",
+                "sidebar_color": "#F6F6F6",
+            },
+        }
+
+        resume = Resume.from_data(raw_data)
+        resume._filename = "test_resume.yaml"
+
+        with pytest.raises(ValidationError) as exc_info:
+            resume.validate_or_raise()
+
+        assert "page_width" in str(exc_info.value)
+        error = exc_info.value
+        assert isinstance(error, ValidationError)
+        assert error.errors
+        assert error.filename == "test_resume.yaml"
+
+    def test_validate_config_or_raise_success(self) -> None:
+        """Test validate_config_or_raise with valid configuration."""
+        raw_config = {
+            "page_width": 210,
+            "page_height": 297,
+            "sidebar_width": 60,
+            "theme_color": "#0395DE",
+            "sidebar_color": "#F6F6F6",
+        }
+
+        config = Resume.validate_config_or_raise(
+            raw_config, filename="test_config.yaml"
+        )
+
+        assert isinstance(config, ResumeConfig)
+        assert config.page_width == 210
+        assert config.page_height == 297
+
+    def test_validate_config_or_raise_failure(self) -> None:
+        """Test validate_config_or_raise with invalid configuration."""
+        raw_config = {
+            "page_width": -100,  # Invalid negative width
+            "page_height": 297,
+            "sidebar_width": 60,
+            "theme_color": "#0395DE",
+            "sidebar_color": "#F6F6F6",
+        }
+
+        with pytest.raises(ValidationError) as exc_info:
+            Resume.validate_config_or_raise(raw_config, filename="test_config.yaml")
+
+        assert "page_width" in str(exc_info.value)
+        error = exc_info.value
+        assert isinstance(error, ValidationError)
+        assert error.errors
+        assert error.filename == "test_config.yaml"
+
+
+class TestPrepareRenderDataHelpers:
+    """Unit tests targeting helper functions added for prepare_render_data."""
+
+    def test_normalize_with_palette_fallback_success(self, story) -> None:
+        story.given("a raw config without palette data")
+        raw_config = {"template": "resume_no_bars"}
+
+        story.when("the helper normalizes the configuration")
+        normalized, palette_meta, config_for_validation = (
+            Resume._normalize_with_palette_fallback(
+                raw_config,
+            )
+        )
+
+        story.then(
+            "the normalized config matches input and palette metadata stays empty"
+        )
+        assert normalized["template"] == "resume_no_bars"
+        assert palette_meta is None
+        assert config_for_validation is raw_config
+
+    def test_normalize_with_palette_fallback_uses_fallback_metadata(
+        self, story, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        story.given("palette normalization fails and fallback metadata is available")
+        raw_config = {
+            "template": "resume_no_bars",
+            "palette": {"source": "custom"},
+        }
+        fallback_meta = {"source": "registry", "name": "ocean"}
+        captured_calls: list[dict[str, Any]] = []
+
+        def fake_normalize(
+            config: dict[str, Any],
+        ) -> tuple[dict[str, Any], dict[str, Any]]:
+            captured_calls.append(config.copy())
+            if "palette" in config:
+                raise PaletteGenerationError("palette failure")
+            return ({"template": config.get("template", "default")}, {"verified": True})
+
+        monkeypatch.setattr(resume_module, "normalize_config", fake_normalize)
+
+        story.when("calling the helper with raw config and meta fallback")
+        normalized, palette_meta, config_for_validation = (
+            Resume._normalize_with_palette_fallback(
+                raw_config,
+                palette_meta_source={"palette": fallback_meta},
+            )
+        )
+
+        story.then("the palette field is stripped and fallback metadata returned")
+        assert captured_calls[0]["palette"] == {"source": "custom"}
+        assert "palette" not in captured_calls[1]
+        assert normalized == {"template": "resume_no_bars"}
+        assert palette_meta == fallback_meta
+        assert "palette" not in config_for_validation
+        assert raw_config["palette"] == {"source": "custom"}
+
+    def test_validate_normalized_config_returns_resume_config(self, story) -> None:
+        story.given("a normalized config dictionary")
+
+        story.when("validating configuration")
+        config = Resume._validate_normalized_config({"template": "resume_no_bars"})
+
+        story.then("a ResumeConfig instance reflecting input values is returned")
+        assert isinstance(config, ResumeConfig)
+        assert config.template == "resume_no_bars"
+
+    def test_transform_for_mode_latex_returns_deep_copy(self, story) -> None:
+        story.given("source YAML content intended for LaTeX rendering")
+        original = {"nested": {"value": 1}}
+
+        story.when("transforming for latex mode")
+        transformed = Resume._transform_for_mode(original, "latex")
+
+        story.then("the data matches input but is a deep copy")
+        assert transformed == original
+        assert transformed is not original
+        assert transformed["nested"] is not original["nested"]
+
+    def test_transform_for_mode_html_renders_markdown(self, story) -> None:
+        story.given("source YAML content containing markdown")
+        original = {"description": "**Bold**"}
+
+        story.when("transforming for html mode")
+        transformed = Resume._transform_for_mode(original, "html")
+
+        story.then("markdown is rendered to HTML")
+        assert "<strong>Bold</strong>" in transformed["description"]
+
+    def test_build_render_plan_latex_mode(self, story) -> None:
+        story.given("a validated config targeting latex output")
+        config = Resume._validate_normalized_config({"output_mode": "latex"})
+
+        story.when("building a render plan without HTML context")
+        plan = Resume._build_render_plan(
+            "Test",
+            "latex",
+            config,
+            context=None,
+            base_path=tempfile.gettempdir(),
+            palette_meta={"palette": "meta"},
+        )
+
+        story.then("the plan omits template/context data and keeps palette metadata")
+        assert plan.mode == "latex"
+        assert plan.template_name is None
+        assert plan.context is None
+        assert plan.palette_metadata == {"palette": "meta"}
+
+    def test_build_render_plan_html_requires_context(self, story) -> None:
+        story.given("a config targeting html output but no context dictionary")
+        config = Resume._validate_normalized_config({})
+
+        story.then("building a plan without context raises a ValueError")
+        with pytest.raises(ValueError, match="context"):
+            Resume._build_render_plan(
+                "Test",
+                "html",
+                config,
+                context=None,
+                base_path=tempfile.gettempdir(),
+                template_name="resume.html",
+            )
+
+    def test_build_render_plan_html_requires_template(self, story) -> None:
+        story.given("a config targeting html output but no template name")
+        config = Resume._validate_normalized_config({})
+
+        story.then("building a plan without template name raises a ValueError")
+        with pytest.raises(ValueError, match="template"):
+            Resume._build_render_plan(
+                "Test",
+                "html",
+                config,
+                context={"key": "value"},
+                base_path=tempfile.gettempdir(),
+                template_name=None,
+            )
+
+    def test_build_render_plan_html_success(self, story) -> None:
+        story.given("a config, context, and template for html rendering")
+        config = Resume._validate_normalized_config({})
+        context = {"key": "value"}
+
+        story.when("building the render plan")
+        plan = Resume._build_render_plan(
+            "Test",
+            "html",
+            config,
+            context,
+            base_path=tempfile.gettempdir(),
+            template_name="resume.html",
+            palette_meta={"palette": "meta"},
+        )
+
+        story.then("the plan carries the template, context, and palette metadata")
+        assert plan.mode == "html"
+        assert plan.context == context
+        assert plan.template_name == "resume.html"
+        assert plan.palette_metadata == {"palette": "meta"}
+
 
 class TestResumeDataPreparation:
     """Test pure resume data transformation to render plans."""
 
-    def test_prepare_render_data_html_mode(self) -> None:
-        """Test preparing render data for HTML mode."""
+    def test_prepare_render_data_html_mode(self, story) -> None:
+        story.given("complete resume data targeting HTML preview")
         raw_data = {
             "full_name": "John Doe",
             "email": "john@example.com",
@@ -163,8 +430,10 @@ class TestResumeDataPreparation:
             },
         }
 
+        story.when("prepare_render_data runs with preview enabled")
         plan = Resume.prepare_render_data(raw_data, preview=True, base_path="/test")
 
+        story.then("the plan targets HTML with rendered markdown and preview context")
         assert isinstance(plan, RenderPlan)
         assert plan.mode == "html"
         assert plan.name == "John Doe"
@@ -177,8 +446,8 @@ class TestResumeDataPreparation:
         assert plan.config.page_width == 210
         assert plan.config.page_height == 297
 
-    def test_prepare_render_data_latex_mode(self) -> None:
-        """Test preparing render data for LaTeX mode."""
+    def test_prepare_render_data_latex_mode(self, story) -> None:
+        story.given("resume data configured for latex output")
         raw_data = {
             "full_name": "Jane Smith",
             "config": {
@@ -188,37 +457,41 @@ class TestResumeDataPreparation:
             },
         }
 
+        story.when("prepare_render_data runs without preview")
         plan = Resume.prepare_render_data(raw_data, preview=False, base_path="/test")
 
+        story.then("a latex render plan without template/context is produced")
         assert isinstance(plan, RenderPlan)
         assert plan.mode == "latex"
         assert plan.name == "Jane Smith"
         assert plan.base_path == "/test"
-        assert plan.tex is None  # LaTeX generation handled by shell layer
+        assert plan.tex is None
         assert plan.config.output_mode == "latex"
 
-    def test_prepare_render_data_invalid_config(self) -> None:
-        """Test that invalid config raises ValueError."""
+    def test_prepare_render_data_invalid_config(self, story) -> None:
+        story.given("resume config contains invalid numeric values")
         raw_data = {
             "config": {
-                "page_width": -10,  # Invalid
+                "page_width": -10,
             },
         }
 
+        story.then("validation fails and a ValueError is raised")
         with pytest.raises(ValueError, match="Invalid resume config"):
             Resume.prepare_render_data(raw_data, preview=False, base_path="/test")
 
-    def test_prepare_render_data_missing_config(self) -> None:
-        """Test handling of missing config section."""
+    def test_prepare_render_data_missing_config(self, story) -> None:
+        story.given("resume data without a config section")
         raw_data = {
             "full_name": "Test User",
         }
 
+        story.then("prepare_render_data raises a ValueError")
         with pytest.raises(ValueError, match="Invalid resume config"):
             Resume.prepare_render_data(raw_data, preview=False, base_path="/test")
 
-    def test_prepare_render_data_markdown_transformation(self) -> None:
-        """Test that markdown content is properly transformed to HTML."""
+    def test_prepare_render_data_markdown_transformation(self, story) -> None:
+        story.given("resume data with markdown fields and HTML target")
         raw_data = {
             "full_name": "Test User",
             "config": {
@@ -235,8 +508,10 @@ class TestResumeDataPreparation:
             },
         }
 
+        story.when("prepare_render_data produces an HTML plan")
         plan = Resume.prepare_render_data(raw_data, preview=False, base_path="/test")
 
+        story.then("markdown content is rendered for description and nested sections")
         assert plan.context is not None
         assert "<strong>Bold text</strong>" in plan.context["description"]
         assert "<em>italic text</em>" in plan.context["description"]
@@ -245,8 +520,8 @@ class TestResumeDataPreparation:
         assert "<h2>Features</h2>" in projects[0]["description"]
         assert "<li>Feature 1</li>" in projects[0]["description"]
 
-    def test_prepare_render_data_palette_metadata(self) -> None:
-        """Test that palette metadata is preserved in render plan."""
+    def test_prepare_render_data_palette_metadata(self, story) -> None:
+        story.given("config includes palette details and fallback metadata")
         raw_data = {
             "full_name": "Test User",
             "config": {
@@ -265,8 +540,10 @@ class TestResumeDataPreparation:
             },
         }
 
+        story.when("prepare_render_data builds the plan")
         plan = Resume.prepare_render_data(raw_data, preview=False, base_path="/test")
 
+        story.then("palette metadata is preserved on the render plan")
         assert plan.palette_metadata is not None
         assert plan.palette_metadata["source"] == "registry"
         assert plan.palette_metadata["name"] == "ocean"
@@ -341,7 +618,7 @@ class TestResumeConfigDataClass:
         config = ResumeConfig(page_width=210, page_height=297)
 
         with pytest.raises(FrozenInstanceError):
-            config.page_width = 300
+            config.page_width = 300  # type: ignore[misc]
 
     def test_resume_config_equality(self) -> None:
         """Test ResumeConfig equality comparison."""
@@ -415,7 +692,7 @@ class TestRenderPlanDataClass:
         plan = RenderPlan(name="test", mode="html", config=config, base_path="/test")
 
         with pytest.raises(FrozenInstanceError):
-            plan.name = "new_name"
+            plan.name = "new_name"  # type: ignore[misc]
 
 
 class TestValidationResult:
@@ -787,20 +1064,23 @@ class TestResumeInstanceMethods:
 class TestResumeIOBehaviour:
     """Story-driven tests covering read/write paths and error handling."""
 
-    def test_read_yaml_conflicting_paths_and_overrides(self, story) -> None:
+    def test_read_yaml_conflicting_paths_and_overrides(
+        self, story, tmp_path: Path
+    ) -> None:
         story.given("callers pass resolved paths and explicit overrides simultaneously")
+        paths = _make_paths(tmp_path)
         with pytest.raises(
             ConfigurationError, match="Provide either paths or path_overrides"
         ):
             Resume.read_yaml(
                 "demo",
-                paths=SimpleNamespace(),
+                paths=paths,
                 content_dir="/sandbox/content",
             )
 
-    def test_read_yaml_wraps_io_errors(self, story) -> None:
+    def test_read_yaml_wraps_io_errors(self, story, tmp_path: Path) -> None:
         story.given("get_content raises an unexpected OSError while reading YAML")
-        fake_paths = SimpleNamespace()
+        fake_paths = _make_paths(tmp_path)
         with patch(
             "simple_resume.core.resume.get_content", side_effect=OSError("disk error")
         ):
@@ -876,9 +1156,7 @@ class TestResumeIOBehaviour:
         story,
     ) -> None:
         story.given("LaTeX compilation fails with diagnostic output")
-        paths = SimpleNamespace(
-            output=tmp_path, templates=tmp_path, content=tmp_path, static=tmp_path
-        )
+        paths = _make_paths(tmp_path)
         resume = Resume.from_data(
             {"full_name": "Candidate", "config": {"output_mode": "latex"}},
             paths=paths,
@@ -890,7 +1168,7 @@ class TestResumeIOBehaviour:
             config=ResumeConfig(output_mode="latex"),
             base_path=str(tmp_path),
         )
-        output_path = tmp_path / "candidate.pdf"
+        output_path = paths.output / "candidate.pdf"
         latex_error = LatexCompilationError("failed", log="bad log")
 
         with (

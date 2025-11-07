@@ -1,20 +1,20 @@
-# Markdown Guide for Resume Content
+# Markdown Guide
 
-This guide explains how to use Markdown to add rich formatting to the content of your resume.
+This guide explains how to use Markdown for rich formatting in your resume content.
 
 ## Supported Features
 
--   **Bold**: `**text**`
--   *Italic*: `*text*`
--   Links: `[text](url)`
--   Headers: `# h1`, `## h2`
--   Fenced code blocks: ` ```python `
+-   **Bold**
+-   *Italic*
+-   Links
+-   Headers
+-   Fenced code blocks
 -   Tables
 -   Bulleted lists
 
-## Formatting Your Projects
+## Formatting Projects
 
-The `Projects` section is a great place to showcase your personal or open-source work.
+The `Projects` section is ideal for showcasing personal or open-source work.
 
 ### Example
 
@@ -35,18 +35,18 @@ Projects:
       - **Tech Stack:** Python, Docker, Kubernetes
 ```
 
-### Tips for Writing Great Project Descriptions
+### Tips
 
--   Lead with measurable results (e.g., "Reduced latency by 75%").
--   Link to your code or a live demo.
--   Include a "Tech Stack" line to highlight the technologies you used.
+-   Quantify results (e.g., "Reduced latency by 75%").
+-   Include links to code or demos.
+-   Highlight technology used with a "Tech Stack" line.
 
-## General Formatting Tips
+## General Formatting
 
--   **Use code blocks** with language identifiers (e.g., `python`, `javascript`) to get syntax highlighting in the HTML version of your resume.
--   **Quantify your accomplishments** with specific numbers (e.g., "Reduced latency by 45%", "Increased revenue by $200K").
--   **Start bullet points with action verbs** that describe the outcome of your work (e.g., "Automated testing, which reduced bug reports by 20%").
+-   Use code blocks with language identifiers (e.g., `python`, `javascript`) for syntax highlighting in HTML resumes.
+-   Quantify accomplishments with numbers (e.g., "Reduced latency by 45%", "Increased revenue by $200K").
+-   Start bullet points with action verbs that describe outcomes.
 
 ## How It Works
 
-We use the `markdown` Python library with extensions for fenced code blocks, tables, and syntax highlighting to render your Markdown content.
+We use the `markdown` Python library with extensions for fenced code blocks, tables, and syntax highlighting to render your Markdown.

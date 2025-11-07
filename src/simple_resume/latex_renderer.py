@@ -6,6 +6,8 @@ from __future__ import annotations
 import itertools
 import re
 import shutil
+
+# Bandit: subprocess usage is confined to vetted TeX commands.
 import subprocess  # nosec B404
 import textwrap
 from collections.abc import Iterable
@@ -535,6 +537,7 @@ def compile_tex_to_pdf(
         tex_argument,
     ]
 
+    # Bandit: command arguments are constructed from vetted engine names and paths.
     result = subprocess.run(  # noqa: S603  # nosec B603
         command,
         cwd=str(tex_path.parent),
@@ -598,6 +601,8 @@ def compile_tex_to_html(
         else:
             continue
 
+        # Bandit: conversion command uses whitelisted tool names and the
+        # rendered tex path.
         result = subprocess.run(  # noqa: S603  # nosec B603
             command,
             cwd=str(tex_path.parent),

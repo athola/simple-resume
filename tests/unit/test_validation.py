@@ -153,7 +153,7 @@ def test_validate_directory_path_reports_creation_failure(
     def fake_mkdir(self, parents=True, exist_ok=True):
         raise PermissionError("denied")
 
-    monkeypatch.setattr(validation.Path, "mkdir", fake_mkdir, raising=False)
+    monkeypatch.setattr(Path, "mkdir", fake_mkdir, raising=False)
 
     with pytest.raises(FileSystemError, match="Failed to create directory"):
         validate_directory_path(target_dir, create_if_missing=True)
@@ -226,7 +226,55 @@ def test_validate_resume_data_requires_non_empty_full_name(story) -> None:
 def test_validate_resume_data_config_must_be_dict(story) -> None:
     story.given("resume data whose config entry is not a dictionary")
     with pytest.raises(ValidationError, match="must be a dictionary"):
-        validate_resume_data({"full_name": "User", "config": "not-a-dict"})
+        validate_resume_data(
+            {
+                "full_name": "User",
+                "email": "user@example.com",
+                "config": "not-a-dict",
+            }
+        )
+
+
+def test_validate_resume_data_requires_email(story) -> None:
+    story.given("resume data missing an email")
+    with pytest.raises(ValidationError, match="include 'email'"):
+        validate_resume_data({"full_name": "User"})
+
+
+def test_validate_resume_data_rejects_invalid_email(story) -> None:
+    story.given("resume data with an invalid email format")
+    with pytest.raises(ValidationError, match="Invalid email format"):
+        validate_resume_data({"full_name": "User", "email": "not-an-email"})
+
+
+def test_validate_resume_data_rejects_invalid_dates(story) -> None:
+    story.given("experience data with a non-ISO date string")
+    data = {
+        "full_name": "User",
+        "email": "user@example.com",
+        "body": {"experience": [{"start_date": "Jan 2020", "end_date": "2021-05"}]},
+    }
+
+    with pytest.raises(ValidationError, match="Invalid date format"):
+        validate_resume_data(data)
+
+
+def test_validate_resume_data_accepts_valid_dates(story) -> None:
+    story.given("experience data with ISO-formatted dates")
+    data = {
+        "full_name": "User",
+        "email": "user@example.com",
+        "body": {
+            "experience": [
+                {"start_date": "2020-01", "end_date": "2021-05"},
+                {"date": "2022"},
+            ]
+        },
+    }
+
+    validate_resume_data(data)
+
+    story.then("validation completes without raising")
 
 
 def test_validate_output_path_accepts_matching_extension(

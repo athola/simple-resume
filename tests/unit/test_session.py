@@ -112,6 +112,7 @@ class TestResumeSessionInit:
 
         story.then("the override updates both session and config paths")
         assert session.paths.output == output_dir
+        assert session.config.paths is not None
         assert session.config.paths.output == output_dir
         session.close()
 

@@ -7,6 +7,7 @@ This file documents all notable changes to the project. The format is based on [
 Initial public release.
 
 ### Added
+
 - YAML-driven resume generation with HTML and PDF outputs
 - Unified generation API with rich result objects and metadata tracking
 - Session management system for consistent configuration across operations
@@ -22,6 +23,7 @@ Initial public release.
 - CLI entry point consolidated: use `simple-resume generate` for all formats
 
 ### Changed
+
 - Refactored core architecture with modular design for better maintainability
 - Improved error handling with structured exception hierarchy
 - Enhanced CLI with better user experience and error messages
@@ -29,6 +31,7 @@ Initial public release.
 - Streamlined configuration system with sensible defaults
 
 ### Fixed
+
 - Resolved LaTeX path handling so XeLaTeX/pdflatex compile sample resumes reliably
 - Fixed template resolution edge cases and improved error reporting
 - Corrected color contrast calculations for better accessibility
@@ -39,6 +42,7 @@ Initial public release.
 ---
 
 ### Release Process Notes
+
 - Update this file before tagging a release (move entries from **Unreleased** to a new version section).
 - Include the release date in ISO format (`YYYY-MM-DD`).
 - Reference GitHub pull requests or issues in brackets when available (e.g., `[#[issue]]`).

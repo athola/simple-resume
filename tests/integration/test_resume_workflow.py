@@ -203,10 +203,20 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
         soup = BeautifulSoup(html, "html.parser")
 
         story.then("markdown headings and emphasis are converted to semantic HTML")
-        assert soup.find("h1", string="Professional Summary") is not None
-        assert soup.find("strong", string="bold text") is not None
-        link = soup.find("a", string="links")
-        assert link and link.get("href") == "https://example.com"
+
+        def _find_tag_with_text(tag_name: str, expected_text: str):
+            for element in soup.find_all(tag_name):
+                if element.get_text(strip=True) == expected_text:
+                    return element
+            return None
+
+        heading = _find_tag_with_text("h1", "Professional Summary")
+        assert heading is not None
+        emphasis = _find_tag_with_text("strong", "bold text")
+        assert emphasis is not None
+        link = _find_tag_with_text("a", "links")
+        assert link is not None
+        assert link.get("href") == "https://example.com"
 
     def test_error_handling_and_recovery_workflow(self, temp_dir: Path) -> None:
         """Continue processing after encountering errors."""

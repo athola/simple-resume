@@ -8,11 +8,15 @@ external dependencies or side effects.
 from __future__ import annotations
 
 import copy
-import subprocess
+import os
+
+# subprocess is used to launch viewer tooling with controlled arguments during
+# optional preview flows.
+import subprocess  # nosec B404
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal, Protocol
+from typing import Any, Literal, Protocol, cast
 
 from ..config import TEMPLATE_LOC, Paths, resolve_paths
 
@@ -23,8 +27,6 @@ from ..exceptions import (
     GenerationError,
     TemplateError,
     ValidationError,
-    raise_generation_error,
-    raise_validation_error,
 )
 from ..palettes.exceptions import PaletteGenerationError
 from ..rendering import get_template_environment
@@ -35,16 +37,21 @@ from ..utilities import (
     _hex_to_rgb,
     _is_valid_color,
     get_content,
+    load_palette_from_file,
     normalize_config,
     render_markdown_content,
 )
 
 # Optional imports for PDF generation
 try:
-    from weasyprint import CSS, HTML
+    from weasyprint import CSS as WEASYPRINT_CSS
+    from weasyprint import HTML as WEASYPRINT_HTML
 except ImportError:
-    CSS = None  # typer: ignore
-    HTML = None  # typer: ignore
+    WEASYPRINT_CSS = cast(Any, None)
+    WEASYPRINT_HTML = cast(Any, None)
+
+CSS = WEASYPRINT_CSS
+HTML = WEASYPRINT_HTML
 
 
 # Protocol definitions for optional LaTeX imports
@@ -85,6 +92,45 @@ except ImportError:
 RenderMode = Literal["html", "latex"]
 
 
+def _candidate_yaml_path(name: str | os.PathLike[str]) -> Path | None:
+    if isinstance(name, (str, os.PathLike)):
+        maybe_path = Path(name)
+        if maybe_path.suffix.lower() in {".yaml", ".yml"}:
+            return maybe_path
+    return None
+
+
+def _resolve_paths_for_read(
+    supplied_paths: Paths | None,
+    overrides: dict[str, Any],
+    candidate: Path | None,
+) -> Paths:
+    if supplied_paths is not None:
+        return supplied_paths
+
+    if overrides:
+        return resolve_paths(**overrides)
+
+    if candidate is not None:
+        if candidate.parent.name == "input":
+            base_dir = candidate.parent.parent
+        else:
+            base_dir = candidate.parent
+
+        # resolve_paths accepts PathLike (includes Path objects)
+        base_paths = resolve_paths(data_dir=base_dir)
+        return Paths(
+            data=base_paths.data,
+            input=candidate.parent,
+            output=base_paths.output,
+            content=base_paths.content,
+            templates=base_paths.templates,
+            static=base_paths.static,
+        )
+
+    return resolve_paths(**overrides)
+
+
 @dataclass(frozen=True)
 class ResumeConfig:
     """Normalized resume configuration with validated fields."""
@@ -103,6 +149,7 @@ class ResumeConfig:
     bar_background_color: str = "#DFDFDF"
     date2_color: str = "#616161"
     frame_color: str = "#757575"
+    heading_icon_color: str = "#0395DE"  # Defaults to theme_color
 
 
 @dataclass(frozen=True)
@@ -116,7 +163,7 @@ class RenderPlan:
     context: dict[str, Any] | None = None
     tex: str | None = None
     palette_metadata: dict[str, Any] | None = None
-    base_path: str = ""
+    base_path: Path | str = ""  # Accepts Path or str for flexibility
 
 
 @dataclass(frozen=True)
@@ -142,28 +189,31 @@ class Resume:
 
     def __init__(
         self,
-        data: dict[str, Any],
+        processed_resume_data: dict[str, Any],
         *,
         name: str | None = None,
         paths: Paths | None = None,
         filename: str | None = None,
-        raw_data: dict[str, Any] | None = None,
+        source_yaml_data: dict[str, Any] | None = None,
     ) -> None:
         """Initialize a Resume instance.
 
         Args:
-            data: Raw resume data dictionary
+            processed_resume_data: Transformed resume data (markdown rendered,
+                normalized)
             name: Optional name identifier
             paths: Optional resolved paths object
             filename: Optional source filename for error reporting
-            raw_data: Optional untransformed resume data dictionary
+            source_yaml_data: Optional untransformed YAML data before processing
 
         """
-        self._data = copy.deepcopy(data)
+        self._data = copy.deepcopy(processed_resume_data)
         self._raw_data = (
-            copy.deepcopy(raw_data) if raw_data is not None else copy.deepcopy(data)
+            copy.deepcopy(source_yaml_data)
+            if source_yaml_data is not None
+            else copy.deepcopy(processed_resume_data)
         )
-        self._name = name or data.get("full_name", "resume")
+        self._name = name or processed_resume_data.get("full_name", "resume")
         self._paths = paths
         self._filename = filename
         self._validation_result: ValidationResult | None = None
@@ -203,7 +253,9 @@ class Resume:
                     "Provide either paths or path_overrides, not both", filename=name
                 )
 
-            resolved_paths = paths or resolve_paths(**path_overrides)
+            overrides = dict(path_overrides)
+            candidate_path = _candidate_yaml_path(name)
+            resolved_paths = _resolve_paths_for_read(paths, overrides, candidate_path)
             raw_data = get_content(name, paths=resolved_paths, transform_markdown=False)
 
             data = (
@@ -212,12 +264,19 @@ class Resume:
                 else copy.deepcopy(raw_data)
             )
 
+            resume_identifier = (
+                candidate_path.stem if candidate_path is not None else str(name)
+            )
+            filename_label = (
+                str(candidate_path) if candidate_path is not None else str(name)
+            )
+
             return cls(
-                data=data,
-                name=name,
+                processed_resume_data=data,
+                name=resume_identifier,
                 paths=resolved_paths,
-                filename=name,
-                raw_data=raw_data,
+                filename=filename_label,
+                source_yaml_data=raw_data,
             )
 
         except Exception as exc:
@@ -250,7 +309,12 @@ class Resume:
             Resume instance created from data
 
         """
-        return cls(data=data, name=name, paths=paths, raw_data=raw_data)
+        return cls(
+            processed_resume_data=data,
+            name=name,
+            paths=paths,
+            source_yaml_data=raw_data,
+        )
 
     # Instance methods for output operations (symmetric to read_yaml)
 
@@ -280,13 +344,7 @@ class Resume:
 
         try:
             # Validate data first
-            validation_result = self.validate()
-            if not validation_result.is_valid:
-                raise_validation_error(
-                    f"Resume validation failed: {validation_result.errors}",
-                    errors=validation_result.errors,
-                    filename=self._filename,
-                )
+            self.validate_or_raise()
 
             # Prepare render plan
             render_plan = self._prepare_render_plan(preview=False)
@@ -303,15 +361,11 @@ class Resume:
                 output_path = Path(output_path)
 
             # Generate PDF using backend selected by render mode
-            backend_result: GenerationResult | tuple[GenerationResult, int | None]
-            if render_plan.mode == "latex":
-                backend_result = self._generate_pdf_with_latex(
-                    render_plan, output_path, **kwargs
-                )
-            else:
-                backend_result = self._generate_pdf_with_weasyprint(
-                    render_plan, output_path, **kwargs
-                )
+            backend_result = self._generate_pdf(
+                render_plan,
+                output_path,
+                **kwargs,
+            )
 
             # Normalize backend result to consistent format
             raw_output_path, file_size, page_count = self._normalize_backend_result(
@@ -349,7 +403,7 @@ class Resume:
             raise GenerationError(
                 f"Failed to generate PDF: {exc}",
                 format_type="pdf",
-                output_path=str(output_path) if output_path else None,
+                output_path=output_path,
                 filename=self._filename,
             ) from exc
 
@@ -381,13 +435,7 @@ class Resume:
 
         try:
             # Validate data first
-            validation_result = self.validate()
-            if not validation_result.is_valid:
-                raise_validation_error(
-                    f"Resume validation failed: {validation_result.errors}",
-                    errors=validation_result.errors,
-                    filename=self._filename,
-                )
+            self.validate_or_raise()
 
             # Prepare render plan
             render_plan = self._prepare_render_plan(preview=True)
@@ -404,7 +452,7 @@ class Resume:
                 output_path = Path(output_path)
 
             # Generate HTML
-            result = self._generate_html_with_jinja(render_plan, output_path, **kwargs)
+            result = self._generate_html(render_plan, output_path, **kwargs)
 
             # Create rich result object
             generation_time = time.time() - start_time
@@ -421,9 +469,11 @@ class Resume:
 
             if open_after:
                 if browser:
-                    # Use specified browser
+                    # Use specified browser command for opening the file.
+                    # Bandit: browser executable originates from user input and
+                    # is invoked with a single file.
                     subprocess.Popen(  # noqa: S603  # nosec B603
-                        [browser, str(output_path)],
+                        [browser, output_path],
                         stdout=subprocess.DEVNULL,
                         stderr=subprocess.DEVNULL,
                     )
@@ -435,12 +485,12 @@ class Resume:
         except Exception as exc:
             if isinstance(exc, (ValidationError, GenerationError, ConfigurationError)):
                 raise
-            raise_generation_error(
+            raise GenerationError(
                 f"Failed to generate HTML: {exc}",
                 format_type="html",
-                output_path=str(output_path) if output_path else None,
+                output_path=output_path,
                 filename=self._filename,
-            )
+            ) from exc
 
     # Method chaining support (fluent interface)
 
@@ -466,11 +516,11 @@ class Resume:
         new_raw["template"] = template_name  # pytype: disable=container-type-mismatch
 
         return Resume(
-            data=new_data,
+            processed_resume_data=new_data,
             name=self._name,
             paths=self._paths,
             filename=self._filename,
-            raw_data=new_raw,
+            source_yaml_data=new_raw,
         )
 
     def with_palette(self, palette: str | dict[str, Any]) -> Resume:
@@ -508,11 +558,11 @@ class Resume:
             new_raw["config"]["palette"] = palette
 
         return Resume(
-            data=new_data,
+            processed_resume_data=new_data,
             name=self._name,
             paths=self._paths,
             filename=self._filename,
-            raw_data=new_raw,
+            source_yaml_data=new_raw,
         )
 
     def with_config(self, **config_overrides: Any) -> Resume:
@@ -536,15 +586,35 @@ class Resume:
         if "config" not in new_raw:
             new_raw["config"] = {}
 
-        new_data["config"].update(config_overrides)
-        new_raw["config"].update(config_overrides)
+        overrides = dict(config_overrides)
+        palette_file = overrides.pop("palette_file", None)
+
+        if palette_file is not None:
+            try:
+                palette_payload = load_palette_from_file(palette_file)
+            except (FileNotFoundError, ValueError) as exc:
+                raise ConfigurationError(
+                    f"Failed to load palette file: {palette_file}",
+                    filename=self._filename,
+                ) from exc
+
+            palette_data = copy.deepcopy(palette_payload["palette"])
+            new_data["config"]["palette"] = palette_data
+            new_raw["config"]["palette"] = copy.deepcopy(palette_data)
+
+        palette_override = overrides.get("palette")
+        if isinstance(palette_override, dict):
+            overrides["palette"] = copy.deepcopy(palette_override)
+
+        new_data["config"].update(overrides)
+        new_raw["config"].update(overrides)
 
         return Resume(
-            data=new_data,
+            processed_resume_data=new_data,
             name=self._name,
             paths=self._paths,
             filename=self._filename,
-            raw_data=new_raw,
+            source_yaml_data=new_raw,
         )
 
     def preview(self) -> Resume:
@@ -555,51 +625,66 @@ class Resume:
 
         """
         new_resume = Resume(
-            data=self._data,
+            processed_resume_data=self._data,
             name=self._name,
             paths=self._paths,
             filename=self._filename,
-            raw_data=self._raw_data,
+            source_yaml_data=self._raw_data,
         )
         new_resume._is_preview = True
         return new_resume
 
     def _normalize_backend_result(
-        self, backend_result: GenerationResult | tuple[GenerationResult, int | None]
+        self,
+        generation_output: GenerationResult | tuple[GenerationResult, int | None],
     ) -> tuple[Path, int, int | None]:
         """Normalize backend result to consistent format.
 
         Args:
-            backend_result: Result from backend (tuple or GenerationResult)
+            generation_output: Result from PDF/HTML generation (tuple or
+                GenerationResult)
 
         Returns:
             Tuple of (output_path, file_size, page_count)
 
         """
-        # Extract raw result and page count
-        if isinstance(backend_result, tuple):
-            raw_result, page_count = backend_result
+        # Extract result object and page count
+        page_count: int | None
+        if isinstance(generation_output, tuple):
+            result_object, page_count_candidate = generation_output
+            page_count = (
+                page_count_candidate
+                if isinstance(page_count_candidate, int) and page_count_candidate >= 0
+                else None
+            )
         else:
-            raw_result = backend_result
-            metadata = getattr(raw_result, "metadata", None)
-            page_count = getattr(metadata, "page_count", None) if metadata else None
-            if not isinstance(page_count, int) or page_count < 0:
-                page_count = None
+            result_object = generation_output
+            metadata = getattr(result_object, "metadata", None)
+            count_candidate = (
+                getattr(metadata, "page_count", None) if metadata else None
+            )
+            page_count = (
+                count_candidate
+                if isinstance(count_candidate, int) and count_candidate >= 0
+                else None
+            )
 
         # Extract output path
-        raw_output_path = getattr(raw_result, "output_path", None)
-        if not isinstance(raw_output_path, Path):
-            raw_output_path = Path(str(raw_output_path)) if raw_output_path else Path()
+        output_file_path = getattr(result_object, "output_path", None)
+        if not isinstance(output_file_path, Path):
+            output_file_path = (
+                Path(str(output_file_path)) if output_file_path else Path()
+            )
 
         # Extract file size
-        size_candidate = getattr(raw_result, "size", None)
-        file_size = (
-            size_candidate
-            if isinstance(size_candidate, int) and size_candidate >= 0
+        reported_size = getattr(result_object, "size", None)
+        file_size: int = (
+            reported_size
+            if isinstance(reported_size, int) and reported_size >= 0
             else 0
         )
 
-        return raw_output_path, file_size, page_count  # typer: ignore
+        return output_file_path, file_size, page_count
 
     def generate(
         self,
@@ -635,10 +720,28 @@ class Resume:
     # Instance methods for validation and rendering
 
     def validate(self) -> ValidationResult:
-        """Validate this resume's data.
+        """Validate this resume's data (inspection tier - never raises).
+
+        This method returns a ValidationResult object that contains validation
+        status, errors, and warnings. It never raises exceptions, allowing you
+        to inspect validation issues without interrupting execution.
+
+        Use this when you want to:
+        - Check validation status without stopping execution
+        - Log warnings or collect error information
+        - Build custom error handling logic
+
+        For fail-fast validation, use `validate_or_raise()` instead.
 
         Returns:
             ValidationResult with validation status and any errors/warnings
+
+        Example:
+            >>> result = resume.validate()
+            >>> if not result.is_valid:
+            >>>     print(f"Errors: {result.errors}")
+            >>> if result.warnings:
+            >>>     log.warning(f"Warnings: {result.warnings}")
 
         """
         if self._validation_result is None:
@@ -646,6 +749,36 @@ class Resume:
             filename = self._filename or ""
             self._validation_result = self.validate_config(raw_config, filename)
         return self._validation_result
+
+    def validate_or_raise(self) -> None:
+        """Validate resume data and raise ValidationError on failure.
+
+        This method validates the resume and raises a ValidationError if validation
+        fails. It's used internally by to_pdf(), to_html(), and other operations
+        that require valid data.
+
+        Use this when you want:
+        - Fail-fast behavior (stop execution on invalid data)
+        - Automatic exception propagation
+        - To validate before an operation that requires valid data
+
+        For inspection without raising, use `validate()` instead.
+
+        Raises:
+            ValidationError: If validation fails with detailed error information
+
+        Example:
+            >>> resume.validate_or_raise()  # Raises if invalid
+            >>> resume.to_pdf("output.pdf")  # Only runs if validation passed
+
+        """
+        validation_result = self.validate()
+        if not validation_result.is_valid:
+            raise ValidationError(
+                f"Resume validation failed: {validation_result.errors}",
+                errors=validation_result.errors,
+                filename=self._filename,
+            )
 
     def _prepare_render_plan(self, preview: bool | None = None) -> RenderPlan:
         """Prepare render plan for this resume.
@@ -661,7 +794,8 @@ class Resume:
             preview is not None and preview != self._is_preview
         ):
             actual_preview = preview if preview is not None else self._is_preview
-            base_path = str(self._paths.content) if self._paths else ""
+            # Pass Path directly - no need to convert to string
+            base_path = self._paths.content if self._paths else Path()
             source_data = (
                 self._raw_data
                 if hasattr(self, "_raw_data") and self._raw_data is not None
@@ -671,6 +805,14 @@ class Resume:
                 source_data, preview=actual_preview, base_path=base_path
             )
         return self._render_plan
+
+    def _generate_pdf(
+        self, render_plan: RenderPlan, output_path: Path, **kwargs: Any
+    ) -> GenerationResult | tuple[GenerationResult, int | None]:
+        """Dispatch PDF generation to the appropriate backend."""
+        if render_plan.mode == "latex":
+            return self._generate_pdf_with_latex(render_plan, output_path, **kwargs)
+        return self._generate_pdf_with_weasyprint(render_plan, output_path, **kwargs)
 
     def _generate_pdf_with_weasyprint(
         self, render_plan: RenderPlan, output_path: Path, **kwargs: Any
@@ -842,6 +984,18 @@ class Resume:
             except OSError:
                 continue
 
+    def _generate_html(
+        self, render_plan: RenderPlan, output_path: Path, **kwargs: Any
+    ) -> GenerationResult:
+        """Generate HTML using the configured backend."""
+        if render_plan.mode == "latex":
+            raise TemplateError(
+                "LaTeX mode not supported in HTML generation method",
+                template_name="latex",
+                filename=self._filename,
+            )
+        return self._generate_html_with_jinja(render_plan, output_path, **kwargs)
+
     def _generate_html_with_jinja(
         self, render_plan: RenderPlan, output_path: Path, **kwargs: Any
     ) -> GenerationResult:
@@ -880,7 +1034,12 @@ class Resume:
         )
 
         # Add base href for proper asset resolution
-        base_path = Path(render_plan.base_path)
+        # Normalize to Path if it's a string
+        base_path = (
+            render_plan.base_path
+            if isinstance(render_plan.base_path, Path)
+            else Path(render_plan.base_path)
+        )
         base_uri = base_path.resolve().as_uri().rstrip("/") + "/"
         base_tag = f'<base href="{base_uri}">'
         if "<head>" in html:
@@ -922,6 +1081,7 @@ class Resume:
                 "bar_background_color",
                 "date2_color",
                 "frame_color",
+                "heading_icon_color",
             ]
             for field in color_fields:
                 if field not in working_config:
@@ -959,6 +1119,9 @@ class Resume:
                 ),
                 date2_color=normalized_config.get("date2_color", "#616161"),
                 frame_color=normalized_config.get("frame_color", "#757575"),
+                heading_icon_color=normalized_config.get(
+                    "heading_icon_color", "#0395DE"
+                ),
             )
 
             if errors:
@@ -986,13 +1149,128 @@ class Resume:
             return ValidationResult(is_valid=False, errors=errors, warnings=warnings)
 
     @staticmethod
+    def validate_config_or_raise(
+        raw_config: dict[str, Any], filename: str = ""
+    ) -> ResumeConfig:
+        """Validate and normalize resume configuration.
+
+        Raises ValidationError when normalization fails.
+
+        Args:
+            raw_config: Raw configuration dictionary from YAML
+            filename: Optional filename for error reporting
+
+        Returns:
+            Normalized ResumeConfig if validation succeeds
+
+        Raises:
+            ValidationError: If validation fails with detailed error information
+
+        """
+        result = Resume.validate_config(raw_config, filename)
+        if not result.is_valid:
+            raise ValidationError(
+                f"Configuration validation failed: {result.errors}",
+                errors=result.errors,
+                filename=filename,
+            )
+
+        if result.normalized_config is None:
+            raise ValidationError(
+                "Configuration validation failed: No normalized config produced",
+                errors=["Internal validation error"],
+                filename=filename,
+            )
+
+        return result.normalized_config
+
+    @staticmethod
+    def _normalize_with_palette_fallback(
+        raw_config: dict[str, Any],
+        *,
+        palette_meta_source: dict[str, Any] | None = None,
+    ) -> tuple[dict[str, Any], Any, dict[str, Any]]:
+        """Normalize a raw config while handling palette generation failures."""
+        config_for_validation = raw_config
+
+        try:
+            normalized_config_dict, palette_meta = normalize_config(raw_config)
+            return normalized_config_dict, palette_meta, config_for_validation
+        except PaletteGenerationError:
+            fallback_meta = None
+            if isinstance(palette_meta_source, dict):
+                fallback_meta = palette_meta_source.get("palette")
+
+            cleaned_config = copy.deepcopy(raw_config)
+            cleaned_config.pop("palette", None)
+            normalized_config_dict, _ = normalize_config(cleaned_config)
+
+            return normalized_config_dict, fallback_meta, cleaned_config
+
+    @staticmethod
+    def _validate_normalized_config(config_data: dict[str, Any]) -> ResumeConfig:
+        """Validate normalized configuration data."""
+        return Resume.validate_config_or_raise(config_data)
+
+    @staticmethod
+    def _transform_for_mode(
+        source_yaml_content: dict[str, Any], mode: RenderMode
+    ) -> dict[str, Any]:
+        """Transform YAML content based on render mode."""
+        if mode == "latex":
+            return copy.deepcopy(source_yaml_content)
+
+        return render_markdown_content(source_yaml_content)
+
+    @staticmethod
+    def _build_render_plan(  # noqa: PLR0913
+        name: str,
+        mode: RenderMode,
+        config: ResumeConfig,
+        context: dict[str, Any] | None,
+        *,
+        base_path: Path | str,
+        template_name: str | None = None,
+        palette_meta: Any = None,
+    ) -> RenderPlan:
+        """Build the final RenderPlan based on resolved mode and context."""
+        if mode == "latex":
+            return RenderPlan(
+                name=name,
+                mode="latex",
+                config=config,
+                base_path=base_path,
+                tex=None,  # Will be filled by shell layer
+                palette_metadata=palette_meta,
+            )
+
+        if context is None:
+            raise ValueError("HTML render plans require a context dictionary")
+
+        if template_name is None:
+            raise ValueError("HTML render plans require a template name")
+
+        return RenderPlan(
+            name=name,
+            mode="html",
+            config=config,
+            template_name=template_name,
+            context=context,
+            base_path=base_path,
+            palette_metadata=palette_meta,
+        )
+
+    @staticmethod
     def prepare_render_data(
-        raw_data: dict[str, Any], *, preview: bool = False, base_path: str = ""
+        source_yaml_content: dict[str, Any],
+        *,
+        preview: bool = False,
+        base_path: Path | str = "",
     ) -> RenderPlan:
         """Transform raw resume data into a render plan.
 
         Args:
-            raw_data: Raw resume data from YAML
+            source_yaml_content: Unprocessed resume data from YAML file
             preview: Whether this is for preview mode
             base_path: Base path for resolving assets
 
@@ -1001,76 +1279,55 @@ class Resume:
 
         """
         # Get the full normalized config dictionary
-        raw_config = raw_data.get("config")
+        raw_config = source_yaml_content.get("config")
         if not isinstance(raw_config, dict) or not raw_config:
             raise ValueError(
                 "Invalid resume config: missing or malformed config section"
             )
 
-        normalized_config_dict: dict[str, Any] | None = None
-        palette_meta: dict[str, Any] | None = None
-        config_for_validation: dict[str, Any] = raw_config
-
-        try:
-            normalized_config_dict, palette_meta = normalize_config(raw_config)
-        except PaletteGenerationError:
-            fallback_meta = (
-                raw_data.get("meta", {}).get("palette")
-                if isinstance(raw_data.get("meta"), dict)
-                else None
+        normalized_config_dict, palette_meta, config_for_validation = (
+            Resume._normalize_with_palette_fallback(
+                raw_config,
+                palette_meta_source=source_yaml_content.get("meta"),
             )
-            cleaned_config = copy.deepcopy(raw_config)
-            cleaned_config.pop("palette", None)
-            normalized_config_dict, _ = normalize_config(cleaned_config)
-            palette_meta = fallback_meta
-            config_for_validation = cleaned_config
+        )
 
         # Validate configuration using our validation
-        config_result = Resume.validate_config(config_for_validation)
-        if not config_result.is_valid or not config_result.normalized_config:
-            raise ValueError(f"Invalid resume config: {config_result.errors}")
-
-        config = config_result.normalized_config
+        config = Resume._validate_normalized_config(config_for_validation)
 
         # Determine render mode
         mode: RenderMode = "latex" if config.output_mode == "latex" else "html"
 
         # Transform markdown content for HTML mode only
-        if mode == "latex":
-            transformed_data = copy.deepcopy(raw_data)
-        else:
-            transformed_data = render_markdown_content(raw_data)
+        transformed_data = Resume._transform_for_mode(source_yaml_content, mode)
+
+        name = transformed_data.get("full_name", "resume")
 
         if mode == "latex":
-            # For LaTeX mode, we'll need to delegate to the LaTeX renderer
-            # This is a placeholder - actual LaTeX generation requires I/O
-            return RenderPlan(
-                name=transformed_data.get("full_name", "resume"),
-                mode="latex",
-                config=config,
+            return Resume._build_render_plan(
+                name,
+                mode,
+                config,
+                context=None,
                 base_path=base_path,
-                tex=None,  # Will be filled by shell layer
-                palette_metadata=palette_meta,
+                palette_meta=palette_meta,
             )
 
-        # For HTML mode, prepare template context
-        # Template is at top level of raw_data, not in config
-        template = raw_data.get("template", "resume_no_bars")
+        template = transformed_data.get("template", "resume_no_bars")
         template_name = f"{template}.html"
 
-        # Build render context - use full normalized config for templates
         context = dict(transformed_data)
         context["resume_config"] = normalized_config_dict or {}
         context["preview"] = preview
 
-        return RenderPlan(
-            name=transformed_data.get("full_name", "resume"),
-            mode="html",
-            config=config,
-            template_name=template_name,
-            context=context,
+        return Resume._build_render_plan(
+            name,
+            mode,
+            config,
+            context,
             base_path=base_path,
-            palette_metadata=palette_meta,
+            template_name=template_name,
+            palette_meta=palette_meta,
         )
 
     @staticmethod

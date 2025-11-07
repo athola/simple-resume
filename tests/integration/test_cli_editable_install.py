@@ -32,9 +32,9 @@ def _checked_call(
 
 @pytest.mark.integration
 def test_generate_html_cli_after_editable_install(
-    tmp_path_factory: pytest.TempPathFactory,
+    story, tmp_path_factory: pytest.TempPathFactory
 ) -> None:
-    """Ensure the CLI runs from a fresh working directory post `pip install -e ..`."""
+    story.given("a clean workspace that performs pip install -e ..")
     repo_root = config.PACKAGE_ROOT.parent.parent
     work_dir = Path(tempfile.mkdtemp(dir=repo_root))
     try:
@@ -71,6 +71,7 @@ def test_generate_html_cli_after_editable_install(
             sample_input.read_text(encoding="utf-8"), encoding="utf-8"
         )
 
+        story.when("the simple-resume CLI generates HTML from the sample file")
         _checked_call(
             [
                 str(cli_path),
@@ -83,6 +84,7 @@ def test_generate_html_cli_after_editable_install(
             cwd=work_dir,
         )
 
+        story.then("the expected HTML artifact exists and is non-empty")
         generated_html = output_dir / "sample_1.html"
         assert generated_html.exists()
         assert generated_html.read_text(encoding="utf-8")

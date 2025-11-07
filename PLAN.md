@@ -4,31 +4,34 @@ This document outlines the development plan for Simple-Resume.
 
 ## Project Goals
 
--   Create professional resumes from YAML, JSON, or other structured data.
--   Customize resumes with a flexible template and color scheme system.
--   Prioritize code quality and clear, actionable documentation.
+-   Generate professional resumes from structured data (YAML, JSON).
+-   Provide a flexible template and color scheme system for customization.
+-   Maintain high code quality and clear, actionable documentation.
 
 ## Phase 1: Core Functionality & Refinement (Completed)
 
--   [x] Initial implementation of resume generation from YAML.
--   [x] HTML and PDF output formats.
+-   [x] Initial YAML resume generation.
+-   [x] HTML and PDF output.
 -   [x] Basic template system.
--   [x] Initial CLI implementation.
--   [x] Code cleanup and removal of "AI slop".
--   [x] Consolidation of `README.md` and linking to the wiki.
--   [x] Creation of `wiki/Contributing.md`.
--   [x] Creation of `wiki/Usage-Guide.md`.
--   [x] Creation of `wiki/Development-Guide.md`.
+-   [x] Initial CLI.
+-   [x] Consolidated `README.md` with wiki links.
+-   [x] Created `wiki/Contributing.md`.
+-   [x] Created `wiki/Usage-Guide.md`.
+-   [x] Created `wiki/Development-Guide.md`.
+-   [x] Enhanced external palette loading with direct color definition.
+-   [x] Optimized print-friendly color palettes for B&W contrast.
+-   [x] Fixed external palette validation conflicts and "registry source requires 'name'" errors.
 
 ## Phase 2: Documentation and Usability
 
--   [ ] Expand the wiki with more detailed guides and examples.
--   [ ] Improve error messages to be more helpful and user-friendly.
+-   [x] Expanded wiki with detailed guides (API reference, usage examples, helper documentation).
+-   [x] Published stability policy and curated API reference (`docs/reference.md`).
+-   [ ] Improve error messages for user-friendliness.
 -   [ ] Add a "live preview" feature to the web UI.
 
 ## Phase 3: Feature Expansion
 
--   [ ] Add at least three new resume templates with different styles.
--   [ ] Evaluate and potentially integrate a new PDF rendering engine to improve quality and performance.
--   [ ] Add support for the JSON Resume format for interoperability.
+-   [ ] Add at least three new resume templates.
+-   [ ] Evaluate and potentially integrate a new PDF rendering engine for quality and performance.
+-   [ ] Add JSON Resume format support for interoperability.
 -   [ ] Add support for generating cover letters from Markdown.

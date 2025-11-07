@@ -13,28 +13,42 @@ from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
+from types import ModuleType
+from typing import TYPE_CHECKING, Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
-
-# Optional imports for optional dependencies
-try:
-    import palettable  # type: ignore[import-untyped]
-except ImportError:
-    palettable = None  # typer: ignore
-
-try:
-    from palettable.palette import (  # type: ignore[import-untyped]
-        Palette as PalettablePalette,
-    )
-except ImportError:
-    PalettablePalette = None  # typer: ignore
 
 from .common import Palette, get_cache_dir
 from .exceptions import (
     PaletteRemoteDisabled,
     PaletteRemoteError,
 )
+
+# Optional imports for optional dependencies. When running under MyPy we only
+# import the modules for type information to avoid missing-stub warnings.
+if TYPE_CHECKING:  # pragma: no cover - typing helper
+    import palettable as _palettable_module  # type: ignore[import-untyped]
+    from palettable.palette import (  # type: ignore[import-untyped]
+        Palette as _PalettablePaletteType,
+    )
+
+    palettable: ModuleType | None = _palettable_module
+    PalettablePalette: Any = _PalettablePaletteType
+else:
+    try:
+        import palettable as _palettable_module
+    except ImportError:  # pragma: no cover - optional dependency
+        palettable = None
+    else:
+        palettable = _palettable_module
+
+    try:
+        from palettable.palette import Palette as _PalettablePaletteType
+    except ImportError:  # pragma: no cover - optional dependency
+        PalettablePalette = None
+    else:
+        PalettablePalette = _PalettablePaletteType
 
 logger = logging.getLogger(__name__)
 
@@ -353,7 +367,8 @@ class ColourLoversClient:
         request = _create_safe_request(url, {"User-Agent": "simple-resume/0.1"})
         try:
             # Safety: URL validated and request constructed via _create_safe_request.
-            with urlopen(request, timeout=10) as response:  # noqa: S310
+            # Bandit B310: urlopen call uses HTTPS endpoint with enforced timeout.
+            with urlopen(request, timeout=10) as response:  # noqa: S310  # nosec B310
                 data = response.read()
         except (HTTPError, URLError) as exc:
             raise PaletteRemoteError(f"ColourLovers request failed: {exc}") from exc

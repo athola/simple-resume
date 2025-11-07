@@ -668,8 +668,8 @@ class TestBatchGenerationResult:
 
     def test_batch_result_creation(self) -> None:
         """BatchGenerationResult can be created with all fields."""
-        results = {}
-        errors = {}
+        results: dict[str, GenerationResult] = {}
+        errors: dict[str, Exception] = {}
 
         batch = BatchGenerationResult(
             results=results, total_time=10.5, successful=5, failed=2, errors=errors

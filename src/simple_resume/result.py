@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+# Bandit: subprocess usage is limited to launching trusted viewer commands.
 from .exceptions import FileSystemError
 
 # File size formatting constants
@@ -125,12 +126,14 @@ class GenerationResult:
         try:
             if sys.platform.startswith("darwin"):
                 opener = shutil.which("open") or "open"
+                # Bandit: command is limited to macOS open with the generated file path.
                 subprocess.Popen(  # noqa: S603  # nosec B603
                     [opener, str(self.output_path)],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                 )
             elif os.name == "nt":
+                # Bandit: Windows open uses os.startfile on a file created by this tool.
                 os.startfile(str(self.output_path))  # type: ignore[attr-defined]  # noqa: S606  # nosec B606
             else:
                 opener = shutil.which("xdg-open")
@@ -140,6 +143,8 @@ class GenerationResult:
                         file=sys.stderr,
                     )
                     return False
+                # Bandit: linux desktop opener is resolved via shutil.which and
+                # invoked with the generated resume path.
                 subprocess.Popen(  # noqa: S603  # nosec B603
                     [opener, str(self.output_path)],
                     stdout=subprocess.DEVNULL,
@@ -155,6 +160,8 @@ class GenerationResult:
         for browser in browsers:
             if shutil.which(browser):
                 try:
+                    # Bandit: browsers are selected from an allowlist and
+                    # invoked with the generated file.
                     subprocess.Popen(  # noqa: S603  # nosec B603
                         [browser, str(self.output_path)],
                         stdout=subprocess.DEVNULL,
@@ -170,6 +177,8 @@ class GenerationResult:
         """Open any file with system default application."""
         try:
             if sys.platform.startswith("darwin"):
+                # Bandit: generic opener on macOS uses the system open command
+                # with the resume path.
                 subprocess.run(  # noqa: S603  # nosec B603
                     ["/usr/bin/open", str(self.output_path)],
                     check=True,
@@ -177,11 +186,15 @@ class GenerationResult:
                     stderr=subprocess.DEVNULL,
                 )
             elif os.name == "nt":
+                # Bandit: os.startfile opens the generated artifact via the OS
+                # shell.
                 os.startfile(str(self.output_path))  # type: ignore[attr-defined]  # noqa: S606  # nosec B606
             else:
                 opener = shutil.which("xdg-open")
                 if opener is None:
                     return False
+                # Bandit: linux opener is selected via which and called with the
+                # single output path.
                 subprocess.run(  # noqa: S603  # nosec B603
                     [opener, str(self.output_path)],
                     check=True,

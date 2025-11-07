@@ -1,10 +1,10 @@
 # Usage Guide
 
-This guide explains how to use Simple-Resume from the command line to generate professional resumes.
+This guide explains how to use Simple-Resume from the command line to generate resumes.
 
 ## Generating Resumes
 
-You can generate your resume in either HTML or PDF format.
+You can generate your resume in HTML or PDF format:
 
 ```bash
 # Generate a PDF resume
@@ -14,13 +14,29 @@ uv run simple-resume generate --format pdf
 uv run simple-resume generate --format html
 ```
 
-> ℹ️ Resumes configured with `config.output_mode: latex` are skipped by the HTML CLI. Use the PDF generator when you want to render those LaTeX templates.
+> ℹ️ Resumes with `config.output_mode: latex` are skipped by the HTML CLI. Use the PDF generator to render LaTeX templates.
 
 ### Key Options
 
--   `--data-dir PATH`: Specify a custom directory for your input and output files. The default is `resume_private`.
--   `--open`: Automatically open the generated resume in the default viewer.
--   `--browser BROWSER`: Specify a browser to use for opening HTML resumes (e.g., "firefox", "chromium").
+- `--data-dir PATH`: Specify a custom directory for input and output files (default: `resume_private`).
+- `--open`: Automatically open the generated resume.
+- `--browser BROWSER`: Specify a browser for opening HTML resumes (e.g., "firefox", "chromium").
+
+## Python API
+
+You can also generate resumes from Python:
+
+```python
+from simple_resume import generate, preview
+
+# Render PDF and HTML
+results = generate("resume_private/input/my_resume.yaml", formats=("pdf", "html"))
+
+# Launch an HTML preview in your browser
+preview("resume_private/input/my_resume.yaml", open_after=True)
+```
+
+These helpers use the same configuration overrides as the CLI.
 
 ## LaTeX Output
 
@@ -31,29 +47,31 @@ config:
   output_mode: latex
 ```
 
-This will create a `.tex` file that you can compile with any LaTeX engine.
+This creates a `.tex` file that you can compile with a LaTeX engine.
 
 ## Color Customization
 
-You can customize the colors of your resume in the `config` section of your YAML file.
+You can customize the colors of your resume using preset schemes, custom colors, or standalone palette files. For detailed instructions and examples, see the [Color Schemes Guide](Color-Schemes.md).
 
-### Using a Preset Scheme
-
-The easiest way to change the look of your resume is to use one of the built-in color schemes:
+To use a preset color scheme:
 
 ```yaml
 config:
   color_scheme: "Professional Blue"
 ```
 
-### Defining Custom Colors
+To use a standalone palette file:
 
-You can also define your own colors:
-
-```yaml
-config:
-  theme_color: "#0395DE"
-  sidebar_color: "#F6F6F6"
+```bash
+uv run simple-resume generate --palette palettes/my-theme.yaml
 ```
 
-For a full list of available color properties and preset schemes, see the [Color Schemes Guide](Color-Schemes.md).
+## Validation
+
+Simple-Resume requires the following fields in your resume YAML:
+
+- `full_name`: Must not be empty.
+- `email`: Must be a valid email address.
+- Date fields (e.g., `start_date`, `end_date`) must be in `YYYY` or `YYYY-MM` format.
+
+If validation fails, you will get an error message that points to the incorrect field.

@@ -24,7 +24,7 @@ titles:
 
 description: |
   Demonstration resume highlighting the **palette** configuration block and
-  every major resume section supported by Simple-Resume. Colors below come from 
+  every major resume section supported by Simple-Resume. Colors below come from
   the built-in palette generator, so you can tweak hue, chroma, and luminance
   directly from YAML.
 
@@ -203,7 +203,7 @@ config:
     luminance_range: [0.25, 0.78]
     chroma: 0.18
 
-  padding: 12 
+  padding: 12
   page_width: 210
   page_height: 297
   sidebar_width: 60

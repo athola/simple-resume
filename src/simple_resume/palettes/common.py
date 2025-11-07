@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -18,7 +17,7 @@ class Palette:
     name: str
     swatches: tuple[str, ...]
     source: str
-    metadata: Mapping[str, object] = field(default_factory=dict)  # typer: ignore
+    metadata: dict[str, object] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, object]:
         """Serialize palette to a JSON-friendly structure."""

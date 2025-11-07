@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import sys
+from email.message import Message
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any, cast
 from unittest.mock import Mock, patch
 from urllib.error import HTTPError
 
@@ -190,8 +192,13 @@ def test_build_palettable_registry_snapshot_uses_loaded_records(story) -> None:
         "the snapshot references the record metadata and includes timing information"
     )
     assert snapshot["count"] == 1
-    assert snapshot["palettes"][0]["name"] == "Forest"
-    assert snapshot["generated_at"] > 0
+    palettes = cast(list[dict[str, Any]], snapshot["palettes"])
+    assert palettes
+    first = palettes[0]
+    assert first["name"] == "Forest"
+    generated_at = snapshot["generated_at"]
+    assert isinstance(generated_at, (int, float))
+    assert generated_at > 0
 
 
 def test_colourlovers_fetch_http_error(
@@ -202,11 +209,12 @@ def test_colourlovers_fetch_http_error(
     monkeypatch.setenv("SIMPLE_RESUME_PALETTE_CACHE_DIR", str(tmp_path))
     client = ColourLoversClient()
 
+    headers = Message()
     http_error = HTTPError(
         url="https://www.colourlovers.com/api/palettes",
         code=503,
         msg="service unavailable",
-        hdrs=None,
+        hdrs=headers,
         fp=None,
     )
 

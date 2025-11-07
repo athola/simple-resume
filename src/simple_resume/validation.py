@@ -5,6 +5,7 @@ and configuration values to ensure data integrity and provide helpful
 error messages.
 """
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +16,9 @@ from .constants import (
     OutputFormat,
 )
 from .exceptions import ConfigurationError, FileSystemError, ValidationError
+
+EMAIL_REGEX = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+DATE_REGEX = re.compile(r"^\d{4}(-\d{2})?$")
 
 
 def validate_format(format_str: str, param_name: str = "format") -> str:
@@ -218,10 +222,14 @@ def validate_resume_data(data: dict[str, Any]) -> None:
     if not data.get("full_name"):
         raise ValidationError("'full_name' cannot be empty")
 
+    _validate_required_email(data)
+
     # Check config if present
     if "config" in data:
         if not isinstance(data["config"], dict):
             raise ValidationError("'config' must be a dictionary")
+
+    _validate_date_fields(data)
 
 
 def validate_output_path(output_path: str | Path, format_type: str) -> Path:
@@ -254,3 +262,39 @@ def validate_output_path(output_path: str | Path, format_type: str) -> Path:
         raise FileSystemError(message)
 
     return path
+
+
+def _validate_required_email(data: dict[str, Any]) -> None:
+    email = data.get("email")
+    if email is None:
+        raise ValidationError("Resume data must include 'email'")
+
+    if not isinstance(email, str) or not EMAIL_REGEX.match(email.strip()):
+        raise ValidationError(
+            "Invalid email format. Expected something like user@example.com"
+        )
+
+
+def _is_date_key(key: str) -> bool:
+    key_lower = key.lower()
+    return key_lower == "date" or key_lower.endswith("_date")
+
+
+def _validate_date_value(field: str, value: Any) -> None:
+    if value is None or value == "":
+        return
+    if not isinstance(value, str) or not DATE_REGEX.match(value.strip()):
+        raise ValidationError(
+            f"Invalid date format for '{field}'. Use 'YYYY' or 'YYYY-MM'."
+        )
+
+
+def _validate_date_fields(node: Any) -> None:
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if isinstance(key, str) and _is_date_key(key):
+                _validate_date_value(key, value)
+            _validate_date_fields(value)
+    elif isinstance(node, list):
+        for item in node:
+            _validate_date_fields(item)

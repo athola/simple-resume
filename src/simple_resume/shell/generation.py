@@ -9,12 +9,14 @@ from __future__ import annotations
 
 import os
 import shutil
-import subprocess
+
+# subprocess is required for launching platform viewers with vetted arguments.
+import subprocess  # nosec B404
 import sys
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Protocol, TextIO
+from typing import Any, Protocol, TextIO, cast
 
 from .. import config
 from ..core.resume import RenderPlan, Resume
@@ -27,9 +29,14 @@ from ..rendering import get_template_environment
 from ..utilities import get_content
 
 try:
-    from weasyprint import CSS, HTML
+    from weasyprint import CSS as WEASYPRINT_CSS
+    from weasyprint import HTML as WEASYPRINT_HTML
 except ImportError:
-    CSS = HTML = None  # typer: ignore
+    WEASYPRINT_CSS = cast(Any, None)
+    WEASYPRINT_HTML = cast(Any, None)
+
+CSS = WEASYPRINT_CSS
+HTML = WEASYPRINT_HTML
 
 
 class FileSystem(Protocol):
@@ -91,13 +98,13 @@ class WeasyPrintWriter:
         page: PageSpec,
     ) -> None:
         """Render the resume HTML with WeasyPrint and write to disk."""
-        if CSS is None or HTML is None:
+        if WEASYPRINT_CSS is None or WEASYPRINT_HTML is None:
             raise ImportError("WeasyPrint is required for PDF generation")
 
-        css = CSS(
+        css = WEASYPRINT_CSS(
             string=f"@page {{size: {page.width_mm}mm {page.height_mm}mm; margin: 0mm;}}"
         )
-        HTML(string=html, base_url=base_url).write_pdf(
+        WEASYPRINT_HTML(string=html, base_url=base_url).write_pdf(
             str(output_path),
             stylesheets=[css],
         )
@@ -284,7 +291,7 @@ class ResumeGenerator:
 
         # Create render plan using core logic (pure)
         plan = Resume.prepare_render_data(
-            raw_data=raw_data, preview=False, base_path=str(paths.content)
+            source_yaml_content=raw_data, preview=False, base_path=str(paths.content)
         )
 
         # Execute the plan (I/O)
@@ -313,7 +320,7 @@ class ResumeGenerator:
 
         # Create render plan using core logic (pure)
         plan = Resume.prepare_render_data(
-            raw_data=raw_data, preview=True, base_path=str(paths.content)
+            source_yaml_content=raw_data, preview=True, base_path=str(paths.content)
         )
 
         # Execute the plan (I/O)
@@ -343,7 +350,7 @@ class ResumeGenerator:
         self.deps.pdf_writer.write(
             output_path=output_file,
             html=html,
-            base_url=plan.base_path,
+            base_url=str(plan.base_path),
             page=page,
         )
 
@@ -500,13 +507,15 @@ class ResumeGenerator:
         try:
             if sys.platform.startswith("darwin"):
                 opener = shutil.which("open") or "open"
-                subprocess.Popen(  # noqa: S603
+                # Safe: launching trusted macOS viewer command with fixed args.
+                subprocess.Popen(  # noqa: S603  # nosec B603
                     [opener, path],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                 )
             elif os.name == "nt":
-                os.startfile(path)  # type: ignore[attr-defined]  # noqa: S606
+                # Safe: opening local file via OS shell, no user supplied command.
+                os.startfile(path)  # type: ignore[attr-defined]  # noqa: S606  # nosec B606
             else:
                 opener = shutil.which("xdg-open")
                 if opener is None:
@@ -515,7 +524,8 @@ class ResumeGenerator:
                         file=sys.stderr,
                     )
                     return
-                subprocess.Popen(  # noqa: S603
+                # Safe: xdg-open resolved from PATH; only local file path provided.
+                subprocess.Popen(  # noqa: S603  # nosec B603
                     [opener, path],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
@@ -547,7 +557,8 @@ class ResumeGenerator:
             return
 
         try:
-            subprocess.Popen(  # noqa: S603
+            # Safe: browser command resolved via allowlist or explicit CLI flag.
+            subprocess.Popen(  # noqa: S603  # nosec B603
                 [*command, str(path)],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,

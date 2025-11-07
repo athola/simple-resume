@@ -2,11 +2,67 @@
 
 This module defines a structured exception hierarchy similar to pandas and requests
 to provide clear error handling and debugging capabilities.
+
+## Error Handling Pattern
+
+simple-resume uses a two-tier error handling pattern:
+
+**Tier 1: Inspection (returns results)**
+- Use when you want to check validation status, log warnings, or collect errors
+- Methods: `Resume.validate()` → `ValidationResult`
+- Never raises exceptions, always returns a result object
+- Example: Check validation without stopping execution
+  ```python
+  result = resume.validate()
+  if result.warnings:
+      log.warning(result.warnings)
+  if not result.is_valid:
+      print(f"Errors: {result.errors}")
+  ```
+
+**Tier 2: Action (raises on invalid)**
+- Use when operations require valid data (fail-fast approach)
+- Methods: `Resume.validate_or_raise()` → None or raises ValidationError
+- Used internally by `to_pdf()`, `to_html()`, and CLI commands
+- Example: Ensure data is valid before proceeding
+  ```python
+  resume.validate_or_raise()  # Raises ValidationError if invalid
+  resume.to_pdf("output.pdf")  # Only runs if validation passed
+  ```
+
+This pattern is similar to:
+- **pandas**: `df.empty` (returns bool) vs operations that raise on empty DataFrames
+- **requests**: `response.status_code` vs `response.raise_for_status()`
+
+## Exception Hierarchy
+
+All exceptions inherit from `SimpleResumeError`, allowing users to catch all
+simple-resume errors with a single except clause:
+
+```python
+try:
+    resume = Resume.read_yaml("resume.yaml")
+    resume.to_pdf()
+except SimpleResumeError as e:
+    # Catches all simple-resume specific errors
+    print(f"Error: {e}")
+```
+
+Exception classes should be raised directly (not through helper functions):
+
+```python
+# Correct
+raise ValidationError("Invalid data", errors=["Missing field"], filename="resume.yaml")
+
+# Correct
+raise GenerationError("PDF generation failed", format_type="pdf", output_path="out.pdf")
+```
 """
 
 from __future__ import annotations
 
-from typing import Any, NoReturn
+import os
+from typing import Any
 
 
 class SimpleResumeError(Exception):
@@ -124,13 +180,21 @@ class GenerationError(SimpleResumeError):
         self,
         message: str,
         *,
-        output_path: str | None = None,
+        output_path: str | os.PathLike[str] | None = None,
         format_type: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize generation error with message and optional output details."""
+        """Initialize generation error with message and optional output details.
+
+        Args:
+            message: Error message
+            output_path: Output path (accepts str or Path objects)
+            format_type: Format type (pdf, html, etc.)
+            **kwargs: Additional context passed to base exception
+
+        """
         super().__init__(message, **kwargs)
-        self.output_path = output_path
+        self.output_path = str(output_path) if output_path is not None else None
         self.format_type = format_type
 
     def __str__(self) -> str:
@@ -173,13 +237,21 @@ class FileSystemError(SimpleResumeError):
         self,
         message: str,
         *,
-        path: str | None = None,
+        path: str | os.PathLike[str] | None = None,
         operation: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize filesystem error with message and optional path/operation."""
+        """Initialize filesystem error with message and optional path/operation.
+
+        Args:
+            message: Error message
+            path: File path (accepts str or Path objects)
+            operation: Operation type (read, write, etc.)
+            **kwargs: Additional context passed to base exception
+
+        """
         super().__init__(message, **kwargs)
-        self.path = path
+        self.path = str(path) if path is not None else None
         self.operation = operation
 
 
@@ -198,50 +270,6 @@ class SessionError(SimpleResumeError):
         self.session_id = session_id
 
 
-# Convenience functions for common error patterns
-def raise_validation_error(
-    message: str, *, errors: list[str] | None = None, filename: str | None = None
-) -> NoReturn:
-    """Raise ValidationError with consistent format."""
-    raise ValidationError(message, errors=errors, filename=filename)
-
-
-def raise_configuration_error(
-    message: str, *, config_key: str, config_value: Any, filename: str | None = None
-) -> NoReturn:
-    """Raise ConfigurationError with consistent format."""
-    raise ConfigurationError(
-        message, config_key=config_key, config_value=config_value, filename=filename
-    )
-
-
-def raise_template_error(
-    message: str, *, template_name: str, filename: str | None = None
-) -> NoReturn:
-    """Raise TemplateError with consistent format."""
-    raise TemplateError(message, template_name=template_name, filename=filename)
-
-
-def raise_generation_error(
-    message: str,
-    *,
-    format_type: str,
-    output_path: str | None = None,
-    filename: str | None = None,
-) -> NoReturn:
-    """Raise GenerationError with consistent format."""
-    raise GenerationError(
-        message, format_type=format_type, output_path=output_path, filename=filename
-    )
-
-
-def raise_filesystem_error(
-    message: str, *, path: str, operation: str, filename: str | None = None
-) -> NoReturn:
-    """Raise FileSystemError with consistent format."""
-    raise FileSystemError(message, path=path, operation=operation, filename=filename)
-
-
 __all__ = [
     # Base exception
     "SimpleResumeError",
@@ -253,10 +281,4 @@ __all__ = [
     "PaletteError",
     "FileSystemError",
     "SessionError",
-    # Convenience functions
-    "raise_validation_error",
-    "raise_configuration_error",
-    "raise_template_error",
-    "raise_generation_error",
-    "raise_filesystem_error",
 ]

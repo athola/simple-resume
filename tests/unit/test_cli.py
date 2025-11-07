@@ -3,11 +3,13 @@
 import argparse
 import io
 from pathlib import Path
+from typing import Any, cast
 from unittest.mock import Mock, patch
 
 import pytest
 
 from simple_resume.cli import (
+    _handle_unexpected_error,
     create_parser,
     handle_generate_command,
     handle_session_command,
@@ -18,6 +20,7 @@ from simple_resume.exceptions import (
     GenerationError,
     SimpleResumeError,
     TemplateError,
+    ValidationError,
 )
 from simple_resume.result import BatchGenerationResult
 
@@ -40,6 +43,7 @@ class TestCreateParser:
             with pytest.raises(SystemExit) as exc_info:
                 parser.parse_args(["--version"])
         story.then("invoking --version exits cleanly with code 0")
+        assert isinstance(exc_info.value, SystemExit)
         assert exc_info.value.code == 0
 
     def test_generate_command_args(self, story):
@@ -246,7 +250,7 @@ class TestHandleGenerateCommand:
                     format_type="html",
                 ) from None
         except GenerationError as latex_error:
-            errors = {"resume2": latex_error}
+            errors: dict[str, Exception] = {"resume2": latex_error}
 
         batch_result = BatchGenerationResult(
             results={"resume1": successful_result},
@@ -353,12 +357,9 @@ class TestHandleValidateCommand:
         args.name = "test_resume"
         args.data_dir = Path("/test")
 
-        # Mock resume and validation
+        # Mock resume and validation (no exception = success)
         mock_resume = Mock()
-        mock_validation = Mock()
-        mock_validation.is_valid = True
-        mock_validation.warnings = []
-        mock_resume.validate.return_value = mock_validation
+        mock_resume.validate_or_raise.return_value = None  # No exception = success
         mock_resume_class.read_yaml.return_value = mock_resume
 
         result = handle_validate_command(args)
@@ -372,12 +373,13 @@ class TestHandleValidateCommand:
         args.name = "test_resume"
         args.data_dir = Path("/test")
 
-        # Mock resume and validation
+        # Mock resume and validation exception
         mock_resume = Mock()
-        mock_validation = Mock()
-        mock_validation.is_valid = False
-        mock_validation.errors = ["Missing required field: name"]
-        mock_resume.validate.return_value = mock_validation
+        mock_resume.validate_or_raise.side_effect = ValidationError(
+            "Resume validation failed",
+            errors=["Missing required field: name"],
+            filename="test_resume.yaml",
+        )
         mock_resume_class.read_yaml.return_value = mock_resume
 
         result = handle_validate_command(args)
@@ -527,6 +529,65 @@ class TestMainFunction:
         assert result == 1
 
 
+class TestHandleUnexpectedError:
+    """Test the new error handling function."""
+
+    @patch("simple_resume.cli.print")
+    @patch("simple_resume.cli.logging.getLogger")
+    def test_handle_file_system_error(self, mock_logger, mock_print):
+        error = PermissionError("Permission denied")
+        result = _handle_unexpected_error(error, "test context")
+
+        assert result == 2
+        mock_print.assert_any_call("File System Error: Permission denied")
+        mock_print.assert_any_call("Suggestion: Check file permissions and disk space")
+        mock_logger.return_value.error.assert_called_once()
+
+    @patch("simple_resume.cli.print")
+    @patch("simple_resume.cli.logging.getLogger")
+    def test_handle_internal_error(self, mock_logger, mock_print):
+        error = AttributeError("Missing attribute")
+        result = _handle_unexpected_error(error, "test context")
+
+        assert result == 3
+        mock_print.assert_any_call("Internal Error: Missing attribute")
+        mock_print.assert_any_call("Suggestion: This may be a bug - please report it")
+        mock_logger.return_value.error.assert_called_once()
+
+    @patch("simple_resume.cli.print")
+    @patch("simple_resume.cli.logging.getLogger")
+    def test_handle_memory_error(self, mock_logger, mock_print):
+        error = MemoryError("Out of memory")
+        result = _handle_unexpected_error(error, "test context")
+
+        assert result == 4
+        mock_print.assert_any_call("Resource Error: Out of memory")
+        mock_print.assert_any_call("Suggestion: System ran out of memory")
+        mock_logger.return_value.error.assert_called_once()
+
+    @patch("simple_resume.cli.print")
+    @patch("simple_resume.cli.logging.getLogger")
+    def test_handle_input_error(self, mock_logger, mock_print):
+        error = ValueError("Invalid value")
+        result = _handle_unexpected_error(error, "test context")
+
+        assert result == 5
+        mock_print.assert_any_call("Input Error: Invalid value")
+        mock_print.assert_any_call("Suggestion: Check your input files and parameters")
+        mock_logger.return_value.error.assert_called_once()
+
+    @patch("simple_resume.cli.print")
+    @patch("simple_resume.cli.logging.getLogger")
+    def test_handle_generic_error(self, mock_logger, mock_print):
+        error = RuntimeError("Something went wrong")
+        result = _handle_unexpected_error(error, "test context")
+
+        assert result == 1
+        mock_print.assert_any_call("Unexpected Error: Something went wrong")
+        mock_print.assert_any_call("Suggestion: Check logs for details")
+        mock_logger.return_value.error.assert_called_once()
+
+
 class TestCLIIntegration:
     """Integration-level assertions for CLI documentation."""
 
@@ -541,7 +602,16 @@ class TestCLIIntegration:
 
     def test_generate_command_examples(self, story):
         parser = create_parser()
-        generate_parser = parser._subparsers._group_actions[0].choices["generate"]
+        subparsers = getattr(parser, "_subparsers", None)
+        assert subparsers is not None
+        group_actions = cast(
+            list[Any],
+            getattr(subparsers, "_group_actions", []),
+        )
+        assert group_actions, "expected at least one subparser action"
+        choices = getattr(group_actions[0], "choices", None)
+        assert isinstance(choices, dict) and "generate" in choices
+        generate_parser = choices["generate"]
 
         help_text = generate_parser.format_help()
         story.then("generate help advertises key options")

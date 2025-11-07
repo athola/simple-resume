@@ -163,5 +163,6 @@ class TestProjectsSectionSupport:
         mock_get_content.return_value = resume_data
 
         dom = _render("dev_user")
-        assert dom.find(string=lambda text: text and "Tech Stack" in text)
-        assert dom.find(string=lambda text: text and "Python" in text)
+        text_content = dom.get_text()
+        assert "Tech Stack" in text_content
+        assert "Python" in text_content
