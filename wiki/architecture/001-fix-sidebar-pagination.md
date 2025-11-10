@@ -1,4 +1,4 @@
-# ADR 001: Fix WeasyPrint Sidebar Content Pagination
+# ADR 001: WeasyPrint Sidebar Content Pagination Fix
 
 ## Status
 
@@ -6,74 +6,50 @@ Accepted
 
 ## Context
 
-Simple-Resume generates PDF resumes from HTML templates using WeasyPrint. A critical
-issue was identified where sidebar content was not flowing properly across multiple
-pages. Specifically:
-
-- Sidebar content would stop abruptly after the "Languages/English" section
-- Expertise, Programming, and Key Skills sections were not appearing on pages 2 and 3
-- The issue occurred with multi-page resumes using the `resume_with_bars.html` template
+Multi-page resume PDF generation had a sidebar content pagination issue with WeasyPrint. Sidebar content was cut off after the first page, observed in `resume_with_bars.html` template where sections like "Expertise" and "Programming" were missing from subsequent pages.
 
 ## Problem Statement
 
-The root cause was identified as a CSS positioning issue with WeasyPrint's page break
-handling:
-
-1. **`position: absolute; top: 0`** restarts positioning on each new page in
-   WeasyPrint
-2. WeasyPrint treats each page as a separate canvas, not as continuous flow like
-   browsers
-3. Sidebar content that should continue from page 1 gets "cut off" because it tries
-   to render at the same absolute coordinates on subsequent pages
-4. The content exists in HTML but becomes invisible in PDF output
+Root cause: CSS positioning conflict with WeasyPrint's page break behavior. WeasyPrint treats each page as a separate canvas; `position: absolute; top: 0;` on the sidebar rendered content at the same absolute coordinates on every page, losing content that should have flowed to subsequent pages.
 
 ## Decision
 
-Implement a hybrid CSS layout solution that enables sidebar content to flow naturally
-across pages while maintaining the original visual layout.
+Decision: Implement a CSS-only solution for sidebar content to flow across pages while preserving original visual layout. This approach combines `position: relative`, `float: left`, and a linear gradient background.
 
 ## Solution
 
-### Key Changes Made
+### Key Changes
 
 #### 1. Sidebar Container Positioning
 
-**Before:**
+Sidebar container changed from `position: absolute` to `position: relative` with `float: left`. This allows content to reflow correctly on page breaks.
 
+**Before:**
 ```css
 .sidebar-container {
   position: absolute;
   left: 0;
   top: 0;
   width: 58mm;
-  margin: 0;
-  padding: 0;
-  max-height: none;
-  overflow: visible;
-  background-color: transparent;
+  /* ... */
 }
 ```
 
 **After:**
-
 ```css
 .sidebar-container {
   position: relative;
   float: left;
   width: 58mm;
-  margin: 0;
-  padding: 0;
-  /* Allow content to flow across pages */
   page-break-inside: auto;
   break-inside: auto;
+  /* ... */
 }
 ```
 
 #### 2. Page Background
 
-**Before:** Individual sidebar background color
-
-**After:** Linear gradient on the page to ensure consistent background
+Instead of sidebar background color, a `linear-gradient` was applied to the page background, ensuring consistent sidebar background color across all pages.
 
 ```css
 .page {
@@ -84,14 +60,14 @@ across pages while maintaining the original visual layout.
     white 58mm,
     white 100%
   );
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  /* Clear floats to prevent layout issues */
-  overflow: hidden;
+  /* ... */
+  overflow: hidden; /* Clear floats */
 }
 ```
 
 #### 3. Sidebar Text Visibility
+
+A `z-index` added to the sidebar ensures its content appears above the new page background.
 
 ```css
 .sidebar {
@@ -100,111 +76,90 @@ across pages while maintaining the original visual layout.
 }
 ```
 
-### Core Technical Insight
+### Technical Summary
 
-The breakthrough was understanding that:
-
-- **`position: relative` + `float: left`** allows content to flow naturally across
-  pages in WeasyPrint
-- **`position: absolute` + `top: 0`** restarts positioning on each page, cutting off content flow
-- **Linear gradient background** provides consistent visual background across all pages
-- **`z-index`** ensures text remains visible above the background
+-   `position: relative` and `float: left` enable content flow across WeasyPrint pages.
+-   A `linear-gradient` on the page background provides consistent visual appearance.
+-   `z-index` ensures sidebar text renders above background.
 
 ## Result
 
-### Before Fix
-
-- ❌ Sidebar content stopped after "Languages/English" on page 1
-- ❌ Expertise, Programming, Key Skills missing from pages 2-3
-- ❌ 3 pages total but incomplete sidebar content
-
-### After Fix
-
-- ✅ Sidebar content flows naturally across all pages
-- ✅ Expertise appears on page 2
-- ✅ Programming and Key Skills appear on page 3
-- ✅ Consistent background color across all pages
-- ✅ Text remains visible with proper contrast
-- ✅ Maintains original 3-page layout structure
+Sidebar content now flows correctly across all pages of multi-page resumes. Visual layout is preserved, and background color is consistent.
 
 ## Alternatives Considered
 
-### 1. CSS Regions Approach
+### 1. CSS Regions
 
-- **Pros:** Native CSS solution for content flow
-- **Cons:** Limited WeasyPrint support, complex implementation
-- **Status:** Attempted but not fully supported
+-   **Description:** Native CSS solution for content flow.
+-   **Outcome:** Attempted, but not adopted due to limited WeasyPrint support.
 
 ### 2. Dynamic Template Generation
 
-- **Pros:** Complete control over content placement
-- **Cons:** Complex Python logic, harder to maintain
-- **Status:** Considered as fallback option
+-   **Description:** Use Python to split and place content.
+-   **Outcome:** Considered, but rejected due to increased complexity.
 
 ### 3. Column-based Layout
 
-- **Pros:** Natural content flow
-- **Cons:** Significant layout changes, compatibility issues
-- **Status:** Tested but caused additional problems
+-   **Description:** Use CSS columns for content flow.
+-   **Outcome:** Tested, but introduced other layout problems.
 
 ## Decision Rationale
 
-The selected solution was chosen because:
+The chosen solution was selected for the following reasons:
 
-1. **Minimal Code Changes**: Requires only CSS modifications
-2. **Maintains Compatibility**: Preserves existing template structure
-3. **WeasyPrint Native**: Uses CSS features fully supported by WeasyPrint
-4. **Backward Compatible**: Doesn't break existing single-page resumes
-5. **Maintainable**: Clear, understandable CSS changes
+1.  **Minimal Code Changes**: Only required CSS modifications.
+2.  **Compatibility**: Preserved existing template structure.
+3.  **WeasyPrint Native**: Uses well-supported CSS features by WeasyPrint.
+4.  **Maintainability**: The CSS changes are straightforward.
 
 ## Consequences
 
 ### Positive
 
-- ✅ Fixes critical multi-page resume functionality
-- ✅ Maintains backward compatibility
-- ✅ Improves overall user experience for multi-page resumes
-- ✅ Documented solution for future WeasyPrint issues
+-   Fixes critical bug in multi-page resume generation.
+-   Maintains backward compatibility with single-page resumes.
+-   Solution documented for future reference.
 
 ### Negative
 
-- ⚠️ Uses `float: left` which requires careful layout management
-- ⚠️ Removes the original `position: absolute` sidebar approach
-- ⚠️ Requires `overflow: hidden` on page container
+-   Use of `float: left` requires careful layout management to avoid float clearing issues.
+-   `overflow: hidden` property on page container now required.
 
 ### Neutral
 
-- 🔄 Changes CSS layout approach but maintains visual output
-- 🔄 Requires understanding of WeasyPrint pagination behavior
+-   Underlying CSS layout approach changed, but visual output is the same.
+-   Solution requires understanding WeasyPrint's specific pagination behavior.
 
 ## Implementation Details
 
 ### Files Modified
 
-- `src/simple_resume/templates/resume_base.html` - Core CSS layout changes
+-   `src/simple_resume/templates/resume_base.html`
 
 ### Key CSS Properties
 
-- `position: relative` instead of `position: absolute`
-- `float: left` for natural content flow
-- `page-break-inside: auto` for pagination support
-- `z-index: 10` for text visibility
-- Linear gradient backgrounds for consistent visuals
+-   `position: relative`
+-   `float: left`
+-   `page-break-inside: auto`
+-   `z-index: 10`
+-   `background: linear-gradient(...)`
 
 ### Testing
 
-- ✅ `sample_multipage_demo.yaml` - Multi-page resume with full sidebar
-- ✅ `sample_1.yaml` - Single-page resume compatibility
-- ✅ Generated both PDF and HTML outputs for validation
+Fix validated using these test cases:
+
+-   `sample_multipage_demo.yaml`: Multi-page resume with full sidebar.
+-   `sample_1.yaml`: Single-page resume to ensure no regressions.
+-   Both PDF and HTML outputs generated and visually inspected.
 
 ## References
 
-- WeasyPrint CSS Paged Media Specification
-- CSS Float Layout and Pagination Behavior
-- WeasyPrint GitHub Issues on Position Absolute Elements
+-   WeasyPrint CSS Paged Media Specification
+-   CSS Float Layout and Pagination Behavior
+-   WeasyPrint GitHub Issues on Position Absolute Elements
 
 ## Future Considerations
 
-1. Monitor WeasyPrint updates for improved CSS regions support
-2. Consider dynamic content processing for very complex multi-page layouts
-3. Document this pattern for other WeasyPrint pagination issues
+-   Monitor WeasyPrint updates for improved CSS Regions support.
+-   Consider dynamic content processing if more complex multi-page layouts are needed.
+-   Document this solution as a pattern for other WeasyPrint pagination issues.

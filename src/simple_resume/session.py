@@ -1,7 +1,7 @@
-"""Session management for simple-resume operations.
+"""Manage sessions for simple-resume operations.
 
-This module provides ResumeSession for managing consistent configuration
-across multiple resume operations, similar to requests.Session.
+This module provides `ResumeSession` for managing consistent configuration
+across multiple resume operations, similar to `requests.Session`.
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ from types import TracebackType
 from typing import Any
 
 from .config import Paths, resolve_paths
+from .constants import OutputFormat
 from .core.resume import Resume
 from .exceptions import ConfigurationError, SessionError
 from .result import BatchGenerationResult, GenerationResult
@@ -24,28 +25,37 @@ from .result import BatchGenerationResult, GenerationResult
 
 @dataclass
 class SessionConfig:
-    """Configuration for a ResumeSession."""
+    """Define configuration for a `ResumeSession`."""
 
     paths: Paths | None = None
     default_template: str | None = None
     default_palette: str | None = None
-    default_format: str = "pdf"
+    default_format: OutputFormat | str = OutputFormat.PDF
     auto_open: bool = False
     preview_mode: bool = False
     output_dir: Path | None = None
     # Additional session-wide settings
     session_metadata: dict[str, Any] = field(default_factory=dict)
 
+    def __post_init__(self) -> None:
+        """Normalize enum-backed fields."""
+        try:
+            self.default_format = OutputFormat.normalize(self.default_format)
+        except (ValueError, TypeError) as exc:
+            raise ConfigurationError(
+                f"Invalid default format: {self.default_format}"
+            ) from exc
+
 
 class ResumeSession:
-    """Context manager for resume operations with consistent configuration.
+    """Manage resume operations with consistent configuration.
 
-    Similar to requests.Session, ResumeSession provides:
-    - Consistent configuration across operations
-    - State management for path resolution
-    - Batch operations support
-    - Resource cleanup
-    - Performance optimization through connection reuse (when applicable)
+    Similar to `requests.Session`, `ResumeSession` provides:
+    - Consistent configuration across operations.
+    - State management for path resolution.
+    - Batch operations support.
+    - Resource cleanup.
+    - Performance optimization through connection reuse (when applicable).
 
     Usage:
         with ResumeSession(data_dir="my_resumes") as session:
@@ -62,17 +72,17 @@ class ResumeSession:
         config: SessionConfig | None = None,
         **path_overrides: str | Path,
     ) -> None:
-        """Initialize a ResumeSession.
+        """Initialize a `ResumeSession`.
 
         Args:
-            data_dir: Base data directory containing input/output folders
-            paths: Pre-resolved paths object
-            config: Session configuration
-            **path_overrides: Path configuration overrides
+            data_dir: Base data directory containing input/output folders.
+            paths: Pre-resolved paths object.
+            config: Session configuration.
+            **path_overrides: Path configuration overrides.
 
         Raises:
-            ConfigurationError: If path configuration is invalid
-            SessionError: If session initialization fails
+            `ConfigurationError`: If path configuration is invalid.
+            `SessionError`: If session initialization fails.
 
         """
         self._session_id = str(uuid.uuid4())
@@ -108,17 +118,17 @@ class ResumeSession:
 
     @property
     def session_id(self) -> str:
-        """Get the unique session identifier."""
+        """Return the unique session identifier."""
         return self._session_id
 
     @property
     def paths(self) -> Paths:
-        """Get the resolved paths for this session."""
+        """Return the resolved paths for this session."""
         return self._paths
 
     @property
     def config(self) -> SessionConfig:
-        """Get the session configuration."""
+        """Return the session configuration."""
         return self._config
 
     @property
@@ -128,12 +138,12 @@ class ResumeSession:
 
     @property
     def operation_count(self) -> int:
-        """Get the number of operations performed in this session."""
+        """Return the number of operations performed in this session."""
         return self._operation_count
 
     @property
     def average_generation_time(self) -> float:
-        """Get average generation time for this session."""
+        """Return the average generation time for this session."""
         if not self._generation_times:
             return 0.0
         return sum(self._generation_times) / len(self._generation_times)
@@ -142,14 +152,14 @@ class ResumeSession:
         """Load a resume within this session context.
 
         Args:
-            name: Resume identifier without extension
-            use_cache: Whether to use cached resume data if available
+            name: Resume identifier without extension.
+            use_cache: Whether to use cached resume data if available.
 
         Returns:
-            Resume instance loaded with session configuration
+            `Resume` instance loaded with session configuration.
 
         Raises:
-            SessionError: If session is not active or resume loading fails
+            `SessionError`: If the session is not active or resume loading fails.
 
         """
         if not self._is_active:
@@ -195,7 +205,7 @@ class ResumeSession:
 
     def generate_all(
         self,
-        format: str = "pdf",
+        format: OutputFormat | str = OutputFormat.PDF,
         *,
         pattern: str = "*",
         open_after: bool | None = None,
@@ -205,18 +215,18 @@ class ResumeSession:
         """Generate all resumes in the session.
 
         Args:
-            format: Output format ("pdf" or "html")
-            pattern: Glob pattern for resume names (default: all)
-            open_after: Whether to open generated files (overrides session default)
-            parallel: Whether to generate in parallel (future enhancement)
-            **kwargs: Additional generation options
+            format: Output format ("pdf" or "html").
+            pattern: Glob pattern for resume names (default: all).
+            open_after: Whether to open generated files (overrides session default).
+            parallel: Whether to generate in parallel (future enhancement).
+            **kwargs: Additional generation options.
 
         Returns:
-            BatchGenerationResult with all generation results
+            `BatchGenerationResult` with all generation results.
 
         Raises:
-            SessionError: If session is not active
-            ValueError: If format is not supported
+            `SessionError`: If the session is not active.
+            `ValueError`: If the format is not supported.
 
         """
         if not self._is_active:
@@ -225,9 +235,17 @@ class ResumeSession:
                 session_id=self._session_id,
             )
 
-        format = format.lower()
-        if format not in ["pdf", "html"]:
-            raise ValueError(f"Unsupported format: {format}. Use 'pdf' or 'html'.")
+        try:
+            format_enum = OutputFormat.normalize(format)
+        except (ValueError, TypeError):
+            raise ValueError(
+                f"Unsupported format: {format}. Use 'pdf' or 'html'."
+            ) from None
+
+        if format_enum not in (OutputFormat.PDF, OutputFormat.HTML):
+            raise ValueError(
+                f"Unsupported format: {format_enum.value}. Use 'pdf' or 'html'."
+            )
 
         # Use session default for open_after if not specified
         if open_after is None:
@@ -256,7 +274,7 @@ class ResumeSession:
                 # Load and generate resume
                 resume = self.resume(resume_name, use_cache=True)
 
-                if format == "pdf":
+                if format_enum is OutputFormat.PDF:
                     result = resume.to_pdf(open_after=open_after, **kwargs)
                 else:  # html
                     result = resume.to_html(open_after=open_after, **kwargs)
@@ -283,10 +301,10 @@ class ResumeSession:
         """Find YAML files matching the given pattern.
 
         Args:
-            pattern: Glob pattern for matching files
+            pattern: Glob pattern for matching files.
 
         Returns:
-            List of matching YAML file paths
+            List of matching YAML file paths.
 
         """
         try:
@@ -311,7 +329,7 @@ class ResumeSession:
         """Invalidate cached resume data.
 
         Args:
-            name: Specific resume name to invalidate, or None for all
+            name: Specific resume name to invalidate, or `None` for all.
 
         """
         if name is None:
@@ -320,10 +338,10 @@ class ResumeSession:
             del self._resumes_loaded[name]
 
     def get_cache_info(self) -> dict[str, Any]:
-        """Get information about cached resume data.
+        """Return information about cached resume data.
 
         Returns:
-            Dictionary with cache statistics
+            Dictionary with cache statistics.
 
         """
         return {
@@ -346,7 +364,7 @@ class ResumeSession:
             self._is_active = False
 
     def __enter__(self) -> ResumeSession:
-        """Context manager entry."""
+        """Provide context manager entry."""
         if not self._is_active:
             raise SessionError(
                 "Cannot enter inactive session", session_id=self._session_id
@@ -359,18 +377,18 @@ class ResumeSession:
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
-        """Context manager exit."""
+        """Provide context manager exit."""
         self.close()
 
     def __repr__(self) -> str:
-        """Return detailed string representation."""
+        """Return a detailed string representation."""
         return (
             f"ResumeSession(id={self._session_id[:8]}..., "
             f"active={self._is_active}, operations={self._operation_count})"
         )
 
     def __str__(self) -> str:
-        """Return string representation of session."""
+        """Return a string representation of the session."""
         return f"ResumeSession({self._session_id[:8]}...)"
 
 
@@ -383,18 +401,18 @@ def create_session(
     config: SessionConfig | None = None,
     **path_overrides: str | Path,
 ) -> Generator[ResumeSession, None, None]:
-    """Create and manage a ResumeSession context.
+    """Create and manage a `ResumeSession` context.
 
     This is a convenience function for creating sessions with common defaults.
 
     Args:
-        data_dir: Base data directory
-        paths: Optional pre-resolved Paths object
-        config: Optional session configuration
-        **path_overrides: Path configuration overrides
+        data_dir: Base data directory.
+        paths: Optional pre-resolved `Paths` object.
+        config: Optional session configuration.
+        **path_overrides: Path configuration overrides.
 
     Yields:
-        ResumeSession instance
+        `ResumeSession` instance.
 
     """
     session = ResumeSession(

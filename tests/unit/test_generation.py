@@ -6,6 +6,8 @@ from unittest.mock import Mock, patch
 import pytest
 
 from simple_resume.config import Paths
+from simple_resume.constants import OutputFormat
+from simple_resume.core.generation_plan import GenerationCommand
 from simple_resume.exceptions import (
     ConfigurationError,
     FileSystemError,
@@ -20,6 +22,7 @@ from simple_resume.generation import (
     generate_resume,
 )
 from simple_resume.result import BatchGenerationResult, GenerationResult
+from tests.bdd import Scenario
 
 
 class TestGeneratePdf:
@@ -29,8 +32,12 @@ class TestGeneratePdf:
     @patch("simple_resume.generation.ResumeSession")
     @patch("simple_resume.generation.SessionConfig")
     def test_generate_pdf_single_resume(
-        self, mock_session_config, mock_resume_session, mock_validate_path, story
-    ):
+        self,
+        mock_session_config: Mock,
+        mock_resume_session: Mock,
+        mock_validate_path: Mock,
+        story: Scenario,
+    ) -> None:
         story.given("a single resume name and data directory")
         mock_validate_path.return_value = Path("/test")
         mock_session = Mock()
@@ -54,8 +61,12 @@ class TestGeneratePdf:
     @patch("simple_resume.generation.ResumeSession")
     @patch("simple_resume.generation.SessionConfig")
     def test_generate_pdf_multiple_resumes(
-        self, mock_session_config, mock_resume_session, mock_validate_path, story
-    ):
+        self,
+        mock_session_config: Mock,
+        mock_resume_session: Mock,
+        mock_validate_path: Mock,
+        story: Scenario,
+    ) -> None:
         story.given("batch generation with generate_all")
         mock_validate_path.return_value = Path("/workspace")
         mock_session = Mock()
@@ -78,8 +89,12 @@ class TestGeneratePdf:
     @patch("simple_resume.generation.ResumeSession")
     @patch("simple_resume.generation.SessionConfig")
     def test_generate_pdf_with_config_overrides(
-        self, mock_session_config, mock_resume_session, mock_validate_path, story
-    ):
+        self,
+        mock_session_config: Mock,
+        mock_resume_session: Mock,
+        mock_validate_path: Mock,
+        story: Scenario,
+    ) -> None:
         mock_validate_path.return_value = Path("/workspace")
         mock_session = Mock()
         mock_resume_session.return_value.__enter__.return_value = mock_session
@@ -111,8 +126,8 @@ class TestGeneratePdf:
     @patch("simple_resume.generation.ResumeSession")
     @patch("simple_resume.generation.SessionConfig")
     def test_generate_pdf_with_paths(
-        self, mock_session_config, mock_resume_session, story
-    ):
+        self, mock_session_config: Mock, mock_resume_session: Mock, story: Scenario
+    ) -> None:
         mock_paths = Mock(spec=Paths)
 
         mock_session = Mock()
@@ -137,8 +152,8 @@ class TestGeneratePdf:
     @patch("simple_resume.generation.validate_directory_path")
     @patch("simple_resume.generation.ResumeSession")
     def test_generate_pdf_handles_generation_error(
-        self, mock_resume_session, mock_validate_path, story
-    ):
+        self, mock_resume_session: Mock, mock_validate_path: Mock, story: Scenario
+    ) -> None:
         story.given("ResumeSession raises GenerationError")
         mock_validate_path.return_value = Path("/workspace")
         mock_resume_session.side_effect = GenerationError(
@@ -152,8 +167,8 @@ class TestGeneratePdf:
     @patch("simple_resume.generation.validate_directory_path")
     @patch("simple_resume.generation.ResumeSession")
     def test_generate_pdf_wraps_generic_error(
-        self, mock_resume_session, mock_validate_path, story
-    ):
+        self, mock_resume_session: Mock, mock_validate_path: Mock, story: Scenario
+    ) -> None:
         story.given("an unexpected ValueError occurs during session setup")
         mock_validate_path.return_value = Path("/workspace")
         mock_resume_session.side_effect = ValueError("Generic error")
@@ -171,8 +186,8 @@ class TestGenerateHtml:
     @patch("simple_resume.generation.ResumeSession")
     @patch("simple_resume.generation.SessionConfig")
     def test_generate_html_single_resume(
-        self, mock_session_config, mock_resume_session, story
-    ):
+        self, mock_session_config: Mock, mock_resume_session: Mock, story: Scenario
+    ) -> None:
         mock_session = Mock()
         mock_resume_session.return_value.__enter__.return_value = mock_session
         mock_resume_session.return_value.__exit__.return_value = None
@@ -192,8 +207,8 @@ class TestGenerateHtml:
     @patch("simple_resume.generation.ResumeSession")
     @patch("simple_resume.generation.SessionConfig")
     def test_generate_html_multiple_resumes(
-        self, mock_session_config, mock_resume_session, story
-    ):
+        self, mock_session_config: Mock, mock_resume_session: Mock, story: Scenario
+    ) -> None:
         mock_session = Mock()
         mock_resume_session.return_value.__enter__.return_value = mock_session
         mock_resume_session.return_value.__exit__.return_value = None
@@ -212,8 +227,8 @@ class TestGenerateHtml:
     @patch("simple_resume.generation.ResumeSession")
     @patch("simple_resume.generation.SessionConfig")
     def test_generate_html_with_browser(
-        self, mock_session_config, mock_resume_session, story
-    ):
+        self, mock_session_config: Mock, mock_resume_session: Mock, story: Scenario
+    ) -> None:
         mock_session = Mock()
         mock_resume_session.return_value.__enter__.return_value = mock_session
         mock_resume_session.return_value.__exit__.return_value = None
@@ -238,8 +253,8 @@ class TestGenerateHtml:
     @patch("simple_resume.generation.ResumeSession")
     @patch("simple_resume.generation.SessionConfig")
     def test_generate_html_preview_mode_default(
-        self, mock_session_config, mock_resume_session, story
-    ):
+        self, mock_session_config: Mock, mock_resume_session: Mock, story: Scenario
+    ) -> None:
         mock_session = Mock()
         mock_resume_session.return_value.__enter__.return_value = mock_session
         mock_resume_session.return_value.__exit__.return_value = None
@@ -260,7 +275,7 @@ class TestGenerateHtml:
 class TestGenerateAll:
     """Test the generate_all function."""
 
-    def test_generate_all_invalid_formats(self, story):
+    def test_generate_all_invalid_formats(self, story: Scenario) -> None:
         story.given("an unsupported format is included")
         config = GenerationConfig(formats=["pdf", "docx"])
         with pytest.raises(ValueError, match="Unsupported format"):
@@ -271,8 +286,12 @@ class TestGenerateAll:
     @patch("simple_resume.generation.ResumeSession")
     @patch("simple_resume.generation.SessionConfig")
     def test_generate_all_multiple_formats(
-        self, mock_session_config, mock_resume_session, mock_validate_path, story
-    ):
+        self,
+        mock_session_config: Mock,
+        mock_resume_session: Mock,
+        mock_validate_path: Mock,
+        story: Scenario,
+    ) -> None:
         mock_session = Mock()
         mock_validate_path.return_value = Path("/workspace")
         mock_resume_session.return_value.__enter__.return_value = mock_session
@@ -299,8 +318,12 @@ class TestGenerateAll:
     @patch("simple_resume.generation.ResumeSession")
     @patch("simple_resume.generation.SessionConfig")
     def test_generate_all_single_resume_multiple_formats(
-        self, mock_session_config, mock_resume_session, mock_validate_path, story
-    ):
+        self,
+        mock_session_config: Mock,
+        mock_resume_session: Mock,
+        mock_validate_path: Mock,
+        story: Scenario,
+    ) -> None:
         mock_session = Mock()
         mock_validate_path.return_value = Path("/workspace")
         mock_resume_session.return_value.__enter__.return_value = mock_session
@@ -330,8 +353,12 @@ class TestGenerateAll:
     @patch("simple_resume.generation.ResumeSession")
     @patch("simple_resume.generation.SessionConfig")
     def test_generate_all_with_config_overrides(
-        self, mock_session_config, mock_resume_session, mock_validate_path, story
-    ):
+        self,
+        mock_session_config: Mock,
+        mock_resume_session: Mock,
+        mock_validate_path: Mock,
+        story: Scenario,
+    ) -> None:
         mock_session = Mock()
         mock_validate_path.return_value = Path("/workspace")
         mock_resume_session.return_value.__enter__.return_value = mock_session
@@ -359,39 +386,63 @@ class TestGenerateAll:
 class TestGenerateResume:
     """Test the generate_resume function."""
 
-    @patch("simple_resume.generation.generate_pdf")
-    def test_generate_resume_pdf(self, mock_generate_pdf):
+    @patch("simple_resume.generation.execute_generation_commands")
+    def test_generate_resume_pdf(self, mock_execute: Mock) -> None:
         """Test generate_resume with PDF format."""
         mock_result = Mock(spec=GenerationResult)
-        mock_generate_pdf.return_value = mock_result
+        captured: list[GenerationCommand] = []
+
+        def fake_execute(
+            commands: list[GenerationCommand],
+        ) -> list[tuple[GenerationCommand, object]]:
+            captured.extend(commands)
+            return [(commands[0], mock_result)]
+
+        mock_execute.side_effect = fake_execute
 
         config = GenerationConfig(name="test_resume", format="pdf", data_dir="/test")
         result = generate_resume(config)
 
         assert result == mock_result
-        mock_generate_pdf.assert_called_once_with(config)
+        assert captured[0].format is OutputFormat.PDF
+        mock_execute.assert_called_once()
 
-    @patch("simple_resume.generation.generate_html")
-    @patch("simple_resume.generation.validate_directory_path")
-    def test_generate_resume_html(self, mock_validate_path, mock_generate_html, story):
+    @patch("simple_resume.generation.execute_generation_commands")
+    def test_generate_resume_html(self, mock_execute: Mock, story: Scenario) -> None:
         mock_result = Mock(spec=GenerationResult)
-        mock_generate_html.return_value = mock_result
-        mock_validate_path.return_value = Path("/workspace")
+        captured: list[GenerationCommand] = []
+
+        def fake_execute(
+            commands: list[GenerationCommand],
+        ) -> list[tuple[GenerationCommand, object]]:
+            captured.extend(commands)
+            return [(commands[0], mock_result)]
+
+        mock_execute.side_effect = fake_execute
 
         story.when("generate_resume targets the HTML format")
-        config = GenerationConfig(
-            name="test_resume", format="html", data_dir="/workspace"
-        )
+        config = GenerationConfig(name="test_resume", format="html", data_dir="/data")
         result = generate_resume(config)
 
-        story.then("generate_html receives preview=False for resume flow")
+        story.then("a single HTML command runs and the result is returned")
         assert result == mock_result
-        mock_generate_html.assert_called_once_with(config)
+        assert captured[0].format is OutputFormat.HTML
+        mock_execute.assert_called_once()
 
-    @patch("simple_resume.generation.generate_pdf")
-    def test_generate_resume_with_output_path(self, mock_generate_pdf, story):
+    @patch("simple_resume.generation.execute_generation_commands")
+    def test_generate_resume_with_output_path(
+        self, mock_execute: Mock, story: Scenario
+    ) -> None:
         mock_result = Mock(spec=GenerationResult)
-        mock_generate_pdf.return_value = mock_result
+        captured: list[GenerationCommand] = []
+
+        def fake_execute(
+            commands: list[GenerationCommand],
+        ) -> list[tuple[GenerationCommand, object]]:
+            captured.extend(commands)
+            return [(commands[0], mock_result)]
+
+        mock_execute.side_effect = fake_execute
 
         story.when("generate_resume is provided an explicit output path")
         config = GenerationConfig(
@@ -402,22 +453,33 @@ class TestGenerateResume:
         )
         result = generate_resume(config)
 
-        story.then("generate_pdf receives the derived output directory")
+        story.then("the planner receives the derived output directory")
         assert result == mock_result
-        mock_generate_pdf.assert_called_once()
-        call_config = mock_generate_pdf.call_args[0][0]
-        assert call_config.output_dir == Path("/custom/output")
+        command_config = captured[0].config
+        assert command_config.output_path == Path("/custom/output/test_resume.pdf")
 
-    def test_generate_resume_invalid_format(self, story):
+    def test_generate_resume_invalid_format(self, story: Scenario) -> None:
         story.given("an unsupported format is requested")
         config = GenerationConfig(name="test_resume", format="docx")
         with pytest.raises(ValueError, match="Unsupported format:.*docx"):
             generate_resume(config)
 
-    @patch("simple_resume.generation.generate_pdf")
-    def test_generate_resume_format_case_insensitive(self, mock_generate_pdf, story):
+    @patch("simple_resume.generation.execute_generation_commands")
+    def test_generate_resume_format_case_insensitive(
+        self,
+        mock_execute: Mock,
+        story: Scenario,
+    ) -> None:
         mock_result = Mock(spec=GenerationResult)
-        mock_generate_pdf.return_value = mock_result
+        captured: list[GenerationCommand] = []
+
+        def fake_execute(
+            commands: list[GenerationCommand],
+        ) -> list[tuple[GenerationCommand, object]]:
+            captured.extend(commands)
+            return [(commands[0], mock_result)]
+
+        mock_execute.side_effect = fake_execute
 
         story.when("format argument is provided in uppercase")
         config = GenerationConfig(
@@ -429,12 +491,23 @@ class TestGenerateResume:
 
         story.then("the call is normalised and generation proceeds")
         assert result == mock_result
-        mock_generate_pdf.assert_called_once()
+        assert captured[0].format is OutputFormat.PDF
+        mock_execute.assert_called_once()
 
-    @patch("simple_resume.generation.generate_pdf")
-    def test_generate_resume_with_all_params(self, mock_generate_pdf, story):
+    @patch("simple_resume.generation.execute_generation_commands")
+    def test_generate_resume_with_all_params(
+        self, mock_execute: Mock, story: Scenario
+    ) -> None:
         mock_result = Mock(spec=GenerationResult)
-        mock_generate_pdf.return_value = mock_result
+        captured: list[GenerationCommand] = []
+
+        def fake_execute(
+            commands: list[GenerationCommand],
+        ) -> list[tuple[GenerationCommand, object]]:
+            captured.extend(commands)
+            return [(commands[0], mock_result)]
+
+        mock_execute.side_effect = fake_execute
 
         story.when("generate_resume receives full parameter set")
         config = GenerationConfig(
@@ -449,14 +522,14 @@ class TestGenerateResume:
         )
         result = generate_resume(config)
 
-        story.then("all arguments are forwarded to generate_pdf correctly")
+        story.then("all arguments are forwarded to the planner correctly")
         assert result == mock_result
-        mock_generate_pdf.assert_called_once()
-        call_config = mock_generate_pdf.call_args[0][0]
-        assert call_config.template == "professional"
-        assert call_config.output_dir == Path("/custom")
-        assert call_config.open_after is True
-        assert call_config.preview is False
+        command_config = captured[0].config
+        assert command_config.template == "professional"
+        assert command_config.output_path == Path("/custom/output.pdf")
+        assert command_config.open_after is True
+        assert command_config.preview is False
+        mock_execute.assert_called_once()
 
 
 class TestGenerationErrorHandling:
@@ -464,7 +537,12 @@ class TestGenerationErrorHandling:
 
     @patch("simple_resume.generation.validate_directory_path")
     @patch("simple_resume.generation.ResumeSession")
-    def test_error_preservation(self, mock_resume_session, mock_validate_path, story):
+    def test_error_preservation(
+        self,
+        mock_resume_session: Mock,
+        mock_validate_path: Mock,
+        story: Scenario,
+    ) -> None:
         mock_validate_path.return_value = Path("/workspace")
         mock_resume_session.side_effect = ValidationError("Validation error")
 
@@ -476,8 +554,8 @@ class TestGenerationErrorHandling:
     @patch("simple_resume.generation.validate_directory_path")
     @patch("simple_resume.generation.ResumeSession")
     def test_error_preservation_config_error(
-        self, mock_resume_session, mock_validate_path, story
-    ):
+        self, mock_resume_session: Mock, mock_validate_path: Mock, story: Scenario
+    ) -> None:
         mock_validate_path.return_value = Path("/workspace")
         mock_resume_session.side_effect = ConfigurationError("Config error")
 
@@ -489,8 +567,8 @@ class TestGenerationErrorHandling:
     @patch("simple_resume.generation.validate_directory_path")
     @patch("simple_resume.generation.ResumeSession")
     def test_error_preservation_filesystem_error(
-        self, mock_resume_session, mock_validate_path, story
-    ):
+        self, mock_resume_session: Mock, mock_validate_path: Mock, story: Scenario
+    ) -> None:
         mock_validate_path.return_value = Path("/workspace")
         mock_resume_session.side_effect = FileSystemError("Filesystem error")
 
@@ -509,8 +587,12 @@ class TestGenerationIntegration:
     @patch("simple_resume.generation.ResumeSession")
     @patch("simple_resume.generation.SessionConfig")
     def test_session_configuration_consistency(
-        self, mock_session_config, mock_resume_session, mock_validate_path, story
-    ):
+        self,
+        mock_session_config: Mock,
+        mock_resume_session: Mock,
+        mock_validate_path: Mock,
+        story: Scenario,
+    ) -> None:
         mock_session = Mock()
         mock_resume_session.return_value.__enter__.return_value = mock_session
         mock_resume_session.return_value.__exit__.return_value = None
@@ -528,7 +610,7 @@ class TestGenerationIntegration:
         pdf_call_args = mock_session_config.call_args[1]
         assert pdf_call_args["default_template"] == "modern"
         assert pdf_call_args["preview_mode"] is True
-        assert pdf_call_args["default_format"] == "pdf"
+        assert pdf_call_args["default_format"] is OutputFormat.PDF
 
         mock_session_config.reset_mock()
 
@@ -541,4 +623,4 @@ class TestGenerationIntegration:
         html_call_args = mock_session_config.call_args[1]
         assert html_call_args["default_template"] == "modern"
         assert html_call_args["preview_mode"] is False
-        assert html_call_args["default_format"] == "html"
+        assert html_call_args["default_format"] is OutputFormat.HTML

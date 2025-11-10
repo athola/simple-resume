@@ -8,18 +8,20 @@ from unittest.mock import Mock, patch
 import pytest
 
 from simple_resume.config import Paths
+from simple_resume.constants import OutputFormat
 from simple_resume.exceptions import ConfigurationError, SessionError
 from simple_resume.session import (
     ResumeSession,
     SessionConfig,
     create_session,
 )
+from tests.bdd import Scenario
 
 
 class TestSessionConfig:
     """Behavioural expectations for SessionConfig."""
 
-    def test_session_config_defaults(self, story) -> None:
+    def test_session_config_defaults(self, story: Scenario) -> None:
         story.given("no overrides are provided")
         config = SessionConfig()
 
@@ -27,13 +29,13 @@ class TestSessionConfig:
         assert config.paths is None
         assert config.default_template is None
         assert config.default_palette is None
-        assert config.default_format == "pdf"
+        assert config.default_format is OutputFormat.PDF
         assert config.auto_open is False
         assert config.preview_mode is False
         assert config.output_dir is None
         assert config.session_metadata == {}
 
-    def test_session_config_custom_values(self, story) -> None:
+    def test_session_config_custom_values(self, story: Scenario) -> None:
         output_dir = Path("/workspace/output")
         paths = Mock(spec=Paths)
         metadata = {"user": "test"}
@@ -53,7 +55,7 @@ class TestSessionConfig:
         assert config.paths is paths
         assert config.default_template == "modern"
         assert config.default_palette == "blue"
-        assert config.default_format == "html"
+        assert config.default_format is OutputFormat.HTML
         assert config.auto_open is True
         assert config.preview_mode is True
         assert config.output_dir == output_dir
@@ -63,7 +65,7 @@ class TestSessionConfig:
 class TestResumeSessionInit:
     """Session initialization scenarios."""
 
-    def test_session_init_with_data_dir(self, story, tmp_path: Path) -> None:
+    def test_session_init_with_data_dir(self, story: Scenario, tmp_path: Path) -> None:
         story.given("a valid data directory path")
         session = ResumeSession(data_dir=str(tmp_path))
 
@@ -74,7 +76,7 @@ class TestResumeSessionInit:
         assert session.paths is not None
         session.close()
 
-    def test_session_init_with_paths_object(self, story) -> None:
+    def test_session_init_with_paths_object(self, story: Scenario) -> None:
         mock_paths = Mock(spec=Paths)
         session = ResumeSession(paths=mock_paths)
 
@@ -84,7 +86,7 @@ class TestResumeSessionInit:
         session.close()
 
     def test_session_init_with_both_paths_and_overrides_raises_error(
-        self, story
+        self, story: Scenario
     ) -> None:
         mock_paths = Mock(spec=Paths)
 
@@ -94,7 +96,10 @@ class TestResumeSessionInit:
 
         story.then("a configuration error is raised")
 
-    def test_session_init_with_invalid_data_dir_raises_error(self, story) -> None:
+    def test_session_init_with_invalid_data_dir_raises_error(
+        self,
+        story: Scenario,
+    ) -> None:
         with patch("simple_resume.session.resolve_paths") as mock_resolve:
             mock_resolve.side_effect = Exception("Invalid path")
 
@@ -104,7 +109,11 @@ class TestResumeSessionInit:
 
         story.then("the invalid path is surfaced as a configuration error")
 
-    def test_session_init_with_output_dir_override(self, story, tmp_path: Path) -> None:
+    def test_session_init_with_output_dir_override(
+        self,
+        story: Scenario,
+        tmp_path: Path,
+    ) -> None:
         output_dir = tmp_path / "custom_output"
         config = SessionConfig(output_dir=output_dir)
 
@@ -116,7 +125,11 @@ class TestResumeSessionInit:
         assert session.config.paths.output == output_dir
         session.close()
 
-    def test_session_init_with_custom_config(self, story, tmp_path: Path) -> None:
+    def test_session_init_with_custom_config(
+        self,
+        story: Scenario,
+        tmp_path: Path,
+    ) -> None:
         config = SessionConfig(
             default_template="modern",
             default_palette="ocean",
@@ -136,7 +149,7 @@ class TestResumeSessionInit:
 class TestResumeSessionProperties:
     """Test ResumeSession properties."""
 
-    def test_session_id_property(self, story, tmp_path: Path) -> None:
+    def test_session_id_property(self, story: Scenario, tmp_path: Path) -> None:
         session = ResumeSession(data_dir=str(tmp_path))
 
         story.then("a unique session_id string is generated")
@@ -144,14 +157,14 @@ class TestResumeSessionProperties:
         assert len(session.session_id) > 0
         session.close()
 
-    def test_paths_property(self, story, tmp_path: Path) -> None:
+    def test_paths_property(self, story: Scenario, tmp_path: Path) -> None:
         session = ResumeSession(data_dir=str(tmp_path))
 
         story.then("paths exposes the resolved Paths instance")
         assert isinstance(session.paths, Paths)
         session.close()
 
-    def test_config_property(self, story, tmp_path: Path) -> None:
+    def test_config_property(self, story: Scenario, tmp_path: Path) -> None:
         config = SessionConfig(default_template="modern")
         session = ResumeSession(data_dir=str(tmp_path), config=config)
 
@@ -160,7 +173,7 @@ class TestResumeSessionProperties:
         assert session.config.default_template == "modern"
         session.close()
 
-    def test_is_active_property(self, story, tmp_path: Path) -> None:
+    def test_is_active_property(self, story: Scenario, tmp_path: Path) -> None:
         session = ResumeSession(data_dir=str(tmp_path))
 
         story.then("is_active tracks whether the session has been closed")
@@ -168,7 +181,7 @@ class TestResumeSessionProperties:
         session.close()
         assert session.is_active is False
 
-    def test_operation_count_property(self, story, tmp_path: Path) -> None:
+    def test_operation_count_property(self, story: Scenario, tmp_path: Path) -> None:
         session = ResumeSession(data_dir=str(tmp_path))
 
         assert session.operation_count == 0
@@ -177,14 +190,22 @@ class TestResumeSessionProperties:
         assert session.operation_count == 5
         session.close()
 
-    def test_average_generation_time_empty(self, story, tmp_path: Path) -> None:
+    def test_average_generation_time_empty(
+        self,
+        story: Scenario,
+        tmp_path: Path,
+    ) -> None:
         session = ResumeSession(data_dir=str(tmp_path))
 
         story.then("without generation history the average is zero")
         assert session.average_generation_time == 0.0
         session.close()
 
-    def test_average_generation_time_with_data(self, story, tmp_path: Path) -> None:
+    def test_average_generation_time_with_data(
+        self,
+        story: Scenario,
+        tmp_path: Path,
+    ) -> None:
         session = ResumeSession(data_dir=str(tmp_path))
         session._generation_times = [1.0, 2.0, 3.0]
 
@@ -487,7 +508,7 @@ class TestResumeSessionGenerateAll:
 
             call_count = [0]
 
-            def side_effect(*args, **kwargs):
+            def side_effect(*args: object, **kwargs: object) -> object:
                 call_count[0] += 1
                 if call_count[0] == 1:
                     raise Exception("Generation failed")

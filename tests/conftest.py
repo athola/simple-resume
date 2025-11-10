@@ -1,5 +1,7 @@
 """Pytest configuration and fixtures for Resume project tests."""
 
+from __future__ import annotations
+
 import tempfile
 from collections.abc import Iterator
 from pathlib import Path
@@ -9,6 +11,7 @@ from unittest.mock import Mock
 import pytest
 import yaml
 
+from .bdd import Scenario
 from .bdd import scenario as make_scenario
 
 
@@ -67,8 +70,12 @@ def sample_resume_data() -> dict[str, Any]:
         "config": {
             "theme_color": "#0395DE",
             "sidebar_color": "#F6F6F6",
+            "sidebar_text_color": "#000000",
             "bar_background_color": "#DFDFDF",
             "date2_color": "#616161",
+            "frame_color": "#757575",
+            "heading_icon_color": "#0395DE",
+            "bold_color": "#000000",
             "padding": 12,
             "page_width": 190,
             "page_height": 270,
@@ -82,7 +89,6 @@ def sample_resume_data() -> dict[str, Any]:
             "date_container_padding_left": 8,
             "description_container_padding_left": 3,
             "frame_padding": 10,
-            "frame_color": "#757575",
             "cover_padding_top": 10,
             "cover_padding_bottom": 20,
             "cover_padding_h": 25,
@@ -181,8 +187,12 @@ def create_complete_resume_data(
         "config": {
             "theme_color": "#0395DE",
             "sidebar_color": "#F6F6F6",
+            "sidebar_text_color": "#000000",
             "bar_background_color": "#DFDFDF",
             "date2_color": "#616161",
+            "frame_color": "#757575",
+            "heading_icon_color": "#0395DE",
+            "bold_color": "#000000",
             "padding": 12,
             "page_width": 190,
             "page_height": 270,
@@ -196,7 +206,6 @@ def create_complete_resume_data(
             "date_container_padding_left": 8,
             "description_container_padding_left": 3,
             "frame_padding": 10,
-            "frame_color": "#757575",
             "cover_padding_top": 10,
             "cover_padding_bottom": 20,
             "cover_padding_h": 25,
@@ -321,7 +330,6 @@ def mock_environment(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
-def story(request: pytest.FixtureRequest):
+def story(request: pytest.FixtureRequest) -> Scenario:
     """Provide a Scenario helper tied to the current test node."""
-
     return make_scenario(request.node.nodeid)

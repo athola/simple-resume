@@ -1,8 +1,10 @@
 # Markdown Guide
 
-This guide explains how to use Markdown for rich formatting in your resume content.
+This guide explains Markdown usage for resume content formatting.
 
 ## Supported Features
+
+Supported Markdown features:
 
 -   **Bold**
 -   *Italic*
@@ -12,9 +14,9 @@ This guide explains how to use Markdown for rich formatting in your resume conte
 -   Tables
 -   Bulleted lists
 
-## Formatting Projects
+## Formatting the Projects Section
 
-The `Projects` section is ideal for showcasing personal or open-source work.
+The `Projects` section showcases personal or open-source work.
 
 ### Example
 
@@ -35,18 +37,18 @@ Projects:
       - **Tech Stack:** Python, Docker, Kubernetes
 ```
 
-### Tips
+### Recommendations
 
 -   Quantify results (e.g., "Reduced latency by 75%").
--   Include links to code or demos.
--   Highlight technology used with a "Tech Stack" line.
+-   Include links to code or live demos.
+-   Highlight technologies used with a "Tech Stack" line.
 
-## General Formatting
+## General Formatting Tips
 
--   Use code blocks with language identifiers (e.g., `python`, `javascript`) for syntax highlighting in HTML resumes.
+-   Use code blocks with language identifiers (e.g., `python`, `javascript`) for syntax highlighting in the HTML resume.
 -   Quantify accomplishments with numbers (e.g., "Reduced latency by 45%", "Increased revenue by $200K").
--   Start bullet points with action verbs that describe outcomes.
+-   Start bullet points with action verbs.
 
-## How It Works
+## Implementation Details
 
-We use the `markdown` Python library with extensions for fenced code blocks, tables, and syntax highlighting to render your Markdown.
+This project uses the `markdown` Python library with extensions for fenced code blocks, tables, and syntax highlighting to render Markdown.

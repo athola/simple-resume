@@ -21,7 +21,7 @@ titles:
   keyskills: Key Skills
 
 description: |
-  Results-driven engineer focused on reliable infrastructure and pragmatic solutions.
+  Results-driven engineer focused on **reliable infrastructure** and **pragmatic solutions**.
   Comfortable working across data pipelines, backend APIs, and on-call rotations.
 
 expertise:
@@ -63,8 +63,8 @@ body:
       title_link: https://contosocloud.dev/platform
       company: Contoso Cloud
       description: |
-        - Designed self-service deployment tools adopted by 40+ product teams.
-        - Reduced mean incident resolution time by 30% through better runbooks.
+        - Designed self-service deployment tools adopted by **40+ product teams**.
+        - Reduced mean incident resolution time by **30%** through better runbooks.
         - Partnered with security to roll out secrets rotation playbooks.
     -
       start: 2020
@@ -72,9 +72,9 @@ body:
       title: Backend Engineer
       company: Northwind Analytics
       description: |
-        - Shipped event-driven billing platform processing 5M events/day.
-        - Introduced property-based testing for data transforms.
-        - Led cross-team effort to deprecate a legacy monolith.
+        - Shipped event-driven billing platform processing **5M events/day**.
+        - Introduced **property-based testing** for data transforms.
+        - Led **cross-team effort** to deprecate a legacy monolith.
   Projects:
     -
       start: 2024
@@ -83,15 +83,15 @@ body:
       title_link: https://github.com/averycandidate/data-mesh-toolkit
       company: Personal Project
       description: |
-        - Delivered Terraform modules and dbt packages for cross-domain governed data products.
-        - Automated compliance dashboards surfacing freshness and quality metrics for 120 datasets.
+        - Delivered **Terraform modules** and **dbt packages** for cross-domain governed data products.
+        - Automated compliance dashboards surfacing freshness and quality metrics for **120 datasets**.
     -
       start: 2023
       end: 2023
       title: Incident Comms Bot
       company: SRE Guild, Northwind
       description: |
-        - Built Slack bot streamlining on-call escalations and stakeholder updates with templated workflows.
+        - Built **Slack bot** streamlining **on-call escalations** and stakeholder updates with templated workflows.
   "Awards & Honors":
     -
       start: 2023
@@ -99,7 +99,7 @@ body:
       title: Reliability Rising Star
       company: SREcon Global
       description: |
-        - Recognized for leadership in democratizing chaos engineering practices.
+        - Recognized for leadership in **democratizing chaos engineering practices**.
   Publications:
     -
       start: 2022
@@ -108,7 +108,7 @@ body:
       title_link: https://avery.dev/articles/batch-to-stream
       company: Personal Blog
       description: |
-        - Authored migration guide used by internal teams and open-source community alike.
+        - Authored migration guide used by **internal teams** and **open-source community** alike.
   "Speaking Engagements":
     -
       start: 2024
@@ -116,7 +116,7 @@ body:
       title: Scaling Incident Response with Data
       company: Monitorama
       description: |
-        - Presented playbook for connecting observability signals to post-incident learning loops.
+        - Presented playbook for connecting **observability signals** to **post-incident learning loops**.
   "Volunteer Service":
     -
       start: 2021
@@ -124,7 +124,7 @@ body:
       title: Mentor — Infrastructure Track
       company: Community Code Cooperative
       description: |
-        - Coach cohorts of career switchers on production-ready platform engineering practices.
+        - Coach cohorts of **career switchers** on **production-ready platform engineering practices**.
   Education:
     -
       start: 2014
@@ -132,7 +132,15 @@ body:
       title: B.S. Computer Science
       company: University of Springfield
       description: |
-        - Undergraduate research on scaling event processing in cloud environments.
+        - Undergraduate research on **scaling event processing** in cloud environments.
 
 config:
   output_mode: latex
+
+  # Section heading icon layout customization (not used in LaTeX)
+  section_icon_circle_size: "7.8mm"
+  section_icon_circle_x_offset: "-0.5mm"
+  section_icon_design_size: "4mm"
+  section_icon_design_x_offset: "-0.1mm"
+  section_icon_design_y_offset: "-0.4mm"
+  section_heading_text_margin: "-6mm"

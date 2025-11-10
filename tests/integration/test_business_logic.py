@@ -613,17 +613,17 @@ in software development.
 
         return True  # Default to valid for unknown templates
 
-    def _get_resume_content_length(self, resume_data: dict[str, Any]) -> int:
+    def _get_resume_content_length(self, resume_data: dict[str, object]) -> int:
         """Calculate total content length of Resume."""
         content_parts = [
             resume_data.get("description", ""),
             resume_data.get("full_name", ""),
-            " ".join(resume_data.get("expertise", [])),
+            " ".join(resume_data.get("expertise", [])),  # type: ignore[arg-type]
         ]
 
         # Add body content
         body = resume_data.get("body", {})
-        for section in body.values():
+        for section in body.values():  # type: ignore[attr-defined]
             for item in section:
                 content_parts.extend(
                     [

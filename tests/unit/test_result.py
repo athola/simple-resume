@@ -13,12 +13,13 @@ from simple_resume.result import (
     GenerationMetadata,
     GenerationResult,
 )
+from tests.bdd import Scenario
 
 
 class TestGenerationMetadata:
     """Test GenerationMetadata dataclass."""
 
-    def test_metadata_creation(self, story) -> None:
+    def test_metadata_creation(self, story: Scenario) -> None:
         story.given("all metadata fields are supplied")
         metadata = GenerationMetadata(
             format_type="pdf",
@@ -39,7 +40,7 @@ class TestGenerationMetadata:
         assert metadata.palette_info == {"name": "ocean"}
         assert metadata.page_count == 2
 
-    def test_metadata_with_defaults(self, story) -> None:
+    def test_metadata_with_defaults(self, story: Scenario) -> None:
         story.given("optional metadata fields are omitted")
         metadata = GenerationMetadata(
             format_type="html",
@@ -57,7 +58,11 @@ class TestGenerationMetadata:
 class TestGenerationResultInit:
     """Test GenerationResult initialization."""
 
-    def test_result_creation_with_metadata(self, story, tmp_path: Path) -> None:
+    def test_result_creation_with_metadata(
+        self,
+        story: Scenario,
+        tmp_path: Path,
+    ) -> None:
         output_file = tmp_path / "test.pdf"
         output_file.write_text("test content")
 
@@ -76,7 +81,11 @@ class TestGenerationResultInit:
         assert result.format_type == "pdf"
         assert result.metadata == metadata
 
-    def test_result_creation_without_metadata(self, story, tmp_path: Path) -> None:
+    def test_result_creation_without_metadata(
+        self,
+        story: Scenario,
+        tmp_path: Path,
+    ) -> None:
         output_file = tmp_path / "test.html"
         result = GenerationResult(output_file, "html")
 
@@ -87,7 +96,11 @@ class TestGenerationResultInit:
         assert result.metadata.template_name == "unknown"
         assert result.metadata.resume_name == "unknown"
 
-    def test_result_normalizes_format_type(self, story, tmp_path: Path) -> None:
+    def test_result_normalizes_format_type(
+        self,
+        story: Scenario,
+        tmp_path: Path,
+    ) -> None:
         output_file = tmp_path / "test.PDF"
         result = GenerationResult(output_file, "PDF")
 
@@ -98,7 +111,7 @@ class TestGenerationResultInit:
 class TestGenerationResultProperties:
     """Test GenerationResult properties."""
 
-    def test_size_property(self, story, tmp_path: Path) -> None:
+    def test_size_property(self, story: Scenario, tmp_path: Path) -> None:
         output_file = tmp_path / "test.pdf"
         content = "x" * 1000
         output_file.write_text(content)
@@ -108,14 +121,18 @@ class TestGenerationResultProperties:
         story.then("size reports the file size in bytes")
         assert result.size == len(content.encode())
 
-    def test_size_property_for_nonexistent_file(self, story, tmp_path: Path) -> None:
+    def test_size_property_for_nonexistent_file(
+        self,
+        story: Scenario,
+        tmp_path: Path,
+    ) -> None:
         output_file = tmp_path / "nonexistent.pdf"
         result = GenerationResult(output_file, "pdf")
 
         story.then("size is zero when the file is missing")
         assert result.size == 0
 
-    def test_size_human_bytes(self, story, tmp_path: Path) -> None:
+    def test_size_human_bytes(self, story: Scenario, tmp_path: Path) -> None:
         output_file = tmp_path / "test.pdf"
         output_file.write_bytes(b"x" * 500)
 
@@ -124,7 +141,7 @@ class TestGenerationResultProperties:
         story.then("size_human chooses byte units for small files")
         assert result.size_human.endswith("B")
 
-    def test_size_human_kilobytes(self, story, tmp_path: Path) -> None:
+    def test_size_human_kilobytes(self, story: Scenario, tmp_path: Path) -> None:
         output_file = tmp_path / "test.pdf"
         output_file.write_bytes(b"x" * (10 * 1024))  # 10 KB
 
@@ -133,7 +150,7 @@ class TestGenerationResultProperties:
         story.then("size_human uses KB for kilobyte-scale files")
         assert result.size_human.endswith("KB")
 
-    def test_size_human_megabytes(self, story, tmp_path: Path) -> None:
+    def test_size_human_megabytes(self, story: Scenario, tmp_path: Path) -> None:
         output_file = tmp_path / "test.pdf"
         output_file.write_bytes(b"x" * (5 * 1024 * 1024))  # 5 MB
 
@@ -142,7 +159,7 @@ class TestGenerationResultProperties:
         story.then("size_human scales to MB for megabyte files")
         assert result.size_human.endswith("MB")
 
-    def test_size_human_terabytes(self, story, tmp_path: Path) -> None:
+    def test_size_human_terabytes(self, story: Scenario, tmp_path: Path) -> None:
         output_file = tmp_path / "test.pdf"
         output_file.write_bytes(b"x")  # Create the file
         result = GenerationResult(output_file, "pdf")
@@ -155,7 +172,7 @@ class TestGenerationResultProperties:
             story.then("size_human labels very large files in TB")
             assert size_str.endswith("TB")
 
-    def test_exists_property_true(self, story, tmp_path: Path) -> None:
+    def test_exists_property_true(self, story: Scenario, tmp_path: Path) -> None:
         output_file = tmp_path / "test.pdf"
         output_file.write_text("test")
 
@@ -164,14 +181,18 @@ class TestGenerationResultProperties:
         story.then("exists returns True when the file is present")
         assert result.exists is True
 
-    def test_exists_property_false(self, story, tmp_path: Path) -> None:
+    def test_exists_property_false(self, story: Scenario, tmp_path: Path) -> None:
         output_file = tmp_path / "nonexistent.pdf"
         result = GenerationResult(output_file, "pdf")
 
         story.then("exists returns False for missing files")
         assert result.exists is False
 
-    def test_exists_property_false_for_directory(self, story, tmp_path: Path) -> None:
+    def test_exists_property_false_for_directory(
+        self,
+        story: Scenario,
+        tmp_path: Path,
+    ) -> None:
         output_dir = tmp_path / "test_dir"
         output_dir.mkdir()
 
@@ -180,21 +201,21 @@ class TestGenerationResultProperties:
         story.then("directories are not treated as existing output files")
         assert result.exists is False
 
-    def test_name_property(self, story, tmp_path: Path) -> None:
+    def test_name_property(self, story: Scenario, tmp_path: Path) -> None:
         output_file = tmp_path / "test_resume.pdf"
         result = GenerationResult(output_file, "pdf")
 
         story.then("name returns the file basename")
         assert result.name == "test_resume.pdf"
 
-    def test_stem_property(self, story, tmp_path: Path) -> None:
+    def test_stem_property(self, story: Scenario, tmp_path: Path) -> None:
         output_file = tmp_path / "test_resume.pdf"
         result = GenerationResult(output_file, "pdf")
 
         story.then("stem strips the extension from the filename")
         assert result.stem == "test_resume"
 
-    def test_suffix_property(self, story, tmp_path: Path) -> None:
+    def test_suffix_property(self, story: Scenario, tmp_path: Path) -> None:
         output_file = tmp_path / "test_resume.pdf"
         result = GenerationResult(output_file, "pdf")
 
@@ -206,7 +227,7 @@ class TestGenerationResultOpen:
     """Test GenerationResult.open() method."""
 
     def test_open_raises_error_for_nonexistent_file(
-        self, story, tmp_path: Path
+        self, story: Scenario, tmp_path: Path
     ) -> None:
         output_file = tmp_path / "nonexistent.pdf"
         result = GenerationResult(output_file, "pdf")
@@ -217,7 +238,7 @@ class TestGenerationResultOpen:
 
     @patch("simple_resume.result.GenerationResult._open_pdf")
     def test_open_calls_open_pdf_for_pdf_format(
-        self, mock_open_pdf, story, tmp_path: Path
+        self, mock_open_pdf: Mock, story: Scenario, tmp_path: Path
     ) -> None:
         output_file = tmp_path / "test.pdf"
         output_file.write_text("test")
@@ -232,7 +253,7 @@ class TestGenerationResultOpen:
 
     @patch("simple_resume.result.GenerationResult._open_html")
     def test_open_calls_open_html_for_html_format(
-        self, mock_open_html, story, tmp_path: Path
+        self, mock_open_html: Mock, story: Scenario, tmp_path: Path
     ) -> None:
         output_file = tmp_path / "test.html"
         output_file.write_text("test")
@@ -247,7 +268,7 @@ class TestGenerationResultOpen:
 
     @patch("simple_resume.result.GenerationResult._open_generic")
     def test_open_calls_open_generic_for_other_formats(
-        self, mock_open_generic, story, tmp_path: Path
+        self, mock_open_generic: Mock, story: Scenario, tmp_path: Path
     ) -> None:
         output_file = tmp_path / "test.txt"
         output_file.write_text("test")
@@ -261,7 +282,12 @@ class TestGenerationResultOpen:
         mock_open_generic.assert_called_once()
 
     @patch("simple_resume.result.GenerationResult._open_pdf")
-    def test_open_wraps_exceptions(self, mock_open_pdf, story, tmp_path: Path) -> None:
+    def test_open_wraps_exceptions(
+        self,
+        mock_open_pdf: Mock,
+        story: Scenario,
+        tmp_path: Path,
+    ) -> None:
         output_file = tmp_path / "test.pdf"
         output_file.write_text("test")
         mock_open_pdf.side_effect = Exception("Permission denied")
@@ -279,7 +305,9 @@ class TestGenerationResultOpenPlatformSpecific:
     @patch("sys.platform", "darwin")
     @patch("shutil.which")
     @patch("subprocess.Popen")
-    def test_open_pdf_macos(self, mock_popen, mock_which, tmp_path: Path) -> None:
+    def test_open_pdf_macos(
+        self, mock_popen: Mock, mock_which: Mock, tmp_path: Path
+    ) -> None:
         """_open_pdf() works on macOS."""
         output_file = tmp_path / "test.pdf"
         output_file.write_text("test")
@@ -295,7 +323,7 @@ class TestGenerationResultOpenPlatformSpecific:
     @patch("shutil.which")
     @patch("subprocess.Popen")
     def test_open_pdf_linux_with_xdg_open(
-        self, mock_popen, mock_which, tmp_path: Path
+        self, mock_popen: Mock, mock_which: Mock, tmp_path: Path
     ) -> None:
         """_open_pdf() works on Linux with xdg-open."""
         output_file = tmp_path / "test.pdf"
@@ -312,7 +340,7 @@ class TestGenerationResultOpenPlatformSpecific:
     @patch("shutil.which")
     @patch("builtins.print")
     def test_open_pdf_linux_without_xdg_open(
-        self, mock_print, mock_which, tmp_path: Path
+        self, mock_print: Mock, mock_which: Mock, tmp_path: Path
     ) -> None:
         """_open_pdf() returns False on Linux without xdg-open."""
         output_file = tmp_path / "test.pdf"
@@ -329,7 +357,7 @@ class TestGenerationResultOpenPlatformSpecific:
     @patch("shutil.which")
     @patch("subprocess.Popen")
     def test_open_pdf_handles_exceptions(
-        self, mock_popen, mock_which, tmp_path: Path
+        self, mock_popen: Mock, mock_which: Mock, tmp_path: Path
     ) -> None:
         """_open_pdf() returns False on exceptions."""
         output_file = tmp_path / "test.pdf"
@@ -345,7 +373,7 @@ class TestGenerationResultOpenPlatformSpecific:
     @patch("shutil.which")
     @patch("subprocess.Popen")
     def test_open_html_finds_browser(
-        self, mock_popen, mock_which, tmp_path: Path
+        self, mock_popen: Mock, mock_which: Mock, tmp_path: Path
     ) -> None:
         """_open_html() opens HTML with available browser."""
         output_file = tmp_path / "test.html"
@@ -361,7 +389,7 @@ class TestGenerationResultOpenPlatformSpecific:
         mock_popen.assert_called_once()
 
     @patch("shutil.which")
-    def test_open_html_no_browser_found(self, mock_which, tmp_path: Path) -> None:
+    def test_open_html_no_browser_found(self, mock_which: Mock, tmp_path: Path) -> None:
         """_open_html() returns False when no browser found."""
         output_file = tmp_path / "test.html"
         output_file.write_text("<html></html>")
@@ -375,7 +403,7 @@ class TestGenerationResultOpenPlatformSpecific:
     @patch("shutil.which")
     @patch("subprocess.Popen")
     def test_open_html_handles_browser_exception(
-        self, mock_popen, mock_which, tmp_path: Path
+        self, mock_popen: Mock, mock_which: Mock, tmp_path: Path
     ) -> None:
         """_open_html() continues to next browser on exception."""
         output_file = tmp_path / "test.html"
@@ -396,7 +424,7 @@ class TestGenerationResultOpenPlatformSpecific:
 
     @patch("sys.platform", "darwin")
     @patch("subprocess.run")
-    def test_open_generic_macos(self, mock_run, tmp_path: Path) -> None:
+    def test_open_generic_macos(self, mock_run: Mock, tmp_path: Path) -> None:
         """_open_generic() works on macOS."""
         output_file = tmp_path / "test.txt"
         output_file.write_text("test")
@@ -411,7 +439,7 @@ class TestGenerationResultOpenPlatformSpecific:
     @patch("shutil.which")
     @patch("subprocess.run")
     def test_open_generic_linux_with_xdg_open(
-        self, mock_run, mock_which, tmp_path: Path
+        self, mock_run: Mock, mock_which: Mock, tmp_path: Path
     ) -> None:
         """_open_generic() works on Linux with xdg-open."""
         output_file = tmp_path / "test.txt"
@@ -427,7 +455,7 @@ class TestGenerationResultOpenPlatformSpecific:
     @patch("sys.platform", "linux")
     @patch("shutil.which")
     def test_open_generic_linux_without_xdg_open(
-        self, mock_which, tmp_path: Path
+        self, mock_which: Mock, tmp_path: Path
     ) -> None:
         """_open_generic() returns False on Linux without xdg-open."""
         output_file = tmp_path / "test.txt"
@@ -441,7 +469,9 @@ class TestGenerationResultOpenPlatformSpecific:
 
     @patch("sys.platform", "darwin")
     @patch("subprocess.run")
-    def test_open_generic_handles_exceptions(self, mock_run, tmp_path: Path) -> None:
+    def test_open_generic_handles_exceptions(
+        self, mock_run: Mock, tmp_path: Path
+    ) -> None:
         """_open_generic() returns False on exceptions."""
         output_file = tmp_path / "test.txt"
         output_file.write_text("test")

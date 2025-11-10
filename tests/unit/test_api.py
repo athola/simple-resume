@@ -11,6 +11,7 @@ This module tests the new pandas/requests-style API features including:
 from __future__ import annotations
 
 import tempfile
+from collections.abc import Generator
 from pathlib import Path
 from typing import cast
 from unittest.mock import Mock, patch
@@ -29,8 +30,10 @@ from simple_resume import (
     preview,
 )
 from simple_resume.config import Paths
+from simple_resume.constants import OutputFormat
 from simple_resume.exceptions import SimpleResumeError
 from simple_resume.generation import (
+    GenerateOptions,
     GenerationConfig,
     generate_all,
     generate_html,
@@ -38,13 +41,14 @@ from simple_resume.generation import (
     generate_resume,
 )
 from simple_resume.session import ResumeSession, SessionConfig
+from tests.bdd import Scenario
 
 
 class TestResumeSymmetricIO:
     """Test symmetric I/O patterns (pandas-style)."""
 
     @pytest.fixture
-    def sample_resume_data(self):
+    def sample_resume_data(self) -> dict[str, object]:
         """Sample resume data for testing."""
         return {
             "full_name": "John Doe",
@@ -70,7 +74,7 @@ class TestResumeSymmetricIO:
         }
 
     @pytest.fixture
-    def temp_paths(self):
+    def temp_paths(self) -> Generator[tuple[Paths, Path], None, None]:
         """Create temporary paths for testing."""
         with tempfile.TemporaryDirectory() as temp_dir:
             base_path = Path(temp_dir)
@@ -99,7 +103,9 @@ class TestResumeSymmetricIO:
 
             yield paths, base_path
 
-    def test_resume_from_data(self, story, sample_resume_data):
+    def test_resume_from_data(
+        self, story: Scenario, sample_resume_data: dict[str, object]
+    ) -> None:
         story.given("a complete resume payload provided as a dictionary")
         story.when("Resume.from_data is invoked with an explicit name")
         resume = Resume.from_data(sample_resume_data, name="test_resume")
@@ -109,7 +115,9 @@ class TestResumeSymmetricIO:
         assert resume._data["full_name"] == "John Doe"
         assert resume.validate().is_valid
 
-    def test_resume_with_template_chaining(self, story, sample_resume_data):
+    def test_resume_with_template_chaining(
+        self, story: Scenario, sample_resume_data: dict[str, object]
+    ) -> None:
         story.given("an existing Resume constructed from data")
         resume = Resume.from_data(sample_resume_data)
 
@@ -127,7 +135,9 @@ class TestResumeSymmetricIO:
         assert new_resume._data["config"]["page_width"] == 220
         assert new_resume._is_preview
 
-    def test_resume_validate_method(self, story, sample_resume_data):
+    def test_resume_validate_method(
+        self, story: Scenario, sample_resume_data: dict[str, object]
+    ) -> None:
         story.given("a Resume instance with valid configuration")
         resume = Resume.from_data(sample_resume_data)
 
@@ -140,7 +150,12 @@ class TestResumeSymmetricIO:
         assert not validation.errors
         assert validation is validation2
 
-    def test_resume_generate_method(self, story, sample_resume_data, temp_paths):
+    def test_resume_generate_method(
+        self,
+        story: Scenario,
+        sample_resume_data: dict[str, object],
+        temp_paths: tuple[Paths, Path],
+    ) -> None:
         story.given("a Resume bound to resolved paths and mocked generators")
         paths, _ = temp_paths
         resume = Resume.from_data(sample_resume_data, paths=paths)
@@ -163,7 +178,9 @@ class TestResumeSymmetricIO:
             with pytest.raises(ValueError, match="Unsupported format"):
                 resume.generate(format="invalid")
 
-    def test_resume_read_yaml_classmethod(self, story, temp_paths):
+    def test_resume_read_yaml_classmethod(
+        self, story: Scenario, temp_paths: tuple[Paths, Path]
+    ) -> None:
         story.given("a YAML resume file stored within the input directory")
         paths, _ = temp_paths
         yaml_file = paths.input / "test_resume.yaml"
@@ -177,14 +194,16 @@ config:
         yaml_file.write_text(yaml_content)
 
         story.when("Resume.read_yaml loads the file")
-        resume = Resume.read_yaml(yaml_file)
+        resume = Resume.read_yaml(str(yaml_file))
 
         story.then("the returned Resume reflects the file contents")
         assert resume._name == "test_resume"
         assert resume._data["full_name"] == "Jane Smith"
         assert resume._data["config"]["theme_color"] == "#FF5733"
 
-    def test_resume_with_palette_variations(self, story, sample_resume_data):
+    def test_resume_with_palette_variations(
+        self, story: Scenario, sample_resume_data: dict[str, object]
+    ) -> None:
         story.given("a Resume that supports palette overrides by name or config")
         resume = Resume.from_data(sample_resume_data)
         palette_config = {"source": "generator", "seed": 42, "size": 6}
@@ -202,7 +221,9 @@ class TestResumeSession:
     """Test ResumeSession functionality."""
 
     @pytest.fixture
-    def temp_session_paths(self):
+    def temp_session_paths(
+        self,
+    ) -> Generator[tuple[Path, Path, Path, Path], None, None]:
         """Create temporary paths for session testing."""
         with tempfile.TemporaryDirectory() as temp_dir:
             base_path = Path(temp_dir)
@@ -236,7 +257,9 @@ config:
 
             yield input_dir, output_dir, templates_dir, static_dir
 
-    def test_session_initialization(self, story, temp_session_paths):
+    def test_session_initialization(
+        self, story: Scenario, temp_session_paths: tuple[Path, Path, Path, Path]
+    ) -> None:
         story.given(
             "resolved directories for data, content, templates, and static assets"
         )
@@ -258,7 +281,9 @@ config:
         assert session.session_id is not None
         assert session.paths.input == input_dir
 
-    def test_session_context_manager(self, story, temp_session_paths):
+    def test_session_context_manager(
+        self, story: Scenario, temp_session_paths: tuple[Path, Path, Path, Path]
+    ) -> None:
         story.given("a session created via context manager")
         input_dir, _, templates_dir, static_dir = temp_session_paths
 
@@ -276,7 +301,9 @@ config:
         assert not session.is_active
         assert session_id == session.session_id
 
-    def test_session_resume_loading_with_cache(self, story, temp_session_paths):
+    def test_session_resume_loading_with_cache(
+        self, story: Scenario, temp_session_paths: tuple[Path, Path, Path, Path]
+    ) -> None:
         story.given("pre-populated resume YAML files accessible to the session")
         input_dir, _, templates_dir, static_dir = temp_session_paths
 
@@ -298,7 +325,9 @@ config:
         assert resume1 is resume2
         assert resume3 is not resume1
 
-    def test_session_configuration_defaults(self, story, temp_session_paths):
+    def test_session_configuration_defaults(
+        self, story: Scenario, temp_session_paths: tuple[Path, Path, Path, Path]
+    ) -> None:
         story.given(
             "session configuration overrides template, palette, and preview mode"
         )
@@ -322,7 +351,9 @@ config:
         assert resume._data["config"]["color_scheme"] == "modern"
         assert resume._is_preview
 
-    def test_session_cache_management(self, story, temp_session_paths):
+    def test_session_cache_management(
+        self, story: Scenario, temp_session_paths: tuple[Path, Path, Path, Path]
+    ) -> None:
         story.given("two resumes are loaded through a long-lived session")
         input_dir, _, templates_dir, static_dir = temp_session_paths
 
@@ -354,13 +385,15 @@ class TestGenerationResult:
     """Test GenerationResult functionality."""
 
     @pytest.fixture
-    def temp_result_file(self):
+    def temp_result_file(self) -> Path:
         """Create a temporary file for testing."""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".pdf", delete=False) as f:
             f.write("dummy pdf content")
             return Path(f.name)
 
-    def test_generation_result_properties(self, story, temp_result_file):
+    def test_generation_result_properties(
+        self, story: Scenario, temp_result_file: Path
+    ) -> None:
         story.given("a generated PDF represented by a real temporary file")
         result = GenerationResult(temp_result_file, "pdf")
 
@@ -374,7 +407,9 @@ class TestGenerationResult:
         assert result.size > 0
         assert isinstance(result.size_human, str)
 
-    def test_generation_result_file_operations(self, story, temp_result_file):
+    def test_generation_result_file_operations(
+        self, story: Scenario, temp_result_file: Path
+    ) -> None:
         story.given("a GenerationResult wrapping a PDF on disk")
         result = GenerationResult(temp_result_file, "pdf")
 
@@ -396,7 +431,9 @@ class TestGenerationResult:
         moved_path.unlink()
         assert not moved_path.exists()
 
-    def test_generation_result_bool_conversion(self, story, temp_result_file):
+    def test_generation_result_bool_conversion(
+        self, story: Scenario, temp_result_file: Path
+    ) -> None:
         story.given("a GenerationResult pointing to an existing file")
         result = GenerationResult(temp_result_file, "pdf")
 
@@ -409,7 +446,7 @@ class TestGenerationResult:
         assert exists_before is True
         assert exists_after is False
 
-    def test_batch_generation_result(self, story):
+    def test_batch_generation_result(self, story: Scenario) -> None:
         story.given("three successful results and one recorded failure")
         results = {}
         errors = {"failed_resume": Exception("Test error")}
@@ -419,8 +456,14 @@ class TestGenerationResult:
             results[f"resume{i}"] = mock_result
 
         story.when("assembling a BatchGenerationResult")
+        # Convert Mock objects to proper GenerationResult type for compatibility
+        proper_results: dict[str, GenerationResult] = dict(results.items())
         batch_result = BatchGenerationResult(
-            results=results, total_time=5.5, successful=3, failed=1, errors=errors
+            results=proper_results,
+            total_time=5.5,
+            successful=3,
+            failed=1,
+            errors=errors,
         )
 
         story.then("aggregate metrics, listings, and iteration reflect the inputs")
@@ -434,7 +477,7 @@ class TestGenerationResult:
 class TestExceptionHierarchy:
     """Test the new exception hierarchy."""
 
-    def test_base_exception(self, story):
+    def test_base_exception(self, story: Scenario) -> None:
         story.given("the base SimpleResumeError is instantiated")
         exc = SimpleResumeError("Test message")
 
@@ -442,7 +485,7 @@ class TestExceptionHierarchy:
         assert str(exc) == "Test message"
         assert isinstance(exc, Exception)
 
-    def test_validation_error_with_context(self, story):
+    def test_validation_error_with_context(self, story: Scenario) -> None:
         story.given("structured validation errors and warnings for a YAML file")
         errors = ["Missing field", "Invalid format"]
         warnings = ["Deprecated setting"]
@@ -457,7 +500,7 @@ class TestExceptionHierarchy:
         assert exc.errors == errors
         assert exc.warnings == warnings
 
-    def test_configuration_error_with_details(self, story):
+    def test_configuration_error_with_details(self, story: Scenario) -> None:
         story.given("a configuration value violates constraints")
         story.when("ConfigurationError is instantiated with context fields")
         exc = ConfigurationError(
@@ -472,7 +515,7 @@ class TestExceptionHierarchy:
         assert exc.config_key == "page_width"
         assert exc.config_value == "-10"
 
-    def test_generation_error_with_metadata(self, story):
+    def test_generation_error_with_metadata(self, story: Scenario) -> None:
         story.given("a generation failure for a PDF output path")
         story.when("GenerationError is raised with format and path metadata")
         exc = GenerationError(
@@ -486,7 +529,7 @@ class TestExceptionHierarchy:
         assert exc.format_type == "pdf"
         assert exc.output_path == "/path/to/output.pdf"
 
-    def test_exception_hierarchy(self, story):
+    def test_exception_hierarchy(self, story: Scenario) -> None:
         story.given(
             "the ValidationError, ConfigurationError, and GenerationError classes"
         )
@@ -517,7 +560,9 @@ class TestUnifiedGenerationFunctions:
     """Test the new unified generation functions."""
 
     @pytest.fixture
-    def temp_generation_paths(self):
+    def temp_generation_paths(
+        self,
+    ) -> Generator[tuple[Path, Path, Path, Path], None, None]:
         """Create temporary paths for generation testing."""
         with tempfile.TemporaryDirectory() as temp_dir:
             base_path = Path(temp_dir)
@@ -550,10 +595,10 @@ config:
     @patch("simple_resume.generation.ResumeSession")
     def test_generate_pdf_function(
         self,
-        mock_session_class,
-        story,
-        temp_generation_paths,
-    ):
+        mock_session_class: Mock,
+        story: Scenario,
+        temp_generation_paths: tuple[Path, Path, Path, Path],
+    ) -> None:
         story.given("GenerationConfig inputs and a mocked ResumeSession pipeline")
         input_dir, _, _, _ = temp_generation_paths
         mock_session = Mock()
@@ -581,10 +626,10 @@ config:
     @patch("simple_resume.generation.ResumeSession")
     def test_generate_html_function(
         self,
-        mock_session_class,
-        story,
-        temp_generation_paths,
-    ):
+        mock_session_class: Mock,
+        story: Scenario,
+        temp_generation_paths: tuple[Path, Path, Path, Path],
+    ) -> None:
         story.given("GenerationConfig requests HTML output via a browser-aware call")
         input_dir, _, _, _ = temp_generation_paths
         mock_session = Mock()
@@ -610,10 +655,10 @@ config:
     @patch("simple_resume.generation.ResumeSession")
     def test_generate_all_function(
         self,
-        mock_session_class,
-        story,
-        temp_generation_paths,
-    ):
+        mock_session_class: Mock,
+        story: Scenario,
+        temp_generation_paths: tuple[Path, Path, Path, Path],
+    ) -> None:
         story.given("formats include pdf and html with mocked session responses")
         input_dir, _, _, _ = temp_generation_paths
         mock_session = Mock()
@@ -634,10 +679,10 @@ config:
     @patch("simple_resume.generation.ResumeSession")
     def test_generate_resume_function(
         self,
-        mock_session_class,
-        story,
-        temp_generation_paths,
-    ):
+        mock_session_class: Mock,
+        story: Scenario,
+        temp_generation_paths: tuple[Path, Path, Path, Path],
+    ) -> None:
         story.given("a single-format GenerationConfig and mocked ResumeSession")
         input_dir, _, _, _ = temp_generation_paths
         mock_session = Mock()
@@ -657,7 +702,7 @@ config:
         story.then("the helper delegates to ResumeSession and returns the result")
         assert result is mock_result
 
-    def test_generate_all_invalid_format(self, story):
+    def test_generate_all_invalid_format(self, story: Scenario) -> None:
         story.given("GenerationConfig specifies an unsupported format")
         config = GenerationConfig(formats=["invalid_format"])
 
@@ -670,7 +715,7 @@ class TestAPIIntegration:
     """Test integration between different API components."""
 
     @pytest.fixture
-    def integration_data(self):
+    def integration_data(self) -> dict[str, object]:
         """Sample data for integration testing."""
         return {
             "full_name": "Integration Test",
@@ -682,7 +727,9 @@ class TestAPIIntegration:
             },
         }
 
-    def test_chaining_with_session(self, story, integration_data):
+    def test_chaining_with_session(
+        self, story: Scenario, integration_data: dict[str, object]
+    ) -> None:
         story.given("a resume instance supporting fluent mutation")
         resume = Resume.from_data(integration_data)
 
@@ -696,7 +743,9 @@ class TestAPIIntegration:
         assert modified_resume._is_preview
         assert modified_resume._data["template"] == "modern"
 
-    def test_error_propagation_through_api(self, story, integration_data):
+    def test_error_propagation_through_api(
+        self, story: Scenario, integration_data: dict[str, object]
+    ) -> None:
         story.given("valid and invalid resume payloads")
         resume = Resume.from_data(integration_data)
         invalid_data = {"config": {"theme_color": "not-a-color"}}
@@ -712,7 +761,9 @@ class TestAPIIntegration:
         assert not invalid_result.is_valid
         assert any("theme_color" in err for err in invalid_result.errors)
 
-    def test_api_compatibility_patterns(self, story, integration_data):
+    def test_api_compatibility_patterns(
+        self, story: Scenario, integration_data: dict[str, object]
+    ) -> None:
         story.given("the API promises pandas/requests style affordances")
 
         story.when("checking for symmetric I/O and fluent interfaces")
@@ -731,7 +782,9 @@ class TestAPIIntegration:
 class TestConvenienceHelpers:
     """Behavioural coverage for the high-level generate/preview helpers."""
 
-    def test_generate_deduces_yaml_path_defaults(self, story, tmp_path, monkeypatch):
+    def test_generate_deduces_yaml_path_defaults(
+        self, story: Scenario, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         story.given("a YAML resume path on disk")
         input_dir = tmp_path / "input"
         input_dir.mkdir()
@@ -740,39 +793,50 @@ class TestConvenienceHelpers:
 
         captured_config: GenerationConfig | None = None
 
-        def fake_generate_pdf(config: GenerationConfig, **overrides):
+        def fake_generate_pdf(
+            config: GenerationConfig, **overrides: object
+        ) -> GenerationResult:
             nonlocal captured_config
             captured_config = config
-            return "PDF"
+            return Mock(spec=GenerationResult)
 
         monkeypatch.setattr(generation_module, "generate_pdf", fake_generate_pdf)
 
         story.when("generate() runs with default parameters")
-        results = generate(resume_path)
+        results = generate(resume_path, GenerateOptions())
 
         story.then("the helper returns a mapping and passes a GenerationConfig")
-        assert results == {"pdf": "PDF"}
+        assert "pdf" in results
+        assert isinstance(results["pdf"], GenerationResult)
         assert captured_config is not None
         assert captured_config.data_dir == input_dir
         assert captured_config.name == "casey"
         assert captured_config.preview is False
 
     def test_generate_multiple_formats_uses_generate_all(
-        self, story, tmp_path, monkeypatch
+        self, story: Scenario, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         story.given("a directory of resumes and multiple requested formats")
 
         captured_config: GenerationConfig | None = None
 
-        def fake_generate_all(config: GenerationConfig, **overrides):
+        def fake_generate_all(
+            config: GenerationConfig, **overrides: object
+        ) -> dict[str, str]:
             nonlocal captured_config
             captured_config = config
-            return {fmt: f"result-{fmt}" for fmt in config.formats or []}
+            results: dict[str, str] = {}
+            for fmt in config.formats or []:
+                label = fmt.value if isinstance(fmt, OutputFormat) else fmt
+                results[label] = f"result-{label}"
+            return results
 
         monkeypatch.setattr(generation_module, "generate_all", fake_generate_all)
 
         story.when("generate() is called with pdf and html formats")
-        results = generate(tmp_path, formats=("pdf", "html"), preview=True)
+        results = generate(
+            tmp_path, GenerateOptions(formats=("pdf", "html"), preview=True)
+        )
 
         story.then("generate_all receives normalized formats and preview flag")
         assert cast(dict[str, str], results) == {
@@ -780,11 +844,11 @@ class TestConvenienceHelpers:
             "html": "result-html",
         }
         assert captured_config is not None
-        assert captured_config.formats == ["pdf", "html"]
+        assert captured_config.formats == [OutputFormat.PDF, OutputFormat.HTML]
         assert captured_config.preview is True
 
     def test_preview_calls_generate_html_with_preview_mode(
-        self, story, tmp_path, monkeypatch
+        self, story: Scenario, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         story.given("a YAML file for a specific resume")
         resume_path = tmp_path / "casey.yaml"
@@ -792,7 +856,7 @@ class TestConvenienceHelpers:
 
         captured_config: GenerationConfig | None = None
 
-        def fake_generate_html(config: GenerationConfig, **overrides):
+        def fake_generate_html(config: GenerationConfig, **overrides: object) -> str:
             nonlocal captured_config
             captured_config = config
             return "HTML"
@@ -808,7 +872,9 @@ class TestConvenienceHelpers:
         assert captured_config.preview is True
         assert captured_config.name == "casey"
 
-    def test_preview_requires_specific_resume(self, story, tmp_path) -> None:
+    def test_preview_requires_specific_resume(
+        self, story: Scenario, tmp_path: Path
+    ) -> None:
         story.given("only a directory was provided")
 
         story.then("preview raises a ValueError explaining the requirement")

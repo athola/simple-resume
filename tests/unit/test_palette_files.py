@@ -14,9 +14,10 @@ from simple_resume.utilities import (
     apply_external_palette,
     load_palette_from_file,
 )
+from tests.bdd import Scenario
 
 
-def test_load_palette_from_file_with_palette_block(story) -> None:
+def test_load_palette_from_file_with_palette_block(story: Scenario) -> None:
     story.given("a palette YAML file containing a nested palette block")
     palette_content = """
 palette:
@@ -49,7 +50,7 @@ palette:
         temp_path.unlink()
 
 
-def test_load_palette_from_file_without_palette_block(story) -> None:
+def test_load_palette_from_file_without_palette_block(story: Scenario) -> None:
     story.given("a palette YAML file with top-level color metadata")
     palette_content = """
 source: registry
@@ -76,14 +77,14 @@ colors:
         temp_path.unlink()
 
 
-def test_load_palette_from_file_not_found(story) -> None:
+def test_load_palette_from_file_not_found(story: Scenario) -> None:
     story.given("a path to a non-existent palette file")
     story.then("loading the palette raises FileNotFoundError")
     with pytest.raises(FileNotFoundError, match="Palette file not found"):
         load_palette_from_file("nonexistent_palette.yaml")
 
 
-def test_load_palette_from_file_invalid_extension(story) -> None:
+def test_load_palette_from_file_invalid_extension(story: Scenario) -> None:
     story.given("a palette file with .txt extension")
     with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
         f.write("palette:\n  source: generator")
@@ -97,7 +98,7 @@ def test_load_palette_from_file_invalid_extension(story) -> None:
         temp_path.unlink()
 
 
-def test_load_palette_from_file_invalid_yaml(story) -> None:
+def test_load_palette_from_file_invalid_yaml(story: Scenario) -> None:
     story.given("a palette file with malformed YAML syntax")
     invalid_yaml = """
 palette:
@@ -117,7 +118,7 @@ palette:
         temp_path.unlink()
 
 
-def test_load_palette_from_file_non_dict_content(story) -> None:
+def test_load_palette_from_file_non_dict_content(story: Scenario) -> None:
     story.given("a palette file whose root node is a list")
     invalid_content = """
 - item1
@@ -140,7 +141,7 @@ def test_load_palette_from_file_non_dict_content(story) -> None:
         temp_path.unlink()
 
 
-def test_apply_external_palette(story) -> None:
+def test_apply_external_palette(story: Scenario) -> None:
     story.given("a resume config and palette YAML to merge")
     base_config = {
         "template": "resume_base",
@@ -176,7 +177,7 @@ palette:
         temp_path.unlink()
 
 
-def test_apply_external_palette_overrides_existing(story) -> None:
+def test_apply_external_palette_overrides_existing(story: Scenario) -> None:
     story.given("a config that already specifies a palette")
     base_config = {
         "template": "resume_base",
@@ -209,7 +210,7 @@ palette:
         temp_path.unlink()
 
 
-def test_resume_with_config_palette_file(story) -> None:
+def test_resume_with_config_palette_file(story: Scenario) -> None:
     story.given("a Resume instance without palette data and a palette file")
     # Create a mock resume data
     resume_data = {
@@ -244,7 +245,7 @@ palette:
         temp_path.unlink()
 
 
-def test_resume_with_config_invalid_palette_file(story) -> None:
+def test_resume_with_config_invalid_palette_file(story: Scenario) -> None:
     story.given("a Resume instance and a missing palette file path")
     resume_data = {"template": "resume_base", "full_name": "Test User"}
 
@@ -255,7 +256,7 @@ def test_resume_with_config_invalid_palette_file(story) -> None:
         resume.with_config(palette_file="nonexistent_palette.yaml")
 
 
-def test_resume_with_config_preserves_other_overrides(story) -> None:
+def test_resume_with_config_preserves_other_overrides(story: Scenario) -> None:
     story.given("a palette file plus additional config overrides")
     resume_data = {"template": "resume_base", "full_name": "Test User"}
 
@@ -286,7 +287,7 @@ palette:
         temp_path.unlink()
 
 
-def test_load_palette_from_file_with_direct_colors(story) -> None:
+def test_load_palette_from_file_with_direct_colors(story: Scenario) -> None:
     """Regression coverage for palette files with direct color definitions."""
     story.given("a palette file with direct color values under palette key")
     palette_content = """
@@ -297,6 +298,7 @@ palette:
   date2_color: "#666666"
   sidebar_text_color: "#333333"
   frame_color: "#C04040"
+  bold_color: "#902E2E"
 """
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
@@ -314,13 +316,14 @@ palette:
         assert result["palette"]["date2_color"] == "#666666"
         assert result["palette"]["sidebar_text_color"] == "#333333"
         assert result["palette"]["frame_color"] == "#C04040"
+        assert result["palette"]["bold_color"] == "#902E2E"
         assert "source" not in result["palette"]
         assert "name" not in result["palette"]
     finally:
         temp_path.unlink()
 
 
-def test_load_palette_file_with_nested_config_block(story) -> None:
+def test_load_palette_file_with_nested_config_block(story: Scenario) -> None:
     """Palette files wrapped in a config block should be supported."""
     story.given("a palette file that keeps colors under a config block")
     palette_content = """
@@ -346,7 +349,9 @@ config:
         temp_path.unlink()
 
 
-def test_resume_with_direct_color_palette_validates_successfully(story) -> None:
+def test_resume_with_direct_color_palette_validates_successfully(
+    story: Scenario,
+) -> None:
     """Ensure direct color palette files validate without errors."""
     story.given("a resume that loads a palette file containing direct colors")
     resume_data = {

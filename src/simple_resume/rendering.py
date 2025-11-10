@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared helpers for rendering resume templates without relying on Flask."""
+"""Provide shared helpers for rendering resume templates without relying on Flask."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from .utilities import get_content
 def build_html_context(
     data: dict[str, Any], *, preview: bool
 ) -> tuple[str, dict[str, Any]]:
-    """Prepare template name and context from resume data."""
+    """Prepare a template name and context from resume data."""
     template_name = data.get("template", "resume_no_bars")
 
     context = dict(data)
@@ -79,7 +79,7 @@ def render_resume_html(
     preview: bool = False,
     paths: config.Paths | None = None,
 ) -> tuple[str, str, dict[str, Any]]:
-    """Render a resume to HTML string and return it with base path and context."""
+    """Render a resume to an HTML string and return it with base path and context."""
     resolved_paths = paths or config.resolve_paths()
     template_name, context = load_resume(name, preview=preview, paths=resolved_paths)
     env = get_template_environment(str(resolved_paths.templates))

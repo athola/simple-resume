@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Palette sources: bundled datasets, palettable integration, remote APIs."""
+"""Provide palette sources: bundled datasets, palettable integration, remote APIs."""
 
 from __future__ import annotations
 
@@ -13,11 +13,12 @@ from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
-from types import ModuleType
-from typing import TYPE_CHECKING, Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
+
+import palettable
+from palettable.palette import Palette as PalettablePalette
 
 from .common import Palette, get_cache_dir
 from .exceptions import (
@@ -25,39 +26,14 @@ from .exceptions import (
     PaletteRemoteError,
 )
 
-# Optional imports for optional dependencies. When running under MyPy we only
-# import the modules for type information to avoid missing-stub warnings.
-if TYPE_CHECKING:  # pragma: no cover - typing helper
-    import palettable as _palettable_module  # type: ignore[import-untyped]
-    from palettable.palette import (  # type: ignore[import-untyped]
-        Palette as _PalettablePaletteType,
-    )
-
-    palettable: ModuleType | None = _palettable_module
-    PalettablePalette: Any = _PalettablePaletteType
-else:
-    try:
-        import palettable as _palettable_module
-    except ImportError:  # pragma: no cover - optional dependency
-        palettable = None
-    else:
-        palettable = _palettable_module
-
-    try:
-        from palettable.palette import Palette as _PalettablePaletteType
-    except ImportError:  # pragma: no cover - optional dependency
-        PalettablePalette = None
-    else:
-        PalettablePalette = _PalettablePaletteType
-
 logger = logging.getLogger(__name__)
 
 
 def _validate_url(url: str) -> None:
-    """Validate that URL uses a safe scheme.
+    """Validate that a URL uses a safe scheme.
 
     Only HTTPS and HTTP schemes are allowed for security. This prevents
-    access to local files (file://) and other potentially unsafe schemes.
+    access to local files (`file://`) and other potentially unsafe schemes.
     """
     parsed = urlparse(url)
     allowed_schemes = {"https", "http"}
@@ -94,7 +70,7 @@ MIN_MODULE_NAME_PARTS = 2
 
 @dataclass(frozen=True)
 class PalettableRecord:
-    """Metadata describing a palette provided by palettable."""
+    """Define metadata describing a palette provided by `palettable`."""
 
     name: str
     module: str
@@ -104,7 +80,7 @@ class PalettableRecord:
     size: int
 
     def to_dict(self) -> dict[str, object]:
-        """Convert record to dictionary representation."""
+        """Convert a record to dictionary representation."""
         return {
             "name": self.name,
             "module": self.module,
@@ -116,7 +92,7 @@ class PalettableRecord:
 
     @classmethod
     def from_dict(cls, data: Mapping[str, object]) -> PalettableRecord:
-        """Create record from dictionary."""
+        """Create a record from a dictionary."""
         return cls(
             name=str(data["name"]),
             module=str(data["module"]),
@@ -130,11 +106,13 @@ class PalettableRecord:
 
 
 def _data_dir() -> Path:
+    """Return the data directory."""
     return Path(__file__).resolve().parent / "data"
 
 
 def _default_file() -> Path:
-    return _data_dir() / DEFAULT_DATA_FILENAME
+    """Return the default palette file path."""
+    return _data_dir() / "default_palettes.json"
 
 
 def load_default_palettes() -> list[Palette]:
@@ -158,15 +136,14 @@ def load_default_palettes() -> list[Palette]:
 
 
 def _cache_path(filename: str) -> Path:
+    """Return the cache file path."""
     cache_dir = get_cache_dir()
     cache_dir.mkdir(parents=True, exist_ok=True)
     return cache_dir / filename
 
 
 def _iter_palette_modules() -> Iterator[str]:
-    if palettable is None:
-        return
-
+    """Iterate over `palettable` modules."""
     for module_info in pkgutil.walk_packages(
         palettable.__path__, palettable.__name__ + "."
     ):
@@ -175,9 +152,7 @@ def _iter_palette_modules() -> Iterator[str]:
 
 
 def _discover_palettable() -> list[PalettableRecord]:
-    if PalettablePalette is None:
-        return []
-
+    """Discover and return all `palettable` records."""
     records: list[PalettableRecord] = []
     for module_name in _iter_palette_modules():
         try:
@@ -208,6 +183,7 @@ def _discover_palettable() -> list[PalettableRecord]:
 
 
 def _load_cached_palettable() -> list[PalettableRecord]:
+    """Load cached `palettable` records."""
     cache_file = _cache_path(PALETTABLE_CACHE)
     if not cache_file.exists():
         return []
@@ -217,6 +193,7 @@ def _load_cached_palettable() -> list[PalettableRecord]:
 
 
 def _save_palettable(records: Iterable[PalettableRecord]) -> None:
+    """Save `palettable` records to cache."""
     data = [record.to_dict() for record in records]
     cache_file = _cache_path(PALETTABLE_CACHE)
     with cache_file.open("w", encoding="utf-8") as handle:
@@ -226,11 +203,7 @@ def _save_palettable(records: Iterable[PalettableRecord]) -> None:
 
 
 def ensure_bundled_palettes_loaded() -> list[PalettableRecord]:
-    """Return cached palettable metadata, discovering when necessary."""
-    if palettable is None:
-        logger.debug("palettable not installed; only default palettes are available")
-        return []
-
+    """Return cached `palettable` metadata, discovering when necessary."""
     records = _load_cached_palettable()
     if records:
         return records
@@ -241,7 +214,7 @@ def ensure_bundled_palettes_loaded() -> list[PalettableRecord]:
 
 
 def load_palettable_palette(record: PalettableRecord) -> Palette | None:
-    """Resolve a Palettable palette into our Palette type."""
+    """Resolve a `Palettable` palette into our `Palette` type."""
     try:
         module = import_module(record.module)
         palette_obj = getattr(module, record.attribute)
@@ -294,7 +267,7 @@ def build_palettable_registry_snapshot() -> dict[str, object]:
 
 
 class ColourLoversClient:
-    """Thin wrapper around the ColourLovers palette API."""
+    """Provide a thin wrapper around the ColourLovers palette API."""
 
     API_BASE = "https://www.colourlovers.com/api/palettes"
 
@@ -304,7 +277,7 @@ class ColourLoversClient:
         cache_ttl: int = COLOURLOVERS_CACHE_TTL_SECONDS,
         enable_flag: str = COLOURLOVERS_FLAG,
     ) -> None:
-        """Initialize ColourLovers API client."""
+        """Initialize the ColourLovers API client."""
         self.cache_dir = get_cache_dir() / "colourlovers"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.cache_ttl = cache_ttl
@@ -384,6 +357,7 @@ class ColourLoversClient:
 
     @staticmethod
     def _palette_from_payload(payload: Mapping[str, object]) -> Palette:
+        """Convert a raw API payload to a `Palette` object."""
         raw_colors = payload.get("colors") or []
         # Ensure raw_colors is iterable
         if not isinstance(raw_colors, (list, tuple)):

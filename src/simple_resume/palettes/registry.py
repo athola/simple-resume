@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Palette registry that aggregates multiple providers."""
+"""Provide a palette registry that aggregates multiple providers."""
 
 from __future__ import annotations
 
@@ -15,10 +15,10 @@ from .sources import (
 
 
 class PaletteRegistry:
-    """In-memory registry of named palettes."""
+    """Define an in-memory registry of named palettes."""
 
     def __init__(self) -> None:
-        """Initialize empty palette registry."""
+        """Initialize an empty palette registry."""
         self._palettes: dict[str, Palette] = {}
 
     def register(self, palette: Palette) -> None:
@@ -39,7 +39,7 @@ class PaletteRegistry:
         return [self._palettes[key] for key in sorted(self._palettes)]
 
     def to_json(self) -> str:
-        """Serialize registry to JSON."""
+        """Serialize the registry to JSON."""
         return json.dumps([palette.to_dict() for palette in self.list()], indent=2)
 
 
@@ -47,7 +47,7 @@ _CACHE_ENV = "SIMPLE_RESUME_PALETTE_CACHE"
 
 
 def _load_palettable(registry: PaletteRegistry) -> None:
-    """Populate registry with palettable palettes."""
+    """Populate the registry with palettable palettes."""
     for record in ensure_bundled_palettes_loaded():
         palette = load_palettable_palette(record)
         if palette is not None:
@@ -55,7 +55,7 @@ def _load_palettable(registry: PaletteRegistry) -> None:
 
 
 @lru_cache(maxsize=1)
-def get_global_registry() -> PaletteRegistry:
+def get_palette_registry() -> PaletteRegistry:
     """Return a singleton registry populated with known sources."""
     registry = PaletteRegistry()
     for palette in load_default_palettes():
@@ -64,15 +64,15 @@ def get_global_registry() -> PaletteRegistry:
     return registry
 
 
-def reset_global_registry() -> None:
+def reset_palette_registry() -> None:
     """Clear the cached global registry (primarily for tests)."""
-    get_global_registry.cache_clear()
+    get_palette_registry.cache_clear()
 
 
 __all__ = [
     "Palette",
     "PaletteRegistry",
-    "get_global_registry",
-    "reset_global_registry",
+    "get_palette_registry",
+    "reset_palette_registry",
     "get_cache_dir",
 ]

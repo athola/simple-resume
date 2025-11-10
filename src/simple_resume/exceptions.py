@@ -1,17 +1,17 @@
-"""Exception hierarchy for simple-resume.
+"""Define the exception hierarchy for simple-resume.
 
 This module defines a structured exception hierarchy similar to pandas and requests
 to provide clear error handling and debugging capabilities.
 
 ## Error Handling Pattern
 
-simple-resume uses a two-tier error handling pattern:
+`simple-resume` uses a two-tier error handling pattern:
 
 **Tier 1: Inspection (returns results)**
-- Use when you want to check validation status, log warnings, or collect errors
-- Methods: `Resume.validate()` → `ValidationResult`
-- Never raises exceptions, always returns a result object
-- Example: Check validation without stopping execution
+- Use when you want to check validation status, log warnings, or collect errors.
+- Methods: `Resume.validate()` → `ValidationResult`.
+- Never raises exceptions, always returns a result object.
+- Example: Check validation without stopping execution.
   ```python
   result = resume.validate()
   if result.warnings:
@@ -21,23 +21,23 @@ simple-resume uses a two-tier error handling pattern:
   ```
 
 **Tier 2: Action (raises on invalid)**
-- Use when operations require valid data (fail-fast approach)
-- Methods: `Resume.validate_or_raise()` → None or raises ValidationError
-- Used internally by `to_pdf()`, `to_html()`, and CLI commands
-- Example: Ensure data is valid before proceeding
+- Use when operations require valid data (fail-fast approach).
+- Methods: `Resume.validate_or_raise()` → `None` or raises `ValidationError`.
+- Used internally by `to_pdf()`, `to_html()`, and CLI commands.
+- Example: Ensure data is valid before proceeding.
   ```python
   resume.validate_or_raise()  # Raises ValidationError if invalid
   resume.to_pdf("output.pdf")  # Only runs if validation passed
   ```
 
 This pattern is similar to:
-- **pandas**: `df.empty` (returns bool) vs operations that raise on empty DataFrames
-- **requests**: `response.status_code` vs `response.raise_for_status()`
+- **pandas**: `df.empty` (returns bool) vs operations that raise on empty DataFrames.
+- **requests**: `response.status_code` vs `response.raise_for_status()`.
 
 ## Exception Hierarchy
 
 All exceptions inherit from `SimpleResumeError`, allowing users to catch all
-simple-resume errors with a single except clause:
+`simple-resume` errors with a single except clause:
 
 ```python
 try:
@@ -66,10 +66,10 @@ from typing import Any
 
 
 class SimpleResumeError(Exception):
-    """Base exception for all simple-resume errors.
+    """Define the base exception for all simple-resume errors.
 
-    All other exceptions in simple-resume inherit from this base class,
-    allowing users to catch all simple-resume-specific errors with a single
+    All other exceptions in `simple-resume` inherit from this base class,
+    allowing users to catch all `simple-resume`-specific errors with a single
     except clause.
     """
 
@@ -80,14 +80,14 @@ class SimpleResumeError(Exception):
         context: dict[str, Any] | None = None,
         filename: str | None = None,
     ) -> None:
-        """Initialize exception with message and optional context."""
+        """Initialize the exception with a message and optional context."""
         super().__init__(message)
         self.message = message
         self.context = context or {}
         self.filename = filename
 
     def __str__(self) -> str:
-        """Return formatted error message with filename and context."""
+        """Return a formatted error message with filename and context."""
         base_msg = self.message
         if self.filename:
             base_msg = f"{self.filename}: {base_msg}"
@@ -98,12 +98,12 @@ class SimpleResumeError(Exception):
 
 
 class ValidationError(SimpleResumeError, ValueError):
-    """Raised when resume data validation fails.
+    """Raise when resume data validation fails.
 
     This exception is raised when the provided resume data doesn't meet
     the required structure, contains invalid values, or fails validation rules.
 
-    Inherits from both SimpleResumeError and ValueError for backwards compatibility.
+    Inherits from both `SimpleResumeError` and `ValueError` for backwards compatibility.
     """
 
     def __init__(
@@ -114,14 +114,14 @@ class ValidationError(SimpleResumeError, ValueError):
         warnings: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize validation error with message and optional error/warning lists."""
+        """Initialize with message and optional error/warning lists."""
         super().__init__(message, **kwargs)
         self.errors = errors or []
         self.warnings = warnings or []
 
 
 class ConfigurationError(SimpleResumeError):
-    """Raised when configuration is invalid.
+    """Raise when configuration is invalid.
 
     This covers issues with resume configuration, color schemes, page dimensions,
     template settings, and other configuration-related problems.
@@ -135,13 +135,13 @@ class ConfigurationError(SimpleResumeError):
         config_value: Any | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize configuration error with message and optional config details."""
+        """Initialize with message and optional config details."""
         super().__init__(message, **kwargs)
         self.config_key = config_key
         self.config_value = config_value
 
     def __str__(self) -> str:
-        """Return formatted error message with config key."""
+        """Return a formatted error message with the config key."""
         base_msg = super().__str__()
         if self.config_key:
             base_msg = f"{base_msg} (config_key={self.config_key})"
@@ -149,7 +149,7 @@ class ConfigurationError(SimpleResumeError):
 
 
 class TemplateError(SimpleResumeError):
-    """Raised when template processing fails.
+    """Raise when template processing fails.
 
     This exception covers issues with template loading, rendering, missing
     templates, and Jinja2 template errors.
@@ -163,14 +163,14 @@ class TemplateError(SimpleResumeError):
         template_path: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize template error with message and optional template details."""
+        """Initialize with message and optional template details."""
         super().__init__(message, **kwargs)
         self.template_name = template_name
         self.template_path = template_path
 
 
 class GenerationError(SimpleResumeError):
-    """Raised when PDF/HTML generation fails.
+    """Raise when PDF/HTML generation fails.
 
     This exception covers issues during the actual generation process,
     including WeasyPrint errors, file I/O problems, and rendering failures.
@@ -184,13 +184,13 @@ class GenerationError(SimpleResumeError):
         format_type: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize generation error with message and optional output details.
+        """Initialize the generation error with a message and optional output details.
 
         Args:
-            message: Error message
-            output_path: Output path (accepts str or Path objects)
-            format_type: Format type (pdf, html, etc.)
-            **kwargs: Additional context passed to base exception
+            message: Error message.
+            output_path: Output path (accepts str or Path objects).
+            format_type: Format type (pdf, html, etc.).
+            **kwargs: Additional context passed to base exception.
 
         """
         super().__init__(message, **kwargs)
@@ -198,7 +198,7 @@ class GenerationError(SimpleResumeError):
         self.format_type = format_type
 
     def __str__(self) -> str:
-        """Return formatted error message with format type."""
+        """Return a formatted error message with the format type."""
         base_msg = super().__str__()
         if self.format_type:
             base_msg = f"{base_msg} (format={self.format_type})"
@@ -206,7 +206,7 @@ class GenerationError(SimpleResumeError):
 
 
 class PaletteError(SimpleResumeError):
-    """Raised when color palette operations fail.
+    """Raise when color palette operations fail.
 
     This exception covers issues with palette loading, generation, color
     validation, and palette-related errors.
@@ -220,14 +220,14 @@ class PaletteError(SimpleResumeError):
         color_values: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize palette error with message and optional palette details."""
+        """Initialize the palette error with a message and optional palette details."""
         super().__init__(message, **kwargs)
         self.palette_name = palette_name
         self.color_values = color_values
 
 
 class FileSystemError(SimpleResumeError):
-    """Raised when file system operations fail.
+    """Raise when file system operations fail.
 
     This exception covers issues with file reading, writing, path resolution,
     and directory operations.
@@ -241,13 +241,13 @@ class FileSystemError(SimpleResumeError):
         operation: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize filesystem error with message and optional path/operation.
+        """Initialize the filesystem error with a message and optional path/operation.
 
         Args:
-            message: Error message
-            path: File path (accepts str or Path objects)
-            operation: Operation type (read, write, etc.)
-            **kwargs: Additional context passed to base exception
+            message: Error message.
+            path: File path (accepts str or Path objects).
+            operation: Operation type (read, write, etc.).
+            **kwargs: Additional context passed to base exception.
 
         """
         super().__init__(message, **kwargs)
@@ -256,16 +256,16 @@ class FileSystemError(SimpleResumeError):
 
 
 class SessionError(SimpleResumeError):
-    """Raised when session operations fail.
+    """Raise when session operations fail.
 
-    This exception covers issues with ResumeSession operations, context
+    This exception covers issues with `ResumeSession` operations, context
     management, and session-related errors.
     """
 
     def __init__(
         self, message: str, *, session_id: str | None = None, **kwargs: Any
     ) -> None:
-        """Initialize session error with message and optional session ID."""
+        """Initialize the session error with a message and optional session ID."""
         super().__init__(message, **kwargs)
         self.session_id = session_id
 

@@ -7,19 +7,27 @@
       @font-face {
         font-family: "Avenir 35";
         src: url("{{ url_for('static', filename='fonts/AvenirLTStd-Light.otf') }}");
+        font-weight: 300;
+        font-style: normal;
       }
       @font-face {
         font-family: "Avenir 45";
         src: url("{{ url_for('static', filename='fonts/AvenirLTStd-Book.otf') }}");
+        font-weight: 400;
+        font-style: normal;
       }
       @font-face {
         font-family: "Avenir 55";
         src: url("{{ url_for('static', filename='fonts/AvenirLTStd-Roman.otf') }}");
+        font-weight: 500;
+        font-style: normal;
       }
-/*      @font-face {
+      @font-face {
         font-family: "Avenir 65";
         src: url("{{ url_for('static', filename='fonts/AvenirLTStd-Medium.otf') }}");
-      }*/
+        font-weight: 700;
+        font-style: normal;
+      }
     </style>
 
     <!-- Documents styles -->
@@ -64,6 +72,10 @@
       h4 {
         font-size: 10pt;
         font-family: 'Avenir 45';
+      }
+      .markdown-strong {
+        font-family: 'Avenir 65', 'Avenir 55', 'Avenir 45', 'Helvetica Neue', Arial, sans-serif !important;
+        font-weight: 700 !important;
       }
 
       /* List styles */

@@ -46,14 +46,14 @@ def escape_url(url: str) -> str:
 
 
 class ParagraphBlock(TypedDict):
-    """Paragraph text block."""
+    """Define a paragraph text block."""
 
     kind: Literal["paragraph"]
     text: str
 
 
 class ListBlock(TypedDict):
-    """Bullet or enumerated list block."""
+    """Define a bullet or enumerated list block."""
 
     kind: Literal["itemize", "enumerate"]
     items: list[str]
@@ -64,7 +64,7 @@ Block = ParagraphBlock | ListBlock
 
 @dataclass(frozen=True)
 class LatexEntry:
-    """Single entry inside a resume section."""
+    """Define a single entry inside a resume section."""
 
     title: str
     subtitle: str | None
@@ -74,7 +74,7 @@ class LatexEntry:
 
 @dataclass(frozen=True)
 class LatexSection:
-    """Top-level resume section (Experience, Education, etc.)."""
+    """Define a top-level resume section (Experience, Education, etc.)."""
 
     title: str
     entries: list[LatexEntry]
@@ -82,13 +82,14 @@ class LatexSection:
 
 @dataclass(frozen=True)
 class LatexRenderResult:
-    """Rendered LaTeX output plus context for debugging or tests."""
+    """Define rendered LaTeX output plus context for debugging or tests."""
 
     tex: str
     context: dict[str, Any]
 
 
 def _jinja_environment(template_root: Path) -> Environment:
+    """Return a Jinja2 environment for LaTeX templates."""
     loader = FileSystemLoader(str(template_root))
     env = Environment(loader=loader, autoescape=select_autoescape(("html", "xml")))
     return env
@@ -102,7 +103,7 @@ class _InlineConverter:
         self._counter = itertools.count()
 
     def convert(self, text: str) -> str:
-        """Return LaTeX-safe string."""
+        """Return a LaTeX-safe string."""
         working = text
         working = re.sub(r"`([^`]+)`", self._code_replacement, working)
         working = re.sub(
@@ -154,7 +155,7 @@ def _convert_inline(text: str) -> str:
 
 
 def _normalize_iterable(value: Any) -> list[str]:
-    """Return list of string entries regardless of input type."""
+    """Return a list of string entries regardless of input type."""
     if value is None:
         return []
     if isinstance(value, dict):
@@ -409,7 +410,7 @@ def build_latex_context(
 
 
 def _fontawesome_support_block(fontawesome_dir: str | None) -> str:
-    """Return LaTeX block that defines contact icons."""
+    """Return a LaTeX block that defines contact icons."""
     fallback = textwrap.dedent(
         r"""
         \IfFileExists{fontawesome.sty}{%
@@ -477,7 +478,7 @@ def render_resume_latex_from_data(
     paths: config.Paths | None = None,
     template_name: str = "latex/basic.tex",
 ) -> LatexRenderResult:
-    """Render LaTeX template with prepared context."""
+    """Render a LaTeX template with prepared context."""
     resolved_paths = paths or config.resolve_paths()
     context = build_latex_context(data, static_dir=resolved_paths.static)
     env = _jinja_environment(resolved_paths.templates)
@@ -492,7 +493,7 @@ def render_resume_latex(
     paths: config.Paths | None = None,
     template_name: str = "latex/basic.tex",
 ) -> LatexRenderResult:
-    """Read resume data and render to LaTeX string."""
+    """Read resume data and render to a LaTeX string."""
     resolved_paths = paths or config.resolve_paths()
     data = get_content(name, paths=resolved_paths, transform_markdown=False)
     return render_resume_latex_from_data(
@@ -501,10 +502,10 @@ def render_resume_latex(
 
 
 class LatexCompilationError(RuntimeError):
-    """Raised when LaTeX compilation fails."""
+    """Raise when LaTeX compilation fails."""
 
     def __init__(self, message: str, *, log: str | None = None) -> None:
-        """Initialize LaTeX compilation error with message and optional log."""
+        """Initialize the LaTeX compilation error with a message and optional log."""
         super().__init__(message)
         self.log = log
 
@@ -514,7 +515,7 @@ def compile_tex_to_pdf(
     *,
     engines: Iterable[str] = ("xelatex", "pdflatex"),
 ) -> Path:
-    """Compile a .tex file to PDF using an available LaTeX engine."""
+    """Compile a `.tex` file to PDF using an available LaTeX engine."""
     available_engine = None
     for engine in engines:
         if shutil.which(engine):
@@ -562,14 +563,14 @@ def compile_tex_to_html(
     *,
     tools: Iterable[str] = ("pandoc", "htlatex"),
 ) -> Path:
-    """Compile a .tex file to HTML using available tooling.
+    """Compile a `.tex` file to HTML using available tooling.
 
     Preference order:
         1. pandoc (fast, single-shot)
         2. htlatex (requires TeX4ht distribution)
 
     Raises:
-        LatexCompilationError: When no tools are available or compilation fails.
+        `LatexCompilationError`: When no tools are available or compilation fails.
 
     """
     html_path = tex_path.with_suffix(".html")

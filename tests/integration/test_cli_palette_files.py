@@ -8,9 +8,13 @@ from pathlib import Path
 import pytest
 
 from simple_resume.cli import _build_config_overrides
+from tests.bdd import Scenario
 
 
-def test_build_config_overrides_with_palette_file(story, tmp_path: Path) -> None:
+def test_build_config_overrides_with_palette_file(
+    story: Scenario,
+    tmp_path: Path,
+) -> None:
     story.given("the CLI receives an absolute palette file path")
     palette_file = tmp_path / "palette.yaml"
     palette_file.write_text("palette: {}", encoding="utf-8")
@@ -31,7 +35,7 @@ def test_build_config_overrides_with_palette_file(story, tmp_path: Path) -> None
 
 
 def test_build_config_overrides_with_relative_path(
-    story, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    story: Scenario, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     story.given("the palette flag references a relative YAML path")
     monkeypatch.chdir(tmp_path)
@@ -55,7 +59,10 @@ def test_build_config_overrides_with_relative_path(
     assert "color_scheme" not in overrides
 
 
-def test_build_config_overrides_with_yaml_extension(story, tmp_path: Path) -> None:
+def test_build_config_overrides_with_yaml_extension(
+    story: Scenario,
+    tmp_path: Path,
+) -> None:
     story.given("the palette flag ends with .yaml")
     palette_file = tmp_path / "theme.yaml"
     palette_file.write_text("palette: {}", encoding="utf-8")
@@ -75,7 +82,10 @@ def test_build_config_overrides_with_yaml_extension(story, tmp_path: Path) -> No
     assert "color_scheme" not in overrides
 
 
-def test_build_config_overrides_with_yml_extension(story, tmp_path: Path) -> None:
+def test_build_config_overrides_with_yml_extension(
+    story: Scenario,
+    tmp_path: Path,
+) -> None:
     story.given("the palette flag ends with .yml")
     palette_file = tmp_path / "theme.yml"
     palette_file.write_text("palette: {}", encoding="utf-8")
@@ -95,7 +105,9 @@ def test_build_config_overrides_with_yml_extension(story, tmp_path: Path) -> Non
     assert "color_scheme" not in overrides
 
 
-def test_build_config_overrides_with_palette_name(story) -> None:
+def test_build_config_overrides_with_palette_name(
+    story: Scenario,
+) -> None:
     story.given("the palette flag is a registry name without .yaml suffix")
     args = Namespace(
         palette="ocean_blue",
@@ -112,7 +124,10 @@ def test_build_config_overrides_with_palette_name(story) -> None:
     assert "palette_file" not in overrides
 
 
-def test_build_config_overrides_with_windows_path(story, tmp_path: Path) -> None:
+def test_build_config_overrides_with_windows_path(
+    story: Scenario,
+    tmp_path: Path,
+) -> None:
     story.given("the palette path uses OS-specific separators")
     palette_file = tmp_path / "palettes" / "theme.yaml"
     palette_file.parent.mkdir(parents=True)
@@ -134,7 +149,7 @@ def test_build_config_overrides_with_windows_path(story, tmp_path: Path) -> None
 
 
 def test_build_config_overrides_with_other_config_overrides(
-    story, tmp_path: Path
+    story: Scenario, tmp_path: Path
 ) -> None:
     story.given("palette file flag plus theme and page size overrides")
     palette_file = tmp_path / "palettes" / "theme.yaml"
@@ -159,8 +174,8 @@ def test_build_config_overrides_with_other_config_overrides(
     assert "color_scheme" not in overrides
 
 
-def test_build_config_overrides_treats_missing_yaml_as_scheme(
-    story, tmp_path: Path
+def test_build_config_overrides_warns_on_missing_yaml(
+    story: Scenario, tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     story.given("the palette path points to a missing YAML file")
     missing_file = tmp_path / "missing.yaml"
@@ -174,13 +189,16 @@ def test_build_config_overrides_treats_missing_yaml_as_scheme(
 
     story.when("_build_config_overrides runs")
     overrides = _build_config_overrides(args)
+    captured = capsys.readouterr().out
 
-    story.then("the palette value falls back to color_scheme")
-    assert overrides["color_scheme"] == str(missing_file)
-    assert "palette_file" not in overrides
+    story.then("a warning is printed and overrides remain unchanged")
+    assert "Palette file" in captured
+    assert overrides == {}
 
 
-def test_build_config_overrides_rejects_yaml_directory(story, tmp_path: Path) -> None:
+def test_build_config_overrides_rejects_yaml_directory(
+    story: Scenario, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     story.given("the provided path is a directory ending with .yaml")
     palette_dir = tmp_path / "fake.yaml"
     palette_dir.mkdir()
@@ -194,13 +212,17 @@ def test_build_config_overrides_rejects_yaml_directory(story, tmp_path: Path) ->
 
     story.when("_build_config_overrides runs")
     overrides = _build_config_overrides(args)
+    captured = capsys.readouterr().out
 
-    story.then("directories are treated as scheme names")
-    assert overrides["color_scheme"] == str(palette_dir)
-    assert "palette_file" not in overrides
+    story.then("directories trigger a warning and no overrides are set")
+    assert "Palette file" in captured
+    assert overrides == {}
 
 
-def test_build_config_overrides_rejects_yaml_txt(story, tmp_path: Path) -> None:
+def test_build_config_overrides_rejects_yaml_txt(
+    story: Scenario,
+    tmp_path: Path,
+) -> None:
     story.given("the path ends with .yaml.txt, not a true YAML file")
     bad_file = tmp_path / "palette.yaml.txt"
     bad_file.write_text("palette", encoding="utf-8")

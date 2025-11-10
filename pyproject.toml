@@ -43,22 +43,22 @@ readme = "README.md"
 repository = "https://github.com/athola/simple-resume"
 requires-python = ">=3.10"
 dependencies = [
-    "markdown>=3.7.0",
-    "oyaml>=1.0",
-    "weasyprint>=66.0",
-    "palettable>=3.3.3",
+    "markdown>=3.7,<4.0",
+    "oyaml>=1.0,<2.0",
+    "weasyprint>=62.1,<63.0",
+    "palettable>=3.3.3,<4.0",
 ]
 
 [project.optional-dependencies]
 utils = [
-    "ruff>=0.14.0",
-    "mypy>=1.18.0",
+    "ruff>=0.7.0,<1.0",
+    "mypy>=1.11.0,<2.0",
     "ty>=0.0.1a23",
-    "pytype>=2024.10.11",
-    "types-markdown>=3.9.0",
-    "pytest>=8.0.0",
-    "pytest-cov>=5.0.0",
-    "pytest-mock>=3.14.0",
+    "pytype>=2024.10.11 ; python_version >= '3.10'",
+    "types-markdown>=3.7.2,<4.0",
+    "pytest>=8.3.3,<9.0",
+    "pytest-cov>=5.0.0,<6.0",
+    "pytest-mock>=3.14.0,<4.0",
 ]
 
 [project.scripts]
@@ -79,16 +79,17 @@ force-include = { "src/simple_resume/templates/latex/basic.tex" = "simple_resume
 
 [dependency-groups]
 dev = [
-    "bandit>=1.8.6",
-    "blacken-docs>=1.20.0",
-    "interrogate>=1.7.0",
-    "pre-commit>=4.3.0",
-    "pytest>=8.4.2",
-    "pytest-cov>=7.0.0",
-    "beautifulsoup4>=4.12.3",
+    "bandit>=1.7.9,<2.0",
+    "blacken-docs>=1.16.0,<2.0",
+    "interrogate>=1.7.0,<2.0",
+    "pre-commit>=4.0.1,<5.0",
+    "pytest>=8.3.3,<9.0",
+    "pytest-cov>=5.0.0,<6.0",
+    "beautifulsoup4>=4.12.3,<5.0",
     "ty>=0.0.1a23",
-    "safety>=3.6.2",
-    "pdf2image>=1.17.0",
+    "safety>=3.7.0,<4.0",
+    "pdf2image>=1.17.0,<2.0",
+    "types-pyyaml>=6.0.12.20250915",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -96,7 +97,7 @@ packages = ["src/simple_resume"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py310"
+target-version = "py39"
 exclude = [".venv", ".uv-cache", "src/simple_resume/static", "src/simple_resume/templates"]
 
 [tool.ruff.lint]
@@ -115,7 +116,7 @@ select = [
   "C4",  # flake8-comprehensions
   "UP",  # pyupgrade
   "S",   # flake8-bandit
-  "PL",   # All Pylint rules (complete coverage)
+  "PL",  # All Pylint rules (complete coverage)
   "D",   # pydocstyle
 ]
 extend-ignore = [
@@ -150,7 +151,7 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -161,30 +162,22 @@ no_implicit_optional = true
 mypy_path = "./src"
 explicit_package_bases = true
 namespace_packages = true
-exclude = ['^\.venv', '^\.uv-cache']
+exclude = ['^\.venv', '^\.uv-cache', '^fix_.*\.py$']
 
+
+# Third-party libraries without type stubs
 [[tool.mypy.overrides]]
-module = "oyaml"
+module = ["palettable", "palettable.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "weasyprint"
+module = ["weasyprint", "weasyprint.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "pytest"
+module = ["oyaml"]
 ignore_missing_imports = true
 
-[[tool.mypy.overrides]]
-module = "yaml"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "tests.*"
-disallow_untyped_decorators = false
-disallow_untyped_defs = false
-disallow_incomplete_defs = false
-check_untyped_defs = false
 
 [tool.bandit]
 exclude_dirs = [".venv", ".uv-cache", ".git", "__pycache__"]

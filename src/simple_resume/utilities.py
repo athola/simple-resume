@@ -4,24 +4,38 @@
 from __future__ import annotations
 
 import copy
-import re
+import importlib
+import os
 from itertools import cycle
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol, cast
 
 from markdown import markdown
 from oyaml import safe_load
 
 from . import config as config_module
 from .config import FILE_DEFAULT, Paths
+from .core.color_utils import darken_color, get_contrasting_text_color, is_valid_color
+from .core.config_core import (
+    BOLD_DARKEN_FACTOR,
+    COLOR_FIELD_ORDER,
+    DEFAULT_BOLD_COLOR,
+    DEFAULT_COLOR_SCHEME,
+    DIRECT_COLOR_KEYS,
+    finalize_config,
+    prepare_config,
+)
+from .core.hydration_core import build_skill_group_payload
+from .palettes.common import PaletteSource
 from .palettes.exceptions import (
     PaletteError,
     PaletteGenerationError,
     PaletteLookupError,
 )
 from .palettes.generators import generate_hcl_palette
-from .palettes.registry import get_global_registry
+from .palettes.registry import get_palette_registry
 from .palettes.sources import ColourLoversClient
+from .skill_utils import format_skill_groups
 
 PATH_DATA = str(config_module.PATH_DATA)
 PATH_INPUT = str(config_module.PATH_INPUT)
@@ -44,6 +58,7 @@ LINEARIZATION_OFFSET = 0.055
 VERY_DARK_THRESHOLD = 0.15
 DARK_THRESHOLD = 0.5
 VERY_LIGHT_THRESHOLD = 0.8
+ICON_CONTRAST_THRESHOLD = 3.0
 
 # Color generation constants
 RANGE_LENGTH = 2
@@ -53,93 +68,49 @@ __all__ = [
     "PATH_DATA",
     "PATH_INPUT",
     "PATH_OUTPUT",
+    "DEFAULT_COLOR_SCHEME",
     "normalize_config",
     "get_content",
     "validate_config",
     "render_markdown_content",
     "apply_external_palette",
     "load_palette_from_file",
+    "derive_bold_color",
+    "format_skill_groups",
 ]
 
 
-def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
-    """Convert hex color to RGB tuple."""
-    hex_color = hex_color.lstrip("#")
-    if len(hex_color) == HEX_COLOR_SHORT_LENGTH:
-        hex_color = "".join([c * 2 for c in hex_color])
-    if len(hex_color) != HEX_COLOR_FULL_LENGTH:
-        raise ValueError(f"Invalid hex color: {hex_color}")
-    try:
-        r = int(hex_color[0:2], 16)
-        g = int(hex_color[2:4], 16)
-        b = int(hex_color[4:6], 16)
-        return r, g, b
-    except ValueError as exc:
-        raise ValueError(f"Invalid hex color: {hex_color}") from exc
+class _HydrationModule(Protocol):
+    """Define a protocol for hydration module functions."""
+
+    def load_resume_yaml(
+        self,
+        name: str | os.PathLike[str] = "",
+        *,
+        paths: Paths | None = None,
+    ) -> tuple[dict[str, Any], str, Paths]: ...
+
+    def hydrate_resume_data(
+        self,
+        source_yaml: dict[str, Any],
+        *,
+        filename: str = "",
+        transform_markdown: bool = True,
+    ) -> dict[str, Any]: ...
 
 
-def _calculate_luminance(rgb: tuple[int, int, int]) -> float:
-    """Calculate relative luminance of RGB color using WCAG formula.
-
-    Returns a value between 0 (darkest black) and 1 (lightest white).
-    """
-    r, g, b = rgb
-
-    # Convert to linear RGB by applying gamma correction
-    def _linearize(c: int) -> float:
-        c_val = c / 255.0
-        return (
-            c_val / LINEARIZATION_DIVISOR
-            if c_val <= LINEARIZATION_THRESHOLD
-            else ((c_val + LINEARIZATION_OFFSET) / (1 + LINEARIZATION_OFFSET))
-            ** LINEARIZATION_EXPONENT
-        )
-
-    r_linear = _linearize(r)
-    g_linear = _linearize(g)
-    b_linear = _linearize(b)
-
-    # Calculate luminance using WCAG weights
-    return 0.2126 * r_linear + 0.7152 * g_linear + 0.0722 * b_linear
-
-
-def _get_contrasting_text_color(background_color: str) -> str:
-    """Generate an appropriate text color for the given background color.
-
-    Returns:
-        - "#000000" (black) for light backgrounds (luminance > 0.5)
-        - "#FFFFFF" (white) for dark backgrounds (luminance <= 0.5)
-        - "#333333" (dark gray) for very light backgrounds (luminance > 0.8)
-        - "#F5F5F5" (off-white) for very dark backgrounds (luminance <= 0.15)
-
-    """
-    try:
-        rgb = _hex_to_rgb(background_color)
-        luminance = _calculate_luminance(rgb)
-
-        # Use different text colors based on background luminance
-        if luminance <= VERY_DARK_THRESHOLD:
-            # Very dark background - use off-white for less harsh contrast
-            return "#F5F5F5"
-        elif luminance <= DARK_THRESHOLD:
-            # Dark background - use white
-            return "#FFFFFF"
-        elif luminance >= VERY_LIGHT_THRESHOLD:
-            # Very light background - use dark gray for less harsh contrast
-            return "#333333"
-        else:
-            # Light background - use black
-            return "#000000"
-    except (ValueError, TypeError):
-        # If color parsing fails, default to black
-        return "#000000"
+def derive_bold_color(frame_color: str | None) -> str:
+    """Return a darkened variant of the frame color for bold emphasis."""
+    if isinstance(frame_color, str) and is_valid_color(frame_color):
+        return darken_color(frame_color, BOLD_DARKEN_FACTOR)
+    return DEFAULT_COLOR_SCHEME.get("bold_color", DEFAULT_BOLD_COLOR)
 
 
 def _read_yaml(uri: str | Path) -> dict[str, Any]:
     """Read a YAML file and return its content as a dictionary.
 
     Raises:
-        ValueError: If the YAML file does not contain a dictionary at the root level.
+        `ValueError`: If the YAML file does not contain a dictionary at the root level.
 
     """
     path = Path(uri)
@@ -158,65 +129,18 @@ def _read_yaml(uri: str | Path) -> dict[str, Any]:
     return content
 
 
-def _is_valid_color(color: str) -> bool:
-    """Check if a color string is a valid hex color code."""
-    if not color:
-        return False
-    # Match #RGB or #RRGGBB format
-    return bool(re.match(r"^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$", color))
-
-
-def _coerce_number(value: Any, *, field: str, prefix: str) -> float | int | None:
-    """Convert mixed numeric inputs (including strings) to floats."""
-    if value is None:
-        return None
-    if isinstance(value, bool):
-        raise ValueError(f"{prefix}{field} must be numeric. Got bool value {value!r}")
-    if isinstance(value, int):
-        return value
-    if isinstance(value, float):
-        return value
-    if isinstance(value, str):
-        stripped = value.strip()
-        if not stripped:
-            raise ValueError(f"{prefix}{field} must be numeric. Got empty string.")
-        try:
-            number = float(stripped)
-            if number.is_integer():
-                return int(number)
-            return number
-        except ValueError as exc:
-            raise ValueError(f"{prefix}{field} must be numeric. Got {value!r}") from exc
-    raise ValueError(f"{prefix}{field} must be numeric. Got {type(value).__name__}")
-
-
-DEFAULT_COLOR_SCHEME = {
-    "theme_color": "#0395DE",
-    "sidebar_color": "#F6F6F6",
-    "sidebar_text_color": "#000000",
-    "bar_background_color": "#DFDFDF",
-    "date2_color": "#616161",
-    "frame_color": "#757575",
-    "heading_icon_color": "#0395DE",  # Defaults to theme_color
-}
-
-COLOR_FIELD_ORDER = [
-    "theme_color",
-    "sidebar_color",
-    "sidebar_text_color",
-    "bar_background_color",
-    "date2_color",
-    "frame_color",
-    "heading_icon_color",  # Icon color for section headings
-]
-
-
 def normalize_config(
     raw_config: dict[str, Any], filename: str = ""
 ) -> tuple[dict[str, Any], dict[str, Any] | None]:
     """Return a normalized copy of the config and optional palette metadata."""
     working = copy.deepcopy(raw_config)
-    palette_meta = _validate_config_inplace(working, filename=filename)
+    sidebar_locked = prepare_config(working, filename=filename)
+    palette_meta = _apply_palette_block(working)
+    finalize_config(
+        working,
+        filename=filename,
+        sidebar_text_locked=sidebar_locked,
+    )
     return working, palette_meta
 
 
@@ -265,11 +189,11 @@ def validate_config(config: dict[str, Any], filename: str = "") -> None:
     """Validate resume configuration for common errors (legacy mutating API).
 
     Args:
-        config: Configuration dict from YAML file
-        filename: Name of the file being validated (for error messages)
+        config: Configuration dict from YAML file.
+        filename: Name of the file being validated (for error messages).
 
     Raises:
-        ValueError: If validation fails with descriptive error message
+        `ValueError`: If validation fails with a descriptive error message.
 
     """
     if not config:
@@ -280,207 +204,15 @@ def validate_config(config: dict[str, Any], filename: str = "") -> None:
     config.update(normalized)
 
 
-def _apply_config_defaults(config: dict[str, Any]) -> None:
-    """Apply default values for optional config parameters."""
-    # Get base padding value for calculating derived defaults
-    base_padding = config.get("padding", 12)
-
-    # Sidebar padding defaults (derived from base padding if not specified)
-    if "sidebar_padding_left" not in config:
-        config["sidebar_padding_left"] = base_padding - 2
-    if "sidebar_padding_right" not in config:
-        config["sidebar_padding_right"] = base_padding - 2
-    if "sidebar_padding_top" not in config:
-        config["sidebar_padding_top"] = 0
-    if "sidebar_padding_bottom" not in config:
-        config["sidebar_padding_bottom"] = base_padding
-
-    # Spacing defaults
-    if "skill_container_padding_top" not in config:
-        config["skill_container_padding_top"] = 3
-    if "skill_spacer_padding_top" not in config:
-        config["skill_spacer_padding_top"] = 3
-    if "h3_padding_top" not in config:
-        config["h3_padding_top"] = 7
-
-    # Section heading spacing defaults
-    if "h2_padding_top" not in config:
-        config["h2_padding_top"] = 8
-    if "section_heading_margin_top" not in config:
-        config["section_heading_margin_top"] = 4
-    if "section_heading_margin_bottom" not in config:
-        config["section_heading_margin_bottom"] = 2
-
-
-def _validate_dimensions(config: dict[str, Any], filename_prefix: str) -> None:
-    """Validate and normalize dimension fields in config."""
-    raw_page_width = config.get("page_width")
-    raw_page_height = config.get("page_height")
-    raw_sidebar_width = config.get("sidebar_width")
-
-    page_width = _coerce_number(
-        raw_page_width, field="page_width", prefix=filename_prefix
-    )
-    page_height = _coerce_number(
-        raw_page_height, field="page_height", prefix=filename_prefix
-    )
-    sidebar_width = _coerce_number(
-        raw_sidebar_width, field="sidebar_width", prefix=filename_prefix
-    )
-
-    if page_width is not None and page_width <= 0:
-        raise ValueError(
-            f"{filename_prefix}Invalid resume config: page_width must be positive. "
-            f"Got page_width={raw_page_width}"
-        )
-
-    if page_height is not None and page_height <= 0:
-        raise ValueError(
-            f"{filename_prefix}Invalid resume config: page_height must be positive. "
-            f"Got page_height={raw_page_height}"
-        )
-
-    if page_width is not None:
-        config["page_width"] = page_width
-    if page_height is not None:
-        config["page_height"] = page_height
-    if sidebar_width is not None:
-        config["sidebar_width"] = sidebar_width
-
-    if page_width is not None and page_height is not None:
-        if page_width <= 0 or page_height <= 0:
-            raise ValueError(
-                f"{filename_prefix}Page dimensions must be positive. "
-                f"Got page_width={raw_page_width}, page_height={raw_page_height}"
-            )
-
-    if sidebar_width is not None:
-        if sidebar_width <= 0:
-            raise ValueError(
-                f"{filename_prefix}Sidebar width must be positive. "
-                f"Got {raw_sidebar_width}"
-            )
-        if page_width is not None and sidebar_width >= page_width:
-            message = (
-                f"{filename_prefix}Sidebar width ({raw_sidebar_width}mm) must be less "
-                f"than page width ({raw_page_width}mm)"
-            )
-            raise ValueError(message)
-
-
-def _normalize_color_scheme(config: dict[str, Any]) -> None:
-    """Normalize color scheme field in config."""
-    raw_color_scheme = config.get("color_scheme", "")
-    if isinstance(raw_color_scheme, str):
-        trimmed_scheme = raw_color_scheme.strip()
-    else:
-        trimmed_scheme = ""
-
-    if trimmed_scheme:
-        config["color_scheme"] = trimmed_scheme
-    else:
-        config["color_scheme"] = "default"
-
-
-def _validate_color_fields(config: dict[str, Any], filename_prefix: str) -> None:
-    """Validate and fill default color fields."""
-    color_fields = [
-        "theme_color",
-        "sidebar_color",
-        "sidebar_text_color",
-        "bar_background_color",
-        "date2_color",
-        "frame_color",
-    ]
-
-    for field in color_fields:
-        value = config.get(field)
-        if not value:
-            default_value = DEFAULT_COLOR_SCHEME.get(field)
-            if default_value:
-                config[field] = default_value
-        value = config.get(field)
-        if value is None:
-            continue
-        if not isinstance(value, str):
-            raise ValueError(
-                f"{filename_prefix}Invalid color format for '{field}': {value}. "
-                "Expected hex color string."
-            )
-        if not _is_valid_color(value):
-            raise ValueError(
-                f"{filename_prefix}Invalid color format for '{field}': {value}. "
-                f"Expected hex color like '#0395DE' or '#FFF'"
-            )
-
-
-def _auto_calculate_sidebar_text_color(config: dict[str, Any]) -> None:
-    """Automatically calculate sidebar text color based on sidebar background."""
-    sidebar_color = config.get("sidebar_color")
-    if isinstance(sidebar_color, str) and _is_valid_color(sidebar_color):
-        config["sidebar_text_color"] = _get_contrasting_text_color(sidebar_color)
-
-
-def _handle_icon_color(config: dict[str, Any], filename_prefix: str) -> None:
-    """Validate and set icon color."""
-    icon_color = config.get("heading_icon_color")
-    if not icon_color:
-        config["heading_icon_color"] = config.get("sidebar_text_color", "#000000")
-    else:
-        if not isinstance(icon_color, str):
-            raise ValueError(
-                f"{filename_prefix}Invalid color format for 'heading_icon_color': "
-                f"{icon_color}. Expected hex color string."
-            )
-        if not _is_valid_color(icon_color):
-            raise ValueError(
-                f"{filename_prefix}Invalid color format for 'heading_icon_color': "
-                f"{icon_color}. Expected hex color like '#0395DE' or '#FFF'"
-            )
-
-
-def _validate_config_inplace(
-    config: dict[str, Any], filename: str = ""
-) -> dict[str, Any] | None:
-    """Validate and normalize config in-place, return palette metadata."""
-    filename_prefix = f"{filename}: " if filename else ""
-
-    # Apply default values for optional parameters
-    _apply_config_defaults(config)
-
-    # Validate dimensions
-    _validate_dimensions(config, filename_prefix)
-
-    # Check if user provided sidebar text color before palette application
-    user_sidebar_text_color = bool(config.get("sidebar_text_color"))
-
-    # Apply palette block
-    palette_metadata = _apply_palette_block(config)
-
-    # Normalize color scheme
-    _normalize_color_scheme(config)
-
-    # Validate color fields
-    _validate_color_fields(config, filename_prefix)
-
-    # Auto-calculate sidebar text color if not user-provided
-    if not user_sidebar_text_color:
-        _auto_calculate_sidebar_text_color(config)
-
-    # Handle icon color
-    _handle_icon_color(config, filename_prefix)
-
-    return palette_metadata
-
-
 def _apply_palette_block(config: dict[str, Any]) -> dict[str, Any] | None:
+    """Apply a palette block to the configuration."""
     block = config.get("palette")
     if not isinstance(block, dict):
         return None
 
     # Check if this is a direct color definition block (contains color field keys)
-    # vs a palette block (contains source/name/generator config)
-    has_direct_colors = any(field in block for field in COLOR_FIELD_ORDER)
+    # versus a palette block (contains source/name/generator config).
+    has_direct_colors = any(field in block for field in DIRECT_COLOR_KEYS)
     palette_block_keys = {
         "source",
         "name",
@@ -497,44 +229,44 @@ def _apply_palette_block(config: dict[str, Any]) -> dict[str, Any] | None:
     has_palette_config = any(key in block for key in palette_block_keys)
 
     if has_direct_colors and not has_palette_config:
-        # Direct color definitions - merge them into config directly
-        for field in COLOR_FIELD_ORDER:
+        # Direct color definitions: merge into config directly.
+        for field in DIRECT_COLOR_KEYS:
             if field in block:
                 config[field] = block[field]
 
-        # Automatically calculate sidebar text color based on sidebar background
+        # Automatically calculate sidebar text color based on sidebar background.
         if config.get("sidebar_color"):
-            config["sidebar_text_color"] = _get_contrasting_text_color(
+            config["sidebar_text_color"] = get_contrasting_text_color(
                 config["sidebar_color"]
             )
 
-        # Return metadata indicating this was a direct color definition
+        # Return metadata indicating a direct color definition.
         return {
             "source": "direct",
-            "fields": [f for f in COLOR_FIELD_ORDER if f in block],
+            "fields": [f for f in DIRECT_COLOR_KEYS if f in block],
         }
 
-    # Otherwise, treat as a palette block that needs resolution
+    # Otherwise, treat as a palette block requiring resolution.
     try:
         swatches, palette_meta = _resolve_palette_block(block)
     except PaletteError:
         raise
     except (TypeError, ValueError, KeyError, AttributeError) as exc:
-        # These are common errors when palette configuration is malformed
+        # Common errors when palette configuration is malformed.
         raise PaletteGenerationError(f"Invalid palette block: {exc}") from exc
 
     if not swatches:
         return None
 
-    # Cycle through swatches to cover all required fields
+    # Cycle through swatches to cover all required fields.
     iterator = cycle(swatches)
     for field in COLOR_FIELD_ORDER:
         if field not in config or not config[field]:
             config[field] = next(iterator)
 
-    # Automatically calculate sidebar text color based on sidebar background
+    # Automatically calculate sidebar text color based on sidebar background.
     if config.get("sidebar_color"):
-        config["sidebar_text_color"] = _get_contrasting_text_color(
+        config["sidebar_text_color"] = get_contrasting_text_color(
             config["sidebar_color"]
         )
 
@@ -545,23 +277,28 @@ def _apply_palette_block(config: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def _resolve_palette_block(block: dict[str, Any]) -> tuple[list[str], dict[str, Any]]:
-    source = str(block.get("source", "registry")).lower()
+    try:
+        source = PaletteSource.normalize(block.get("source"), param_name="palette")
+    except (TypeError, ValueError) as exc:
+        raise PaletteLookupError(
+            f"Unsupported palette source: {block.get('source')}"
+        ) from exc
 
-    if source == "registry":
+    if source is PaletteSource.REGISTRY:
         name = block.get("name")
         if not name:
             raise PaletteLookupError("registry source requires 'name'")
-        registry = get_global_registry()
+        registry = get_palette_registry()
         palette = registry.get(str(name))
         metadata = {
-            "source": "registry",
+            "source": source.value,
             "name": palette.name,
             "size": len(palette.swatches),
             "attribution": palette.metadata,
         }
         return list(palette.swatches), metadata
 
-    if source == "generator":
+    if source is PaletteSource.GENERATOR:
         size = int(block.get("size", len(COLOR_FIELD_ORDER)))
         seed = block.get("seed")
         hue_range = tuple(block.get("hue_range", (0, 360)))
@@ -579,7 +316,7 @@ def _resolve_palette_block(block: dict[str, Any]) -> tuple[list[str], dict[str, 
             luminance_range=(float(luminance_range[0]), float(luminance_range[1])),
         )
         metadata = {
-            "source": "generator",
+            "source": source.value,
             "size": len(swatches),
             "seed": int(seed) if seed is not None else None,
             "hue_range": [float(hue_range[0]), float(hue_range[1])],
@@ -588,7 +325,7 @@ def _resolve_palette_block(block: dict[str, Any]) -> tuple[list[str], dict[str, 
         }
         return swatches, metadata
 
-    if source == "remote":
+    if source is PaletteSource.REMOTE:
         client = ColourLoversClient()
         palettes = client.fetch(
             keywords=block.get("keywords"),
@@ -599,93 +336,71 @@ def _resolve_palette_block(block: dict[str, Any]) -> tuple[list[str], dict[str, 
             raise PaletteLookupError("ColourLovers returned no palettes")
         palette = palettes[0]
         metadata = {
-            "source": "remote",
+            "source": source.value,
             "name": palette.name,
             "attribution": palette.metadata,
             "size": len(palette.swatches),
         }
         return list(palette.swatches), metadata
 
-    raise PaletteLookupError(f"Unsupported palette source: {source}")
-
-
-def _coerce_items(raw_input: Any) -> list[str]:
-    """Return a list of trimmed string items from arbitrary input."""
-    if raw_input is None:
-        return []
-    if isinstance(raw_input, (list, tuple, set)):
-        return [str(element).strip() for element in raw_input if str(element).strip()]
-    return [str(raw_input).strip()]
-
-
-def format_skill_groups(
-    skill_data: Any,
-) -> list[dict[str, list[str] | str | None]]:
-    """Normalize skill data into titled groups with string entries."""
-    groups: list[dict[str, list[str] | str | None]] = []
-
-    if skill_data is None:
-        return groups
-
-    def add_group(title: str | None, items: Any) -> None:
-        normalized = [entry for entry in _coerce_items(items) if entry]
-        if not normalized:
-            return
-        groups.append(
-            {
-                "title": str(title).strip() if title else None,
-                "items": normalized,
-            }
-        )
-
-    if isinstance(skill_data, dict):
-        for category_name, items in skill_data.items():
-            add_group(str(category_name), items)
-        return groups
-
-    if isinstance(skill_data, (list, tuple, set)):
-        # Check if all entries are simple strings (not dicts)
-        all_simple = all(not isinstance(entry, dict) for entry in skill_data)
-
-        if all_simple:
-            # Create a single group with all items
-            add_group(None, list(skill_data))
-        else:
-            # Mixed content: process each entry separately
-            for entry in skill_data:
-                if isinstance(entry, dict):
-                    for category_name, items in entry.items():
-                        add_group(str(category_name), items)
-                else:
-                    add_group(None, entry)
-        return groups
-
-    add_group(None, skill_data)
-    return groups
+    raise PaletteLookupError(f"Unsupported palette source: {source.value}")
 
 
 def render_markdown_content(resume_data: dict[str, Any]) -> dict[str, Any]:
     """Return a copy of the resume data with Markdown transformed to HTML."""
     transformed_resume = copy.deepcopy(resume_data)
-    _transform_from_markdown(transformed_resume)
-    transformed_resume["expertise_groups"] = format_skill_groups(
-        transformed_resume.get("expertise")
-    )
-    transformed_resume["programming_groups"] = format_skill_groups(
-        transformed_resume.get("programming")
-    )
-    transformed_resume["keyskills_groups"] = format_skill_groups(
-        transformed_resume.get("keyskills")
-    )
-    transformed_resume["certification_groups"] = format_skill_groups(
-        transformed_resume.get("certification")
-    )
+
+    # Extract palette colors for bold text styling (prefer explicit bold_color)
+    config = transformed_resume.get("config", {})
+    bold_color = config.get("bold_color")
+    if not bold_color:
+        bold_color = config.get("frame_color")
+    if not bold_color:
+        bold_color = config.get("heading_icon_color")
+    if not bold_color:
+        bold_color = config.get("theme_color", "#0395DE")
+
+    _transform_from_markdown(transformed_resume, bold_color=bold_color)
+    transformed_resume.update(build_skill_group_payload(transformed_resume))
     return transformed_resume
 
 
-def _transform_from_markdown(data: dict[str, Any]) -> None:
-    """Convert Markdown fields in a resume data dictionary to HTML in-place."""
-    # Markdown extensions for enhanced formatting
+def _apply_bold_color(html: str, color: str) -> str:
+    """Apply color styling to bold (`<strong>`) tags in HTML.
+
+    Args:
+        html: HTML string that may contain `<strong>` tags.
+        color: Hex color code to apply (e.g., "#0395DE").
+
+    Returns:
+        HTML string with styled `<strong>` tags.
+
+    """
+    if not html:
+        return html
+    strong_style = f"color: {color}; font-weight: 700 !important;"
+    replacements = {
+        "<strong>": f'<strong class="markdown-strong" style="{strong_style}">',
+        "<strong >": f'<strong class="markdown-strong" style="{strong_style}">',
+    }
+    if "<strong" not in html:
+        return html
+    for needle, replacement in replacements.items():
+        html = html.replace(needle, replacement)
+    return html
+
+
+def _transform_from_markdown(
+    data: dict[str, Any], bold_color: str = DEFAULT_BOLD_COLOR
+) -> None:
+    """Convert Markdown fields in a resume data dictionary to HTML in-place.
+
+    Args:
+        data: Resume data dictionary.
+        bold_color: Hex color code for bold text (defaults to theme color).
+
+    """
+    # Markdown extensions for enhanced formatting.
     extensions = [
         "fenced_code",  # For ```code blocks
         "tables",  # For pipe tables
@@ -695,42 +410,15 @@ def _transform_from_markdown(data: dict[str, Any]) -> None:
     ]
 
     if "description" in data:
-        data["description"] = markdown(data["description"], extensions=extensions)
+        html = markdown(data["description"], extensions=extensions)
+        data["description"] = _apply_bold_color(html, bold_color)
 
     if "body" in data:
         for block_data in data["body"].values():
             for element in block_data:
                 if "description" in element:
-                    element["description"] = markdown(
-                        element["description"], extensions=extensions
-                    )
-
-
-def calculate_text_color(background_color: str) -> str:
-    """Calculate appropriate text color for given background color.
-
-    Args:
-        background_color: Background color as hex string (e.g., "#FF0000")
-
-    Returns:
-        Text color as hex string that provides good contrast
-
-    """
-    return _get_contrasting_text_color(background_color)
-
-
-def calculate_luminance(hex_color: str) -> float:
-    """Calculate relative luminance of a hex color.
-
-    Args:
-        hex_color: Color as hex string (e.g., "#FF0000")
-
-    Returns:
-        Relative luminance value between 0.0 and 1.0
-
-    """
-    rgb = _hex_to_rgb(hex_color)
-    return _calculate_luminance(rgb)
+                    html = markdown(element["description"], extensions=extensions)
+                    element["description"] = _apply_bold_color(html, bold_color)
 
 
 def get_content(
@@ -744,16 +432,18 @@ def get_content(
     Args:
         name: Resume identifier without extension.
         paths: Optional set of resolved content/input/output paths.
-        transform_markdown: When True (default), convert Markdown fields to HTML.
+        transform_markdown: When `True` (default), convert Markdown fields to HTML.
 
     Returns:
         Parsed resume data dictionary.
 
     """
-    from .hydration import hydrate_resume_data, load_resume_yaml  # noqa: PLC0415
-
-    raw_data, filename, _ = load_resume_yaml(name, paths=paths)
-    hydrated = hydrate_resume_data(
+    hydration_module = cast(
+        _HydrationModule,
+        importlib.import_module("simple_resume.hydration"),
+    )
+    raw_data, filename, _ = hydration_module.load_resume_yaml(name, paths=paths)
+    hydrated = hydration_module.hydrate_resume_data(
         raw_data,
         filename=filename,
         transform_markdown=transform_markdown,

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Procedural palette generators."""
+"""Provide procedural palette generators."""
 
 from __future__ import annotations
 
@@ -7,37 +7,39 @@ import colorsys
 import hashlib
 import math
 
+# Default deterministic seed for consistent color palette generation
+# Format: YYYYMMDD (November 1, 2025) - ensures reproducible palettes across runs
 DEFAULT_SEED = 20251101
 
 
 class DeterministicRNG:
-    """Deterministic random number generator using hash-based seeding."""
+    """Define a deterministic random number generator using hash-based seeding."""
 
     def __init__(self, seed: int):
         self.seed = seed
         self.state = seed
 
     def random(self) -> float:
-        """Generate deterministic random float between 0 and 1."""
+        """Generate a deterministic random float between 0 and 1."""
         self.state += 1
         hash_input = f"{self.seed}-{self.state}".encode()
-        hash_bytes = hashlib.sha256(hash_input).digest()
-        # Convert first 8 bytes to float between 0 and 1
-        hash_int = int.from_bytes(hash_bytes[:8], "big")
+        # 64-bit digest keeps deterministic behavior without wasting work
+        hash_bytes = hashlib.blake2s(hash_input, digest_size=8).digest()
+        hash_int = int.from_bytes(hash_bytes, "big")
         return hash_int / (2**64 - 1)
 
     def uniform(self, a: float, b: float) -> float:
-        """Generate deterministic random float between a and b."""
+        """Generate a deterministic random float between a and b."""
         return a + self.random() * (b - a)
 
 
 def _clamp(value: float, low: float, high: float) -> float:
-    """Restrict value to the [low, high] interval."""
+    """Restrict a value to the [low, high] interval."""
     return max(low, min(value, high))
 
 
 def _wrap_hue(value: float) -> float:
-    """Wrap hue into [0, 360) degrees."""
+    """Wrap a hue value into [0, 360) degrees."""
     return value % 360.0
 
 
@@ -121,7 +123,7 @@ def generate_hcl_palette(
 
     saturation = _clamp(chroma, 0.0, 1.0)
     colors: list[str] = []
-    for hue, luminance in zip(hues, luminances, strict=False):
+    for hue, luminance in zip(hues, luminances):
         colors.append(_hsl_to_hex(hue, saturation, _clamp(luminance, 0.0, 1.0)))
     return colors
 

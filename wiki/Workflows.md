@@ -1,33 +1,32 @@
 # GitHub Actions Workflows
 
-We use GitHub Actions to automatically check our code for errors, style issues, and
-security vulnerabilities. These checks run on every push and pull request to the
-`main` branch. This guide explains each workflow and how to run the same checks locally.
+This project uses GitHub Actions to automate code quality checks. These checks run on every push and pull request to the `main` branch. This guide overviews each workflow and explains local execution of the same checks.
 
 ## CI/CD Workflows
 
-- **`test.yml`**: Runs the test suite with `pytest` and static analysis (`mypy`, `ty`, `ruff`).
-- **`lint.yml`**: Enforces consistent code style with `ruff`, `flake8`, and `pylint`.
-- **`typecheck.yml`**: Validates type hints using `mypy`, `ty`, `pyright`, and `pytype`.
-- **`code-quality.yml`**: Scans for security vulnerabilities and complex code
-  with `Bandit`, `Safety`, `Radon`, and `Xenon`.
-- **`pre-commit.yml`**: Validates the `.pre-commit-config.yaml` file.
+-   **`test.yml`**: Runs `pytest` test suite; performs static analysis with `mypy`, `ty`, `ruff`.
+-   **`lint.yml`**: Enforces consistent code style using `ruff`, `flake8`, `pylint`.
+-   **`typecheck.yml`**: Validates type hints using `mypy`, `ty`, `pyright`, `pytype`.
+-   **`code-quality.yml`**: Scans for security vulnerabilities, code complexity with `Bandit`, `Safety`, `Radon`, `Xenon`.
+-   **`pre-commit.yml`**: Validates `.pre-commit-config.yaml` file.
 
 ## Local Development
 
 ### Pre-commit Hooks
 
-Use pre-commit hooks to catch issues early. They run `ruff`, `mypy`, and
-security checks automatically on commit.
+Pre-commit hooks are recommended to identify issues before committing code. Hooks run `ruff`, `mypy`, and several security checks automatically.
 
 ```bash
-pre-commit install
-pre-commit run --all-files
+# Install the pre-commit hooks
+uv run pre-commit install
+
+# Run the hooks on all files
+uv run pre-commit run --all-files
 ```
 
 ### Manual Execution
 
-Run checks manually:
+You can also run the checks manually.
 
 ```bash
 # Linting and formatting
@@ -44,5 +43,4 @@ uv run pytest
 
 ## Configuration
 
-All workflows use Python 3.10 and `uv`. Security and complexity scan reports are
-saved as build artifacts in GitHub Actions.
+All workflows use Python 3.9 and `uv`. Security and complexity scan reports save as build artifacts in GitHub Actions.

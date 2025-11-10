@@ -20,9 +20,10 @@ from simple_resume.palettes.sources import (
     load_default_palettes,
     load_palettable_palette,
 )
+from tests.bdd import Scenario
 
 
-def test_load_default_palettes_returns_palettes(story) -> None:
+def test_load_default_palettes_returns_palettes(story: Scenario) -> None:
     story.given("the bundled default palettes file is present")
     palettes = load_default_palettes()
 
@@ -33,7 +34,10 @@ def test_load_default_palettes_returns_palettes(story) -> None:
     assert all(color.startswith("#") for color in palettes[0].swatches)
 
 
-def test_load_default_palettes_handles_missing_file(tmp_path: Path, story) -> None:
+def test_load_default_palettes_handles_missing_file(
+    tmp_path: Path,
+    story: Scenario,
+) -> None:
     story.given("the default palette file cannot be found")
     missing_file = tmp_path / "missing.json"
 
@@ -47,7 +51,7 @@ def test_load_default_palettes_handles_missing_file(tmp_path: Path, story) -> No
 
 
 def test_ensure_bundled_palettes_returns_cached_records(
-    monkeypatch: pytest.MonkeyPatch, story
+    monkeypatch: pytest.MonkeyPatch, story: Scenario
 ) -> None:
     story.given("palettable is available and a cache of records already exists")
     fake_module = SimpleNamespace(__path__=())
@@ -80,7 +84,7 @@ def test_ensure_bundled_palettes_returns_cached_records(
 def test_ensure_bundled_palettes_discovers_when_cache_empty(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
-    story,
+    story: Scenario,
 ) -> None:
     story.given("palettable is installed but the cache is empty")
     fake_module = SimpleNamespace(__path__=())
@@ -117,7 +121,7 @@ def test_ensure_bundled_palettes_discovers_when_cache_empty(
 
 
 def test_load_palettable_palette_normalises_hex_colors(
-    monkeypatch: pytest.MonkeyPatch, story
+    monkeypatch: pytest.MonkeyPatch, story: Scenario
 ) -> None:
     story.given("a palettable record references colours without the leading hash")
 
@@ -149,7 +153,7 @@ def test_load_palettable_palette_normalises_hex_colors(
     assert palette.metadata["category"] == "sequential"
 
 
-def test_load_palettable_palette_handles_exceptions(story) -> None:
+def test_load_palettable_palette_handles_exceptions(story: Scenario) -> None:
     story.given("importing the palette module raises an exception")
     record = PalettableRecord(
         name="Broken",
@@ -169,7 +173,9 @@ def test_load_palettable_palette_handles_exceptions(story) -> None:
     assert palette is None
 
 
-def test_build_palettable_registry_snapshot_uses_loaded_records(story) -> None:
+def test_build_palettable_registry_snapshot_uses_loaded_records(
+    story: Scenario,
+) -> None:
     story.given("the registry builder receives discovered palettable records")
     records = [
         PalettableRecord(
@@ -202,7 +208,7 @@ def test_build_palettable_registry_snapshot_uses_loaded_records(story) -> None:
 
 
 def test_colourlovers_fetch_http_error(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, story
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, story: Scenario
 ) -> None:
     story.given("ColourLovers responds with an HTTP error")
     monkeypatch.setenv("SIMPLE_RESUME_ENABLE_REMOTE_PALETTES", "1")
@@ -226,7 +232,7 @@ def test_colourlovers_fetch_http_error(
 
 
 def test_colourlovers_fetch_invalid_json(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, story
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, story: Scenario
 ) -> None:
     story.given("ColourLovers returns an invalid JSON payload")
     monkeypatch.setenv("SIMPLE_RESUME_ENABLE_REMOTE_PALETTES", "1")

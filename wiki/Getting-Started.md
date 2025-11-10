@@ -1,101 +1,86 @@
 # Getting Started
 
-This guide explains how to create your first resume with Simple-Resume.
-
-## Table of Contents
-
-- [Installation](#installation)
-- [Creating Your Resume](#creating-your-resume)
-- [Customizing Your Resume](#customizing-your-resume)
-- [Next Steps](#next-steps)
-- [Troubleshooting](#troubleshooting)
+This guide outlines the steps to install the tool, create a resume, and generate output files.
 
 ## Installation
 
-### Prerequisites
+Requires Python 3.9+ and `uv` installed.
 
-- Python 3.9+
-- uv
-
-### Install Simple-Resume
-
-```bash
-git clone https://github.com/athola/simple-resume.git
-cd simple-resume
-uv sync
-```
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/athola/simple-resume.git
+    cd simple-resume
+    ```
+2.  Install dependencies:
+    ```bash
+    uv sync
+    ```
 
 ## Creating Your Resume
 
-1.  **Start with a Sample**: Copy `sample/input/sample_1.yaml` to `my_resume.yaml`.
+1.  **Start with a sample:**
 
+    Copy one of the sample files to use as a starting point.
     ```bash
-    cp sample/input/sample_1.yaml my_resume.yaml
+    cp sample/input/sample_1.yaml resume_private/input/my_resume.yaml
     ```
 
-2.  **Add Your Information**: Open `my_resume.yaml` and replace the sample content. The YAML structure is straightforward. Refer to comments in the sample files for field explanations.
+2.  **Edit the YAML file:**
+
+    Open `resume_private/input/my_resume.yaml` and replace the placeholder content with your own information.
 
     ```yaml
     full_name: "Your Name"
     job_title: "Your Job Title"
-    email: "your.email@example.example.com"
-    # ...and so on
+    email: "your.email@example.com"
 
     body:
       experience:
         - company: "Your Company"
           position: "Your Position"
-          # ...
     ```
 
-3.  **Generate Your Resume**: Generate your resume in HTML or PDF format.
+3.  **Generate the resume:**
+
+    Run the following command to generate HTML and PDF versions of your resume. The `--open` flag will open the files in your browser and default PDF viewer.
 
     ```bash
     uv run simple-resume generate --format html --open
     uv run simple-resume generate --format pdf --open
     ```
 
-    You can generate multiple resumes by placing several YAML files in a directory and using the `--data-dir` flag.
+    To generate multiple resumes at once, you can use the `--data-dir` argument with a path to a directory containing multiple YAML files.
 
-## Customizing Your Resume
-
-Customize your resume's appearance using the `config` section in your YAML file.
+## Customization
 
 ### Templates
 
-Simple-Resume includes these built-in templates:
-
--   `resume_no_bars`: A minimalist design.
--   `resume_with_bars`: Includes skill level bars.
-
-To use a template:
+You can change the resume's layout by specifying a different template in your YAML file.
 
 ```yaml
-config:
-  template: "resume_no_bars"
+template: resume_no_bars  # A minimalist design
+# template: resume_with_bars  # A design that includes skill level bars
 ```
 
 ### Color Schemes
 
-Use built-in color schemes or define your own. See the [Color Schemes guide](Color-Schemes.md) for details.
-
-To use a built-in scheme:
+Set a color scheme by adding the `color_scheme` key under `config`.
 
 ```yaml
 config:
   color_scheme: "Professional Blue"
 ```
 
+For more details, see the [Color Schemes guide](Color-Schemes.md).
+
 ## Next Steps
 
--   [Markdown Guide](Markdown-Guide.md): Format your resume content with Markdown.
--   [Examples](../sample/): Explore sample resume files for more ideas.
+- [Markdown Guide](Markdown-Guide.md): Learn how to format content with Markdown.
+- [Examples](../sample/): Review the sample resume files for more examples.
 
 ## Troubleshooting
 
-Common issues and solutions:
+-   **PDF generation fails**: `simple-resume` uses `wkhtmltopdf` to generate PDFs. Install `wkhtmltopdf` and ensure it's in your system's `PATH`.
+-   **YAML syntax errors**: YAML requires correct indentation. Validate your YAML syntax with a tool if errors occur.
 
--   **PDF generation fails**: Ensure `wkhtmltopdf` is installed and in your system's PATH. Check with `wkhtmltopdf --version`.
--   **YAML syntax errors**: Validate your YAML file with an online validator. Pay attention to 2-space indentation.
-
-If you're still stuck, open an issue on [GitHub](https://github.com/athola/simple-resume/issues).
+For questions, open an issue on [GitHub](https://github.com/athola/simple-resume/issues).

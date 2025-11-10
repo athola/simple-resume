@@ -5,13 +5,14 @@ import pytest
 from simple_resume.palettes.registry import (
     Palette,
     PaletteRegistry,
-    get_global_registry,
-    reset_global_registry,
+    get_palette_registry,
+    reset_palette_registry,
 )
 from simple_resume.palettes.sources import PalettableRecord, load_default_palettes
+from tests.bdd import Scenario
 
 
-def test_load_default_palettes_returns_palettes(story) -> None:
+def test_load_default_palettes_returns_palettes(story: Scenario) -> None:
     story.given("the built-in palette catalogue is requested")
     palettes = load_default_palettes()
 
@@ -20,7 +21,7 @@ def test_load_default_palettes_returns_palettes(story) -> None:
     assert all(palette.swatches for palette in palettes)
 
 
-def test_palette_registry_register_and_get(story) -> None:
+def test_palette_registry_register_and_get(story: Scenario) -> None:
     story.given("an empty registry and a palette to register")
     registry = PaletteRegistry()
     palette = Palette(name="Test", swatches=("#FFFFFF",), source="test")
@@ -35,7 +36,7 @@ def test_palette_registry_register_and_get(story) -> None:
 
 
 def test_global_registry_uses_palettable(
-    story, monkeypatch: pytest.MonkeyPatch
+    story: Scenario, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     record = PalettableRecord(
         name="Mock Palette",
@@ -60,10 +61,10 @@ def test_global_registry_uses_palettable(
     monkeypatch.setattr(
         "simple_resume.palettes.registry.load_palettable_palette", fake_load
     )
-    reset_global_registry()
+    reset_palette_registry()
 
     story.when("the global registry is first initialised")
-    registry = get_global_registry()
+    registry = get_palette_registry()
 
     story.then("palettable-backed palettes are registered and retrievable")
     palette = registry.get("mock palette")

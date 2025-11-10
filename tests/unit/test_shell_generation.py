@@ -14,7 +14,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from simple_resume import config
-from simple_resume.core.resume import RenderPlan, ResumeConfig
+from simple_resume.core.resume import RenderMode, RenderPlan, ResumeConfig
 from simple_resume.latex_renderer import LatexCompilationError
 from simple_resume.shell.generation import (
     GenerationDeps,
@@ -25,6 +25,7 @@ from simple_resume.shell.generation import (
     ResumeGenerator,
     WeasyPrintWriter,
 )
+from tests.bdd import Scenario
 
 
 class MockFileSystem:
@@ -166,8 +167,12 @@ description: "Experienced designer"
 """,
         }
 
-    def test_generator_initialization_with_custom_deps(self) -> None:
-        """Test generator initialization with custom dependencies."""
+    def test_generator_initialization_with_custom_deps(self, story: Scenario) -> None:
+        story.case(
+            given="a custom dependency bundle",
+            when="ResumeGenerator is constructed with it",
+            then="the generator uses those dependencies verbatim",
+        )
         custom_deps = GenerationDeps(
             pdf_writer=MockPdfWriter(),
             html_writer=MockHtmlWriter(),
@@ -177,8 +182,12 @@ description: "Experienced designer"
         generator = ResumeGenerator(custom_deps)
         assert generator.deps == custom_deps
 
-    def test_generator_initialization_with_defaults(self) -> None:
-        """Test generator initialization with default dependencies."""
+    def test_generator_initialization_with_defaults(self, story: Scenario) -> None:
+        story.case(
+            given="no dependency overrides",
+            when="ResumeGenerator is instantiated",
+            then="the injected deps use the default writers, logger, and filesystem",
+        )
         generator = ResumeGenerator()
         assert isinstance(generator.deps.pdf_writer, WeasyPrintWriter)
         assert isinstance(generator.deps.html_writer, HtmlWriter)
@@ -186,9 +195,16 @@ description: "Experienced designer"
         assert isinstance(generator.deps.filesystem, LocalFileSystem)
 
     def test_generate_pdf_with_no_files(
-        self, mock_deps: GenerationDeps, sample_paths: config.Paths
+        self,
+        mock_deps: GenerationDeps,
+        sample_paths: config.Paths,
+        story: Scenario,
     ) -> None:
-        """Test PDF generation when no YAML files exist."""
+        story.case(
+            given="the input directory exists but contains no YAML resumes",
+            when="generate_pdf runs",
+            then="a FileNotFoundError communicates the absence of inputs",
+        )
         generator = ResumeGenerator(mock_deps)
 
         # Create empty input directory
@@ -198,9 +214,16 @@ description: "Experienced designer"
             generator.generate_pdf(paths=sample_paths)
 
     def test_generate_html_with_no_files(
-        self, mock_deps: GenerationDeps, sample_paths: config.Paths
+        self,
+        mock_deps: GenerationDeps,
+        sample_paths: config.Paths,
+        story: Scenario,
     ) -> None:
-        """Test HTML generation when no YAML files exist."""
+        story.case(
+            given="the input directory exists but contains no YAML resumes",
+            when="generate_html runs",
+            then="a FileNotFoundError communicates the absence of inputs",
+        )
         generator = ResumeGenerator(mock_deps)
 
         # Create empty input directory
@@ -217,8 +240,13 @@ description: "Experienced designer"
         mock_get_content: Mock,
         mock_deps: GenerationDeps,
         sample_paths: config.Paths,
+        story: Scenario,
     ) -> None:
-        """Test successful PDF generation for a single resume."""
+        story.case(
+            given="a single YAML resume in the input directory",
+            when="generate_pdf processes that resume",
+            then="the PDF writer receives the rendered HTML and logs success",
+        )
         # Setup mocks
         mock_get_content.return_value = {
             "full_name": "John Doe",
@@ -273,8 +301,13 @@ description: "Experienced designer"
         mock_get_content: Mock,
         mock_deps: GenerationDeps,
         sample_paths: config.Paths,
+        story: Scenario,
     ) -> None:
-        """Test successful HTML generation for a single resume."""
+        story.case(
+            given="a single YAML resume in the input directory",
+            when="generate_html processes that resume",
+            then="the HTML writer persists rendered markup and logs success",
+        )
         # Setup mocks
         mock_get_content.return_value = {
             "full_name": "John Doe",
@@ -326,8 +359,13 @@ description: "Experienced designer"
         mock_get_content: Mock,
         mock_deps: GenerationDeps,
         sample_paths: config.Paths,
+        story: Scenario,
     ) -> None:
-        """Test PDF generation with open_after=True."""
+        story.case(
+            given="open_after=True is requested for PDF generation",
+            when="generate_pdf finishes writing the file",
+            then="the viewer is invoked exactly once with the output path",
+        )
         # Setup mocks
         mock_get_content.return_value = {
             "full_name": "John Doe",
@@ -359,8 +397,13 @@ description: "Experienced designer"
         mock_get_content: Mock,
         mock_deps: GenerationDeps,
         sample_paths: config.Paths,
+        story: Scenario,
     ) -> None:
-        """Test HTML generation with browser specification."""
+        story.case(
+            given="a browser command is provided",
+            when="generate_html completes rendering",
+            then="the viewer launches the requested browser",
+        )
         # Setup mocks
         mock_get_content.return_value = {
             "full_name": "John Doe",
@@ -385,17 +428,25 @@ description: "Experienced designer"
                     mock_open_browser.assert_called_once()
 
     def test_generate_pdf_with_invalid_data_dir(
-        self, mock_deps: GenerationDeps
+        self, mock_deps: GenerationDeps, story: Scenario
     ) -> None:
-        """Test PDF generation with invalid data directory."""
+        story.case(
+            given="callers supply a non-existent data directory",
+            when="generate_pdf validates inputs",
+            then="a ValueError explains the missing directory",
+        )
         with pytest.raises(ValueError, match="Data directory does not exist"):
             generator = ResumeGenerator(mock_deps)
             generator.generate_pdf(data_dir="/nonexistent/path")
 
     def test_resolve_paths_conflicting_args(
-        self, mock_deps: GenerationDeps, sample_paths: config.Paths
+        self, mock_deps: GenerationDeps, sample_paths: config.Paths, story: Scenario
     ) -> None:
-        """Test path resolution with conflicting arguments."""
+        story.case(
+            given="both resolved paths and overrides are supplied",
+            when="_resolve_paths runs",
+            then="a ValueError informs the caller about conflicting arguments",
+        )
         generator = ResumeGenerator(mock_deps)
 
         with pytest.raises(
@@ -408,9 +459,13 @@ description: "Experienced designer"
             )
 
     def test_collect_yaml_inputs(
-        self, mock_deps: GenerationDeps, sample_paths: config.Paths
+        self, mock_deps: GenerationDeps, sample_paths: config.Paths, story: Scenario
     ) -> None:
-        """Test YAML file collection from input directory."""
+        story.case(
+            given="the input directory contains YAML and non-YAML files",
+            when="_collect_yaml_inputs scans the directory",
+            then="only YAML files are returned",
+        )
         generator = ResumeGenerator(mock_deps)
 
         # Setup mock files
@@ -442,8 +497,12 @@ description: "Experienced designer"
         assert mock_file1 in collected
         assert mock_file2 in collected
 
-    def test_determine_page_spec_from_config(self) -> None:
-        """Test page specification extraction from config."""
+    def test_determine_page_spec_from_config(self, story: Scenario) -> None:
+        story.case(
+            given="page dimensions are specified in the config",
+            when="_determine_page_spec runs",
+            then="the resulting PageSpec reflects those dimensions",
+        )
         generator = ResumeGenerator()
 
         config = ResumeConfig(page_width=210, page_height=297)
@@ -452,8 +511,12 @@ description: "Experienced designer"
         assert page_spec.width_mm == 210
         assert page_spec.height_mm == 297
 
-    def test_determine_page_spec_with_defaults(self) -> None:
-        """Test page specification extraction with defaults."""
+    def test_determine_page_spec_with_defaults(self, story: Scenario) -> None:
+        story.case(
+            given="no page dimensions are supplied",
+            when="_determine_page_spec runs",
+            then="the defaults (190mm x 270mm) are used",
+        )
         generator = ResumeGenerator()
 
         config = ResumeConfig()  # All defaults
@@ -462,8 +525,12 @@ description: "Experienced designer"
         assert page_spec.width_mm == 190
         assert page_spec.height_mm == 270
 
-    def test_inject_base_href(self) -> None:
-        """Test base href injection into HTML."""
+    def test_inject_base_href(self, story: Scenario) -> None:
+        story.case(
+            given="HTML snippets with and without <head> tags",
+            when="_inject_base_href is invoked",
+            then="the method injects a base tag appropriately",
+        )
         generator = ResumeGenerator()
         base_path = Path("/test/path")
 
@@ -481,9 +548,13 @@ description: "Experienced designer"
         assert "Content" in result
 
     def test_error_handling_during_generation(
-        self, mock_deps: GenerationDeps, sample_paths: config.Paths
+        self, mock_deps: GenerationDeps, sample_paths: config.Paths, story: Scenario
     ) -> None:
-        """Test error handling during resume generation."""
+        story.case(
+            given="get_content raises an unexpected exception",
+            when="generate_pdf processes a resume",
+            then="the logger records a failed event containing that exception",
+        )
         generator = ResumeGenerator(mock_deps)
 
         yaml_file = sample_paths.input / "invalid.yaml"
@@ -509,7 +580,7 @@ description: "Experienced designer"
     def test_execute_latex_plan_success(
         self,
         tmp_path: Path,
-        story,
+        story: Scenario,
     ) -> None:
         story.given("a LaTeX render plan that compiles without errors")
         viewer = MockViewer()
@@ -523,7 +594,7 @@ description: "Experienced designer"
         generator = ResumeGenerator(deps)
         plan = RenderPlan(
             name="demo",
-            mode="latex",
+            mode=RenderMode.LATEX,
             config=ResumeConfig(output_mode="latex"),
             tex=r"\documentclass{article}",
             base_path=str(tmp_path),
@@ -551,7 +622,7 @@ description: "Experienced designer"
     def test_execute_latex_plan_compilation_error_writes_log(
         self,
         tmp_path: Path,
-        story,
+        story: Scenario,
     ) -> None:
         story.given("LaTeX compilation raises an error with diagnostic log text")
         viewer = MockViewer()
@@ -565,7 +636,7 @@ description: "Experienced designer"
         generator = ResumeGenerator(deps)
         plan = RenderPlan(
             name="broken",
-            mode="latex",
+            mode=RenderMode.LATEX,
             config=ResumeConfig(output_mode="latex"),
             tex="broken",
             base_path=str(tmp_path),
@@ -594,7 +665,7 @@ description: "Experienced designer"
     def test_execute_latex_html_plan_launches_browser(
         self,
         tmp_path: Path,
-        story,
+        story: Scenario,
     ) -> None:
         story.given("a LaTeX render plan destined for HTML output")
         deps = GenerationDeps(
@@ -607,7 +678,7 @@ description: "Experienced designer"
         generator = ResumeGenerator(deps)
         plan = RenderPlan(
             name="demo",
-            mode="latex",
+            mode=RenderMode.LATEX,
             config=ResumeConfig(output_mode="latex"),
             tex="content",
             base_path=str(tmp_path),
@@ -640,8 +711,16 @@ description: "Experienced designer"
 class TestLocalFileSystem:
     """Test LocalFileSystem implementation."""
 
-    def test_ensure_dir_creates_directory(self, tmp_path: Path) -> None:
-        """Test directory creation."""
+    def test_ensure_dir_creates_directory(
+        self,
+        tmp_path: Path,
+        story: Scenario,
+    ) -> None:
+        story.case(
+            given="a path pointing to a missing directory",
+            when="LocalFileSystem.ensure_dir creates it",
+            then="the directory exists afterward",
+        )
         fs = LocalFileSystem()
         test_dir = tmp_path / "test_dir"
 
@@ -650,8 +729,12 @@ class TestLocalFileSystem:
         assert test_dir.exists()
         assert test_dir.is_dir()
 
-    def test_ensure_dir_idempotent(self, tmp_path: Path) -> None:
-        """Test that ensure_dir is idempotent."""
+    def test_ensure_dir_idempotent(self, tmp_path: Path, story: Scenario) -> None:
+        story.case(
+            given="a directory that already exists",
+            when="ensure_dir runs again",
+            then="the call succeeds without errors",
+        )
         fs = LocalFileSystem()
         test_dir = tmp_path / "test_dir"
 
@@ -659,8 +742,12 @@ class TestLocalFileSystem:
         fs.ensure_dir(test_dir)  # Should not raise
         assert test_dir.exists()
 
-    def test_iterdir_returns_children(self, tmp_path: Path) -> None:
-        """Test iterdir returns directory children."""
+    def test_iterdir_returns_children(self, tmp_path: Path, story: Scenario) -> None:
+        story.case(
+            given="a directory containing files and subdirectories",
+            when="LocalFileSystem.iterdir is invoked",
+            then="all immediate children are returned",
+        )
         fs = LocalFileSystem()
 
         # Create test files
@@ -674,8 +761,12 @@ class TestLocalFileSystem:
         assert tmp_path / "file2.txt" in children
         assert tmp_path / "subdir" in children
 
-    def test_is_dir_check(self, tmp_path: Path) -> None:
-        """Test directory existence check."""
+    def test_is_dir_check(self, tmp_path: Path, story: Scenario) -> None:
+        story.case(
+            given="paths for a directory, a file, and a missing location",
+            when="is_dir evaluates them",
+            then="only the actual directory returns True",
+        )
         fs = LocalFileSystem()
 
         file_path = tmp_path / "test_file.txt"
@@ -692,8 +783,12 @@ class TestLocalFileSystem:
 class TestPageSpec:
     """Test PageSpec dataclass."""
 
-    def test_page_spec_creation(self) -> None:
-        """Test PageSpec creation and immutability."""
+    def test_page_spec_creation(self, story: Scenario) -> None:
+        story.case(
+            given="explicit width and height values",
+            when="a PageSpec is instantiated",
+            then="the dataclass stores them immutably",
+        )
         page_spec = PageSpec(width_mm=210, height_mm=297)
 
         assert page_spec.width_mm == 210
@@ -702,8 +797,12 @@ class TestPageSpec:
         with pytest.raises(FrozenInstanceError):
             page_spec.width_mm = 300  # type: ignore[misc]
 
-    def test_page_spec_equality(self) -> None:
-        """Test PageSpec equality comparison."""
+    def test_page_spec_equality(self, story: Scenario) -> None:
+        story.case(
+            given="PageSpec instances with matching and different dimensions",
+            when="they are compared for equality",
+            then="only identical dimensions evaluate as equal",
+        )
         spec1 = PageSpec(width_mm=210, height_mm=297)
         spec2 = PageSpec(width_mm=210, height_mm=297)
         spec3 = PageSpec(width_mm=210, height_mm=300)
@@ -715,8 +814,12 @@ class TestPageSpec:
 class TestHtmlWriter:
     """Test HtmlWriter implementation."""
 
-    def test_write_html_file(self, tmp_path: Path) -> None:
-        """Test HTML file writing."""
+    def test_write_html_file(self, tmp_path: Path, story: Scenario) -> None:
+        story.case(
+            given="HTML content and a destination path",
+            when="HtmlWriter.write is called",
+            then="the file is created with the provided contents",
+        )
         writer = HtmlWriter()
         output_path = tmp_path / "test.html"
         html_content = "<html><body>Test content</body></html>"
@@ -731,9 +834,13 @@ class TestPrintLogger:
     """Test PrintLogger implementation."""
 
     def test_logging_methods(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], story: Scenario
     ) -> None:
-        """Test all logging methods."""
+        story.case(
+            given="a PrintLogger handling start/success/failure events",
+            when="each method is invoked",
+            then="the expected messages are emitted to stdout/stderr",
+        )
         logger = PrintLogger()
         test_path = Path("/test/output.pdf")
         test_error = Exception("Test error")
@@ -744,20 +851,24 @@ class TestPrintLogger:
 
         logger.succeeded("test_resume", test_path)
         captured = capsys.readouterr()
-        assert "✓ Generated: /test/output.pdf" in captured.out
+        assert "Generated: /test/output.pdf" in captured.out
 
         logger.failed("test_resume", test_path, test_error)
         captured = capsys.readouterr()
-        assert "✗ Failed to generate output.pdf: Test error" in captured.err
+        assert "Failed to generate output.pdf: Test error" in captured.err
 
 
 class TestShellHelpers:
     """Tests for lower-level helper methods in the shell generation module."""
 
     def test_cleanup_latex_artifacts_prunes_known_suffixes(
-        self, tmp_path: Path, story
+        self, tmp_path: Path, story: Scenario
     ) -> None:
-        story.given("LaTeX artifact files exist alongside the tex source")
+        story.case(
+            given="LaTeX artifact files exist alongside the .tex source",
+            when="_cleanup_latex_artifacts runs",
+            then="auxiliary files are removed while the tex file remains",
+        )
         generator = ResumeGenerator()
         tex_path = tmp_path / "demo.tex"
         tex_path.write_text("document", encoding="utf-8")
@@ -771,9 +882,13 @@ class TestShellHelpers:
             assert not (tmp_path / f"demo{suffix}").exists()
 
     def test_cleanup_latex_artifacts_ignores_unlink_errors(
-        self, tmp_path: Path, story
+        self, tmp_path: Path, story: Scenario
     ) -> None:
-        story.given("deleting LaTeX artifacts raises OSError")
+        story.case(
+            given="unlink raises OSError for certain artifacts",
+            when="_cleanup_latex_artifacts runs",
+            then="the routine ignores those errors and continues",
+        )
         generator = ResumeGenerator()
         tex_path = tmp_path / "demo.tex"
         artifact = tmp_path / "demo.aux"
@@ -786,7 +901,7 @@ class TestShellHelpers:
         assert artifact.exists()
         assert mock_unlink.call_count >= 1
 
-    def test_open_file_mac_invokes_open(self, tmp_path: Path, story) -> None:
+    def test_open_file_mac_invokes_open(self, tmp_path: Path, story: Scenario) -> None:
         story.given("macOS environment with the open command available")
         generator = ResumeGenerator()
         pdf_path = str(tmp_path / "demo.pdf")
@@ -805,7 +920,11 @@ class TestShellHelpers:
         mock_popen.assert_called_once()
         assert pdf_path in mock_popen.call_args[0][0]
 
-    def test_open_file_windows_uses_startfile(self, tmp_path: Path, story) -> None:
+    def test_open_file_windows_uses_startfile(
+        self,
+        tmp_path: Path,
+        story: Scenario,
+    ) -> None:
         story.given("Windows environment with os.startfile available")
         generator = ResumeGenerator()
         pdf_path = str(tmp_path / "demo.pdf")
@@ -825,7 +944,11 @@ class TestShellHelpers:
         story.then("os.startfile receives the PDF path")
         mock_startfile.assert_called_once_with(pdf_path)
 
-    def test_open_file_linux_with_xdg_open(self, tmp_path: Path, story) -> None:
+    def test_open_file_linux_with_xdg_open(
+        self,
+        tmp_path: Path,
+        story: Scenario,
+    ) -> None:
         story.given("Linux environment with xdg-open available on PATH")
         generator = ResumeGenerator()
         pdf_path = str(tmp_path / "demo.pdf")
@@ -849,7 +972,7 @@ class TestShellHelpers:
         assert pdf_path in mock_popen.call_args[0][0]
 
     def test_open_file_linux_without_xdg_open(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], story
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], story: Scenario
     ) -> None:
         story.given("Linux environment without xdg-open installed")
         generator = ResumeGenerator()
@@ -873,7 +996,7 @@ class TestShellHelpers:
         assert "xdg-utils" in captured.err
 
     def test_open_file_warns_on_exception(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], story
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], story: Scenario
     ) -> None:
         story.given("subprocess launch unexpectedly fails")
         generator = ResumeGenerator()
@@ -900,7 +1023,11 @@ class TestShellHelpers:
         captured = capsys.readouterr()
         assert "Warning: Could not open" in captured.err
 
-    def test_open_in_browser_explicit_command(self, tmp_path: Path, story) -> None:
+    def test_open_in_browser_explicit_command(
+        self,
+        tmp_path: Path,
+        story: Scenario,
+    ) -> None:
         story.given("an explicit browser command is provided and exists on PATH")
         generator = ResumeGenerator()
         html_path = tmp_path / "index.html"
@@ -922,7 +1049,7 @@ class TestShellHelpers:
         assert mock_popen.call_args[0][0][-1] == str(html_path)
 
     def test_open_in_browser_picks_first_available_default(
-        self, tmp_path: Path, story
+        self, tmp_path: Path, story: Scenario
     ) -> None:
         story.given("no browser hint is given but Chromium is installed")
         generator = ResumeGenerator()
@@ -945,7 +1072,7 @@ class TestShellHelpers:
         assert mock_popen.call_args[0][0][0] == "chromium"
 
     def test_open_in_browser_no_available_command(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], story
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], story: Scenario
     ) -> None:
         story.given("no supported browser is present")
         generator = ResumeGenerator()
@@ -959,7 +1086,7 @@ class TestShellHelpers:
         assert "install Firefox or Chromium" in captured.err
 
     def test_open_in_browser_warns_on_failure(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], story
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], story: Scenario
     ) -> None:
         story.given("launching the browser raises an unexpected error")
         generator = ResumeGenerator()

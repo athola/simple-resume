@@ -1,7 +1,7 @@
-"""Rich result objects for simple-resume operations.
+"""Provide rich result objects for simple-resume operations.
 
 This module provides rich result objects that contain both data and useful methods,
-similar to how requests.Response objects work.
+similar to how `requests.Response` objects work.
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ BYTES_PER_UNIT = 1024
 
 @dataclass(frozen=True)
 class GenerationMetadata:
-    """Metadata about a generation operation."""
+    """Define metadata about a generation operation."""
 
     format_type: str
     template_name: str
@@ -37,9 +37,9 @@ class GenerationMetadata:
 
 
 class GenerationResult:
-    """Rich result object with both data and methods.
+    """Define a rich result object with both data and methods.
 
-    Similar to requests.Response, this object provides both access to data
+    Similar to `requests.Response`, this object provides both access to data
     and useful methods for working with the generated result.
     """
 
@@ -49,7 +49,7 @@ class GenerationResult:
         format_type: str,
         metadata: GenerationMetadata | None = None,
     ) -> None:
-        """Initialize generation result."""
+        """Initialize the generation result."""
         self.output_path = output_path
         self.format_type = format_type.lower()
         self.metadata = metadata or GenerationMetadata(
@@ -62,7 +62,7 @@ class GenerationResult:
 
     @property
     def size(self) -> int:
-        """File size in bytes."""
+        """Return the file size in bytes."""
         try:
             return self.output_path.stat().st_size
         except OSError:
@@ -70,7 +70,7 @@ class GenerationResult:
 
     @property
     def size_human(self) -> str:
-        """File size in human-readable format."""
+        """Return the file size in human-readable format."""
         size = float(self.size)
         for unit in ["B", "KB", "MB", "GB"]:
             if size < BYTES_PER_UNIT:
@@ -122,7 +122,7 @@ class GenerationResult:
             ) from exc
 
     def _open_pdf(self) -> bool:
-        """Open PDF file with system PDF viewer."""
+        """Open a PDF file with the system PDF viewer."""
         try:
             if sys.platform.startswith("darwin"):
                 opener = shutil.which("open") or "open"
@@ -155,7 +155,7 @@ class GenerationResult:
             return False
 
     def _open_html(self) -> bool:
-        """Open HTML file with browser."""
+        """Open an HTML file with a browser."""
         browsers = ("firefox", "chromium", "google-chrome", "safari")
         for browser in browsers:
             if shutil.which(browser):
@@ -174,7 +174,7 @@ class GenerationResult:
         return False
 
     def _open_generic(self) -> bool:
-        """Open any file with system default application."""
+        """Open any file with the system default application."""
         try:
             if sys.platform.startswith("darwin"):
                 # Bandit: generic opener on macOS uses the system open command
@@ -270,24 +270,24 @@ class GenerationResult:
             ) from exc
 
     def __str__(self) -> str:
-        """Return string representation of generation result."""
+        """Return a string representation of the generation result."""
         return f"GenerationResult({self.output_path}, format={self.format_type})"
 
     def __repr__(self) -> str:
-        """Return detailed string representation."""
+        """Return a detailed string representation."""
         return (
             f"GenerationResult(output_path={self.output_path!r}, "
             f"format_type={self.format_type!r}, size={self.size})"
         )
 
     def __bool__(self) -> bool:
-        """Return True if the generated file exists."""
+        """Return `True` if the generated file exists."""
         return self.exists
 
 
 @dataclass(frozen=True)
 class BatchGenerationResult:
-    """Result for batch generation operations."""
+    """Define the result for batch generation operations."""
 
     results: dict[str, GenerationResult] = field(default_factory=dict)
     total_time: float = 0.0
@@ -297,12 +297,12 @@ class BatchGenerationResult:
 
     @property
     def total(self) -> int:
-        """Total number of attempted generations."""
+        """Return the total number of attempted generations."""
         return self.successful + self.failed
 
     @property
     def success_rate(self) -> float:
-        """Success rate as a percentage."""
+        """Return the success rate as a percentage."""
         if self.total == 0:
             return 0.0
         return (self.successful / self.total) * 100
@@ -326,7 +326,7 @@ class BatchGenerationResult:
                 continue
 
     def delete_all(self) -> int:
-        """Delete all successful results. Returns number of deleted files."""
+        """Delete all successful results. Return the number of deleted files."""
         deleted = 0
         for result in self.get_successful().values():
             if result.delete():
@@ -334,14 +334,14 @@ class BatchGenerationResult:
         return deleted
 
     def __str__(self) -> str:
-        """Return string representation of batch result."""
+        """Return a string representation of the batch result."""
         return (
             f"BatchGenerationResult(successful={self.successful}, "
             f"failed={self.failed}, success_rate={self.success_rate:.1f}%)"
         )
 
     def __len__(self) -> int:
-        """Return total number of results."""
+        """Return the total number of results."""
         return self.total
 
     def __iter__(self) -> Iterator[tuple[str, GenerationResult]]:

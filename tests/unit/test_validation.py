@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from simple_resume import validation
+from simple_resume.constants import OutputFormat
 from simple_resume.exceptions import (
     ConfigurationError,
     FileSystemError,
@@ -20,29 +21,30 @@ from simple_resume.validation import (
     validate_template_name,
     validate_yaml_file,
 )
+from tests.bdd import Scenario
 
 
-def test_validate_format_accepts_supported(story) -> None:
+def test_validate_format_accepts_supported(story: Scenario) -> None:
     story.given("a supported format string with extra whitespace")
     normalized = validate_format("  PDF ")
 
-    story.then("the value is normalized to lowercase")
-    assert normalized == "pdf"
+    story.then("the value is normalized to the OutputFormat enum")
+    assert normalized is OutputFormat.PDF
 
 
-def test_validate_format_rejects_unknown(story) -> None:
+def test_validate_format_rejects_unknown(story: Scenario) -> None:
     story.given("an unsupported format string")
     with pytest.raises(ValidationError, match="Unsupported"):
         validate_format("docx")
 
 
-def test_validate_format_empty_input(story) -> None:
+def test_validate_format_empty_input(story: Scenario) -> None:
     story.given("an empty format string")
     with pytest.raises(ValidationError, match="cannot be empty"):
         validate_format("")
 
 
-def test_validate_file_path_with_existing_file(story, tmp_path: Path) -> None:
+def test_validate_file_path_with_existing_file(story: Scenario, tmp_path: Path) -> None:
     story.given("a file that exists on disk")
     file_path = tmp_path / "resume.txt"
     file_path.write_text("example")
@@ -53,7 +55,10 @@ def test_validate_file_path_with_existing_file(story, tmp_path: Path) -> None:
     assert validated == file_path.resolve()
 
 
-def test_validate_file_path_rejects_missing_file(story, tmp_path: Path) -> None:
+def test_validate_file_path_rejects_missing_file(
+    story: Scenario,
+    tmp_path: Path,
+) -> None:
     story.given("a path to a non-existent file")
     missing = tmp_path / "missing.yaml"
 
@@ -61,13 +66,16 @@ def test_validate_file_path_rejects_missing_file(story, tmp_path: Path) -> None:
         validate_file_path(missing)
 
 
-def test_validate_file_path_empty_string(story) -> None:
+def test_validate_file_path_empty_string(story: Scenario) -> None:
     story.given("an empty string path")
     with pytest.raises(FileSystemError, match="cannot be empty"):
         validate_file_path("")
 
 
-def test_validate_file_path_resolves_relative_path(story, tmp_path: Path) -> None:
+def test_validate_file_path_resolves_relative_path(
+    story: Scenario,
+    tmp_path: Path,
+) -> None:
     story.given("a relative path provided as a string")
     cwd = tmp_path / "work"
     cwd.mkdir()
@@ -85,7 +93,7 @@ def test_validate_file_path_resolves_relative_path(story, tmp_path: Path) -> Non
     assert validated == file_path.resolve()
 
 
-def test_validate_file_path_enforces_extension(story, tmp_path: Path) -> None:
+def test_validate_file_path_enforces_extension(story: Scenario, tmp_path: Path) -> None:
     story.given("a temporary file that does not use YAML extension")
     file_path = tmp_path / "data.txt"
     file_path.write_text("content")
@@ -95,7 +103,7 @@ def test_validate_file_path_enforces_extension(story, tmp_path: Path) -> None:
 
 
 def test_validate_file_path_rejects_large_files(
-    story,
+    story: Scenario,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -110,7 +118,7 @@ def test_validate_file_path_rejects_large_files(
 
 
 def test_validate_directory_path_creates_when_allowed(
-    story,
+    story: Scenario,
     tmp_path: Path,
 ) -> None:
     story.given("a directory path that does not yet exist")
@@ -123,7 +131,7 @@ def test_validate_directory_path_creates_when_allowed(
     assert target_dir.exists() and target_dir.is_dir()
 
 
-def test_validate_directory_path_rejects_file(story, tmp_path: Path) -> None:
+def test_validate_directory_path_rejects_file(story: Scenario, tmp_path: Path) -> None:
     story.given("a path that points to an existing file")
     file_path = tmp_path / "file.txt"
     file_path.write_text("content")
@@ -133,7 +141,7 @@ def test_validate_directory_path_rejects_file(story, tmp_path: Path) -> None:
 
 
 def test_validate_directory_path_requires_existing_when_flagged(
-    story, tmp_path: Path
+    story: Scenario, tmp_path: Path
 ) -> None:
     story.given("a missing directory with must_exist enabled")
     missing_dir = tmp_path / "missing"
@@ -143,14 +151,14 @@ def test_validate_directory_path_requires_existing_when_flagged(
 
 
 def test_validate_directory_path_reports_creation_failure(
-    story,
+    story: Scenario,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     story.given("mkdir raises an OSError during directory creation")
     target_dir = tmp_path / "blocked"
 
-    def fake_mkdir(self, parents=True, exist_ok=True):
+    def fake_mkdir(self: Path, parents: bool = True, exist_ok: bool = True) -> None:
         raise PermissionError("denied")
 
     monkeypatch.setattr(Path, "mkdir", fake_mkdir, raising=False)
@@ -159,7 +167,7 @@ def test_validate_directory_path_reports_creation_failure(
         validate_directory_path(target_dir, create_if_missing=True)
 
 
-def test_validate_template_name_accepts_simple_patterns(story) -> None:
+def test_validate_template_name_accepts_simple_patterns(story: Scenario) -> None:
     story.given("a template name containing hyphens and underscores")
     name = validate_template_name(" business-template_2025 ")
 
@@ -167,19 +175,22 @@ def test_validate_template_name_accepts_simple_patterns(story) -> None:
     assert name == "business-template_2025"
 
 
-def test_validate_template_name_rejects_illegal_characters(story) -> None:
+def test_validate_template_name_rejects_illegal_characters(story: Scenario) -> None:
     story.given("a template name with disallowed punctuation")
     with pytest.raises(ConfigurationError, match="Invalid template name"):
         validate_template_name("bad/template")
 
 
-def test_validate_template_name_empty(story) -> None:
+def test_validate_template_name_empty(story: Scenario) -> None:
     story.given("an empty template name")
     with pytest.raises(ConfigurationError, match="cannot be empty"):
         validate_template_name("")
 
 
-def test_validate_yaml_file_requires_yaml_extension(story, tmp_path: Path) -> None:
+def test_validate_yaml_file_requires_yaml_extension(
+    story: Scenario,
+    tmp_path: Path,
+) -> None:
     story.given("a YAML file stored under the data directory")
     yaml_path = tmp_path / "resume.yaml"
     yaml_path.write_text("full_name: Example")
@@ -190,7 +201,10 @@ def test_validate_yaml_file_requires_yaml_extension(story, tmp_path: Path) -> No
     assert validated == yaml_path.resolve()
 
 
-def test_validate_yaml_file_rejects_wrong_extension(story, tmp_path: Path) -> None:
+def test_validate_yaml_file_rejects_wrong_extension(
+    story: Scenario,
+    tmp_path: Path,
+) -> None:
     story.given("a JSON file where YAML is expected")
     json_path = tmp_path / "resume.json"
     json_path.write_text("{}")
@@ -199,31 +213,31 @@ def test_validate_yaml_file_rejects_wrong_extension(story, tmp_path: Path) -> No
         validate_yaml_file(json_path)
 
 
-def test_validate_resume_data_checks_full_name(story) -> None:
+def test_validate_resume_data_checks_full_name(story: Scenario) -> None:
     story.given("resume data without a full name")
     with pytest.raises(ValidationError, match="must include 'full_name'"):
         validate_resume_data({"config": {}})
 
 
-def test_validate_resume_data_requires_dictionary(story) -> None:
+def test_validate_resume_data_requires_dictionary(story: Scenario) -> None:
     story.given("resume data that is not a dictionary")
     with pytest.raises(ValidationError, match="must be a dictionary"):
         validate_resume_data(["not-a-dict"])  # type: ignore[arg-type]
 
 
-def test_validate_resume_data_empty_dictionary(story) -> None:
+def test_validate_resume_data_empty_dictionary(story: Scenario) -> None:
     story.given("resume data that is an empty dictionary")
     with pytest.raises(ValidationError, match="cannot be empty"):
         validate_resume_data({})
 
 
-def test_validate_resume_data_requires_non_empty_full_name(story) -> None:
+def test_validate_resume_data_requires_non_empty_full_name(story: Scenario) -> None:
     story.given("resume data with an empty full_name string")
     with pytest.raises(ValidationError, match="cannot be empty"):
         validate_resume_data({"full_name": ""})
 
 
-def test_validate_resume_data_config_must_be_dict(story) -> None:
+def test_validate_resume_data_config_must_be_dict(story: Scenario) -> None:
     story.given("resume data whose config entry is not a dictionary")
     with pytest.raises(ValidationError, match="must be a dictionary"):
         validate_resume_data(
@@ -235,19 +249,19 @@ def test_validate_resume_data_config_must_be_dict(story) -> None:
         )
 
 
-def test_validate_resume_data_requires_email(story) -> None:
+def test_validate_resume_data_requires_email(story: Scenario) -> None:
     story.given("resume data missing an email")
     with pytest.raises(ValidationError, match="include 'email'"):
         validate_resume_data({"full_name": "User"})
 
 
-def test_validate_resume_data_rejects_invalid_email(story) -> None:
+def test_validate_resume_data_rejects_invalid_email(story: Scenario) -> None:
     story.given("resume data with an invalid email format")
     with pytest.raises(ValidationError, match="Invalid email format"):
         validate_resume_data({"full_name": "User", "email": "not-an-email"})
 
 
-def test_validate_resume_data_rejects_invalid_dates(story) -> None:
+def test_validate_resume_data_rejects_invalid_dates(story: Scenario) -> None:
     story.given("experience data with a non-ISO date string")
     data = {
         "full_name": "User",
@@ -259,7 +273,7 @@ def test_validate_resume_data_rejects_invalid_dates(story) -> None:
         validate_resume_data(data)
 
 
-def test_validate_resume_data_accepts_valid_dates(story) -> None:
+def test_validate_resume_data_accepts_valid_dates(story: Scenario) -> None:
     story.given("experience data with ISO-formatted dates")
     data = {
         "full_name": "User",
@@ -278,7 +292,7 @@ def test_validate_resume_data_accepts_valid_dates(story) -> None:
 
 
 def test_validate_output_path_accepts_matching_extension(
-    story,
+    story: Scenario,
     tmp_path: Path,
 ) -> None:
     story.given("an output path with the correct extension")
@@ -290,7 +304,7 @@ def test_validate_output_path_accepts_matching_extension(
     assert validated == output_path
 
 
-def test_validate_output_path_rejects_mismatch(story, tmp_path: Path) -> None:
+def test_validate_output_path_rejects_mismatch(story: Scenario, tmp_path: Path) -> None:
     story.given("an output path whose suffix does not match the requested format")
     output_path = tmp_path / "result.html"
 

@@ -1,28 +1,33 @@
 #!/usr/bin/env python3
-"""Simple Resume public API.
+"""Define the Simple Resume public API.
 
-Only the symbols listed in :data:`simple_resume.__all__` are covered by the
-stability contract—this matches the way pandas exposes its curated
-``pandas.api`` surface. Everything else (utility helpers, palette plumbing, the
-rendering shell, etc.) lives under :mod:`simple_resume.internal` and may change
-without notice. Import from ``simple_resume.internal`` only when you are
-prepared to track upstream changes.
+Symbols listed in `:data:simple_resume.__all__` are covered by the
+stability contract, mirroring pandas' curated ``pandas.api`` surface.
+Other components (utility helpers, palette plumbing, rendering shell, etc.)
+reside under `:mod:simple_resume.internal` and may change without notice.
+Import from ``simple_resume.internal`` only if prepared to track upstream changes.
 
-High-level categories:
+High-level categories include:
 
-* **Core models** – :class:`Resume`, :class:`ResumeConfig`, and
-  :class:`RenderPlan` for representing resumes and render plans.
-* **Sessions & results** – :class:`ResumeSession`, :class:`SessionConfig`,
-  :class:`GenerationResult`, and :class:`BatchGenerationResult`.
-* **Generation helpers** – ``generate_pdf/html/all/resume`` plus the new
-  convenience wrappers :func:`generate` and :func:`preview` for one-liner
-  workflows similar to the verb helpers that ``requests`` provides.
+* **Core models** – `:class:Resume`, `:class:ResumeConfig`, and
+  `:class:RenderPlan` represent resumes and render plans.
+* **Sessions & results** – `:class:ResumeSession`, `:class:SessionConfig`,
+  `:class:GenerationResult`, and `:class:BatchGenerationResult`.
+* **Generation helpers** – ``generate_pdf/html/all/resume`` plus new
+  convenience wrappers `:func:generate` and `:func:preview` for one-liner
+  workflows, similar to ``requests`` verb helpers.
+* **Curated API namespaces** – Modules under `:mod:simple_resume.api`
+  (e.g., `:mod:simple_resume.api.colors`) mirror ``pandas.api`` by
+  re-exporting stable helper families.
 
 Refer to ``docs/reference.md`` for a complete API map, stability labels, and
 deprecation policy.
 """
 
 from __future__ import annotations
+
+# Public API namespaces
+from . import api
 
 # Core classes
 from .core.resume import RenderPlan, Resume, ResumeConfig
@@ -55,16 +60,6 @@ from .result import BatchGenerationResult, GenerationMetadata, GenerationResult
 
 # Session management
 from .session import ResumeSession, SessionConfig, create_session
-
-# Utility functions
-from .utilities import (
-    calculate_luminance,
-    calculate_text_color,
-    get_content,
-    normalize_config,
-    render_markdown_content,
-    validate_config,
-)
 
 # Version
 __version__ = "0.1.0"

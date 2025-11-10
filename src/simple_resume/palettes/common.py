@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Common types and utilities for palette modules."""
+"""Define common types and utilities for palette modules."""
 
 from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
 
 _CACHE_ENV = "SIMPLE_RESUME_PALETTE_CACHE_DIR"
@@ -12,7 +13,7 @@ _CACHE_ENV = "SIMPLE_RESUME_PALETTE_CACHE_DIR"
 
 @dataclass(frozen=True)
 class Palette:
-    """Palette metadata and resolved swatches."""
+    """Define palette metadata and resolved swatches."""
 
     name: str
     swatches: tuple[str, ...]
@@ -27,6 +28,41 @@ class Palette:
             "source": self.source,
             "metadata": dict(self.metadata),
         }
+
+
+class PaletteSource(str, Enum):
+    """Define supported palette sources for resume configuration."""
+
+    REGISTRY = "registry"
+    GENERATOR = "generator"
+    REMOTE = "remote"
+
+    @classmethod
+    def normalize(
+        cls, value: str | PaletteSource | None, *, param_name: str | None = None
+    ) -> PaletteSource:
+        """Convert arbitrary input into a `PaletteSource` enum member."""
+        if value is None:
+            return cls.REGISTRY
+        if isinstance(value, cls):
+            return value
+        if not isinstance(value, str):
+            raise TypeError(
+                f"Palette source must be string or PaletteSource, got {type(value)}"
+            )
+
+        normalized = value.strip().lower()
+        try:
+            return cls(normalized)
+        except ValueError as exc:
+            label = f"{param_name} " if param_name else ""
+            supported_sources = ", ".join(
+                sorted(member.value for member in cls.__members__.values())
+            )
+            raise ValueError(
+                f"Unsupported {label}source: {value}. Supported sources: "
+                f"{supported_sources}"
+            ) from exc
 
 
 def get_cache_dir() -> Path:

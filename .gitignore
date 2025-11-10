@@ -88,3 +88,5 @@ src/static/images/*
 .DS_Store
 *.swp
 commit_msg.txt
+bandit-report.json
+bandit-report.json

@@ -1,8 +1,7 @@
-"""Input validation utilities for Simple-Resume.
+"""Provide validation functions for Simple-Resume inputs and files.
 
-This module provides validation functions for user inputs, file paths,
-and configuration values to ensure data integrity and provide helpful
-error messages.
+Validate YAML files, file paths, formats, and configuration values.
+Raise `ValidationError` with specific messages when validation fails.
 """
 
 import re
@@ -21,24 +20,30 @@ EMAIL_REGEX = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 DATE_REGEX = re.compile(r"^\d{4}(-\d{2})?$")
 
 
-def validate_format(format_str: str, param_name: str = "format") -> str:
-    """Validate and normalize format string.
+def validate_format(
+    format_str: str | OutputFormat, param_name: str = "format"
+) -> OutputFormat:
+    """Validate and normalize a format string.
 
     Args:
-        format_str: Format string to validate (pdf, html, latex)
-        param_name: Parameter name for error messages
+        format_str: Format string/enum to validate (pdf, html, latex).
+        param_name: Parameter name for error messages.
 
     Returns:
-        Normalized format string (lowercase)
+        `OutputFormat` enum value.
 
     Raises:
-        ValidationError: If format is not supported
+        `ValidationError`: If the format is not supported.
 
     """
     if not format_str:
         raise ValidationError(f"{param_name} cannot be empty")
 
-    normalized = format_str.lower().strip()
+    normalized = (
+        format_str.value
+        if isinstance(format_str, OutputFormat)
+        else format_str.lower().strip()
+    )
 
     if not OutputFormat.is_valid(normalized):
         raise ValidationError(
@@ -46,7 +51,7 @@ def validate_format(format_str: str, param_name: str = "format") -> str:
             f"Supported formats: {', '.join(SUPPORTED_FORMATS)}"
         )
 
-    return normalized
+    return OutputFormat(normalized)
 
 
 def validate_file_path(
@@ -56,22 +61,19 @@ def validate_file_path(
     must_be_file: bool = True,
     allowed_extensions: tuple[str, ...] | None = None,
 ) -> Path:
-    """Validate file path.
+    """Validate a file path.
 
     Args:
-        file_path: Path to validate
-        must_exist: If True, path must exist
-        must_be_file: If True, path must be a file (not directory)
-        allowed_extensions: If provided, file must have one of these extensions
+        file_path: Path to validate.
+        must_exist: If `True`, the path must exist.
+        must_be_file: If `True`, the path must be a file (not a directory).
+        allowed_extensions: If provided, the file must have one of these extensions.
 
     Returns:
-        Validated Path object
+        Validated `Path` object.
 
     Raises:
-        FileSystemError: If path validation fails
-
-
-
+        `FileSystemError`: If path validation fails.
 
     """
     if not file_path:
@@ -79,7 +81,7 @@ def validate_file_path(
 
     path = Path(file_path) if isinstance(file_path, str) else file_path
 
-    # Check if absolute path or resolve to absolute
+    # Resolve to absolute path if not already absolute.
     if not path.is_absolute():
         path = path.resolve()
 
@@ -95,7 +97,7 @@ def validate_file_path(
             f"Allowed: {', '.join(allowed_extensions)}"
         )
 
-    # Check file size if it exists
+    # Check file size if file exists.
     if must_exist and path.is_file():
         size_mb = path.stat().st_size / (1024 * 1024)
         if size_mb > MAX_FILE_SIZE_MB:
@@ -109,18 +111,18 @@ def validate_file_path(
 def validate_directory_path(
     dir_path: str | Path, *, must_exist: bool = False, create_if_missing: bool = False
 ) -> Path:
-    """Validate directory path.
+    """Validate a directory path.
 
     Args:
-        dir_path: Directory path to validate
-        must_exist: If True, directory must exist
-        create_if_missing: If True, create directory if it doesn't exist
+        dir_path: Directory path to validate.
+        must_exist: If `True`, the directory must exist.
+        create_if_missing: If `True`, create the directory if it doesn't exist.
 
     Returns:
-        Validated Path object
+        Validated `Path` object.
 
     Raises:
-        FileSystemError: If path validation fails
+        `FileSystemError`: If path validation fails.
 
     """
     if not dir_path:
@@ -147,16 +149,16 @@ def validate_directory_path(
 
 
 def validate_template_name(template: str) -> str:
-    """Validate template name.
+    """Validate a template name.
 
     Args:
-        template: Template name to validate
+        template: Template name to validate.
 
     Returns:
-        Validated template name
+        Validated template name.
 
     Raises:
-        ConfigurationError: If template is invalid
+        `ConfigurationError`: If the template is invalid.
 
     """
     if not template:
@@ -164,8 +166,7 @@ def validate_template_name(template: str) -> str:
 
     template = template.strip()
 
-    # Allow custom templates (don't enforce SUPPORTED_TEMPLATES strictly)
-    # Just ensure it's a reasonable string
+    # Allow custom templates; ensure reasonable string format.
     if not template.replace("_", "").replace("-", "").isalnum():
         message = (
             f"Invalid template name: '{template}'. "
@@ -178,17 +179,16 @@ def validate_template_name(template: str) -> str:
 
 
 def validate_yaml_file(file_path: str | Path) -> Path:
-    """Validate YAML resume file.
+    """Validate a YAML resume file.
 
     Args:
-        file_path: Path to YAML file
+        file_path: Path to YAML file.
 
     Returns:
-        Validated Path object
+        Validated `Path` object.
 
     Raises:
-        FileSystemError: If file validation fails
-
+        `FileSystemError`: If file validation fails.
 
     """
     return validate_file_path(
@@ -203,10 +203,10 @@ def validate_resume_data(data: dict[str, Any]) -> None:
     """Validate basic resume data structure.
 
     Args:
-        data: Resume data dictionary
+        data: Resume data dictionary.
 
     Raises:
-        ValidationError: If data structure is invalid
+        `ValidationError`: If the data structure is invalid.
 
     """
     if not isinstance(data, dict):
@@ -215,7 +215,7 @@ def validate_resume_data(data: dict[str, Any]) -> None:
     if not data:
         raise ValidationError("Resume data cannot be empty")
 
-    # Check for required fields
+    # Check required fields.
     if "full_name" not in data:
         raise ValidationError("Resume data must include 'full_name'")
 
@@ -224,7 +224,7 @@ def validate_resume_data(data: dict[str, Any]) -> None:
 
     _validate_required_email(data)
 
-    # Check config if present
+    # Check config if present.
     if "config" in data:
         if not isinstance(data["config"], dict):
             raise ValidationError("'config' must be a dictionary")
@@ -233,26 +233,26 @@ def validate_resume_data(data: dict[str, Any]) -> None:
 
 
 def validate_output_path(output_path: str | Path, format_type: str) -> Path:
-    """Validate output file path for generated resume.
+    """Validate the output file path for a generated resume.
 
     Args:
-        output_path: Output file path
-        format_type: Format type (pdf, html)
+        output_path: Output file path.
+        format_type: Format type (pdf, html).
 
     Returns:
-        Validated Path object
+        Validated `Path` object.
 
     Raises:
-        FileSystemError: If path validation fails
+        `FileSystemError`: If path validation fails.
 
     """
     path = Path(output_path) if isinstance(output_path, str) else output_path
 
-    # Validate parent directory
+    # Validate parent directory.
     if path.parent and path.parent != Path("."):
         validate_directory_path(path.parent, must_exist=False, create_if_missing=False)
 
-    # Check file extension matches format
+    # Check file extension matches format.
     expected_ext = f".{format_type.lower()}"
     if path.suffix.lower() != expected_ext:
         message = (
@@ -265,6 +265,7 @@ def validate_output_path(output_path: str | Path, format_type: str) -> Path:
 
 
 def _validate_required_email(data: dict[str, Any]) -> None:
+    """Validate the required email field."""
     email = data.get("email")
     if email is None:
         raise ValidationError("Resume data must include 'email'")
@@ -276,6 +277,7 @@ def _validate_required_email(data: dict[str, Any]) -> None:
 
 
 def _is_date_key(key: str) -> bool:
+    """Check if a key is a date field."""
     key_lower = key.lower()
     return key_lower == "date" or key_lower.endswith("_date")
 

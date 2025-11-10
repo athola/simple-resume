@@ -3,6 +3,7 @@
 import argparse
 import io
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import Mock, patch
 
@@ -10,11 +11,17 @@ import pytest
 
 from simple_resume.cli import (
     _handle_unexpected_error,
+    _run_session_generation,
     create_parser,
     handle_generate_command,
     handle_session_command,
     handle_validate_command,
     main,
+)
+from simple_resume.constants import OutputFormat
+from simple_resume.core.generation_plan import (
+    CommandType,
+    GenerationCommand,
 )
 from simple_resume.exceptions import (
     GenerationError,
@@ -22,13 +29,16 @@ from simple_resume.exceptions import (
     TemplateError,
     ValidationError,
 )
+from simple_resume.generation import GenerationConfig
 from simple_resume.result import BatchGenerationResult
+from simple_resume.session import ResumeSession
+from tests.bdd import Scenario
 
 
 class TestCreateParser:
     """Behavioural tests for the CLI parser."""
 
-    def test_parser_creation(self, story):
+    def test_parser_creation(self, story: Scenario) -> None:
         story.given("the request to construct the CLI parser")
         parser = create_parser()
 
@@ -36,7 +46,7 @@ class TestCreateParser:
         assert isinstance(parser, argparse.ArgumentParser)
         assert parser.prog == "simple-resume"
 
-    def test_parser_has_version(self, story):
+    def test_parser_has_version(self, story: Scenario) -> None:
         story.given("the parser exposes a --version flag")
         parser = create_parser()
         with patch("sys.stdout", new=Mock()):
@@ -46,7 +56,7 @@ class TestCreateParser:
         assert isinstance(exc_info.value, SystemExit)
         assert exc_info.value.code == 0
 
-    def test_generate_command_args(self, story):
+    def test_generate_command_args(self, story: Scenario) -> None:
         story.given("the user invokes the generate subcommand")
         parser = create_parser()
 
@@ -64,14 +74,14 @@ class TestCreateParser:
         assert args.format == "html"
         assert args.template == "modern"
 
-    def test_generate_command_multiple_formats(self, story):
+    def test_generate_command_multiple_formats(self, story: Scenario) -> None:
         story.given("the generate command receives multiple formats")
         parser = create_parser()
         args = parser.parse_args(["generate", "--formats", "pdf", "html"])
         story.then("the parsed namespace lists both formats")
         assert args.formats == ["pdf", "html"]
 
-    def test_session_command_args(self, story, tmp_path: Path):
+    def test_session_command_args(self, story: Scenario, tmp_path: Path) -> None:
         parser = create_parser()
         data_dir = tmp_path / "session"
         args = parser.parse_args(["session", "--data-dir", str(data_dir)])
@@ -79,7 +89,7 @@ class TestCreateParser:
         assert args.command == "session"
         assert args.data_dir == data_dir
 
-    def test_validate_command_args(self, story):
+    def test_validate_command_args(self, story: Scenario) -> None:
         parser = create_parser()
         args = parser.parse_args(["validate", "my_resume"])
         story.then("the target resume name is captured")
@@ -90,8 +100,10 @@ class TestCreateParser:
 class TestHandleGenerateCommand:
     """Test the generate command handler."""
 
-    @patch("simple_resume.cli.generate_resume")
-    def test_generate_single_resume_success(self, mock_generate, story):
+    @patch("simple_resume.cli.execute_generation_commands")
+    def test_generate_single_resume_success(
+        self, mock_execute: Mock, story: Scenario
+    ) -> None:
         story.given("a single resume request with default PDF format")
         args = Mock()
         args.name = "test_resume"
@@ -106,21 +118,31 @@ class TestHandleGenerateCommand:
         args.palette = None
         args.page_width = None
         args.page_height = None
+        captured_commands: list[GenerationCommand] = []
 
-        # Mock result
-        mock_result = Mock()
-        mock_result.output_path = Path("/test/output.pdf")
-        mock_result.exists.return_value = True
-        mock_generate.return_value = mock_result
+        def fake_execute(
+            commands: list[GenerationCommand],
+        ) -> list[tuple[GenerationCommand, object]]:
+            captured_commands.extend(commands)
+            result = Mock()
+            result.output_path = Path("/test/output.pdf")
+            result.exists = True
+            return [(commands[0], result)]
+
+        mock_execute.side_effect = fake_execute
 
         story.when("handle_generate_command executes")
         result = handle_generate_command(args)
         story.then("generation succeeds and underlying service is called once")
         assert result == 0
-        mock_generate.assert_called_once()
+        mock_execute.assert_called_once()
+        assert captured_commands
+        assert captured_commands[0].kind is CommandType.SINGLE
 
-    @patch("simple_resume.cli.generate_pdf")
-    def test_generate_multiple_resumes_success(self, mock_generate_pdf, story):
+    @patch("simple_resume.cli.execute_generation_commands")
+    def test_generate_multiple_resumes_success(
+        self, mock_execute: Mock, story: Scenario
+    ) -> None:
         story.given("batch generation has available YAML files")
         args = Mock()
         args.name = None
@@ -136,28 +158,26 @@ class TestHandleGenerateCommand:
         args.page_width = None
         args.page_height = None
 
-        # Mock batch result
-        mock_result = Mock()
-        mock_result.successful = 3
-        mock_result.failed = 0
-        mock_result.success_rate = 100.0
-        mock_result.total_time = 1.5
-        mock_result.get_successful.return_value = {
-            "resume1": Mock(),
-            "resume2": Mock(),
-            "resume3": Mock(),
-        }
-        mock_result.get_failed.return_value = {}
-        mock_generate_pdf.return_value = mock_result
+        def fake_execute(
+            commands: list[GenerationCommand],
+        ) -> list[tuple[GenerationCommand, object]]:
+            batch_result = Mock(spec=BatchGenerationResult)
+            batch_result.errors = {}
+            batch_result.successful = 3
+            return [(commands[0], batch_result)]
+
+        mock_execute.side_effect = fake_execute
 
         story.when("handle_generate_command executes for batch mode")
         result = handle_generate_command(args)
         story.then("the PDF generator runs and returns success")
         assert result == 0
-        mock_generate_pdf.assert_called_once()
+        mock_execute.assert_called_once()
 
-    @patch("simple_resume.cli.generate_resume")
-    def test_generate_with_config_overrides(self, mock_generate, story):
+    @patch("simple_resume.cli.execute_generation_commands")
+    def test_generate_with_config_overrides(
+        self, mock_execute: Mock, story: Scenario
+    ) -> None:
         story.given("the caller provides configuration overrides")
         args = Mock()
         args.name = "test_resume"
@@ -172,24 +192,33 @@ class TestHandleGenerateCommand:
         args.palette = "ocean"
         args.page_width = 210
         args.page_height = 297
+        captured_commands: list[GenerationCommand] = []
 
-        mock_result = Mock()
-        mock_result.output_path = Path("/test/output.pdf")
-        mock_result.exists.return_value = False
-        mock_generate.return_value = mock_result
+        def fake_execute(
+            commands: list[GenerationCommand],
+        ) -> list[tuple[GenerationCommand, object]]:
+            captured_commands.extend(commands)
+            result = Mock()
+            result.output_path = Path("/test/output.pdf")
+            result.exists = True
+            return [(commands[0], result)]
+
+        mock_execute.side_effect = fake_execute
 
         story.when("handle_generate_command executes")
         result = handle_generate_command(args)
-        story.then("the overrides are forwarded to generate_resume")
+        story.then("the overrides are forwarded to the planner commands")
         assert result == 0
-        call_args = mock_generate.call_args
-        assert call_args.kwargs["theme_color"] == "#0395DE"
-        assert call_args.kwargs["color_scheme"] == "ocean"
-        assert call_args.kwargs["page_width"] == 210
-        assert call_args.kwargs["page_height"] == 297
+        overrides = captured_commands[0].overrides
+        assert overrides["theme_color"] == "#0395DE"
+        assert overrides["color_scheme"] == "ocean"
+        assert overrides["page_width"] == 210
+        assert overrides["page_height"] == 297
 
-    @patch("simple_resume.cli.generate_resume")
-    def test_generate_multiple_formats(self, mock_generate, story):
+    @patch("simple_resume.cli.execute_generation_commands")
+    def test_generate_multiple_formats(
+        self, mock_execute: Mock, story: Scenario
+    ) -> None:
         story.given("a user requests both PDF and HTML outputs")
         args = Mock()
         args.name = "test_resume"
@@ -203,22 +232,33 @@ class TestHandleGenerateCommand:
         args.palette = None
         args.page_width = None
         args.page_height = None
+        captured_commands: list[GenerationCommand] = []
 
-        mock_result = Mock()
-        mock_result.output_path = Path("/test/output")
-        mock_result.exists.return_value = True
-        mock_generate.return_value = mock_result
+        def fake_execute(
+            commands: list[GenerationCommand],
+        ) -> list[tuple[GenerationCommand, object]]:
+            captured_commands.extend(commands)
+            results: list[tuple[GenerationCommand, object]] = []
+            for command in commands:
+                assert command.format is not None
+                result = Mock()
+                result.output_path = Path(f"/test/output_{command.format.value}")
+                result.exists = True
+                results.append((command, result))
+            return results
+
+        mock_execute.side_effect = fake_execute
 
         story.when("handle_generate_command executes")
         result = handle_generate_command(args)
-        story.then("each requested format triggers a generation call")
+        story.then("each requested format triggers a planner command")
         assert result == 0
-        assert mock_generate.call_count == 2
+        mock_execute.assert_called_once()
+        assert len(captured_commands) == 2
 
-    @patch("simple_resume.cli.generate_html")
     def test_generate_html_batch_skips_latex(
-        self, mock_generate_html, story, tmp_path: Path
-    ):
+        self, story: Scenario, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         story.given("batch HTML generation encounters LaTeX-only templates")
         args = Mock()
         args.name = None
@@ -259,7 +299,15 @@ class TestHandleGenerateCommand:
             failed=1,
             errors=errors,
         )
-        mock_generate_html.return_value = batch_result
+
+        def fake_execute(
+            commands: list[GenerationCommand],
+        ) -> list[tuple[GenerationCommand, object]]:
+            return [(commands[0], batch_result)]
+
+        monkeypatch.setattr(
+            "simple_resume.cli.execute_generation_commands", fake_execute
+        )
 
         with patch("sys.stdout", new=io.StringIO()) as buffer:
             result = handle_generate_command(args)
@@ -271,28 +319,27 @@ class TestHandleGenerateCommand:
         assert "Failed: 0" in output
         assert "ℹ️ Skipped LaTeX template(s): resume2" in output
 
-    def test_generate_command_error_handling(self):
+    @patch("simple_resume.cli.execute_generation_commands")
+    def test_generate_command_error_handling(self, mock_execute: Mock) -> None:
         """Test error handling in generate command."""
         args = Mock()
         args.formats = None
 
-        with patch(
-            "simple_resume.cli.generate_resume",
-            side_effect=SimpleResumeError("Test error"),
-        ):
-            result = handle_generate_command(args)
-            assert result == 1
+        mock_execute.side_effect = SimpleResumeError("Test error")
 
-    def test_generate_keyboard_interrupt(self):
+        result = handle_generate_command(args)
+        assert result == 1
+
+    @patch("simple_resume.cli.execute_generation_commands")
+    def test_generate_keyboard_interrupt(self, mock_execute: Mock) -> None:
         """Test keyboard interrupt handling."""
         args = Mock()
         args.formats = None
 
-        with patch(
-            "simple_resume.cli.generate_resume", side_effect=KeyboardInterrupt()
-        ):
-            result = handle_generate_command(args)
-            assert result == 130
+        mock_execute.side_effect = KeyboardInterrupt()
+
+        result = handle_generate_command(args)
+        assert result == 130
 
 
 class TestHandleSessionCommand:
@@ -302,8 +349,8 @@ class TestHandleSessionCommand:
     @patch("simple_resume.cli.SessionConfig")
     @patch("simple_resume.cli.input")
     def test_session_command_basic_flow(
-        self, mock_input, mock_session_config, mock_resume_session
-    ):
+        self, mock_input: Mock, mock_session_config: Mock, mock_resume_session: Mock
+    ) -> None:
         """Test basic session command flow."""
         # Mock args
         args = Mock()
@@ -332,7 +379,7 @@ class TestHandleSessionCommand:
         mock_resume_session.assert_called_once()
 
     @patch("simple_resume.cli.ResumeSession")
-    def test_session_command_error(self, mock_resume_session):
+    def test_session_command_error(self, mock_resume_session: Mock) -> None:
         """Test session command error handling."""
         # Mock args
         args = Mock()
@@ -350,7 +397,7 @@ class TestHandleValidateCommand:
     """Test the validate command handler."""
 
     @patch("simple_resume.cli.Resume")
-    def test_validate_single_resume_success(self, mock_resume_class):
+    def test_validate_single_resume_success(self, mock_resume_class: Mock) -> None:
         """Test successful single resume validation."""
         # Mock args
         args = Mock()
@@ -366,7 +413,7 @@ class TestHandleValidateCommand:
         assert result == 0
 
     @patch("simple_resume.cli.Resume")
-    def test_validate_single_resume_failure(self, mock_resume_class):
+    def test_validate_single_resume_failure(self, mock_resume_class: Mock) -> None:
         """Test single resume validation with errors."""
         # Mock args
         args = Mock()
@@ -386,7 +433,7 @@ class TestHandleValidateCommand:
         assert result == 1
 
     @patch("simple_resume.session.ResumeSession")
-    def test_validate_all_resumes(self, mock_resume_session_class):
+    def test_validate_all_resumes(self, mock_resume_session_class: Mock) -> None:
         """Test validating all resumes."""
         # Mock args
         args = Mock()
@@ -421,7 +468,7 @@ class TestHandleValidateCommand:
         result = handle_validate_command(args)
         assert result == 0
 
-    def test_validate_command_error(self):
+    def test_validate_command_error(self) -> None:
         """Test validate command error handling."""
         args = Mock()
         args.name = "test_resume"
@@ -439,7 +486,7 @@ class TestMainFunction:
     """Test the main CLI entry point."""
 
     @patch("simple_resume.cli.create_parser")
-    def test_main_generate_command(self, mock_create_parser):
+    def test_main_generate_command(self, mock_create_parser: Mock) -> None:
         """Test main with generate command."""
         mock_parser = Mock()
         mock_args = Mock()
@@ -455,7 +502,7 @@ class TestMainFunction:
             mock_handle.assert_called_once_with(mock_args)
 
     @patch("simple_resume.cli.create_parser")
-    def test_main_session_command(self, mock_create_parser):
+    def test_main_session_command(self, mock_create_parser: Mock) -> None:
         """Test main with session command."""
         mock_parser = Mock()
         mock_args = Mock()
@@ -471,7 +518,9 @@ class TestMainFunction:
             mock_handle.assert_called_once_with(mock_args)
 
     @patch("simple_resume.cli.create_parser")
-    def test_main_validate_command(self, mock_create_parser, story):
+    def test_main_validate_command(
+        self, mock_create_parser: Mock, story: Scenario
+    ) -> None:
         mock_parser = Mock()
         mock_args = Mock()
         mock_args.command = "validate"
@@ -488,7 +537,9 @@ class TestMainFunction:
         mock_handle.assert_called_once_with(mock_args)
 
     @patch("simple_resume.cli.create_parser")
-    def test_main_unknown_command(self, mock_create_parser, story):
+    def test_main_unknown_command(
+        self, mock_create_parser: Mock, story: Scenario
+    ) -> None:
         mock_parser = Mock()
         mock_args = Mock()
         mock_args.command = "unknown"
@@ -501,7 +552,9 @@ class TestMainFunction:
         mock_parser.print_help.assert_called_once()
 
     @patch("simple_resume.cli.create_parser")
-    def test_main_keyboard_interrupt(self, mock_create_parser, story):
+    def test_main_keyboard_interrupt(
+        self, mock_create_parser: Mock, story: Scenario
+    ) -> None:
         mock_parser = Mock()
         mock_args = Mock()
         mock_args.command = "generate"
@@ -513,7 +566,9 @@ class TestMainFunction:
         assert result == 130
 
     @patch("simple_resume.cli.create_parser")
-    def test_main_unexpected_error(self, mock_create_parser, story):
+    def test_main_unexpected_error(
+        self, mock_create_parser: Mock, story: Scenario
+    ) -> None:
         mock_parser = Mock()
         mock_args = Mock()
         mock_args.command = "generate"
@@ -534,7 +589,9 @@ class TestHandleUnexpectedError:
 
     @patch("simple_resume.cli.print")
     @patch("simple_resume.cli.logging.getLogger")
-    def test_handle_file_system_error(self, mock_logger, mock_print):
+    def test_handle_file_system_error(
+        self, mock_logger: Mock, mock_print: Mock
+    ) -> None:
         error = PermissionError("Permission denied")
         result = _handle_unexpected_error(error, "test context")
 
@@ -545,7 +602,7 @@ class TestHandleUnexpectedError:
 
     @patch("simple_resume.cli.print")
     @patch("simple_resume.cli.logging.getLogger")
-    def test_handle_internal_error(self, mock_logger, mock_print):
+    def test_handle_internal_error(self, mock_logger: Mock, mock_print: Mock) -> None:
         error = AttributeError("Missing attribute")
         result = _handle_unexpected_error(error, "test context")
 
@@ -556,7 +613,7 @@ class TestHandleUnexpectedError:
 
     @patch("simple_resume.cli.print")
     @patch("simple_resume.cli.logging.getLogger")
-    def test_handle_memory_error(self, mock_logger, mock_print):
+    def test_handle_memory_error(self, mock_logger: Mock, mock_print: Mock) -> None:
         error = MemoryError("Out of memory")
         result = _handle_unexpected_error(error, "test context")
 
@@ -567,7 +624,7 @@ class TestHandleUnexpectedError:
 
     @patch("simple_resume.cli.print")
     @patch("simple_resume.cli.logging.getLogger")
-    def test_handle_input_error(self, mock_logger, mock_print):
+    def test_handle_input_error(self, mock_logger: Mock, mock_print: Mock) -> None:
         error = ValueError("Invalid value")
         result = _handle_unexpected_error(error, "test context")
 
@@ -578,7 +635,7 @@ class TestHandleUnexpectedError:
 
     @patch("simple_resume.cli.print")
     @patch("simple_resume.cli.logging.getLogger")
-    def test_handle_generic_error(self, mock_logger, mock_print):
+    def test_handle_generic_error(self, mock_logger: Mock, mock_print: Mock) -> None:
         error = RuntimeError("Something went wrong")
         result = _handle_unexpected_error(error, "test context")
 
@@ -588,10 +645,128 @@ class TestHandleUnexpectedError:
         mock_logger.return_value.error.assert_called_once()
 
 
+class TestRunSessionGeneration:
+    """Planner-driven session generation execution."""
+
+    def test_executes_pdf_command_with_default_path(self, tmp_path: Path) -> None:
+        resume = Mock()
+        resume._name = "demo"
+        session = cast(
+            ResumeSession,
+            SimpleNamespace(paths=SimpleNamespace(output=tmp_path)),
+        )
+        commands = [
+            GenerationCommand(
+                kind=CommandType.SINGLE,
+                format=OutputFormat.PDF,
+                config=GenerationConfig(
+                    name="demo",
+                    output_path=None,
+                    open_after=True,
+                ),
+                overrides={},
+            )
+        ]
+        pdf_result = SimpleNamespace(
+            exists=True,
+            output_path=tmp_path / "demo.pdf",
+        )
+        resume.to_pdf.return_value = pdf_result
+
+        with patch("simple_resume.cli.print") as mock_print:
+            _run_session_generation(resume, session, commands)
+
+        resume.to_pdf.assert_called_once_with(
+            output_path=tmp_path / "demo.pdf",
+            open_after=True,
+        )
+        mock_print.assert_any_call(f"PDF generated: {tmp_path / 'demo.pdf'}")
+
+    def test_executes_html_command_with_custom_output(self, tmp_path: Path) -> None:
+        resume = Mock()
+        resume._name = "demo"
+        session = cast(
+            ResumeSession,
+            SimpleNamespace(paths=SimpleNamespace(output=tmp_path)),
+        )
+        custom_path = tmp_path / "custom.html"
+        commands = [
+            GenerationCommand(
+                kind=CommandType.SINGLE,
+                format=OutputFormat.HTML,
+                config=GenerationConfig(
+                    name="demo",
+                    output_path=custom_path,
+                    open_after=False,
+                    browser="firefox",
+                ),
+                overrides={},
+            )
+        ]
+        html_result = SimpleNamespace(exists=True, output_path=custom_path)
+        resume.to_html.return_value = html_result
+
+        with patch("simple_resume.cli.print") as mock_print:
+            _run_session_generation(resume, session, commands)
+
+        resume.to_html.assert_called_once_with(
+            output_path=custom_path,
+            open_after=False,
+            browser="firefox",
+        )
+        mock_print.assert_any_call(f"HTML generated: {custom_path}")
+
+    def test_skips_non_single_commands(self, tmp_path: Path) -> None:
+        resume = Mock()
+        session = cast(
+            ResumeSession,
+            SimpleNamespace(paths=SimpleNamespace(output=tmp_path)),
+        )
+        commands = [
+            GenerationCommand(
+                kind=CommandType.BATCH_ALL,
+                format=None,
+                config=GenerationConfig(),
+                overrides={},
+            )
+        ]
+
+        with patch("simple_resume.cli.print") as mock_print:
+            _run_session_generation(resume, session, commands)
+
+        resume.to_pdf.assert_not_called()
+        resume.to_html.assert_not_called()
+        mock_print.assert_any_call(
+            "Session generate only supports single-resume commands today."
+        )
+
+    def test_handles_generation_errors(self, tmp_path: Path) -> None:
+        resume = Mock()
+        resume._name = "demo"
+        session = cast(
+            ResumeSession,
+            SimpleNamespace(paths=SimpleNamespace(output=tmp_path)),
+        )
+        commands = [
+            GenerationCommand(
+                kind=CommandType.SINGLE,
+                format=OutputFormat.PDF,
+                config=GenerationConfig(name="demo"),
+                overrides={},
+            )
+        ]
+        resume.to_pdf.side_effect = SimpleResumeError("boom")
+
+        with patch("simple_resume.cli.print") as mock_print:
+            _run_session_generation(resume, session, commands)
+
+        mock_print.assert_any_call("Generation error for demo: boom")
+
+
 class TestCLIIntegration:
     """Integration-level assertions for CLI documentation."""
 
-    def test_parser_help_message(self, story):
+    def test_parser_help_message(self, story: Scenario) -> None:
         parser = create_parser()
         help_text = parser.format_help()
         story.then("the help text references all subcommands")
@@ -600,7 +775,7 @@ class TestCLIIntegration:
         assert "session" in help_text
         assert "validate" in help_text
 
-    def test_generate_command_examples(self, story):
+    def test_generate_command_examples(self, story: Scenario) -> None:
         parser = create_parser()
         subparsers = getattr(parser, "_subparsers", None)
         assert subparsers is not None

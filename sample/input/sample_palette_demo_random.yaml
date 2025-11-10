@@ -1,14 +1,14 @@
 template: resume_with_bars
-full_name: Casey Twhpl
-job_title: Product Strategist
+full_name: Taylor Santos
+job_title: Full Stack Developer
 address:
 - 101 Color Way
 - Austin, TX
-phone: (512) 555-7405
-email: casey.twhpl.ean9dbvf@example.com
-web: https://caseytwhpl.dev
-linkedin: in/casey-twhpl-qwow
-github: caseytwhpl
+phone: (512) 555-2667
+email: taylor.santos.856q9t8b@example.com
+web: https://taylorsantos.dev
+linkedin: in/taylor-santos-98dm
+github: taylorsantos
 titles:
   contact: Contact
   skills: Skills
@@ -17,12 +17,12 @@ titles:
   programming: Technical Tooling
   keyskills: Key Skills
   languages: Languages
-description: 'Cndvbh yzzqzu cljjow lmygfl gmoslw gdqzzx dghgjm bgpvsk. Cfqmxp qwvybm
-  kaxgcg qmfzlo gaohac kqhres ldtkeb iuojrf tmccib mghvgk knfqnd wwowze.
+description: 'Experienced with microservices architecture and modern development practices.
+  Experienced with automated testing and modern development practices.
 
 
-  Fcxenl bjgaau klskab gzffgh vmphxa hqtipr ikcawa jwsgwe dkhxdp vkbfvr floztl zpezfn
-  tggbdw. Zrqqvv jxdnau fyphub mxxdqm slhzgd tvldyu nphrvp rbiaud kghher dkwrep tttlye.'
+  Experienced with performance optimization and modern development practices. Experienced
+  with containerization and modern development practices.'
 skills:
   UI/UX Design: 55
   Frontend Development: 48
@@ -34,19 +34,15 @@ expertise:
   Product Strategy:
   - Journey mapping
   - Experiment design
-  - Outcome-based roadmaps
   Delivery:
   - Design systems
   - Rapid prototyping
-  - Continuous discovery
   Research & Analytics:
   - Field studies
   - Accessibility audits
-  - Funnel analytics
-  - Funnel analytics
 certification:
-- Certified DesignOps Professional
-- Accessibility Auditor (Level II)
+- DesignOps Professional
+- Accessibility Auditor
 - ScrumMaster (PSM I)
 programming:
   Prototyping:
@@ -79,24 +75,26 @@ body:
     end: Present
     title: Principal Design Technologist
     title_link: https://spectrumlabs.design/systems
-    company: Spectrum Labs
+    company: Quantum Dynamics
     company_link: https://spectrumlabs.design
-    description: '- Xgojwi zfccbc pcvjue zlolxw lztqdw asiqva bdwctf hxgwsl fgoyge.
+    description: '- Streamlined development workflow reducing build time by 65%
 
-      - Ndyyei pfastn rwdntm atdthm fxambp ptkfqd ttfjlk conrne.
+      - Architected scalable solution handling 434K requests/day
 
-      - Gzrpkw rxjssq gqhxgw mwutwk bpfflh brldof hvorib fnlqgu.'
+      - Increased test coverage from 56% to 94%'
     tech_stack: TypeScript, React, Styled Components, Figma API, Python, PostgreSQL
   - start: 2018
     end: 2022
     title: Senior UX Engineer
-    company: Aurora Analytics
+    company: DevStack
     company_link: https://auroraanalytics.io
-    description: '- Xtawqc vrfjbf xwpkaa iktkzp kgfira qutmky gfbsmy ngljtj.
+    description: '- Reduced latency by 46% through optimization
 
-      - Nwylgy ndukqg oyqiix gkwbdw tbuqod rwwtot.
+      - Reduced latency by 78% through optimization
 
-      - Oobxqj kngmaw vqzebj jlduer jmkvug zqjbrt.'
+      - Implemented monitoring system tracking 85+ metrics
+
+      - Architected scalable solution handling 675K requests/day'
     tech_stack: React, TypeScript, Jest, Storybook, Webpack, Node.js
   Projects:
   - start: 2024
@@ -104,98 +102,110 @@ body:
     title: Adaptive Palette Generator
     title_link: https://github.com/caseypalette/adaptive-palettes
     company: Personal Project
-    description: '- Igorvs fsvebe afqrel snrnly sgvdun vylzbn vuoxne.
+    description: '- Built distributed system to handle multi-tenant operations
 
-      - Ydoaxi qijbmb mgsjvd mxzqgd bfqavn bwibcm vnelxn npkrhc.'
+      - Created automated deployment pipeline reducing manual effort by 71%
+
+      - Created automated code review process reducing manual effort by 58%'
   - start: 2023
     end: 2023
     title: Voice of Customer Pipeline
     company: Open Source Collective
     company_link: https://github.com/caseypalette/voc-pipeline
-    description: '- Fgozqv gbxqii fabanm epmcoe xswlri yburje pctcsf keoxny pmpyxi.
+    description: '- Built distributed system to handle multi-tenant operations
 
-      - Nyilga pbtkny xkzbdu aipwhg phtpkw vsjiou vthjjc.'
+      - Optimized frontend rendering achieving 99.9% uptime
+
+      - Built distributed system to handle multi-tenant operations'
   Awards & Honors:
   - start: 2023
     end: 2023
     title: "UX Awards \u2014 Best Systems Initiative"
     company: DesignOps Summit
-    description: '- Axxvnd odsebe dxmpaq grqwij apdegl fxrhqf fjvjtc.
+    description: '- Experienced with caching strategies and modern development practices.
 
-      - Xlyzet zejwcv vtzzps ccvhsl ligwnm pjmhum.
+      - Experienced with performance optimization and modern development practices.
 
-      - Brmucc aorors ufezob fypmam zyvugl oitbec.'
+      - Experienced with containerization and modern development practices.'
   - start: 2022
     end: 2022
     title: "Webby Awards \u2014 People\u2019s Voice (Productivity)"
     company: The Webby Awards
-    description: '- Kgcmba tjyiuz cjjums afdomu kklnvd oyhtic vfuphv.
+    description: '- Experienced with cloud infrastructure and modern development practices.
 
-      - Fyzzou hrwhbi jrxoik kandgl slztyo epikst wvnflz vtziup.
+      - Experienced with system monitoring and modern development practices.
 
-      - Clyksg weemph pnbhca abnhrj jrfsrc hptcqe.'
+      - Experienced with API design and modern development practices.'
   Publications:
   - start: 2022
     end: 2022
     title: Designing Color Systems for Accessibility
     title_link: https://medium.com/@caseypalette/color-systems-accessibility
     company: Medium
-    description: '- Rsfshd ycwsqy yicome rxetds mpadij llypsq.
+    description: '- Experienced with orchestration and modern development practices.
 
-      - Jsfyyt rpkspx apvqvr kdxejj bnshjc rdayof avdgfj vmfbet.'
+      - Experienced with CI/CD pipelines and modern development practices.
+
+      - Experienced with automated testing and modern development practices.'
   - start: 2021
     end: 2021
     title: Measuring Design Impact with Product Analytics
     company: Design Leadership Forum
-    description: '- Pzpouk ywbhlc itcdwy cquvqv jwkgbv hsivwu jutvur btaiwl vcckjg.
+    description: '- Experienced with cloud infrastructure and modern development practices.
 
-      - Avxqfn ibmnid gzhaca tyamru popbdw yqkrzz hfebdz yjguzs.
+      - Experienced with automated testing and modern development practices.
 
-      - Vtctit hawmet cjqzyp xxnstg wdipev jjrjgn zlpnzb.'
+      - Experienced with performance optimization and modern development practices.'
   Speaking Engagements:
   - start: 2024
     end: 2024
     title: "Keynote \u2014 Measuring Design Impact"
     company: ColorConf
-    description: '- Dbkwzr lujnqr mkgczj ipmatx vrmjjo mxjfyk.
+    description: '- Experienced with CI/CD pipelines and modern development practices.
 
-      - Uxmgsa wckduk togimw avhglv kblyvp cmylro urrbch.'
+      - Experienced with microservices architecture and modern development practices.'
   - start: 2023
     end: 2023
     title: "Workshop \u2014 Accessible Theming in Practice"
     company: Config by Figma
-    description: '- Pxsgff iinumz iaamob jwxcud qedbyp fioowf eygxyl gzvhbg imtoll.
+    description: '- Experienced with API design and modern development practices.
 
-      - Eccxlh yqautl vdctae apcjir uwemdz nqahin imysfl ctesva eclfnu.
+      - Experienced with containerization and modern development practices.
 
-      - Obeuud pgmeli yywicl msawcd nbvary szkuil dzipec cwvplr onswey.'
+      - Experienced with caching strategies and modern development practices.
+
+      - Experienced with CI/CD pipelines and modern development practices.'
   Volunteer Service:
   - start: 2021
     end: Present
     title: "Mentor \u2014 Inclusive Design"
     company: ADPList
-    description: '- Lxjowe edncob icffgp vyegyj noxrtc xgfofj lpjlpr gsfzyh gwsend.
+    description: '- Experienced with database design and modern development practices.
 
-      - Hnaeho pziszs hjudfv xusqvz syihzw lkfgwb lhkwnz ktexct ktdgli.'
+      - Experienced with cloud infrastructure and modern development practices.
+
+      - Experienced with database design and modern development practices.'
   - start: 2020
     end: Present
     title: "Organizer \u2014 Civic Tech Nights"
     company: Austin Design Week
-    description: '- Rjzhxd ybrnwe nhpvce onbqvy bkhdsi rvzfkc ebhaeb rnyjkg dirmki.
+    description: '- Experienced with database design and modern development practices.
 
-      - Iwlaiu hmvdfb ihtnhp dqbjba buwpvx iowral.
+      - Experienced with cloud infrastructure and modern development practices.
 
-      - Byltoz kfcgcu ofdwfs oluntz ptrlgn nuvlkq jthugt.'
+      - Experienced with cloud infrastructure and modern development practices.
+
+      - Experienced with orchestration and modern development practices.'
   Education:
   - start: 2014
     end: 2018
     title: B.S. Human-Centered Design
     company: University of Texas at Austin
-    description: '- Emsowp iizsze yjipss qlcnxs lnvzdu mzdyuw vmpzyv mdutnl kgjqve.
+    description: '- Experienced with API design and modern development practices.
 
-      - Qinrcp udtszh ykiegg qzwnpt zjffoz pqfkzv vwqlzg oowlzg.'
+      - Experienced with API design and modern development practices.'
 config:
-  color_scheme: GrayC_11
+  color_scheme: Safe_5
   palette:
     source: generator
     type: hcl
@@ -214,19 +224,26 @@ config:
   sidebar_width: 60
   sidebar_padding_top: 6
   profile_image_padding_bottom: 6
-  pitch_padding_top: 0
+  pitch_padding_top: 4
   pitch_padding_bottom: 4
   pitch_padding_left: 4
   h2_padding_left: 4
   h3_padding_top: 5
-  date_container_width: 13
-  date_container_padding_left: 8
-  description_container_padding_left: 3
+  date_container_width: 12
+  date_container_padding_left: 6
+  description_container_padding_left: 2
   frame_padding: 10
-  frame_color: '#767676'
+  frame_color: '#644F4F'
+  bold_color: '#4B3B3B'
+  section_icon_circle_size: 7.8mm
+  section_icon_circle_x_offset: -0.5mm
+  section_icon_design_size: 4mm
+  section_icon_design_x_offset: -0.1mm
+  section_icon_design_y_offset: -0.4mm
+  section_heading_text_margin: -6mm
   output_mode: markdown
-  theme_color: '#FFFFFF'
-  sidebar_color: '#E2E2E2'
-  sidebar_text_color: '#C6C6C6'
-  bar_background_color: '#ACACAC'
-  date2_color: '#919191'
+  theme_color: '#88CCEE'
+  sidebar_color: '#CC6677'
+  sidebar_text_color: '#DDCC77'
+  bar_background_color: '#117733'
+  date2_color: '#332288'

@@ -209,7 +209,7 @@ config:
   sidebar_width: 60
   sidebar_padding_top: 5
   profile_image_padding_bottom: 6
-  pitch_padding_top: 0
+  pitch_padding_top: 4
   pitch_padding_bottom: 4
   pitch_padding_left: 4
   h2_padding_left: 4
@@ -219,3 +219,12 @@ config:
   description_container_padding_left: 2
   frame_padding: 10
   frame_color: "#757575"
+  bold_color: "#585858"  # Darkened frame for bold text
+
+  # Section heading icon layout customization
+  section_icon_circle_size: "7.8mm"          # Size of the circular icon background
+  section_icon_circle_x_offset: "-0.5mm"     # Horizontal position adjustment of circle
+  section_icon_design_size: "4mm"            # Size of the icon design (briefcase, cog, etc)
+  section_icon_design_x_offset: "-0.1mm"     # Horizontal position of icon within circle
+  section_icon_design_y_offset: "-0.4mm"     # Vertical position of icon within circle
+  section_heading_text_margin: "-6mm"        # Left margin of heading text (Education, etc)

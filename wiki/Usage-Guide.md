@@ -1,77 +1,145 @@
 # Usage Guide
 
-This guide explains how to use Simple-Resume from the command line to generate resumes.
+This guide details instructions for using the command-line interface (CLI), Python API, and other features.
 
-## Generating Resumes
+## Command-Line Interface
 
-You can generate your resume in HTML or PDF format:
+The `simple-resume` CLI is the primary tool for resume generation.
+
+### Generating Resumes
+
+Generate a resume using the `generate` command with the desired format.
 
 ```bash
-# Generate a PDF resume
+# Generate a PDF file
 uv run simple-resume generate --format pdf
 
-# Generate an HTML resume
+# Generate an HTML file
 uv run simple-resume generate --format html
 ```
 
-> ℹ️ Resumes with `config.output_mode: latex` are skipped by the HTML CLI. Use the PDF generator to render LaTeX templates.
+Automatically open the generated file using the `--open` flag.
 
-### Key Options
+```bash
+uv run simple-resume generate --format pdf --open
+```
 
-- `--data-dir PATH`: Specify a custom directory for input and output files (default: `resume_private`).
-- `--open`: Automatically open the generated resume.
-- `--browser BROWSER`: Specify a browser for opening HTML resumes (e.g., "firefox", "chromium").
+Specify a different browser for HTML files using the `--browser` flag.
+
+```bash
+uv run simple-resume generate --format html --browser firefox
+```
+
+### Specifying a Data Directory
+
+For multiple resume files, use the `--data-dir` argument to specify a directory containing your YAML files.
+
+```bash
+uv run simple-resume generate --data-dir my_resumes --format html
+```
 
 ## Python API
 
-You can also generate resumes from Python:
+For programmatic use, import and use the `generate` and `preview` functions.
+
+### Generating Resumes
+
+The `generate` function accepts a resume file path and a `GenerateOptions` object.
 
 ```python
-from simple_resume import generate, preview
+from simple_resume import generate
+from simple_resume.generation import GenerateOptions
 
-# Render PDF and HTML
-results = generate("resume_private/input/my_resume.yaml", formats=("pdf", "html"))
+# Generate both PDF and HTML formats
+results = generate(
+    "resume_private/input/my_resume.yaml",
+    GenerateOptions(formats=("pdf", "html"))
+)
+```
 
-# Launch an HTML preview in your browser
+### Previewing Resumes
+
+The `preview` function opens a resume in your web browser without saving it.
+
+```python
+from simple_resume import preview
+
 preview("resume_private/input/my_resume.yaml", open_after=True)
 ```
 
-These helpers use the same configuration overrides as the CLI.
+## Customization
 
-## LaTeX Output
+### LaTeX Output
 
-To generate a LaTeX version of your resume, set the `output_mode` in your YAML file to `latex`:
+To generate a `.tex` file for use with a LaTeX engine, set the `output_mode` in your YAML file. A LaTeX distribution must be installed.
 
-```yaml
-config:
-  output_mode: latex
-```
+When `output_mode` is `latex`, the `generate` command produces a `.tex` file instead of HTML or PDF.
 
-This creates a `.tex` file that you can compile with a LaTeX engine.
+### Colors
 
-## Color Customization
-
-You can customize the colors of your resume using preset schemes, custom colors, or standalone palette files. For detailed instructions and examples, see the [Color Schemes Guide](Color-Schemes.md).
-
-To use a preset color scheme:
+Specify a color scheme in the YAML file or via a command-line argument.
 
 ```yaml
+# In your YAML file
 config:
   color_scheme: "Professional Blue"
 ```
 
-To use a standalone palette file:
-
 ```bash
-uv run simple-resume generate --palette palettes/my-theme.yaml
+# Via the command line
+uv run simple-resume generate --palette resume_private/palettes/my-theme.yaml
+```
+
+For more information, see the [Color Schemes Guide](Color-Schemes.md).
+
+### Layout
+
+Adjust the layout of template elements, such as section heading icons, through the `config` section of your YAML file. Values are CSS units, typically `mm`. Negative values move elements left or up; positive values move them right or down.
+
+```yaml
+config:
+  section_icon_circle_size: "7.8mm"
+  section_icon_circle_x_offset: "-0.5mm"
+  section_icon_design_size: "4mm"
+  section_icon_design_x_offset: "-0.1mm"
+  section_icon_design_y_offset: "-0.4mm"
+  section_heading_text_margin: "-6mm"
 ```
 
 ## Validation
 
-Simple-Resume requires the following fields in your resume YAML:
+The tool validates the following fields:
 
-- `full_name`: Must not be empty.
-- `email`: Must be a valid email address.
-- Date fields (e.g., `start_date`, `end_date`) must be in `YYYY` or `YYYY-MM` format.
+-   `full_name`: Must not be empty.
+-   `email`: Must be a valid email address.
+-   Date fields: Must be in `YYYY` or `YYYY-MM` format.
 
-If validation fails, you will get an error message that points to the incorrect field.
+## Test Framework Helper
+
+The project includes a small helper for Behavior-Driven Development (BDD) style tests, intended for internal development.
+
+The `tests/bdd.py` module provides a `scenario` object to structure tests.
+
+```python
+from tests.bdd import scenario
+
+def test_palette_cli_lists_available_palettes() -> None:
+    story = scenario("Palette CLI list command")
+    story.given("a registry with sample palettes")
+    story.when("the list command runs")
+
+    result = run_cli(["palette", "list"])
+
+    story.then("palette names are printed")
+    story.expect("Spectrum Labs" in result, "CLI output should contain palette name")
+```
+
+Available methods:
+
+-   `given(step)`, `when(step)`, `then(step)`: Describe the steps of the scenario.
+-   `background(**context)`: Add metadata for debugging.
+-   `note(message)`: Add optional commentary.
+-   `expect(condition, message)`: Perform an assertion.
+-   `summary()`: Render the full scenario story.
+
+For more examples, see `tests/unit/test_bdd_helper.py`.

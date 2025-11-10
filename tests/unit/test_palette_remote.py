@@ -9,6 +9,7 @@ import pytest
 
 from simple_resume.palettes.exceptions import PaletteRemoteDisabled
 from simple_resume.palettes.sources import ColourLoversClient
+from tests.bdd import Scenario
 
 
 @pytest.fixture
@@ -28,7 +29,9 @@ def _mock_response(payload: list[dict[str, object]]) -> Mock:
     return mock_response
 
 
-def test_colourlovers_client_fetches_and_caches(story, palette_cache_dir: Path) -> None:
+def test_colourlovers_client_fetches_and_caches(
+    story: Scenario, palette_cache_dir: Path
+) -> None:
     payload = [
         {
             "title": "Sunset",
@@ -66,7 +69,7 @@ def test_colourlovers_client_fetches_and_caches(story, palette_cache_dir: Path) 
 
 
 def test_colourlovers_disabled_by_default(
-    story, monkeypatch: pytest.MonkeyPatch
+    story: Scenario, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.delenv("SIMPLE_RESUME_ENABLE_REMOTE_PALETTES", raising=False)
     client = ColourLoversClient()

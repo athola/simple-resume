@@ -1,37 +1,43 @@
 # Project Plan
 
-This document outlines the development plan for Simple-Resume.
+This document outlines the `simple-resume` development plan.
 
 ## Project Goals
 
--   Generate professional resumes from structured data (YAML, JSON).
--   Provide a flexible template and color scheme system for customization.
--   Maintain high code quality and clear, actionable documentation.
+-   Generate resumes from structured data formats (YAML, JSON).
+-   Support custom templates and color schemes via YAML configuration.
+-   Keep test coverage above 85%; document all public APIs.
 
-## Phase 1: Core Functionality & Refinement (Completed)
+## Phase 1: Core Functionality and Refinement (Completed)
 
--   [x] Initial YAML resume generation.
--   [x] HTML and PDF output.
+-   [x] Initial YAML-based resume generation.
+-   [x] HTML and PDF output formats.
 -   [x] Basic template system.
--   [x] Initial CLI.
+-   [x] Initial command-line interface (CLI).
 -   [x] Consolidated `README.md` with wiki links.
--   [x] Created `wiki/Contributing.md`.
--   [x] Created `wiki/Usage-Guide.md`.
--   [x] Created `wiki/Development-Guide.md`.
--   [x] Enhanced external palette loading with direct color definition.
--   [x] Optimized print-friendly color palettes for B&W contrast.
--   [x] Fixed external palette validation conflicts and "registry source requires 'name'" errors.
+-   [x] `wiki/Contributing.md`
+-   [x] `wiki/Usage-Guide.md`
+-   [x] `wiki/Development-Guide.md`
+-   [x] Enhanced external palette loading with direct color definitions.
+-   [x] Optimized print-friendly color palettes for black/white contrast.
+-   [x] Fixed external palette validation conflicts.
 
 ## Phase 2: Documentation and Usability
 
--   [x] Expanded wiki with detailed guides (API reference, usage examples, helper documentation).
--   [x] Published stability policy and curated API reference (`docs/reference.md`).
+-   [x] Expanded wiki with detailed guides.
+-   [x] Published stability policy and API reference (`docs/reference.md`).
 -   [ ] Improve error messages for user-friendliness.
--   [ ] Add a "live preview" feature to the web UI.
+-   [ ] Add "live preview" feature to web UI.
 
 ## Phase 3: Feature Expansion
 
 -   [ ] Add at least three new resume templates.
--   [ ] Evaluate and potentially integrate a new PDF rendering engine for quality and performance.
--   [ ] Add JSON Resume format support for interoperability.
+-   [ ] Evaluate and potentially integrate new PDF rendering engine to improve quality/performance.
+-   [ ] Add support for JSON Resume format to improve interoperability.
 -   [ ] Add support for generating cover letters from Markdown.
+
+## Tooling Notes
+
+The validation process runs `ruff`, `mypy`, `ty`, and `pytest`. Markdown linting/formatting tools (`blacken-docs`, `markdownlint`) no longer run on `README.md` and `wiki/` files, as these are frequently updated from an external source. These files no longer block the `make validate` command.
+
+To keep validation fast, README/wiki rewrites will land through doc-only branches anchored to a recorded baseline (`docs/doc-baseline.md`, refreshed via `scripts/doc_baseline.sh`). Mainline work should avoid touching those files unless the baseline is bumped first, preventing huge markdown diffs in day-to-day PRs.

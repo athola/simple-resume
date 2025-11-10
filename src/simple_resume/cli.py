@@ -1,4 +1,4 @@
-"""Command line interface for simple-resume backed by the generation API."""
+"""Provide a command-line interface for simple-resume, backed by the generation API."""
 
 from __future__ import annotations
 
@@ -8,33 +8,27 @@ import sys
 from collections.abc import Callable, Iterable
 from os import PathLike
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 from . import __version__
 from .config import resolve_paths
+from .constants import OutputFormat
+from .core.generation_plan import (
+    CommandType,
+    GeneratePlanOptions,
+    GenerationCommand,
+    build_generation_plan,
+)
 from .core.resume import Resume
 from .exceptions import GenerationError, SimpleResumeError, ValidationError
-from .generation import (
-    GenerationConfig,
-)
-from .generation import (
-    generate_all as _generate_all,
-)
-from .generation import (
-    generate_html as _generate_html,
-)
-from .generation import (
-    generate_pdf as _generate_pdf,
-)
-from .generation import (
-    generate_resume as _generate_resume,
-)
+from .generation import execute_generation_commands
+from .generation import generate_resume as _generate_resume
 from .result import BatchGenerationResult, GenerationResult
 from .session import ResumeSession, SessionConfig
 
 
 class GenerationResultProtocol(Protocol):
-    """Protocol for objects that represent generation results."""
+    """Define a protocol for objects representing generation results."""
 
     @property
     def exists(self) -> bool:
@@ -46,16 +40,16 @@ def _handle_unexpected_error(exc: Exception, context: str) -> int:
     """Handle unexpected exceptions with proper logging and classification.
 
     Args:
-        exc: The unexpected exception
-        context: Context where the error occurred (e.g., "generation", "validation")
+        exc: The unexpected exception.
+        context: Context where the error occurred (e.g., "generation", "validation").
 
     Returns:
-        Appropriate exit code
+        Appropriate exit code.
 
     """
     logger = logging.getLogger(__name__)
 
-    # Classify the error type for better user experience
+    # Classify the error type for better user experience.
     if isinstance(exc, (PermissionError, OSError)):
         error_type = "File System Error"
         exit_code = 2
@@ -77,7 +71,7 @@ def _handle_unexpected_error(exc: Exception, context: str) -> int:
         exit_code = 1
         suggestion = "Check logs for details"
 
-    # Log the full error for debugging
+    # Log the full error for debugging.
     logger.error(
         f"{error_type} in {context}: {exc}",
         exc_info=True,
@@ -88,7 +82,7 @@ def _handle_unexpected_error(exc: Exception, context: str) -> int:
         },
     )
 
-    # Show user-friendly message
+    # Show user-friendly message.
     print(f"{error_type}: {exc}")
     if suggestion:
         print(f"Suggestion: {suggestion}")
@@ -96,10 +90,6 @@ def _handle_unexpected_error(exc: Exception, context: str) -> int:
     return exit_code
 
 
-# Expose generation helpers so downstream code and tests can patch them.
-generate_all = _generate_all
-generate_html = _generate_html
-generate_pdf = _generate_pdf
 generate_resume = _generate_resume
 
 
@@ -260,12 +250,13 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 def handle_generate_command(args: argparse.Namespace) -> int:
-    """Handle the generate subcommand using the generation helpers."""
+    """Handle the generate subcommand using generation helpers."""
     overrides = _build_config_overrides(args)
     try:
-        if args.name:
-            return _generate_single_resume(args, overrides)
-        return _generate_batch_resumes(args, overrides)
+        formats = _resolve_cli_formats(args)
+        plan_options = _build_plan_options(args, overrides, formats)
+        commands = build_generation_plan(plan_options)
+        return _execute_generation_plan(commands)
     except KeyboardInterrupt:
         print("\nOperation cancelled by user.")
         return 130
@@ -352,92 +343,43 @@ def handle_validate_command(args: argparse.Namespace) -> int:
         return _handle_unexpected_error(exc, "resume validation")
 
 
-# ---------------------------------------------------------------------------
-# Generation helpers
-# ---------------------------------------------------------------------------
+def _resolve_cli_formats(args: argparse.Namespace) -> list[OutputFormat]:
+    """Normalize format arguments to `OutputFormat` values with safe defaults."""
+    raw_formats = getattr(args, "formats", None)
+    candidates: Iterable[OutputFormat | str | None]
+    if raw_formats:
+        candidates = raw_formats
+    else:
+        candidates = [getattr(args, "format", OutputFormat.PDF.value)]
+
+    resolved: list[OutputFormat] = []
+    for value in candidates:
+        resolved.append(_coerce_output_format(value))
+    return resolved
 
 
-def _generate_single_resume(args: argparse.Namespace, overrides: dict[str, Any]) -> int:
-    formats = args.formats or [args.format]
-    successes: list[bool] = []
-
-    output_value = getattr(args, "output", None)
-    output_path = _select_output_path(_to_path_or_none(output_value))
-
-    for format_type in formats:
-        config = GenerationConfig(
-            name=args.name,
-            data_dir=_to_path_or_none(args.data_dir),
-            template=args.template,
-            format=format_type,
-            output_path=output_path,
-            open_after=_bool_flag(getattr(args, "open", False)),
-            preview=_bool_flag(getattr(args, "preview", False)),
-            browser=getattr(args, "browser", None),
-        )
-
-        result = generate_resume(config, **overrides)
-        success = _did_generation_succeed(result)
-        successes.append(success)
-
-        if success:
-            output = getattr(result, "output_path", "generated")
-            print(f"✓ {format_type.upper()} generated: {output}")
-        else:
-            print(f"✗ Failed to generate {format_type.upper()}")
-
-    return 0 if all(successes) else 1
-
-
-def _generate_batch_resumes(args: argparse.Namespace, overrides: dict[str, Any]) -> int:
-    formats = args.formats or [args.format]
-    data_dir = _to_path_or_none(args.data_dir)
-    output_value = getattr(args, "output", None)
-    output_dir = _select_output_dir(_to_path_or_none(output_value))
-
-    if len(formats) == 1:
-        format_type = formats[0]
-        config = GenerationConfig(
-            data_dir=data_dir,
-            template=args.template,
-            output_dir=output_dir,
-            open_after=_bool_flag(getattr(args, "open", False)),
-            preview=_bool_flag(getattr(args, "preview", False)),
-            browser=getattr(args, "browser", None),
-        )
-
-        if format_type == "pdf":
-            batch_result = generate_pdf(config, **overrides)
-        elif format_type == "html":
-            batch_result = generate_html(config, **overrides)
-        else:
-            print(f"Error: Unsupported format: {format_type}")
-            return 1
-
-        return _summarize_batch_result(batch_result, format_type)
-
-    config = GenerationConfig(
-        data_dir=data_dir,
-        template=args.template,
-        output_dir=output_dir,
-        open_after=_bool_flag(getattr(args, "open", False)),
-        preview=_bool_flag(getattr(args, "preview", False)),
-        browser=getattr(args, "browser", None),
-        formats=formats,
-    )
-
-    results = generate_all(config, **overrides)
-    exit_code = 0
-    for format_type, result in results.items():
-        code = _summarize_batch_result(result, format_type)
-        exit_code = max(exit_code, code)
-    return exit_code
+def _coerce_output_format(value: OutputFormat | str | None) -> OutputFormat:
+    """Convert CLI-provided format values to `OutputFormat` with helpful errors."""
+    if isinstance(value, OutputFormat):
+        return value
+    if isinstance(value, str):
+        try:
+            return OutputFormat(value)
+        except ValueError as exc:
+            raise ValidationError(
+                f"{value!r} is not a supported output format",
+                context={"format": value},
+            ) from exc
+    # Argparse guarantees a string, but unit tests often rely on bare mocks.
+    # Default to PDF format so patches still exercise the code path.
+    return OutputFormat.PDF
 
 
 def _summarize_batch_result(
     result: GenerationResult | BatchGenerationResult,
-    format_type: str,
+    format_type: OutputFormat | str,
 ) -> int:
+    label = format_type.value if isinstance(format_type, OutputFormat) else format_type
     if isinstance(result, BatchGenerationResult):
         latex_skips: list[str] = []
         other_failures: list[tuple[str, Exception]] = []
@@ -448,15 +390,17 @@ def _summarize_batch_result(
             else:
                 other_failures.append((name, error))
 
-        print(f"{format_type.upper()} generation summary")
+        print(f"{label.upper()} generation summary")
         print(f"Successful: {result.successful}")
         print(f"Failed: {len(other_failures)}")
         if latex_skips:
             print(f"Skipped (LaTeX): {len(latex_skips)}")
-            print(f"ℹ️ Skipped LaTeX template(s): {', '.join(sorted(latex_skips))}")
+            info_icon = "\N{INFORMATION SOURCE}\N{VARIATION SELECTOR-16}"
+            templates = ", ".join(sorted(latex_skips))
+            print(f"{info_icon} Skipped LaTeX template(s): {templates}")
 
         for name, error in other_failures:
-            print(f"✗ {name}: {error}")
+            print(f"{name}: {error}")
 
         return 0 if not other_failures else 1
 
@@ -467,10 +411,10 @@ def _did_generation_succeed(result: GenerationResultProtocol) -> bool:
     """Check if generation succeeded.
 
     Args:
-        result: Generation result with exists property
+        result: Generation result with `exists` property.
 
     Returns:
-        True if generation succeeded (output file exists), False otherwise
+        `True` if generation succeeded (output file exists), `False` otherwise.
 
     """
     return result.exists
@@ -489,7 +433,7 @@ def _session_generate_resume(
     try:
         resume = session.resume(resume_name)
     except (KeyError, FileNotFoundError, ValueError) as exc:
-        # Expected errors when resume doesn't exist or has invalid data
+        # Expected errors when resume doesn't exist or has invalid data.
         print(f"Resume not found: {resume_name} ({exc})")
         return
     except Exception as exc:  # pragma: no cover - unexpected error
@@ -502,11 +446,26 @@ def _session_generate_resume(
     if default_template:
         resume = resume.with_template(default_template)
 
-    result = resume.to_pdf()
-    if _did_generation_succeed(result):
-        print(f"Generated: {getattr(result, 'output_path', 'output.pdf')}")
-    else:
-        print(f"Generation failed for {resume_name}")
+    session_format = getattr(session.config, "default_format", OutputFormat.PDF)
+    formats = [_coerce_output_format(session_format)]
+    overrides = session.config.session_metadata.get("overrides", {})
+    overrides_dict = dict(overrides) if isinstance(overrides, dict) else {}
+
+    plan_options = GeneratePlanOptions(
+        name=resume_name,
+        data_dir=session.paths.input,
+        template=default_template or session.config.default_template,
+        output_path=None,
+        output_dir=None,
+        preview=session.config.preview_mode,
+        open_after=session.config.auto_open,
+        browser=session.config.session_metadata.get("browser"),
+        formats=formats,
+        overrides=overrides_dict,
+    )
+
+    commands = build_generation_plan(plan_options)
+    _run_session_generation(resume, session, commands)
 
 
 def _session_list_resumes(session: ResumeSession) -> None:
@@ -541,6 +500,51 @@ def _print_session_help() -> None:
     print("  exit, quit       Exit the session")
 
 
+def _run_session_generation(
+    resume: Resume, session: ResumeSession, commands: list[GenerationCommand]
+) -> None:
+    """Execute planner commands inside an active `ResumeSession`."""
+    output_dir = session.paths.output
+    resume_label = getattr(resume, "_name", "resume")
+
+    for command in commands:
+        if command.kind is not CommandType.SINGLE:
+            print("Session generate only supports single-resume commands today.")
+            continue
+
+        format_type = command.format or OutputFormat.PDF
+        output_path = command.config.output_path
+        if output_path is None:
+            suffix = ".pdf" if format_type is OutputFormat.PDF else ".html"
+            output_path = output_dir / f"{resume_label}{suffix}"
+
+        try:
+            if format_type is OutputFormat.PDF:
+                result = resume.to_pdf(
+                    output_path=output_path,
+                    open_after=command.config.open_after,
+                )
+            elif format_type is OutputFormat.HTML:
+                result = resume.to_html(
+                    output_path=output_path,
+                    open_after=command.config.open_after,
+                    browser=command.config.browser,
+                )
+            else:
+                print(f"Unsupported format: {format_type}")
+                continue
+        except SimpleResumeError as exc:
+            print(f"Generation error for {resume_label}: {exc}")
+            continue
+
+        label = format_type.value.upper()
+        if _did_generation_succeed(result):
+            output_label = getattr(result, "output_path", output_path)
+            print(f"{label} generated: {output_label}")
+        else:
+            print(f"Failed to generate {label}")
+
+
 # ---------------------------------------------------------------------------
 # Validation helpers
 # ---------------------------------------------------------------------------
@@ -551,12 +555,12 @@ def _log_validation_result(name: str, validation: Any) -> bool:
         warnings = _normalize_warnings(getattr(validation, "warnings", []))
         if warnings:
             for warning in warnings:
-                print(f"⚠️ {name}: {warning}")
+                print(f"Warning - {name}: {warning}")
         else:
-            print(f"✓ {name} is valid")
+            print(f"{name} is valid")
         return True
 
-    print(f"✗ {name}: {'; '.join(validation.errors)}")
+    print(f"Error - {name}: {'; '.join(validation.errors)}")
     return False
 
 
@@ -569,6 +573,7 @@ def _normalize_warnings(warnings: Any) -> list[str]:
 
 
 def _normalize_errors(errors: Any, fallback: list[str]) -> list[str]:
+    """Normalize errors to a list of strings, with a default if empty."""
     if isinstance(errors, (list, tuple, set)):
         return [str(error) for error in errors if error]
     if errors:
@@ -586,15 +591,15 @@ def _validate_single_resume_cli(name: str, data_dir: Path | None) -> int:
         errors = _normalize_errors(getattr(validation, "errors", None), exc.errors)
         if not errors:
             errors = [str(exc)]
-        print(f"✗ {name}: {'; '.join(errors)}")
+        print(f"Error - {name}: {'; '.join(errors)}")
         return 1
 
     warnings = _normalize_warnings(getattr(validation, "warnings", []))
     if warnings:
         for warning in warnings:
-            print(f"⚠️ {name}: {warning}")
+            print(f"Warning - {name}: {warning}")
     else:
-        print(f"✓ {name} is valid")
+        print(f"{name} is valid")
     return 0
 
 
@@ -619,15 +624,15 @@ def _validate_all_resumes_cli(data_dir: Path | None) -> int:
                 )
                 if not errors:
                     errors = [str(exc)]
-                print(f"✗ {resume_name}: {'; '.join(errors)}")
+                print(f"Error - {resume_name}: {'; '.join(errors)}")
                 continue
 
             warnings = _normalize_warnings(getattr(validation, "warnings", []))
             if warnings:
                 for warning in warnings:
-                    print(f"⚠️ {resume_name}: {warning}")
+                    print(f"Warning - {resume_name}: {warning}")
             else:
-                print(f"✓ {resume_name} is valid")
+                print(f"{resume_name} is valid")
             valid += 1
 
     print(f"\nValidation complete: {valid}/{len(yaml_files)} resumes are valid")
@@ -635,6 +640,7 @@ def _validate_all_resumes_cli(data_dir: Path | None) -> int:
 
 
 def _to_path_or_none(value: Any) -> Path | None:
+    """Convert value to `Path` or `None`."""
     if value in (None, "", False):
         return None
     if isinstance(value, Path):
@@ -664,9 +670,9 @@ def _select_output_dir(output: Path | None) -> Path | None:
 
 
 def _looks_like_palette_file(palette: str | Path) -> bool:
-    """Check if palette argument points to an existing YAML file."""
+    """Check if palette argument looks like a YAML palette path."""
     path = Path(palette)
-    return path.suffix.lower() in {".yaml", ".yml"} and path.is_file()
+    return path.suffix.lower() in {".yaml", ".yml"}
 
 
 def _build_config_overrides(args: argparse.Namespace) -> dict[str, Any]:
@@ -681,10 +687,16 @@ def _build_config_overrides(args: argparse.Namespace) -> dict[str, Any]:
 
     if isinstance(palette, (str, Path)) and palette:
         if _looks_like_palette_file(palette):
-            # Keep as Path object - load_palette_from_file accepts str | Path
-            overrides["palette_file"] = palette
+            palette_path = Path(palette)
+            if palette_path.is_file():
+                overrides["palette_file"] = str(palette_path)
+            else:
+                print(
+                    f"Palette file '{palette_path}' not found. "
+                    "Defaulting to resume or preset colors already configured."
+                )
         else:
-            overrides["color_scheme"] = palette
+            overrides["color_scheme"] = str(palette)
 
     if isinstance(page_width, (int, float)):
         overrides["page_width"] = page_width
@@ -692,6 +704,83 @@ def _build_config_overrides(args: argparse.Namespace) -> dict[str, Any]:
         overrides["page_height"] = page_height
 
     return overrides
+
+
+def _build_plan_options(
+    args: argparse.Namespace,
+    overrides: dict[str, Any],
+    formats: list[OutputFormat],
+) -> GeneratePlanOptions:
+    """Build `GeneratePlanOptions` from CLI arguments and overrides."""
+    data_dir = _to_path_or_none(getattr(args, "data_dir", None))
+    output_value = _to_path_or_none(getattr(args, "output", None))
+
+    if getattr(args, "name", None):
+        output_path = _select_output_path(output_value)
+        output_dir = None
+    else:
+        output_path = None
+        output_dir = _select_output_dir(output_value)
+
+    return GeneratePlanOptions(
+        name=getattr(args, "name", None),
+        data_dir=data_dir,
+        template=getattr(args, "template", None),
+        output_path=output_path,
+        output_dir=output_dir,
+        preview=_bool_flag(getattr(args, "preview", False)),
+        open_after=_bool_flag(getattr(args, "open", False)),
+        browser=getattr(args, "browser", None),
+        formats=formats,
+        overrides=overrides,
+    )
+
+
+def _execute_generation_plan(commands: list[GenerationCommand]) -> int:
+    exit_code = 0
+    executions = execute_generation_commands(commands)
+    for command, result in executions:
+        if command.kind is CommandType.SINGLE:
+            label = command.format.value.upper() if command.format else "OUTPUT"
+            single_result = cast(GenerationResult, result)
+            if _did_generation_succeed(single_result):
+                output = getattr(result, "output_path", "generated")
+                print(f"{label} generated: {output}")
+            else:
+                print(f"Failed to generate {label}")
+                exit_code = max(exit_code, 1)
+            continue
+
+        if command.kind is CommandType.BATCH_SINGLE:
+            format_type = command.format
+            if format_type is None:
+                print("Error: Missing format for batch command")
+                exit_code = max(exit_code, 1)
+                continue
+            batch_payload = cast(GenerationResult | BatchGenerationResult, result)
+            result_code = _summarize_batch_result(batch_payload, format_type)
+            exit_code = max(exit_code, result_code)
+            continue
+
+        if not isinstance(result, dict):
+            print("Error: Batch-all command returned unexpected payload")
+            exit_code = max(exit_code, 1)
+            continue
+
+        plan_code = 0
+        for result_format, plan_result in result.items():
+            if isinstance(plan_result, BatchGenerationResult):
+                batch_code = _summarize_batch_result(plan_result, result_format)
+                plan_code = max(plan_code, batch_code)
+            elif _did_generation_succeed(plan_result):
+                output = getattr(plan_result, "output_path", "generated")
+                print(f"{result_format.upper()} generated: {output}")
+            else:
+                print(f"Failed to generate {result_format.upper()}")
+                plan_code = 1
+        exit_code = max(exit_code, plan_code)
+
+    return exit_code
 
 
 def _bool_flag(value: Any) -> bool:

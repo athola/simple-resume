@@ -1,4 +1,4 @@
-\documentclass[12pt]{article}
+\documentclass[11pt]{article}
 \usepackage[margin=0.55in]{geometry}
 \usepackage{enumitem}
 \usepackage{hyperref}
@@ -9,13 +9,13 @@
 {{ fontawesome_block }}
 \renewcommand{\familydefault}{\sfdefault}
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{0.22em}
+\setlength{\parskip}{0.12em}
 
-\setlist[itemize]{leftmargin=1.2em,itemsep=0.12em,topsep=0.12em,parsep=0.04em}
-\setlist[enumerate]{leftmargin=1.2em,itemsep=0.12em,topsep=0.12em,parsep=0.04em}
+\setlist[itemize]{leftmargin=1.2em,itemsep=0.02em,topsep=0.02em,parsep=0.01em}
+\setlist[enumerate]{leftmargin=1.2em,itemsep=0.02em,topsep=0.02em,parsep=0.01em}
 
-\titleformat{\section}{\Large\bfseries\scshape}{\thesection}{0.4em}{}
-\titlespacing*{\section}{0pt}{0.75em}{0.45em}
+\titleformat{\section}{\Large\bfseries\scshape}{\thesection}{0.3em}{}
+\titlespacing*{\section}{0pt}{0.4em}{0.2em}
 
 \hypersetup{
     colorlinks=true,
@@ -32,7 +32,7 @@
     {%- endif %}
 \end{tabularx}
 \hrule height 0.6pt
-\vspace{0.4em}
+\vspace{0.2em}
 
 {% macro render_block(block) -%}
 {% if block["kind"] == "paragraph" -%}
@@ -56,26 +56,26 @@
 
 \begin{tabularx}{\textwidth}{@{}p{0.36\textwidth}@{\hspace{1em}}X@{}}
 \begin{minipage}[t]{\linewidth}
-\raggedright
+\raggedright\small
 {% if contact_lines -%}
-{\large\textbf{CONTACT}}\\[0.3em]
-{\normalsize {{ contact_lines|join(" \\\\ ") }}}\\[1.2em]
+{\large\textbf{CONTACT}}\\[0.2em]
+{{ contact_lines|join(" \\\\ ") }}\\[0.5em]
 {% endif -%}
 {% if summary_blocks -%}
-{\large\textbf{SUMMARY}}\\[0.3em]
+{\large\textbf{SUMMARY}}\\[0.2em]
 {% for block in summary_blocks -%}
 {{- render_block(block) -}}
 {% endfor -%}
-\vspace{0.8em}
+\vspace{0.35em}
 {% endif -%}
 {% for skill in skill_sections if skill["items"] -%}
-{\large\textbf{ {{- skill["title"]|upper -}} }}\\[0.3em]
-{\normalsize {{ skill["items"]|join(" \\\\ ") }}}\\[1.2em]
+{\large\textbf{ {{- skill["title"]|upper -}} }}\\[0.2em]
+{{ skill["items"]|join(" \\\\ ") }}\\[0.5em]
 {% endfor -%}
 \end{minipage}
 &
 \begin{minipage}[t]{\linewidth}
-\raggedright
+\raggedright\small
 
 {% for section in sections -%}
 \section*{ {{- section.title|trim -}} }
@@ -86,7 +86,7 @@
 {% for block in entry.blocks -%}
 {{- render_block(block) -}}
 {% endfor -%}
-\vspace{0.32em}
+\vspace{0.12em}
 {% endfor -%}
 {% endfor -%}
 \end{minipage}

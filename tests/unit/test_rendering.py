@@ -14,12 +14,13 @@ from simple_resume.rendering import (
     load_resume,
     render_resume_html,
 )
+from tests.bdd import Scenario
 from tests.conftest import create_complete_resume_data
 
 
 @patch("simple_resume.rendering.get_content")
 def test_load_resume_returns_template_and_context(
-    mock_get_content: Mock, story
+    mock_get_content: Mock, story: Scenario
 ) -> None:
     story.given("a resume file containing template and config data")
     mock_get_content.return_value = {
@@ -40,7 +41,7 @@ def test_load_resume_returns_template_and_context(
 
 
 @patch("simple_resume.rendering.get_content")
-def test_load_resume_uses_default_name(mock_get_content: Mock, story) -> None:
+def test_load_resume_uses_default_name(mock_get_content: Mock, story: Scenario) -> None:
     story.given("the caller does not provide an explicit resume name")
     mock_get_content.return_value = {
         "template": "resume_no_bars",
@@ -57,7 +58,7 @@ def test_load_resume_uses_default_name(mock_get_content: Mock, story) -> None:
 @patch(
     "simple_resume.rendering.get_content", return_value={"template": "resume_no_bars"}
 )
-def test_load_resume_requires_config(mock_get_content: Mock, story) -> None:
+def test_load_resume_requires_config(mock_get_content: Mock, story: Scenario) -> None:
     story.given("resume content lacks the required config section")
 
     story.then("load_resume raises ValueError to signal invalid structure")
@@ -66,7 +67,9 @@ def test_load_resume_requires_config(mock_get_content: Mock, story) -> None:
 
 
 @patch("simple_resume.rendering.get_content")
-def test_render_resume_html_renders_template(mock_get_content: Mock, story) -> None:
+def test_render_resume_html_renders_template(
+    mock_get_content: Mock, story: Scenario
+) -> None:
     story.given("complete resume data for preview rendering")
     resume_data = create_complete_resume_data(
         template="resume_no_bars", full_name="Render User"
@@ -82,7 +85,7 @@ def test_render_resume_html_renders_template(mock_get_content: Mock, story) -> N
     assert Path(base_url).match("*/src/simple_resume")
 
 
-def test_get_template_environment_url_for_static(story) -> None:
+def test_get_template_environment_url_for_static(story: Scenario) -> None:
     story.given("the template environment exposes url_for")
     env = get_template_environment()
 
@@ -96,7 +99,7 @@ def test_get_template_environment_url_for_static(story) -> None:
     assert url == "static/icon.png"
 
 
-def test_get_template_environment_url_for_invalid_endpoint(story) -> None:
+def test_get_template_environment_url_for_invalid_endpoint(story: Scenario) -> None:
     story.given("only the 'static' endpoint is supported")
     env = get_template_environment()
 
@@ -108,7 +111,7 @@ def test_get_template_environment_url_for_invalid_endpoint(story) -> None:
         url_for_callable("api", filename="x")
 
 
-def test_get_template_environment_requires_filename(story) -> None:
+def test_get_template_environment_requires_filename(story: Scenario) -> None:
     story.given("url_for requires a filename arg even for static endpoint")
     env = get_template_environment()
 

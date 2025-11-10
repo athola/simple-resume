@@ -83,9 +83,9 @@ config:
   page_width: 210
   page_height: 297
   sidebar_width: 60
-  sidebar_padding_top: 0
+  sidebar_padding_top: 5
   profile_image_padding_bottom: 6
-  pitch_padding_top: 0
+  pitch_padding_top: 4
   pitch_padding_bottom: 4
   pitch_padding_left: 4
   h2_padding_left: 4
@@ -95,3 +95,12 @@ config:
   description_container_padding_left: 3
   frame_padding: 10
   frame_color: "#757575"
+  bold_color: "#585858"  # Darkened frame for bold text
+
+  # Section heading icon layout customization
+  section_icon_circle_size: "7.8mm"
+  section_icon_circle_x_offset: "-0.5mm"
+  section_icon_design_size: "4mm"
+  section_icon_design_x_offset: "-0.1mm"
+  section_icon_design_y_offset: "-0.4mm"
+  section_heading_text_margin: "-6mm"

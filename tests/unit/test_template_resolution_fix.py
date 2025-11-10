@@ -14,16 +14,17 @@ import pytest
 from jinja2.loaders import FileSystemLoader
 
 from simple_resume.config import TEMPLATE_LOC, resolve_paths
-from simple_resume.core.resume import RenderPlan, Resume, ResumeConfig
+from simple_resume.core.resume import RenderMode, RenderPlan, Resume, ResumeConfig
 from simple_resume.exceptions import TemplateError
 from simple_resume.rendering import get_template_environment
+from tests.bdd import Scenario
 
 
 class TestTemplateResolutionFix:
     """Test cases to verify the template resolution fix."""
 
     @pytest.fixture
-    def sample_resume_data(self):
+    def sample_resume_data(self) -> dict[str, object]:
         """Sample resume data for testing."""
         return {
             "full_name": "Test User",
@@ -58,7 +59,7 @@ class TestTemplateResolutionFix:
         }
 
     @pytest.fixture
-    def valid_render_plan(self):
+    def valid_render_plan(self) -> RenderPlan:
         """Create a valid render plan for testing."""
         config = ResumeConfig(
             page_width=210,
@@ -140,7 +141,7 @@ class TestTemplateResolutionFix:
 
         return RenderPlan(
             name="test_resume",
-            mode="html",
+            mode=RenderMode.HTML,
             config=config,
             template_name="resume_no_bars.html",
             context=context,
@@ -148,8 +149,18 @@ class TestTemplateResolutionFix:
             base_path="/some/incorrect/path",
         )
 
-    def test_template_environment_uses_correct_templates_path(self, sample_resume_data):
+    def test_template_environment_uses_correct_templates_path(
+        self, story: Scenario, sample_resume_data: dict[str, object]
+    ) -> None:
         """Ensure template environment uses templates path, not base_path."""
+        story.case(
+            given="a render plan generated with an arbitrary base path",
+            when="the template environment is requested",
+            then=(
+                "the loader resolves templates relative to TEMPLATE_LOC "
+                "instead of the base path"
+            ),
+        )
         # Clear the cache to ensure we get a fresh environment
         get_template_environment.cache_clear()
 
@@ -189,14 +200,24 @@ class TestTemplateResolutionFix:
                 if plan.context is not None:
                     plan.context["resume_config"] = resume_config
 
-                # Mock the output path
-                mock_output_path = Mock()
-                mock_output_path.__str__ = Mock(return_value="/safe/path/test.pdf")
-
-                # Create the actual parent directory
+                # Create a Path-like object that can be used in place of Path
                 actual_dir = Path(tempfile.mkdtemp())
                 actual_output_path = actual_dir / "test.pdf"
-                mock_output_path.__str__ = Mock(return_value=str(actual_output_path))
+
+                class StringablePath:
+                    def __init__(self, path: Path):
+                        self.path = path
+
+                    def __str__(self) -> str:
+                        return str(self.path)
+
+                    @property
+                    def parent(self) -> Path:
+                        return self.path.parent
+
+                mock_output_path = (
+                    actual_output_path  # Use the actual Path object instead
+                )
 
                 resume = Resume.from_data(sample_resume_data)
 
@@ -213,8 +234,15 @@ class TestTemplateResolutionFix:
                         f"Template resolution failed: {exc}"
                     )
 
-    def test_template_resolution_with_actual_template(self, sample_resume_data):
+    def test_template_resolution_with_actual_template(
+        self, story: Scenario, sample_resume_data: dict[str, object]
+    ) -> None:
         """Confirm templates can be resolved without full rendering."""
+        story.case(
+            given="the built-in templates residing under TEMPLATE_LOC",
+            when="the environment loads resume_no_bars.html",
+            then="the template is resolved without rendering errors",
+        )
         # Verify that the template files exist in the expected location
         template_path = TEMPLATE_LOC
         assert template_path.exists(), (
@@ -235,9 +263,14 @@ class TestTemplateResolutionFix:
         # The key regression was template lookup, not rendering fidelity.
 
     def test_generate_pdf_uses_templates_directory_not_base_path(
-        self, valid_render_plan
-    ):
+        self, story: Scenario, valid_render_plan: RenderPlan
+    ) -> None:
         """Ensure PDF generation uses template directory rather than base_path."""
+        story.case(
+            given="a render plan whose base path is intentionally incorrect",
+            when="PDF generation runs",
+            then="templates are still located under TEMPLATE_LOC",
+        )
         # Create a resume instance
         resume = Resume.from_data(
             {
@@ -266,8 +299,8 @@ class TestTemplateResolutionFix:
 
         try:
             # Mock the PDF writing to avoid actual PDF generation
-            with patch("simple_resume.core.resume.HTML") as mock_html_class:
-                with patch("simple_resume.core.resume.CSS") as mock_css_class:
+            with patch("simple_resume.core.pdf_generation.HTML") as mock_html_class:
+                with patch("simple_resume.core.pdf_generation.CSS") as mock_css_class:
                     mock_css_instance = Mock()
                     mock_html_instance = Mock()
                     mock_html_class.return_value = mock_html_instance
@@ -297,7 +330,11 @@ class TestTemplateResolutionFix:
                     css_string = css_kwargs.get("string") or (
                         css_args[0] if css_args else ""
                     )
-                    assert "210mm 297mm" in css_string
+                    expected_dims = (
+                        f"{valid_render_plan.config.page_width}mm "
+                        f"{valid_render_plan.config.page_height}mm"
+                    )
+                    assert expected_dims in css_string
 
                     assert result is not None
         finally:
@@ -306,9 +343,14 @@ class TestTemplateResolutionFix:
                 output_path.unlink()
 
     def test_generate_html_uses_templates_directory_not_base_path(
-        self, valid_render_plan
-    ):
+        self, story: Scenario, valid_render_plan: RenderPlan
+    ) -> None:
         """Ensure HTML generation loads templates from the templates directory."""
+        story.case(
+            given="an HTML render plan with an arbitrary base_path",
+            when="_generate_html_with_jinja runs",
+            then="templates load from TEMPLATE_LOC so the output contains resume data",
+        )
         resume = Resume.from_data(
             {
                 "full_name": "Test User",
@@ -334,8 +376,13 @@ class TestTemplateResolutionFix:
             if output_path.exists():
                 output_path.unlink()
 
-    def test_template_loader_search_path_correctness(self):
+    def test_template_loader_search_path_correctness(self, story: Scenario) -> None:
         """Ensure the template loader uses the expected search path."""
+        story.case(
+            given="the cached template environment",
+            when="examining the loader search path",
+            then="TEMPLATE_LOC appears as the canonical search directory",
+        )
         env = get_template_environment(str(TEMPLATE_LOC))
 
         # Verify that the loader's search path contains the templates directory
@@ -356,8 +403,16 @@ class TestTemplateResolutionFix:
                 f"Template {template_name} should exist at {template_file}"
             )
 
-    def test_template_resolution_failure_scenario(self):
+    def test_template_resolution_failure_scenario(self, story: Scenario) -> None:
         """Test to document the scenario that was previously failing."""
+        story.case(
+            given=(
+                "a render plan with a base path pointing at content "
+                "instead of templates"
+            ),
+            when="prepare_render_data runs",
+            then="the resulting plan still references resume_no_bars.html",
+        )
         # This test documents what would have failed before the fix.
         # A render plan pointing base_path to the content directory (instead of
         # the templates directory) previously caused template resolution to fail.
@@ -380,8 +435,13 @@ class TestTemplateResolutionFix:
 class TestTemplateResolutionRegression:
     """Regression tests to prevent the template resolution issue from recurring."""
 
-    def test_demo_palette_scenario(self):  # noqa: PLR0912, PLR0915
+    def test_demo_palette_scenario(self, story: Scenario) -> None:  # noqa: PLR0912, PLR0915
         """Test the specific scenario that was failing in the demo-palette command."""
+        story.case(
+            given="the demo-palette workflow rendering resume_no_bars",
+            when="prepare_render_data and template loading execute",
+            then="templates resolve via TEMPLATE_LOC without validation failures",
+        )
         # This test recreates the scenario from the demo-palette command
         # which was failing due to template resolution issues
 
@@ -414,7 +474,7 @@ class TestTemplateResolutionRegression:
         )
 
         assert render_plan.template_name == "resume_no_bars.html"
-        assert render_plan.mode == "html"
+        assert render_plan.mode is RenderMode.HTML
         assert render_plan.context is not None
 
         # The fix always resolves templates from TEMPLATE_LOC, regardless of
@@ -495,15 +555,15 @@ class TestTemplateResolutionRegression:
             }
 
         # Verify rendering works
-        rendered = template.render(**render_plan.context)
-        assert sample_data["full_name"] in rendered
+        rendered: str = template.render(**render_plan.context)
+        assert sample_data["full_name"] in rendered  # type: ignore[operator]
 
 
 class TestFullTemplateResolution:
     """Test template resolution functionality with all field types."""
 
     @pytest.fixture
-    def sample_resume_with_all_fields(self):
+    def sample_resume_with_all_fields(self) -> dict[str, object]:
         """Create sample resume data with all required template fields."""
         return {
             "template": "resume_no_bars",
@@ -571,8 +631,15 @@ class TestFullTemplateResolution:
             },
         }
 
-    def test_full_template_resolution_end_to_end(self, sample_resume_with_all_fields):
+    def test_full_template_resolution_end_to_end(
+        self, story: Scenario, sample_resume_with_all_fields: dict[str, object]
+    ) -> None:
         """TDD test: Comprehensive end-to-end template resolution."""
+        story.case(
+            given="resume data that populates every template section",
+            when="prepare_render_data and template rendering run",
+            then="the rendered HTML contains the expected names and roles",
+        )
         # Act: Prepare render plan (this calls prepare_render_data)
         # base_path should not influence template resolution after the fix.
         render_plan = Resume.prepare_render_data(
@@ -583,7 +650,7 @@ class TestFullTemplateResolution:
 
         # Assert: Render plan is correctly configured
         assert render_plan.template_name == "resume_no_bars.html"
-        assert render_plan.mode == "html"
+        assert render_plan.mode is RenderMode.HTML
         assert render_plan.context is not None
         assert "full_name" in render_plan.context
         assert "resume_config" in render_plan.context
@@ -606,9 +673,14 @@ class TestFullTemplateResolution:
         assert "Senior Developer" in html_output
 
     def test_template_resolution_with_different_templates(
-        self, sample_resume_with_all_fields
-    ):
+        self, story: Scenario, sample_resume_with_all_fields: dict[str, object]
+    ) -> None:
         """TDD test: Template resolution works with different template types."""
+        story.case(
+            given="each built-in HTML template",
+            when="loading templates via get_template_environment",
+            then="every template resolves even if base_path changes",
+        )
         # The main goal is to test that templates can be loaded from the correct path
         # Different templates have different requirements, so just test loading
         templates_to_test = [
@@ -642,8 +714,15 @@ class TestFullTemplateResolution:
                 rendered = template.render(**context)
                 assert "Test User" in rendered
 
-    def test_template_resolution_uses_correct_path_not_base_path(self):
+    def test_template_resolution_uses_correct_path_not_base_path(
+        self, story: Scenario
+    ) -> None:
         """TDD test: Template resolution uses templates path, not base_path."""
+        story.case(
+            given="paths whose content and template directories differ",
+            when="prepare_render_data renders resume_no_bars",
+            then="template loading still occurs from TEMPLATE_LOC",
+        )
         # This tests the core fix specifically
         # Create paths with different content and templates directories
         paths = resolve_paths()

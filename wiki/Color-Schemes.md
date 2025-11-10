@@ -1,76 +1,75 @@
 # Color Scheme Guide
 
-This guide explains how to customize the colors of your resume by defining them in
-the `config` section of your YAML file.
+This guide explains how to customize the colors of your resume. You can use preset color schemes, define your own colors, or use palette files for more advanced configurations.
 
 ## Color Properties
 
-Here are the available color properties and what they control:
+The following color properties can be set in the `config` section of your YAML file. All colors must be specified as quoted hexadecimal strings (e.g., `"#0395DE"`).
+
+-   `theme_color`: The primary color for headings and other accent elements.
+-   `sidebar_color`: The background color of the sidebar.
+-   `sidebar_text_color`: The text color in the sidebar. If not provided, this color is automatically calculated based on the `sidebar_color` to ensure readability. Contact icons also use this color.
+-   `bar_background_color`: The background color of skill bars.
+-   `date2_color`: The color for secondary date text.
+-   `frame_color`: The color of the preview frame in the web preview.
+-   `bold_color`: The color for bolded text. If not provided, it is derived from the `frame_color`.
 
 ```yaml
 config:
-  theme_color: "#0395DE"          # Headings and accent elements
-  sidebar_color: "#F6F6F6"        # Sidebar background
-  sidebar_text_color: "#000000"   # Sidebar text (auto-calculated if omitted)
-  bar_background_color: "#DFDFDF"  # Progress bar background in `resume_with_bars` template
-  date2_color: "#616161"          # Secondary date text
-  frame_color: "#757575"          # Preview frame in web preview
+  theme_color: "#0395DE"
+  sidebar_color: "#F6F6F6"
+  sidebar_text_color: "#000000"
+  bar_background_color: "#DFDFDF"
+  date2_color: "#616161"
+  frame_color: "#757575"
+  bold_color: "#585858"
 ```
-
-The contact icons automatically use the `sidebar_text_color`, so you don't need to
-worry about them when using a dark sidebar.
 
 ## Using Color Schemes
 
-You can use one of our preset color schemes, create your own custom scheme, or use
-external palette files.
-
 ### Preset Schemes
 
-To use a preset scheme, simply add the `color_scheme` property to your `config` section:
+The easiest way to change the look of your resume is to use one of the built-in color schemes.
 
 ```yaml
 config:
   color_scheme: "Professional Blue"
 ```
 
-Here are the available presets:
+The following presets are available:
 
-- **Professional Blue (Default)**: A high-contrast blue suitable for both screen and print.
-- **Creative Purple**: A saturated purple, best for screen viewing.
-- **Minimal Dark**: Charcoal and neutral grays.
-- **Energetic Orange**: A high-saturation orange.
-- **Modern Teal**: A medium-saturation teal.
-- **Classic Green**: A WCAG AA compliant green.
+-   **Professional Blue** (default): A high-contrast blue suitable for both screen and print.
+-   **Creative Purple**: A saturated purple, best for screen viewing.
+-   **Minimal Dark**: A theme with charcoal and neutral grays.
+-   **Energetic Orange**: A high-saturation orange.
+-   **Modern Teal**: A medium-saturation teal.
+-   **Classic Green**: A WCAG AA compliant green.
 
 ### Custom Schemes
 
-To create your own scheme, define the individual color properties in your `config` section.
-A good way to start is to copy a preset and modify it.
+You can define your own color scheme by setting the color properties directly in your YAML file.
 
 ```yaml
 config:
   theme_color: "#0395DE"
   sidebar_color: "#F6F6F6"
-  # ... and so on
 ```
 
-All colors must be quoted hexadecimal strings (e.g., `"#0395DE"`).
+## Using Palette Files
 
-## Standalone Palette Files
+For more advanced and reusable color configurations, you can use palette files. A palette file is a YAML file that defines a set of colors.
 
-For more complex or reusable color configurations, you can use standalone palette files. This is useful for creating multiple color variations of the same resume or sharing color schemes.
+To use a palette file, pass the path to the file using the `--palette` command-line argument.
 
-### Creating a Palette File
+```bash
+uv run simple-resume generate --palette resume_private/palettes/my-theme.yaml
+```
 
-A palette file is a YAML file that contains a `palette` object. There are two ways to define a palette:
+### Direct Color Palettes
 
-#### 1. Direct Color Definitions
+A direct color palette file defines the exact colors to be used.
 
-You can define colors directly using key-value pairs. This is useful for matching brand colors or creating print-optimized palettes.
-
-**`palettes/direct-theme.yaml`**
-
+**`resume_private/palettes/direct-theme.yaml`**
 ```yaml
 palette:
   theme_color: "#4060A0"
@@ -78,14 +77,15 @@ palette:
   bar_background_color: "#B8B8B8"
   date2_color: "#444444"
   sidebar_text_color: "#333333"
+  frame_color: "#324970"
+  bold_color: "#263657"
 ```
 
-#### 2. Generated Palettes
+### Generated Palettes
 
-You can also generate a palette procedurally using the HCL-based generator.
+You can also generate a palette of colors based on a set of parameters. This is useful for creating a consistent set of colors from a single seed color.
 
-**`palettes/generated-theme.yaml`**
-
+**`resume_private/palettes/generated-theme.yaml`**
 ```yaml
 palette:
   source: generator
@@ -97,26 +97,16 @@ palette:
   chroma: 0.25
 ```
 
-### Using a Palette File
+## Verifying Colors
 
-To use a palette file, pass it to the `--palette` option when generating your resume:
+To check how your colors will look, generate the resume in both HTML and PDF formats. The HTML preview is useful for quick iteration, but the PDF will give you the most accurate representation of the final printed colors.
 
 ```bash
-uv run simple-resume generate --palette palettes/direct-theme.yaml
+uv run simple-resume generate --format html --open
+uv run simple-resume generate --format pdf --open
 ```
-
-The colors in the palette file will be merged with your resume's configuration.
-
-## Testing Your Colors
-
-To see your color scheme in action, you can:
-
-- **Generate an HTML preview**: `uv run simple-resume generate --format html --open`
-- **Generate a PDF**: `uv run simple-resume generate --format pdf --open`
-
-Always generate a test PDF, as colors can render differently in print.
 
 ## Troubleshooting
 
-- **Colors not appearing**: Make sure your color values are quoted strings with a leading `#`.
-- **Poor readability**: Check the contrast between your text and background colors.
+-   **Colors are not being applied:** Ensure that the color values are enclosed in quotes and start with a `#`.
+-   **Text is hard to read:** Check the contrast between your text and background colors. You can use an online contrast checker to ensure your color combinations are accessible.

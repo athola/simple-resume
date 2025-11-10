@@ -10,12 +10,13 @@ from unittest.mock import Mock, patch
 import pytest
 
 from simple_resume.palettes.cli import build_parser, cmd_list, cmd_snapshot, main
+from tests.bdd import Scenario
 
 
 class TestCmdSnapshot:
     """Test the snapshot command functionality."""
 
-    def test_cmd_snapshot_prints_to_stdout(self, story) -> None:
+    def test_cmd_snapshot_prints_to_stdout(self, story: Scenario) -> None:
         args = argparse.Namespace(output=None)
 
         with patch(
@@ -34,7 +35,7 @@ class TestCmdSnapshot:
         assert printed_data == {"test": "data"}
         assert result == 0
 
-    def test_cmd_snapshot_writes_to_file(self, story, tmp_path: Path) -> None:
+    def test_cmd_snapshot_writes_to_file(self, story: Scenario, tmp_path: Path) -> None:
         output_file = tmp_path / "snapshot.json"
         # Use argparse.FileType to create a real file object
         with output_file.open("w", encoding="utf-8") as file_obj:
@@ -57,7 +58,7 @@ class TestCmdSnapshot:
         data = json.loads(content.strip())
         assert data == {"palettes": ["red", "blue", "green"]}
 
-    def test_cmd_snapshot_calls_build_function(self, story) -> None:
+    def test_cmd_snapshot_calls_build_function(self, story: Scenario) -> None:
         args = argparse.Namespace(output=None)
 
         with patch(
@@ -75,7 +76,7 @@ class TestCmdSnapshot:
 class TestCmdList:
     """Test the list command functionality."""
 
-    def test_cmd_list_prints_palettes(self, story) -> None:
+    def test_cmd_list_prints_palettes(self, story: Scenario) -> None:
         args = argparse.Namespace()
 
         # Mock palette registry
@@ -101,7 +102,7 @@ class TestCmdList:
             "#000000",
         ]
 
-        with patch("simple_resume.palettes.cli.get_global_registry") as mock_registry:
+        with patch("simple_resume.palettes.cli.get_palette_registry") as mock_registry:
             mock_registry.return_value.list.return_value = [
                 mock_palette1,
                 mock_palette2,
@@ -122,10 +123,10 @@ class TestCmdList:
         )
         assert result == 0
 
-    def test_cmd_list_handles_empty_registry(self, story) -> None:
+    def test_cmd_list_handles_empty_registry(self, story: Scenario) -> None:
         args = argparse.Namespace()
 
-        with patch("simple_resume.palettes.cli.get_global_registry") as mock_registry:
+        with patch("simple_resume.palettes.cli.get_palette_registry") as mock_registry:
             mock_registry.return_value.list.return_value = []
 
             with patch("builtins.print") as mock_print:
@@ -136,7 +137,7 @@ class TestCmdList:
         mock_print.assert_not_called()
         assert result == 0
 
-    def test_cmd_list_limits_swatches_display(self, story) -> None:
+    def test_cmd_list_limits_swatches_display(self, story: Scenario) -> None:
         args = argparse.Namespace()
 
         mock_palette = Mock()
@@ -151,7 +152,7 @@ class TestCmdList:
             "#9400D3",
         ]
 
-        with patch("simple_resume.palettes.cli.get_global_registry") as mock_registry:
+        with patch("simple_resume.palettes.cli.get_palette_registry") as mock_registry:
             mock_registry.return_value.list.return_value = [mock_palette]
 
             with patch("builtins.print") as mock_print:
@@ -167,14 +168,14 @@ class TestCmdList:
 class TestBuildParser:
     """Test argument parser construction."""
 
-    def test_build_parser_creates_subparsers(self, story) -> None:
+    def test_build_parser_creates_subparsers(self, story: Scenario) -> None:
         parser = build_parser()
 
         story.then("the parser has a description and subcommands")
         assert parser.description == "Palette utilities"
         assert parser._subparsers is not None
 
-    def test_build_parser_has_snapshot_command(self, story) -> None:
+    def test_build_parser_has_snapshot_command(self, story: Scenario) -> None:
         parser = build_parser()
 
         # Test parsing snapshot command
@@ -184,7 +185,11 @@ class TestBuildParser:
         assert args.output is None
         assert callable(args.func)
 
-    def test_build_parser_snapshot_with_output(self, story, tmp_path: Path) -> None:
+    def test_build_parser_snapshot_with_output(
+        self,
+        story: Scenario,
+        tmp_path: Path,
+    ) -> None:
         parser = build_parser()
         tmp_file = tmp_path / "test.json"
 
@@ -194,7 +199,7 @@ class TestBuildParser:
         story.then("the output FileType points at the requested path")
         assert args.output.name == str(tmp_file)
 
-    def test_build_parser_has_list_command(self, story) -> None:
+    def test_build_parser_has_list_command(self, story: Scenario) -> None:
         parser = build_parser()
 
         args = parser.parse_args(["list"])
@@ -202,7 +207,7 @@ class TestBuildParser:
         assert args.command == "list"
         assert callable(args.func)
 
-    def test_build_parser_requires_command(self, story) -> None:
+    def test_build_parser_requires_command(self, story: Scenario) -> None:
         parser = build_parser()
 
         with pytest.raises(SystemExit):
@@ -213,7 +218,7 @@ class TestBuildParser:
 class TestMainFunction:
     """Test the main CLI entry point."""
 
-    def test_main_calls_correct_command_function(self, story) -> None:
+    def test_main_calls_correct_command_function(self, story: Scenario) -> None:
         with patch("simple_resume.palettes.cli.build_parser") as mock_build_parser:
             mock_parser = Mock()
             mock_parser.parse_args.return_value = Mock(func=Mock(return_value=42))
@@ -230,7 +235,7 @@ class TestMainFunction:
         mock_parser.parse_args.return_value.func.assert_called_once()
         assert result == 42
 
-    def test_main_uses_default_argv(self, story) -> None:
+    def test_main_uses_default_argv(self, story: Scenario) -> None:
         with patch("simple_resume.palettes.cli.build_parser") as mock_build_parser:
             mock_parser = Mock()
             mock_parser.parse_args.return_value = Mock(func=Mock(return_value=0))

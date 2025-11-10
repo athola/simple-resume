@@ -11,7 +11,7 @@ from .exceptions import (
     PaletteRemoteError,
 )
 from .generators import generate_hcl_palette
-from .registry import Palette, PaletteRegistry, get_global_registry
+from .registry import Palette, PaletteRegistry, get_palette_registry
 from .sources import (
     ColourLoversClient,
     ensure_bundled_palettes_loaded,
@@ -22,7 +22,7 @@ __all__ = [
     "Palette",
     "PaletteRegistry",
     "generate_hcl_palette",
-    "get_global_registry",
+    "get_palette_registry",
     "load_default_palettes",
     "ensure_bundled_palettes_loaded",
     "ColourLoversClient",

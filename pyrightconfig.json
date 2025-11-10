@@ -2,7 +2,7 @@
   "include": ["src"],
   "venvPath": ".",
   "venv": ".venv",
-  "pythonVersion": "3.10",
+  "pythonVersion": "3.12",
   "executionEnvironments": [
     {
       "root": ".",

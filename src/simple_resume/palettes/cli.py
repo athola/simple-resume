@@ -7,7 +7,7 @@ import argparse
 import json
 import sys
 
-from .registry import get_global_registry
+from .registry import get_palette_registry
 from .sources import build_palettable_registry_snapshot
 
 
@@ -25,7 +25,7 @@ def cmd_snapshot(args: argparse.Namespace) -> int:
 
 def cmd_list(_: argparse.Namespace) -> int:
     """List all available palette names with preview colors."""
-    registry = get_global_registry()
+    registry = get_palette_registry()
     for palette in registry.list():
         print(f"{palette.name}: {', '.join(palette.swatches[:6])}")
     return 0

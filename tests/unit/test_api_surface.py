@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import simple_resume
+from tests.bdd import Scenario
 
 EXPECTED_PUBLIC_SYMBOLS = {
     "__version__",
@@ -33,7 +34,7 @@ EXPECTED_PUBLIC_SYMBOLS = {
 }
 
 
-def test_public_api_surface_matches_reference(story) -> None:
+def test_public_api_surface_matches_reference(story: Scenario) -> None:
     story.given("the curated __all__ list defines the stable API surface")
 
     story.when("reading simple_resume.__all__")

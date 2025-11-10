@@ -1,45 +1,51 @@
 # Development Guide
 
-This guide covers setting up a local development environment for Simple-Resume.
+This guide sets up a local development environment for `simple-resume`.
 
-## Setup
+## Environment Setup
 
-1.  Fork and clone the repository.
-2.  Install dependencies:
+1.  **Fork and clone the repository:**
+
+    Fork the repository on GitHub, then clone it locally.
+
+2.  **Install dependencies:**
+
+    This project uses `uv` for dependency management. Install all development and optional dependencies with:
 
     ```bash
-    uv sync
+    uv sync --dev --extra utils
     ```
 
-## Running Checks
+## Running Code Quality Checks
 
-We use a `Makefile` for common development tasks.
+A `Makefile` simplifies common development tasks.
 
-### Testing
+### Running Tests
 
-Run unit and integration tests:
+Run the full test suite, including unit and integration tests, with:
 
 ```bash
 make test
 ```
 
-### Code Quality
+### Linting and Formatting
 
-We use `ruff` for linting and formatting.
-
-Run all checks (linting, formatting, type-checking):
+`ruff` handles linting and code formatting. Run all checks, including linting, formatting, and type-checking, with:
 
 ```bash
 make check-all
 ```
 
-Or run individual checks:
+You can also run individual checks:
 
 ```bash
+# Run the linter
 make lint
+
+# Format the code
 make format
 ```
 
 ## Contributing
 
-Before contributing, read our [Contributing Guide](Contributing.md) for information on the development process and submitting pull requests.
+Before starting, read the [Contributing Guide](Contributing.md) for information on the development process, coding standards, and submitting pull requests.

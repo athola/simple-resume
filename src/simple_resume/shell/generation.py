@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any, Protocol, TextIO, cast
 
 from .. import config
-from ..core.resume import RenderPlan, Resume
+from ..core.resume import RenderMode, RenderPlan, Resume
 from ..latex_renderer import (
     LatexCompilationError,
     compile_tex_to_html,
@@ -157,11 +157,11 @@ class PrintLogger:
 
     def succeeded(self, name: str, output_path: Path) -> None:
         """Emit a success message after generation."""
-        print(f"✓ Generated: {output_path}", file=self._stdout)
+        print(f"Generated: {output_path}", file=self._stdout)
 
     def failed(self, name: str, output_path: Path, error: Exception) -> None:
         """Emit a failure message when generation raises."""
-        print(f"✗ Failed to generate {output_path.name}: {error}", file=self._stderr)
+        print(f"Failed to generate {output_path.name}: {error}", file=self._stderr)
 
 
 @dataclass(frozen=True)
@@ -295,7 +295,7 @@ class ResumeGenerator:
         )
 
         # Execute the plan (I/O)
-        if plan.mode == "latex":
+        if plan.mode is RenderMode.LATEX:
             self._execute_latex_plan(plan, output_file, open_after)
         else:
             self._execute_html_pdf_plan(plan, output_file, open_after)
@@ -324,7 +324,7 @@ class ResumeGenerator:
         )
 
         # Execute the plan (I/O)
-        if plan.mode == "latex":
+        if plan.mode is RenderMode.LATEX:
             self._execute_latex_html_plan(plan, output_file, open_after, browser)
         else:
             self._execute_html_plan(plan, output_file, open_after, browser)
