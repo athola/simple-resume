@@ -29,6 +29,8 @@ Initial public release.
 -   `sample_contrast_demo.yaml` - Color contrast accessibility examples
 -   **Architecture documentation**: Added functional core-shell inventory and API surface design documentation.
 -   **Enhanced wiki**: Added new guides for color schemes, migration, and PDF renderer evaluation.
+-   **LaTeX documentation**: Added comprehensive LaTeX support documentation to README.md with configuration examples and compilation instructions
+-   **Enhanced README**: Improved Custom Styling section with LaTeX subsection and proper linking to Usage Guide
 
 ### Changed
 

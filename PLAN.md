@@ -32,6 +32,8 @@ This document outlines the `simple-resume` development plan.
 -   [x] **Comprehensive sample files**: Added demo resumes showcasing all features.
 -   [x] **Architecture documentation**: Added functional core-shell design docs.
 -   [x] **Error handling improvements**: Enhanced exception hierarchy and validation.
+-   [x] **LaTeX documentation**: Added comprehensive LaTeX support documentation with examples and compilation instructions.
+-   [x] **Enhanced README**: Improved documentation structure with better LaTeX support coverage.
 -   [ ] Improve error messages for user-friendliness.
 -   [ ] Add "live preview" feature to web UI.
 

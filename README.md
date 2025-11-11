@@ -149,6 +149,28 @@ uv run simple-resume generate --palette "Professional Blue"
 uv run simple-resume generate --palette resume_private/palettes/my-theme.yaml
 ```
 
+#### LaTeX Support
+
+Generate LaTeX source files for advanced typesetting capabilities. This requires a LaTeX distribution (like TeX Live, MiKTeX, or MacTeX) to be installed on your system.
+
+```yaml
+# In your YAML file
+config:
+  output_mode: latex
+```
+
+When `output_mode: latex` is set, the generate command produces a `.tex` file instead of PDF or HTML. This gives you full control over typesetting, custom fonts, mathematical equations, and academic formatting.
+
+```bash
+# Generate LaTeX source (configured via YAML)
+uv run simple-resume generate
+
+# Compile with pdflatex (requires LaTeX installation)
+pdflatex resume_output.tex
+```
+
+For detailed LaTeX configuration and examples, see the [LaTeX Output section in the Usage Guide](wiki/Usage-Guide.md#latex-output).
+
 ### 5. API Utilities
 
 The API includes color utilities, for example, to calculate an accessible text color for a given background.

@@ -73,7 +73,44 @@ preview("resume_private/input/my_resume.yaml", open_after=True)
 
 To generate a `.tex` file for a LaTeX engine, set `output_mode: latex` in your YAML file. This requires a LaTeX distribution to be installed.
 
-With this setting, the `generate` command produces a `.tex` file instead of HTML or PDF.
+```yaml
+config:
+  output_mode: latex
+```
+
+With this setting, the `generate` command produces a `.tex` file instead of HTML or PDF. This gives you full control over typesetting, custom fonts, mathematical equations, and academic formatting.
+
+#### LaTeX Requirements
+
+You need a LaTeX distribution installed on your system:
+- **TeX Live** (cross-platform)
+- **MiKTeX** (Windows)
+- **MacTeX** (macOS)
+
+#### Compilation
+
+Once generated, compile the `.tex` file with your preferred LaTeX engine:
+
+```bash
+# Generate LaTeX source (configured via YAML)
+uv run simple-resume generate
+
+# Compile with pdflatex
+pdflatex resume_output.tex
+
+# Or with XeLaTeX/LuaLaTeX for better font support
+xelatex resume_output.tex
+lualatex resume_output.tex
+```
+
+#### Benefits of LaTeX Output
+
+- **Professional typesetting**: Superior typography and layout control
+- **Mathematical equations**: Full support for complex mathematical notation
+- **Custom fonts**: Access to extensive font libraries
+- **Academic compatibility**: Ideal for academic and research applications
+- **Version control**: Plain text format that works well with Git
+- **Cross-platform**: Consistent output across different operating systems
 
 ### Colors
 
