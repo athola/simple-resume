@@ -60,6 +60,13 @@ def _calculate_luminance_from_rgb(rgb: tuple[int, int, int]) -> float:
     r_linear = _linearize(r)
     g_linear = _linearize(g)
     b_linear = _linearize(b)
+
+    # Calculate relative luminance using sRGB BT.709 coefficients
+    # These coefficients represent human eye sensitivity to different color wavelengths:
+    # - 0.2126: Red channel contribution (humans are least sensitive to red)
+    # - 0.7152: Green channel contribution (humans are most sensitive to green)
+    # - 0.0722: Blue channel contribution (humans are least sensitive to blue)
+    # Formula from WCAG 2.0 and ITU-R BT.709 standards for accessibility calculations
     return 0.2126 * r_linear + 0.7152 * g_linear + 0.0722 * b_linear
 
 

@@ -25,7 +25,7 @@ from .result import BatchGenerationResult, GenerationResult
 
 @dataclass
 class SessionConfig:
-    """Define configuration for a `ResumeSession`."""
+    """Configuration for a `ResumeSession`."""
 
     paths: Paths | None = None
     default_template: str | None = None
@@ -55,7 +55,6 @@ class ResumeSession:
     - State management for path resolution.
     - Batch operations support.
     - Resource cleanup.
-    - Performance optimization through connection reuse (when applicable).
 
     Usage:
         with ResumeSession(data_dir="my_resumes") as session:
@@ -274,10 +273,14 @@ class ResumeSession:
                 # Load and generate resume
                 resume = self.resume(resume_name, use_cache=True)
 
+                # Apply config overrides (like palette_file) to resume
+                if kwargs:
+                    resume = resume.with_config(**kwargs)
+
                 if format_enum is OutputFormat.PDF:
-                    result = resume.to_pdf(open_after=open_after, **kwargs)
+                    result = resume.to_pdf(open_after=open_after)
                 else:  # html
-                    result = resume.to_html(open_after=open_after, **kwargs)
+                    result = resume.to_html(open_after=open_after)
 
                 results[resume_name] = result
                 self._generation_times.append(time.time() - start_time)

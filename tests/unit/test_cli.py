@@ -406,7 +406,11 @@ class TestHandleValidateCommand:
 
         # Mock resume and validation (no exception = success)
         mock_resume = Mock()
-        mock_resume.validate_or_raise.return_value = None  # No exception = success
+        mock_validation_result = Mock()
+        mock_validation_result.warnings = []
+        mock_resume.validate_or_raise.return_value = (
+            mock_validation_result  # No exception = success
+        )
         mock_resume_class.read_yaml.return_value = mock_resume
 
         result = handle_validate_command(args)

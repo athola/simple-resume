@@ -2,16 +2,6 @@
 
 This guide explains migrating to the latest `simple-resume` version. The new version features improved error handling, a new programmatic API, and a consolidated CLI under the `simple-resume` command.
 
-## Table of Contents
-
-- [Who Should Read This](#who-should-read-this)
-- [Breaking Changes Summary](#breaking-changes-summary)
-- [Quick Migration Example](#quick-migration-example)
-- [Detailed Migration Steps](#detailed-migration-steps)
-- [New Features](#new-features)
-- [Migration Checklist](#migration-checklist)
-- [Getting Help](#getting-help)
-
 ## Who Should Read This
 
 -   **CLI Users** (Low Impact): If you only use command-line tools, switch to the new `simple-resume generate` command and update YAML files.
@@ -37,6 +27,7 @@ This guide explains migrating to the latest `simple-resume` version. The new ver
 The `template` property moved from the `config` section to the YAML file's root.
 
 **Before (v0.0.x):**
+
 ```yaml
 config:
   template: resume_with_bars
@@ -45,6 +36,7 @@ config:
 ```
 
 **After (v0.1.0+):**
+
 ```yaml
 template: resume_with_bars
 config:
@@ -57,6 +49,7 @@ config:
 The commands now use a single entry point.
 
 **Before (v0.0.x):**
+
 ```bash
 # Old direct Python file execution
 uv run python src/simple_resume/generate_pdf.py --data-dir resume_private
@@ -64,6 +57,7 @@ uv run python src/simple_resume/generate_html.py --open
 ```
 
 **After (v0.1.0+):**
+
 ```bash
 # Unified CLI command
 uv run simple-resume generate --format pdf --data-dir resume_private
@@ -77,6 +71,7 @@ uv run simple-resume generate --format html --open
 The API restructured for greater functionality.
 
 **Before (v0.0.x):**
+
 ```python
 from simple_resume.generation import generate_pdf as generate_pdf_cli
 
@@ -85,6 +80,7 @@ generate_pdf_cli()
 ```
 
 **After (v0.1.0+):**
+
 ```python
 from simple_resume.generation import generate_pdf
 
@@ -117,6 +113,7 @@ with ResumeSession(data_dir="resumes/") as session:
 **Reason**: This change separates structural (template) from styling (colors) configuration.
 
 **Validation**:
+
 ```bash
 # Test your updated YAML files
 uv run simple-resume generate --format pdf --data-dir your_dir
@@ -133,6 +130,7 @@ uv run simple-resume generate --format pdf --data-dir your_dir
 **Action**: If using `simple-resume` as a library, migrate code from old CLI-style imports to the new generation API.
 
 **Before (v0.0.x):**
+
 ```python
 from simple_resume.generation import generate_pdf as generate_resume_pdf
 from simple_resume.utilities import load_yaml_data
@@ -142,6 +140,7 @@ pdf_path = generate_resume_pdf(data, "output.pdf")
 ```
 
 **After (v0.1.0+):**
+
 ```python
 from simple_resume.generation import generate_pdf
 from simple_resume.core.resume import Resume
@@ -162,6 +161,7 @@ result = resume.to_pdf("output.pdf")
 **Action**: If catching exceptions from `simple-resume`, update code to catch new, more specific exceptions.
 
 **Before (v0.0.x):**
+
 ```python
 try:
     generate_pdf_cli()
@@ -170,6 +170,7 @@ except Exception as e:
 ```
 
 **After (v0.1.0+):**
+
 ```python
 from simple_resume.exceptions import (
     ResumeValidationError,
@@ -190,6 +191,7 @@ except FileOperationError as e:
 ```
 
 **Exception Hierarchy**:
+
 ```text
 Simple-ResumeError (base)
 ├── ResumeValidationError    # Invalid YAML structure

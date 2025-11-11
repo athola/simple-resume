@@ -22,10 +22,16 @@ This document outlines the `simple-resume` development plan.
 -   [x] Optimized print-friendly color palettes for black/white contrast.
 -   [x] Fixed external palette validation conflicts.
 
-## Phase 2: Documentation and Usability
+## Phase 2: Documentation and Usability (Completed)
 
 -   [x] Expanded wiki with detailed guides.
 -   [x] Published stability policy and API reference (`docs/reference.md`).
+-   [x] **Major architectural refactor**: Migrated to functional core, imperative shell architecture.
+-   [x] **Enhanced API surface**: Redesigned Resume class with pandas-like symmetric I/O patterns.
+-   [x] **Improved session management**: Enhanced ResumeSession with caching and statistics.
+-   [x] **Comprehensive sample files**: Added demo resumes showcasing all features.
+-   [x] **Architecture documentation**: Added functional core-shell design docs.
+-   [x] **Error handling improvements**: Enhanced exception hierarchy and validation.
 -   [ ] Improve error messages for user-friendliness.
 -   [ ] Add "live preview" feature to web UI.
 

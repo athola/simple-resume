@@ -23,7 +23,7 @@ _A CLI tool for generating resumes from YAML files._
 
 # Simple-Resume
 
-This tool generates PDF, HTML, and LaTeX resumes from a single YAML source file. This approach allows version-controllable resume content, with different templates and color schemes. Use it as a command-line utility or Python library.
+This tool generates PDF, HTML, and LaTeX resumes from a single YAML source file. This lets you version-control your resume content and apply different templates or color schemes. Use it as a command-line utility or Python library.
 
 ## Getting Started
 
@@ -54,7 +54,7 @@ pip install -e .
 
 ### 1. Create Your Resume
 
-Create a YAML file with resume content. The `template` field specifies the base template.
+Create a YAML file with your resume content. The `template` field specifies which base template to use.
 
 ```yaml
 # resume_private/input/my_resume.yaml
@@ -100,7 +100,7 @@ body:
 
 ### 2. Generate Resume
 
-Use `simple-resume generate` to create resumes in different formats.
+Use `simple-resume generate` to create your resume in PDF or HTML format.
 
 ```bash
 # Generate a PDF
@@ -115,19 +115,26 @@ uv run simple-resume generate --format pdf --open
 
 ### 3. Use the Python API
 
-The tool can also be used as a library.
+The tool can also be used as a library, providing a chained API for configuration.
 
 ```python
-from simple_resume import generate, preview
-from simple_resume.generation import GenerateOptions
+from simple_resume import Resume
+from simple_resume.session import ResumeSession
 
-# Generate PDF and HTML files
-results = generate(
-    "resume_private/input/my_resume.yaml", GenerateOptions(formats=("pdf", "html"))
-)
+# Method 1: Direct, single-file conversion
+resume = Resume.read_yaml("resume_private/input/my_resume.yaml")
+result = resume.to_pdf(open_after=True)
+html_result = resume.to_html()
 
-# Preview the resume (opens in a web browser)
-preview("resume_private/input/my_resume.yaml", open_after=True)
+# Method 2: Use a session for consistent settings across multiple resumes
+with ResumeSession(data_dir="resume_private") as session:
+    resume = session.resume("my_resume")
+    # Apply different styles with method chaining
+    dark_resume = resume.with_palette("Professional Blue").with_template("resume_base")
+    result = dark_resume.to_pdf(open_after=True)
+
+    # Generate all resumes in batch
+    batch_results = session.generate_all(format="pdf", open_after=False)
 ```
 
 ### 4. Custom Styling
@@ -144,7 +151,7 @@ uv run simple-resume generate --palette resume_private/palettes/my-theme.yaml
 
 ### 5. API Utilities
 
-The API includes helper functions, for example, to calculate text color based on background.
+The API includes color utilities, for example, to calculate an accessible text color for a given background.
 
 ```python
 from simple_resume.api import colors
@@ -158,6 +165,9 @@ assert accent == "#000000"
 - **[Getting Started](wiki/Getting-Started.md)**
 - **[Usage Guide](wiki/Usage-Guide.md)**
 - **[Development Guide](wiki/Development-Guide.md)**
+- **[Migration Guide](wiki/Migration-Guide.md)** - For upgrading from earlier versions
+- **[Color Schemes](wiki/Color-Schemes.md)** - For creating and using custom palettes
+- **[Workflows](wiki/Workflows.md)** - Common patterns and examples
 - **[API Reference](docs/reference.md)**
 
 ## Getting Help

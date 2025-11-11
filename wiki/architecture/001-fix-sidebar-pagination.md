@@ -25,6 +25,7 @@ Decision: Implement a CSS-only solution for sidebar content to flow across pages
 Sidebar container changed from `position: absolute` to `position: relative` with `float: left`. This allows content to reflow correctly on page breaks.
 
 **Before:**
+
 ```css
 .sidebar-container {
   position: absolute;
@@ -36,6 +37,7 @@ Sidebar container changed from `position: absolute` to `position: relative` with
 ```
 
 **After:**
+
 ```css
 .sidebar-container {
   position: relative;

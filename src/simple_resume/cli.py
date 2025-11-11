@@ -22,13 +22,12 @@ from .core.generation_plan import (
 from .core.resume import Resume
 from .exceptions import GenerationError, SimpleResumeError, ValidationError
 from .generation import execute_generation_commands
-from .generation import generate_resume as _generate_resume
 from .result import BatchGenerationResult, GenerationResult
 from .session import ResumeSession, SessionConfig
 
 
 class GenerationResultProtocol(Protocol):
-    """Define a protocol for objects representing generation results."""
+    """A protocol for objects representing generation results."""
 
     @property
     def exists(self) -> bool:
@@ -88,9 +87,6 @@ def _handle_unexpected_error(exc: Exception, context: str) -> int:
         print(f"Suggestion: {suggestion}")
 
     return exit_code
-
-
-generate_resume = _generate_resume
 
 
 def main() -> int:
@@ -379,6 +375,16 @@ def _summarize_batch_result(
     result: GenerationResult | BatchGenerationResult,
     format_type: OutputFormat | str,
 ) -> int:
+    """Summarize batch generation results for CLI output.
+
+    Args:
+        result: The batch generation result object.
+        format_type: The format type (e.g., PDF, HTML).
+
+    Returns:
+        An exit code (0 for success, 1 for partial failure).
+
+    """
     label = format_type.value if isinstance(format_type, OutputFormat) else format_type
     if isinstance(result, BatchGenerationResult):
         latex_skips: list[str] = []
@@ -407,7 +413,7 @@ def _summarize_batch_result(
     return 0 if _did_generation_succeed(result) else 1
 
 
-def _did_generation_succeed(result: GenerationResultProtocol) -> bool:
+def _did_generation_succeed(result: GenerationResult) -> bool:
     """Check if generation succeeded.
 
     Args:
@@ -572,29 +578,27 @@ def _normalize_warnings(warnings: Any) -> list[str]:
     return [str(warnings)]
 
 
-def _normalize_errors(errors: Any, fallback: list[str]) -> list[str]:
+def _normalize_errors(errors: Any, default: list[str]) -> list[str]:
     """Normalize errors to a list of strings, with a default if empty."""
     if isinstance(errors, (list, tuple, set)):
         return [str(error) for error in errors if error]
     if errors:
         return [str(errors)]
-    return fallback
+    return default
 
 
 def _validate_single_resume_cli(name: str, data_dir: Path | None) -> int:
     paths = resolve_paths(data_dir=data_dir) if data_dir else None
     resume = Resume.read_yaml(name, paths=paths)
-    validation = resume.validate()
     try:
-        resume.validate_or_raise()
+        validation = resume.validate_or_raise()
     except ValidationError as exc:
-        errors = _normalize_errors(getattr(validation, "errors", None), exc.errors)
-        if not errors:
-            errors = [str(exc)]
+        errors = _normalize_errors([], exc.errors)
         print(f"Error - {name}: {'; '.join(errors)}")
         return 1
 
-    warnings = _normalize_warnings(getattr(validation, "warnings", []))
+    # Use the validation result from validate_or_raise() - no redundant calls
+    warnings = _normalize_warnings(validation.warnings)
     if warnings:
         for warning in warnings:
             print(f"Warning - {name}: {warning}")
@@ -615,19 +619,15 @@ def _validate_all_resumes_cli(data_dir: Path | None) -> int:
         for file_path in yaml_files:
             resume_name = Path(file_path).stem
             resume = session.resume(resume_name)
-            validation = resume.validate()
             try:
-                resume.validate_or_raise()
+                validation = resume.validate_or_raise()
             except ValidationError as exc:
-                errors = _normalize_errors(
-                    getattr(validation, "errors", None), exc.errors
-                )
-                if not errors:
-                    errors = [str(exc)]
+                errors = _normalize_errors([], exc.errors)
                 print(f"Error - {resume_name}: {'; '.join(errors)}")
                 continue
 
-            warnings = _normalize_warnings(getattr(validation, "warnings", []))
+            # Use the validation result from validate_or_raise() - no redundant calls
+            warnings = _normalize_warnings(validation.warnings)
             if warnings:
                 for warning in warnings:
                     print(f"Warning - {resume_name}: {warning}")
@@ -676,6 +676,15 @@ def _looks_like_palette_file(palette: str | Path) -> bool:
 
 
 def _build_config_overrides(args: argparse.Namespace) -> dict[str, Any]:
+    """Construct a dictionary of configuration overrides from CLI arguments.
+
+    Args:
+        args: The parsed command-line arguments.
+
+    Returns:
+        A dictionary of configuration overrides.
+
+    """
     overrides: dict[str, Any] = {}
     theme_color = getattr(args, "theme_color", None)
     palette = getattr(args, "palette", None)
@@ -737,6 +746,15 @@ def _build_plan_options(
 
 
 def _execute_generation_plan(commands: list[GenerationCommand]) -> int:
+    """Execute a list of generation commands and summarize their results for CLI output.
+
+    Args:
+        commands: A list of `GenerationCommand` objects to execute.
+
+    Returns:
+        An exit code (0 for full success, non-zero for any failures).
+
+    """
     exit_code = 0
     executions = execute_generation_commands(commands)
     for command, result in executions:

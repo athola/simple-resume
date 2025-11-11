@@ -7,6 +7,7 @@ to the pure core functions.
 
 from __future__ import annotations
 
+import logging
 import os
 import shutil
 
@@ -20,6 +21,7 @@ from typing import Any, Protocol, TextIO, cast
 
 from .. import config
 from ..core.resume import RenderMode, RenderPlan, Resume
+from ..exceptions import GenerationError
 from ..latex_renderer import (
     LatexCompilationError,
     compile_tex_to_html,
@@ -421,12 +423,21 @@ class ResumeGenerator:
         tex_path = output_file.parent / f"{output_file.stem}.tex"
         tex_path.write_text(plan.tex, encoding="utf-8")
 
+        html_path = None
         try:
             html_path = compile_tex_to_html(tex_path)
-        finally:
+        except Exception as exc:
+            self._cleanup_latex_artifacts(tex_path)
+            raise GenerationError(
+                f"LaTeX to HTML conversion failed: {exc}",
+                format_type="html",
+                output_path=str(output_file),
+                filename=plan.name,
+            ) from exc
+        else:
             self._cleanup_latex_artifacts(tex_path)
 
-        if open_after:
+        if open_after and html_path:
             self._open_in_browser(html_path, browser)
 
     def _resolve_paths(
@@ -499,8 +510,8 @@ class ResumeGenerator:
             try:
                 if candidate.exists():
                     candidate.unlink()
-            except OSError:
-                continue
+            except OSError as e:
+                logging.warning("Failed to unlink LaTeX artifact %s: %s", candidate, e)
 
     def _open_file(self, path: str) -> None:
         """Open a file with the OS default PDF viewer."""

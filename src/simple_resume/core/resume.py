@@ -1,8 +1,7 @@
 """Provide core resume data transformations as pure functions without side effects.
 
-This module contains the functional core of the resume system. All functions
-here are pure data transformations that take inputs and return outputs without
-external dependencies or side effects.
+All functions here are pure data transformations that take inputs and return outputs
+without external dependencies or side effects.
 """
 
 from __future__ import annotations
@@ -41,12 +40,14 @@ from ..result import GenerationMetadata, GenerationResult
 from ..utilities import (
     get_content,
     load_palette_from_file,
+    normalize_config,
     render_markdown_content,
 )
 from . import html_generation as _html_generation
 from . import pdf_generation as _pdf_generation
 from .io_utils import candidate_yaml_path, resolve_paths_for_read
 from .models import RenderPlan, ResumeConfig, ValidationResult
+from .pdf_generation import LatexGenerationContext
 from .plan import (
     prepare_render_data as plan_prepare_render_data,
 )
@@ -73,9 +74,9 @@ def _temporary_backend_bindings(
 
 
 class Resume:
-    """Provide an enhanced Resume class with symmetric I/O and method chaining support.
+    """Manage resume operations with symmetric I/O and method chaining support.
 
-    This class provides a pandas-like API for resume operations, featuring:
+    This class provides an API for resume operations, featuring:
     - Symmetric read/write methods (`read_yaml`/`to_pdf`/`to_html`).
     - Method chaining for fluent interfaces.
     - Rich result objects.
@@ -126,7 +127,7 @@ class Resume:
         transform_markdown: bool = True,
         **path_overrides: str | Path,
     ) -> Resume:
-        """Load a resume from a YAML file (pandas-style pattern).
+        """Load a resume from a YAML file.
 
         Args:
             name: Resume identifier without extension.
@@ -497,6 +498,15 @@ class Resume:
             new_data["config"]["palette"] = copy.deepcopy(palette_data)
             new_raw["config"]["palette"] = copy.deepcopy(palette_data)
 
+            # Apply the palette block to individual color fields
+            # Normalize both data structures to apply palette colors
+            new_data["config"], _ = normalize_config(
+                new_data["config"], filename=self._filename or ""
+            )
+            new_raw["config"], _ = normalize_config(
+                new_raw["config"], filename=self._filename or ""
+            )
+
         palette_override = overrides.get("palette")
         if isinstance(palette_override, dict):
             overrides["palette"] = copy.deepcopy(palette_override)
@@ -579,13 +589,16 @@ class Resume:
             "cleanup_latex_artifacts": self._cleanup_latex_artifacts,
         }
         with _temporary_backend_bindings(_pdf_generation, **bindings):
-            return _pdf_generation.generate_pdf_with_latex(
-                render_plan,
-                output_path,
+            context = LatexGenerationContext(
                 raw_data=raw_data,
                 processed_data=self._data,
                 paths=self._paths,
                 filename=self._filename,
+            )
+            return _pdf_generation.generate_pdf_with_latex(
+                render_plan,
+                output_path,
+                context,
             )
 
     def _generate_html_with_jinja(
@@ -731,7 +744,7 @@ class Resume:
             self._validation_result = self.validate_config(raw_config, filename)
         return self._validation_result
 
-    def validate_or_raise(self) -> None:
+    def validate_or_raise(self) -> ValidationResult:
         """Validate resume data and raise `ValidationError` on failure.
 
         This method validates the resume and raises a `ValidationError` if validation
@@ -745,11 +758,14 @@ class Resume:
 
         For inspection without raising, use `validate()` instead.
 
+        Returns:
+            `ValidationResult`: The validation result (only if validation succeeds).
+
         Raises:
             `ValidationError`: If validation fails with detailed error information.
 
         Example:
-            >>> resume.validate_or_raise()  # Raises if invalid
+            >>> result = resume.validate_or_raise()  # Raises if invalid, returns result
             >>> resume.to_pdf("output.pdf")  # Only runs if validation passed
 
         """
@@ -758,8 +774,10 @@ class Resume:
             raise ValidationError(
                 f"Resume validation failed: {validation_result.errors}",
                 errors=validation_result.errors,
+                warnings=validation_result.warnings,
                 filename=self._filename,
             )
+        return validation_result
 
     def _prepare_render_plan(self, preview: bool | None = None) -> RenderPlan:
         """Prepare a render plan for this resume.

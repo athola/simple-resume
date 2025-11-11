@@ -70,6 +70,7 @@ uv run simple-resume generate --palette resume_private/palettes/my-theme.yaml
 A direct color palette file defines the exact colors to be used.
 
 **`resume_private/palettes/direct-theme.yaml`**
+
 ```yaml
 palette:
   theme_color: "#4060A0"
@@ -86,6 +87,7 @@ palette:
 You can also generate a palette of colors based on a set of parameters. This is useful for creating a consistent set of colors from a single seed color.
 
 **`resume_private/palettes/generated-theme.yaml`**
+
 ```yaml
 palette:
   source: generator

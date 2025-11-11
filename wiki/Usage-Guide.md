@@ -1,6 +1,6 @@
 # Usage Guide
 
-This guide details instructions for using the command-line interface (CLI), Python API, and other features.
+This guide provides detailed instructions for using the command-line interface (CLI), Python API, and other features.
 
 ## Command-Line Interface
 
@@ -8,7 +8,7 @@ The `simple-resume` CLI is the primary tool for resume generation.
 
 ### Generating Resumes
 
-Generate a resume using the `generate` command with the desired format.
+Use the `generate` command to create a resume in the desired format.
 
 ```bash
 # Generate a PDF file
@@ -32,7 +32,7 @@ uv run simple-resume generate --format html --browser firefox
 
 ### Specifying a Data Directory
 
-For multiple resume files, use the `--data-dir` argument to specify a directory containing your YAML files.
+To process multiple YAML files from a single directory, use the `--data-dir` argument.
 
 ```bash
 uv run simple-resume generate --data-dir my_resumes --format html
@@ -40,9 +40,9 @@ uv run simple-resume generate --data-dir my_resumes --format html
 
 ## Python API
 
-For programmatic use, import and use the `generate` and `preview` functions.
+For programmatic use, you can import functions like `generate` and `preview`.
 
-### Generating Resumes
+### Generating Resumes Programmatically
 
 The `generate` function accepts a resume file path and a `GenerateOptions` object.
 
@@ -71,9 +71,9 @@ preview("resume_private/input/my_resume.yaml", open_after=True)
 
 ### LaTeX Output
 
-To generate a `.tex` file for use with a LaTeX engine, set the `output_mode` in your YAML file. A LaTeX distribution must be installed.
+To generate a `.tex` file for a LaTeX engine, set `output_mode: latex` in your YAML file. This requires a LaTeX distribution to be installed.
 
-When `output_mode` is `latex`, the `generate` command produces a `.tex` file instead of HTML or PDF.
+With this setting, the `generate` command produces a `.tex` file instead of HTML or PDF.
 
 ### Colors
 
@@ -94,7 +94,7 @@ For more information, see the [Color Schemes Guide](Color-Schemes.md).
 
 ### Layout
 
-Adjust the layout of template elements, such as section heading icons, through the `config` section of your YAML file. Values are CSS units, typically `mm`. Negative values move elements left or up; positive values move them right or down.
+The layout of template elements, like section heading icons, can be adjusted in the `config` section of your YAML. Values are specified in CSS units (e.g., `mm`). Negative values shift elements left/up, while positive values shift them right/down.
 
 ```yaml
 config:
@@ -116,9 +116,9 @@ The tool validates the following fields:
 
 ## Test Framework Helper
 
-The project includes a small helper for Behavior-Driven Development (BDD) style tests, intended for internal development.
+The project includes a helper for Behavior-Driven Development (BDD) style tests, intended for internal project development.
 
-The `tests/bdd.py` module provides a `scenario` object to structure tests.
+The `tests/bdd.py` module provides a `scenario` object for structuring tests.
 
 ```python
 from tests.bdd import scenario

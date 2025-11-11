@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, SupportsInt, cast
 
@@ -18,6 +19,16 @@ from ..latex_renderer import (
 from ..rendering import get_template_environment
 from ..result import GenerationMetadata, GenerationResult
 from .models import RenderPlan
+
+
+@dataclass(frozen=True)
+class LatexGenerationContext:
+    """Context object for LaTeX PDF generation, grouping related parameters."""
+
+    raw_data: dict[str, Any] | None
+    processed_data: dict[str, Any]
+    paths: Any
+    filename: str | None = None
 
 
 def generate_pdf_with_weasyprint(
@@ -95,19 +106,15 @@ def generate_pdf_with_weasyprint(
     return GenerationResult(output_path, "pdf", metadata), page_count
 
 
-def generate_pdf_with_latex(  # noqa: PLR0913 - backend needs explicit context
+def generate_pdf_with_latex(
     render_plan: RenderPlan,
     output_path: Path,
-    *,
-    raw_data: dict[str, Any] | None,
-    processed_data: dict[str, Any],
-    paths: Any,
-    filename: str | None = None,
+    context: LatexGenerationContext,
 ) -> tuple[GenerationResult, int | None]:
     """Generate a PDF using the LaTeX backend."""
-    if paths is None:
+    if context.paths is None:
         raise ConfigurationError(
-            "LaTeX generation requires resolved paths", filename=filename
+            "LaTeX generation requires resolved paths", filename=context.filename
         )
 
     if (
@@ -118,7 +125,7 @@ def generate_pdf_with_latex(  # noqa: PLR0913 - backend needs explicit context
         raise ConfigurationError(
             "LaTeX renderer is required for LaTeX generation. "
             "Install with: pip install simple-resume[latex]",
-            filename=filename,
+            filename=context.filename,
         )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -126,10 +133,10 @@ def generate_pdf_with_latex(  # noqa: PLR0913 - backend needs explicit context
     tex_path = output_path.with_suffix(".tex")
     preserve_log = False
     try:
-        latex_source = raw_data if raw_data is not None else processed_data
+        latex_source = context.raw_data or context.processed_data
         latex_result = render_resume_latex_from_data(
             latex_source,
-            paths=paths,
+            paths=context.paths,
         )
         tex_path.write_text(latex_result.tex, encoding="utf-8")
         pdf_path = compile_tex_to_pdf(tex_path)
@@ -147,7 +154,7 @@ def generate_pdf_with_latex(  # noqa: PLR0913 - backend needs explicit context
                 f"LaTeX compilation failed: {exc}",
                 format_type="pdf",
                 output_path=str(output_path),
-                filename=filename,
+                filename=context.filename,
             ) from exc
         raise
     finally:
@@ -170,6 +177,7 @@ def cleanup_latex_artifacts(tex_path: Path, *, preserve_log: bool = False) -> No
 
 
 __all__ = [
+    "LatexGenerationContext",
     "cleanup_latex_artifacts",
     "generate_pdf_with_latex",
     "generate_pdf_with_weasyprint",

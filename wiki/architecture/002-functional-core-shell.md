@@ -6,26 +6,26 @@ Accepted (2025-11-09)
 
 ## Context
 
-Original `simple-resume` design mixed file I/O, CLI orchestration, and domain logic within modules (e.g., `utilities`, `hydration`, `cli`, `generation`). This tight coupling led to brittle tests, slow code reviews, and widespread changes. Adopting "functional core, imperative shell" pattern separates deterministic logic from I/O side effects.
+The original `simple-resume` design mixed file I/O, CLI orchestration, and domain logic across modules like `utilities`, `hydration`, and `generation`. This coupling caused brittle tests, slow code reviews, and cascading changes. To fix this, we are adopting the "functional core, imperative shell" pattern to separate pure, deterministic logic from I/O and other side effects.
 
 ## Decision
 
-1.  **Define Shell Boundaries:** Place all code interacting with the outside world (e.g., filesystem access, YAML parsing, CLI I/O, LaTeX subprocesses) in "shell" modules. Shell's responsibility: sequence operations, handle retries, log events, translate external events into simple data structures.
+1.  **Define Shell Boundaries:** Place all code interacting with the outside world (e.g., filesystem access, YAML parsing, CLI I/O, LaTeX subprocesses) in "shell" modules. The shell's responsibility is to sequence operations, handle retries, log events, and translate external data (e.g., from files or CLI arguments) into simple data structures for the core.
 
-2.  **Implement a Pure Core:** Core modules expose deterministic functions operating on plain data structures (e.g., `GeneratePlanOptions -> list[GenerationCommand]`, `hydrate_resume(raw) -> dict`). These functions will not access the filesystem or global state.
+2.  **Implement a Pure Core:** Core modules will contain only pure functions that operate on simple data structures (e.g., `GeneratePlanOptions -> list[GenerationCommand]`, `hydrate_resume(raw) -> dict`). These functions must not access the filesystem, environment variables, or other global state.
 
-3.  **Adopt Incrementally:** Refactor incrementally, starting with frequently changing code (e.g., CLI command generation). Each step must preserve existing behavior, add unit tests for new core logic, and keep the shell as a thin adapter. Address more stateful parts (e.g., sessions) later.
+3.  **Adopt Incrementally:** Refactor incrementally, starting with frequently changing code (e.g., CLI command generation). Each step must preserve existing behavior, add fast unit tests for the new core logic, and keep the shell a thin adapter over the core. Address more stateful parts (e.g., sessions) later.
 
 4.  **Use a Shared Command Model:** Communication between adapters (e.g., CLI) and core uses explicit command objects. This makes orchestration logic transparent and simplifies adding new adapters (e.g., API endpoints).
 
-5.  **Document and Measure:** Maintain this ADR and `functional-core-shell-inventory.md` to document architecture. Track metrics like code coverage and mean time to recovery (MTTR) to verify pattern effectiveness.
+5.  **Document and Measure:** Maintain this ADR and `functional-core-shell-inventory.md` to document architecture. We will track metrics like code coverage and mean time to recovery (MTTR) to verify that this pattern is effective.
 
 ## Rationale
 
--   Separating planning logic into a pure core makes unit testing easier and safer than CLI code.
+-   Moving planning logic into a pure core makes it easier and safer to unit-test than the previous CLI-dependent code.
 -   Explicit command objects eliminate duplicated logic (e.g., for format iteration and overrides) and provide a single, clear interface.
 -   Incremental approach avoids large-scale rewrite risks. Starting with CLI's `generate` command due to frequent regressions and existing test coverage.
--   Documentation ensures team understanding and consistent pattern application.
+-   This documentation is intended to ensure the team understands the pattern and applies it consistently.
 
 ## Consequences
 
@@ -37,14 +37,14 @@ Original `simple-resume` design mixed file I/O, CLI orchestration, and domain lo
 
 ### Negative
 
--   Shell modules still contain significant printing and error handling logic. Future simplification needed to avoid duplication.
--   Until refactoring is complete, developers will work with both legacy code and new core/shell pattern, potentially causing confusion.
+-   The shell modules still contain considerable printing and error-handling logic, which may lead to duplication. This logic should be simplified in the future.
+-   Until the refactoring is complete, developers must work with both the legacy code and the new pattern, which could cause confusion.
 
 ### Monitoring
 
 -   Track code coverage of new core modules, with a goal of >90%.
--   Measure time to implement new CLI features, expecting 20-30% reduction once new pattern established.
--   Monitor defect rate in shell code. Explicit commands expected to help identify edge cases earlier.
+-   We will measure the time required to implement new CLI features, with a goal of a 20-30% reduction once the pattern is established.
+-   We expect the explicit command objects to help identify edge cases earlier in the development process.
 
 ## Follow-up Tasks
 

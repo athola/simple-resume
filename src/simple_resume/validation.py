@@ -1,7 +1,7 @@
-"""Provide validation functions for Simple-Resume inputs and files.
+"""Provide validation functions for resume inputs and files.
 
-Validate YAML files, file paths, formats, and configuration values.
-Raise `ValidationError` with specific messages when validation fails.
+These functions validate entities like YAML files, paths, and data structures,
+raising a `ValidationError` or `FileSystemError` on failure.
 """
 
 import re

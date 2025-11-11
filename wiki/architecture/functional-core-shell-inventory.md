@@ -11,7 +11,7 @@ This document inventories modules refactored to follow the "functional core, imp
 | `src/simple_resume/session.py` | Manages temporary directories, caches, open file handles. | Provide high-level orchestration API. | Shell will be thin context manager for filesystem/session state; core produces operations for execution. | Single-resume commands use generation planner. Batch and session APIs still mix orchestration with I/O. |
 | `src/simple_resume/shell/generation.py` | Executes generation via subprocesses (e.g., LaTeX). | Module is already shell-like but not coordinated with a core planner. | Module should update to use new command objects, making it common execution path for CLI, sessions, and future services. | Align `shell` and `core` module naming during rollout to avoid confusion. |
 
-### Next Steps
+## Next Steps
 
 The following steps should be taken for each module being refactored:
 

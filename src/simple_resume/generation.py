@@ -1,7 +1,9 @@
-"""Provide unified generation functions with standardized parameter patterns.
+"""Provide high-level functions for generating resumes.
 
-This module provides pandas-style unified generation functions with consistent
-parameter patterns across all operations.
+This module acts as the primary public API for generating resumes, offering
+functions to create PDFs, HTML files, or both from a GenerationConfig object.
+It uses a planning step to translate configuration into a series of commands,
+which are then executed.
 """
 
 from __future__ import annotations
@@ -422,8 +424,8 @@ def generate_all(
 ) -> dict[str, GenerationResult | BatchGenerationResult]:
     """Generate resumes in all specified formats.
 
-    This function provides a convenient way to generate resumes in multiple formats
-    with a single call, maintaining consistent parameter patterns.
+    Generates resumes in multiple formats (e.g., PDF and HTML) from a single
+    configuration.
 
     Args:
         config: Configuration describing what to render and which formats to include.
@@ -466,10 +468,10 @@ def generate_resume(
     config: GenerationConfig,
     **config_overrides: Any,
 ) -> GenerationResult:
-    """Generate a single resume with a pandas-style function signature.
+    """Generate a single resume.
 
-    This function follows pandas naming conventions for single-item operations
-    and provides a simple, consistent interface.
+    This function is designed for generating a single resume file, as opposed
+    to batch operations.
 
     Args:
         config: Configuration describing the resume to render.

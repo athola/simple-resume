@@ -1,4 +1,4 @@
-"""Define core dataclasses for resume rendering."""
+"""Core data models for resume rendering."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from ..constants import OutputFormat, RenderMode
 
 @dataclass(frozen=True)
 class ResumeConfig:
-    """Define a normalized resume configuration with validated fields."""
+    """A normalized resume configuration with validated fields."""
 
     page_width: int | None = None
     page_height: int | None = None
@@ -43,7 +43,7 @@ class ResumeConfig:
 
 @dataclass(frozen=True)
 class RenderPlan:
-    """Define a pure data structure describing how to render a resume."""
+    """A pure data structure describing how to render a resume."""
 
     name: str
     mode: RenderMode
@@ -57,7 +57,7 @@ class RenderPlan:
 
 @dataclass(frozen=True)
 class ValidationResult:
-    """Define the result of validating resume data."""
+    """The result of validating resume data."""
 
     is_valid: bool
     errors: list[str]
@@ -68,7 +68,7 @@ class ValidationResult:
 
 @dataclass(frozen=True)
 class GenerationConfig:
-    """Define a complete configuration for generation operations."""
+    """A complete configuration for generation operations."""
 
     # Path configuration
     data_dir: str | Path | None = None

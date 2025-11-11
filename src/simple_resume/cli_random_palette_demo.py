@@ -386,4 +386,4 @@ def main() -> None:
     print(f"Wrote {args.output}")
 
 
-__all__ = ["generate_random_yaml", "main"]
+__all__ = ["main"]
