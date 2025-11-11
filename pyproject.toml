@@ -75,7 +75,6 @@ include = [
     "src/simple_resume/static/**/*",
     "src/simple_resume/palettes/**/*",
 ]
-force-include = { "src/simple_resume/templates/latex/basic.tex" = "simple_resume/templates/latex/basic.tex" }
 
 [dependency-groups]
 dev = [
