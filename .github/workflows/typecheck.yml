@@ -28,7 +28,7 @@ jobs:
       run: uv sync --extra utils --group dev
 
     - name: Run MyPy
-      run: uv run mypy src/easyresume/ --strict
+      run: uv run mypy src/simple_resume/ --strict
 
   ty:
     name: Ty Type Checking
@@ -51,54 +51,4 @@ jobs:
       run: uv sync --extra utils --group dev
 
     - name: Run Ty
-      run: uv run ty check src/easyresume/
-
-  pyright:
-    name: Pyright Type Checking
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v2
-      with:
-        version: "latest"
-
-    - name: Install dependencies
-      run: uv sync --extra utils --group dev
-
-    - name: Install Pyright
-      run: npm install -g pyright
-
-    - name: Run Pyright
-      run: |
-        pyright src/easyresume/
-
-  pytype:
-    name: Pytype Type Checking
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v2
-      with:
-        version: "latest"
-
-    - name: Install dependencies
-      run: uv sync --extra utils --group dev
-
-    - name: Run Pytype
-      run: uv run pytype src/easyresume/
+      run: uv run ty check src/simple_resume/

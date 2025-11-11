@@ -1,17 +1,4 @@
-"""Unit tests for easyresume.utilities module following TDD principles.
-
-These tests follow the Red-Green-Refactor cycle:
-1. RED: Write failing tests for desired functionality
-2. GREEN: Write minimal code to make tests pass
-3. REFACTOR: Improve code while keeping tests green
-
-Tests follow extreme programming practices:
-- Edge case coverage
-- Business logic validation
-- Clear, descriptive test names
-- Single assertion per test where possible
-- Test isolation and independence
-"""
+"""Behavioural tests for simple_resume.utilities using BDD terminology."""
 
 from pathlib import Path
 from typing import Any
@@ -20,19 +7,45 @@ from unittest.mock import Mock, mock_open, patch
 import pytest
 import yaml
 
-from easyresume import config
-from easyresume.utilities import (
+from simple_resume import config, utilities
+from simple_resume.core.color_utils import hex_to_rgb
+from simple_resume.core.config_core import prepare_config
+from simple_resume.palettes.exceptions import (
+    PaletteGenerationError,
+    PaletteLookupError,
+)
+from simple_resume.palettes.registry import Palette
+from simple_resume.utilities import (
     _read_yaml,
     _transform_from_markdown,
     get_content,
     validate_config,
 )
+from tests.bdd import Scenario
+
+
+def _describe(
+    story: Scenario,
+    given: str,
+    when: str,
+    then: str = "the assertions describe the expected outcome",
+) -> None:
+    story.case(given=given, when=when, then=then)
 
 
 class TestReadYaml:
     """Test cases for _read_yaml function following TDD principles."""
 
-    def test_read_valid_yaml_file_returns_dict(self, temp_dir: Path) -> None:
+    def test_read_valid_yaml_file_returns_dict(
+        self,
+        temp_dir: Path,
+        story: Scenario,
+    ) -> None:
+        story.case(
+            given="a well-formed YAML file exists on disk",
+            when="_read_yaml loads the file",
+            then="a dictionary matching the source content is returned",
+        )
         """RED: Test that reading a valid YAML file returns a dictionary."""
         # Arrange
         test_data = {"name": "John", "age": 30, "skills": ["Python", "Testing"]}
@@ -48,7 +61,14 @@ class TestReadYaml:
         assert result == test_data
         assert isinstance(result, dict)
 
-    def test_read_empty_yaml_file_returns_empty_dict(self, temp_dir: Path) -> None:
+    def test_read_empty_yaml_file_returns_empty_dict(
+        self, temp_dir: Path, story: Scenario
+    ) -> None:
+        story.case(
+            given="an empty YAML file",
+            when="_read_yaml parses it",
+            then="an empty dictionary is returned",
+        )
         """RED: Test that reading an empty YAML file returns an empty dict."""
         # Arrange
         yaml_file = temp_dir / "empty.yaml"
@@ -62,8 +82,13 @@ class TestReadYaml:
         assert isinstance(result, dict)
 
     def test_read_yaml_with_null_content_returns_empty_dict(
-        self, temp_dir: Path
+        self, temp_dir: Path, story: Scenario
     ) -> None:
+        story.case(
+            given="a YAML file whose contents are explicit null",
+            when="_read_yaml processes it",
+            then="an empty dictionary is produced",
+        )
         """RED: Test that reading YAML with null content returns empty dict."""
         # Arrange
         yaml_file = temp_dir / "null.yaml"
@@ -76,17 +101,28 @@ class TestReadYaml:
         assert result == {}
         assert isinstance(result, dict)
 
-    def test_read_nonexistent_file_raises_file_not_found(self) -> None:
+    def test_read_nonexistent_file_raises_file_not_found(self, story: Scenario) -> None:
         """RED: Test that reading a non-existent file raises FileNotFoundError."""
-        # Arrange
+        story.case(
+            given="the requested YAML path does not exist",
+            when="_read_yaml attempts to open it",
+            then="FileNotFoundError is raised",
+        )
         nonexistent_path = "/path/to/nonexistent/file.yaml"
 
         # Act & Assert
         with pytest.raises(FileNotFoundError):
             _read_yaml(nonexistent_path)
 
-    def test_read_invalid_yaml_file_raises_exception(self, temp_dir: Path) -> None:
+    def test_read_invalid_yaml_file_raises_exception(
+        self, temp_dir: Path, story: Scenario
+    ) -> None:
         """RED: Test that reading invalid YAML raises appropriate exception."""
+        story.case(
+            given="a malformed YAML document",
+            when="_read_yaml parses it",
+            then="PyYAML raises a YAMLError",
+        )
         # Arrange
         yaml_file = temp_dir / "invalid.yaml"
         yaml_file.write_text("invalid: yaml: content: [", encoding="utf-8")
@@ -95,8 +131,75 @@ class TestReadYaml:
         with pytest.raises(yaml.YAMLError):
             _read_yaml(str(yaml_file))
 
-    def test_read_yaml_with_complex_nested_structure(self, temp_dir: Path) -> None:
+    def test_read_yaml_with_list_root_raises_value_error(
+        self, temp_dir: Path, story: Scenario
+    ) -> None:
+        """RED: Test that reading YAML with list root raises ValueError."""
+        story.case(
+            given="the YAML root value is a list",
+            when="_read_yaml reads the file",
+            then="a ValueError explains that a mapping is required",
+        )
+        # Arrange
+        yaml_file = temp_dir / "list_root.yaml"
+        yaml_file.write_text("- item1\n- item2\n- item3", encoding="utf-8")
+
+        # Act & Assert
+        with pytest.raises(
+            ValueError,
+            match="YAML file must contain a dictionary at the root level",
+        ):
+            _read_yaml(str(yaml_file))
+
+    def test_read_yaml_with_string_root_raises_value_error(
+        self, temp_dir: Path, story: Scenario
+    ) -> None:
+        """RED: Test that reading YAML with string root raises ValueError."""
+        story.case(
+            given="the YAML root is a string scalar",
+            when="_read_yaml validates the payload",
+            then="a ValueError enforces dictionary roots",
+        )
+        # Arrange
+        yaml_file = temp_dir / "string_root.yaml"
+        yaml_file.write_text('"just a string"', encoding="utf-8")
+
+        # Act & Assert
+        with pytest.raises(
+            ValueError,
+            match="YAML file must contain a dictionary at the root level",
+        ):
+            _read_yaml(str(yaml_file))
+
+    def test_read_yaml_with_number_root_raises_value_error(
+        self, temp_dir: Path, story: Scenario
+    ) -> None:
+        """RED: Test that reading YAML with number root raises ValueError."""
+        story.case(
+            given="the YAML root is a numeric scalar",
+            when="_read_yaml parses the file",
+            then="a ValueError enforces dictionary roots",
+        )
+        # Arrange
+        yaml_file = temp_dir / "number_root.yaml"
+        yaml_file.write_text("42", encoding="utf-8")
+
+        # Act & Assert
+        with pytest.raises(
+            ValueError,
+            match="YAML file must contain a dictionary at the root level",
+        ):
+            _read_yaml(str(yaml_file))
+
+    def test_read_yaml_with_complex_nested_structure(
+        self, temp_dir: Path, story: Scenario
+    ) -> None:
         """RED: Test reading YAML with complex nested structure."""
+        story.case(
+            given="a deeply nested YAML document",
+            when="_read_yaml loads it",
+            then="the resulting dict preserves nested structures",
+        )
         # Arrange
         complex_data = {
             "personal": {
@@ -129,8 +232,17 @@ class TestReadYaml:
         assert len(result["experience"]) == 1
 
     @patch("builtins.open", new_callable=mock_open, read_data="key: value")
-    def test_read_yaml_file_encoding_handling(self, mock_file: Mock) -> None:
+    def test_read_yaml_file_encoding_handling(
+        self,
+        mock_file: Mock,
+        story: Scenario,
+    ) -> None:
         """GREEN: Test that YAML files are read with UTF-8 encoding."""
+        story.case(
+            given="builtins.open is patched",
+            when="_read_yaml opens a file",
+            then="UTF-8 encoding is requested exactly once",
+        )
         # Act
         result = _read_yaml("dummy_path.yaml")
 
@@ -151,8 +263,15 @@ class TestTransformFromMarkdown:
         _transform_from_markdown(data)
 
         # Assert
-        expected_html = "<p>This is <strong>bold</strong> and <em>italic</em> text.</p>"
-        assert data["description"] == expected_html
+        # Bold text should be styled with default color
+        assert "<strong" in data["description"]
+        expected = utilities.DEFAULT_COLOR_SCHEME["bold_color"]
+        assert (
+            f'style="color: {expected}; font-weight: 700 !important;"'
+            in data["description"]
+        )
+        assert "<em>italic</em>" in data["description"]
+        assert data["description"].startswith("<p>")
 
     def test_transform_markdown_in_body_sections(self) -> None:
         """RED: Test that markdown in body sections is converted to HTML."""
@@ -173,7 +292,10 @@ class TestTransformFromMarkdown:
         # Assert
         # Check Experience section
         exp_desc = data["body"]["Experience"][0]["description"]
-        assert "<strong>bold</strong>" in exp_desc
+        assert "<strong" in exp_desc
+        expected = utilities.DEFAULT_COLOR_SCHEME["bold_color"]
+        assert f'style="color: {expected}; font-weight: 700 !important;"' in exp_desc
+        assert "bold</strong>" in exp_desc
         assert "<ul>" in exp_desc
         assert "<li>" in exp_desc
 
@@ -209,7 +331,13 @@ class TestTransformFromMarkdown:
         # Assert
         assert data["name"] == "John Doe"
         assert data["age"] == 30
-        assert "description" not in data["body"]["Experience"][0]
+        body = data["body"]
+        assert isinstance(body, dict)
+        experience = body["Experience"]
+        assert isinstance(experience, list)
+        first_entry = experience[0]
+        assert isinstance(first_entry, dict)
+        assert "description" not in first_entry
 
     def test_transform_with_empty_body_sections(self) -> None:
         """RED: Test handling of empty body sections."""
@@ -249,7 +377,11 @@ Visit my [portfolio](https://example.com) for more details.
         # Assert
         result = data["description"]
         assert "<h1>Professional Summary</h1>" in result
-        assert "<strong>senior developer</strong>" in result
+        # Bold text should be styled
+        assert "<strong" in result
+        assert "senior developer</strong>" in result
+        expected = utilities.DEFAULT_COLOR_SCHEME["bold_color"]
+        assert f'style="color: {expected}; font-weight: 700 !important;"' in result
         assert "<ul>" in result
         assert "<li>Python programming</li>" in result
         assert '<a href="https://example.com">portfolio</a>' in result
@@ -272,7 +404,9 @@ Visit my [portfolio](https://example.com) for more details.
         assert data["name"] == "John Doe"
         assert data["email"] == "john@example.com"
         assert data["skills"] == ["Python", "Testing"]
-        assert data["config"]["theme"] == "dark"
+        config_section = data["config"]
+        assert isinstance(config_section, dict)
+        assert config_section["theme"] == "dark"
         # Only description should be transformed
         assert data["description"] == "<p>Simple description</p>"
 
@@ -283,7 +417,7 @@ Visit my [portfolio](https://example.com) for more details.
             "description": """Here's some code:
 
 ```python
-def hello_world():
+def hello_world() -> None:
     print("Hello, World!")
 ```
 
@@ -329,7 +463,7 @@ from flask import Flask, jsonify
 app = Flask(__name__)
 
 @app.route('/api/data')
-def get_data():
+def get_data() -> None:
     \"\"\"Get data from API endpoint.\"\"\"
     return jsonify({'status': 'success'})
 ```
@@ -434,9 +568,12 @@ def get_data():
         assert "<h2>" in exp_desc
         assert "<h3>" in exp_desc
 
-        # Bullet points with bold emphasis
-        assert "<strong>Revenue Growth</strong>" in exp_desc
-        assert "<strong>Cost Reduction</strong>" in exp_desc
+        # Bullet points with bold emphasis (now styled with color)
+        assert "<strong" in exp_desc
+        assert "Revenue Growth</strong>" in exp_desc
+        assert "Cost Reduction</strong>" in exp_desc
+        expected = utilities.DEFAULT_COLOR_SCHEME["bold_color"]
+        assert f'style="color: {expected}; font-weight: 700 !important;"' in exp_desc
 
         # Tables for experience/education
         assert "<table>" in exp_desc
@@ -453,16 +590,17 @@ def get_data():
 class TestGetContent:
     """Test cases for get_content function following TDD principles."""
 
-    @patch("easyresume.utilities._read_yaml")
-    @patch("easyresume.utilities._transform_from_markdown")
-    @patch("easyresume.utilities.FILE_DEFAULT", "default_resume")
+    @patch("simple_resume.hydration.load_resume_yaml")
+    @patch("simple_resume.hydration.hydrate_resume_data")
+    @patch("simple_resume.config.FILE_DEFAULT", "test_default")
     def test_get_content_with_empty_name_uses_default(
         self, mock_transform: Mock, mock_read: Mock
     ) -> None:
         """RED: Test that empty name uses default file name."""
         # Arrange
         expected_data = {"name": "Default Resume", "template": "default"}
-        mock_read.return_value = expected_data
+        mock_read.return_value = (expected_data, Path("test_default.yaml"), None)
+        mock_transform.return_value = expected_data
         paths = config.Paths(
             data=Path("data_dir"),
             input=Path("test_input"),
@@ -473,20 +611,25 @@ class TestGetContent:
         result = get_content(paths=paths)
 
         # Assert
-        mock_read.assert_called_once_with(paths.input / "default_resume.yaml")
-        mock_transform.assert_called_once_with(expected_data)
+        mock_read.assert_called_once_with("", paths=paths)
+        mock_transform.assert_called_once_with(
+            expected_data,
+            filename=Path("test_default.yaml"),
+            transform_markdown=True,
+        )
         assert result == expected_data
 
-    @patch("easyresume.utilities._read_yaml")
-    @patch("easyresume.utilities._transform_from_markdown")
-    @patch("easyresume.utilities.FILE_DEFAULT", "default_resume")
+    @patch("simple_resume.hydration.load_resume_yaml")
+    @patch("simple_resume.hydration.hydrate_resume_data")
+    @patch("simple_resume.config.FILE_DEFAULT", "test_default")
     def test_get_content_with_specific_name(
         self, mock_transform: Mock, mock_read: Mock
     ) -> None:
         """RED: Test that specific name is used correctly."""
         # Arrange
         expected_data = {"name": "John Doe", "template": "modern"}
-        mock_read.return_value = expected_data
+        mock_read.return_value = (expected_data, Path("test_file.yaml"), None)
+        mock_transform.return_value = expected_data
         paths = config.Paths(
             data=Path("data_dir"),
             input=Path("test_input"),
@@ -497,20 +640,25 @@ class TestGetContent:
         result = get_content("john_doe", paths=paths)
 
         # Assert
-        mock_read.assert_called_once_with(paths.input / "john_doe.yaml")
-        mock_transform.assert_called_once_with(expected_data)
+        mock_read.assert_called_once_with("john_doe", paths=paths)
+        mock_transform.assert_called_once_with(
+            expected_data,
+            filename=Path("test_file.yaml"),
+            transform_markdown=True,
+        )
         assert result == expected_data
 
-    @patch("easyresume.utilities._read_yaml")
-    @patch("easyresume.utilities._transform_from_markdown")
-    @patch("easyresume.utilities.FILE_DEFAULT", "default_resume")
+    @patch("simple_resume.hydration.load_resume_yaml")
+    @patch("simple_resume.hydration.hydrate_resume_data")
+    @patch("simple_resume.config.FILE_DEFAULT", "test_default")
     def test_get_content_with_name_containing_dot(
         self, mock_transform: Mock, mock_read: Mock
     ) -> None:
         """RED: Test that names with dots are handled correctly."""
         # Arrange
         expected_data = {"name": "Jane Smith", "template": "classic"}
-        mock_read.return_value = expected_data
+        mock_read.return_value = (expected_data, Path("test_file.yaml"), None)
+        mock_transform.return_value = expected_data
         paths = config.Paths(
             data=Path("data_dir"),
             input=Path("test_input"),
@@ -521,20 +669,25 @@ class TestGetContent:
         result = get_content("jane.smith", paths=paths)
 
         # Assert - Function strips extension, so we pass name without extension
-        mock_read.assert_called_once_with(paths.input / "jane.yaml")
-        mock_transform.assert_called_once_with(expected_data)
+        mock_read.assert_called_once_with("jane.smith", paths=paths)
+        mock_transform.assert_called_once_with(
+            expected_data,
+            filename=Path("test_file.yaml"),
+            transform_markdown=True,
+        )
         assert result == expected_data
 
-    @patch("easyresume.utilities._read_yaml")
-    @patch("easyresume.utilities._transform_from_markdown")
-    @patch("easyresume.utilities.FILE_DEFAULT", "default_resume")
+    @patch("simple_resume.hydration.load_resume_yaml")
+    @patch("simple_resume.hydration.hydrate_resume_data")
+    @patch("simple_resume.config.FILE_DEFAULT", "test_default")
     def test_get_content_with_name_containing_multiple_dots(
         self, mock_transform: Mock, mock_read: Mock
     ) -> None:
         """RED: Test that names with multiple dots are handled correctly."""
         # Arrange
         expected_data = {"name": "Bob Johnson", "template": "creative"}
-        mock_read.return_value = expected_data
+        mock_read.return_value = (expected_data, Path("test_file.yaml"), None)
+        mock_transform.return_value = expected_data
         paths = config.Paths(
             data=Path("data_dir"),
             input=Path("test_input"),
@@ -545,20 +698,25 @@ class TestGetContent:
         result = get_content("bob.johnson", paths=paths)
 
         # Assert - Function strips dots and adds .yaml
-        mock_read.assert_called_once_with(paths.input / "bob.yaml")
-        mock_transform.assert_called_once_with(expected_data)
+        mock_read.assert_called_once_with("bob.johnson", paths=paths)
+        mock_transform.assert_called_once_with(
+            expected_data,
+            filename=Path("test_file.yaml"),
+            transform_markdown=True,
+        )
         assert result == expected_data
 
-    @patch("easyresume.utilities._read_yaml")
-    @patch("easyresume.utilities._transform_from_markdown")
-    @patch("easyresume.utilities.FILE_DEFAULT", "default_resume")
+    @patch("simple_resume.hydration.load_resume_yaml")
+    @patch("simple_resume.hydration.hydrate_resume_data")
+    @patch("simple_resume.config.FILE_DEFAULT", "test_default")
     def test_get_content_with_yml_extension(
         self, mock_transform: Mock, mock_read: Mock
     ) -> None:
         """RED: Test that .yml extension is handled correctly."""
         # Arrange
         expected_data = {"name": "Alice Brown", "template": "minimal"}
-        mock_read.return_value = expected_data
+        mock_read.return_value = (expected_data, Path("test_file.yaml"), None)
+        mock_transform.return_value = expected_data
         paths = config.Paths(
             data=Path("data_dir"),
             input=Path("test_input"),
@@ -569,12 +727,16 @@ class TestGetContent:
         result = get_content("alice_brown", paths=paths)
 
         # Assert - Function strips extension and adds .yaml
-        mock_read.assert_called_once_with(paths.input / "alice_brown.yaml")
-        mock_transform.assert_called_once_with(expected_data)
+        mock_read.assert_called_once_with("alice_brown", paths=paths)
+        mock_transform.assert_called_once_with(
+            expected_data,
+            filename=Path("test_file.yaml"),
+            transform_markdown=True,
+        )
         assert result == expected_data
 
-    @patch("easyresume.utilities._read_yaml", side_effect=FileNotFoundError)
-    @patch("easyresume.utilities.FILE_DEFAULT", "default_resume")
+    @patch("simple_resume.hydration.load_resume_yaml", side_effect=FileNotFoundError)
+    @patch("simple_resume.config.FILE_DEFAULT", "test_default")
     def test_get_content_file_not_found_raises_exception(self, mock_read: Mock) -> None:
         """RED: Test that file not found error is properly raised."""
         paths = config.Paths(
@@ -587,9 +749,9 @@ class TestGetContent:
         with pytest.raises(FileNotFoundError):
             get_content("nonexistent_file", paths=paths)
 
-    @patch("easyresume.utilities._read_yaml")
-    @patch("easyresume.utilities._transform_from_markdown")
-    @patch("easyresume.utilities.FILE_DEFAULT", "default_resume")
+    @patch("simple_resume.hydration.load_resume_yaml")
+    @patch("simple_resume.hydration.hydrate_resume_data")
+    @patch("simple_resume.config.FILE_DEFAULT", "test_default")
     def test_get_content_integration_with_markdown_transformation(
         self, mock_transform: Mock, mock_read: Mock
     ) -> None:
@@ -604,7 +766,8 @@ class TestGetContent:
                 ]
             },
         }
-        mock_read.return_value = raw_data
+        mock_read.return_value = (raw_data, Path("test_file.yaml"), None)
+        mock_transform.return_value = raw_data
         paths = config.Paths(
             data=Path("data_dir"),
             input=Path("test_input"),
@@ -612,7 +775,7 @@ class TestGetContent:
         )
 
         # The transform should actually modify the data in place
-        def actual_transform(data: dict[str, Any]) -> dict[str, Any]:
+        def actual_transform(data: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
             data["description"] = "<p>This is <strong>bold</strong> text</p>"
             return data
 
@@ -622,8 +785,9 @@ class TestGetContent:
         result = get_content("test_user", paths=paths)
 
         # Assert
-        mock_read.assert_called_once_with(paths.input / "test_user.yaml")
-        mock_transform.assert_called_once_with(raw_data)
+        mock_read.assert_called_once_with("test_user", paths=paths)
+        # hydrate_resume_data makes a deep copy, so we just verify it was called
+        assert mock_transform.called
         assert result["description"] == "<p>This is <strong>bold</strong> text</p>"
         assert result["name"] == "Test User"
 
@@ -732,6 +896,139 @@ class TestValidateConfig:
         with pytest.raises(ValueError, match="Invalid color format"):
             validate_config(config)
 
+    def test_default_color_scheme_applied_when_missing(self) -> None:
+        """Missing colors should be populated with defaults."""
+        config_map = {
+            "color_scheme": "",
+            "theme_color": "",
+            "sidebar_color": None,
+        }
+        validate_config(config_map)
+        assert config_map["color_scheme"] == "default"
+        for field in (
+            "theme_color",
+            "sidebar_color",
+            "sidebar_text_color",
+            "sidebar_bold_color",
+            "bar_background_color",
+            "date2_color",
+            "frame_color",
+            "heading_icon_color",
+            "bold_color",
+        ):
+            assert field in config_map
+            value = config_map[field]
+            assert isinstance(value, str)
+            assert value.startswith("#")
+
+    def test_sidebar_text_color_derives_from_sidebar_color(self) -> None:
+        """Sidebar text should contrast with automatically computed values."""
+        config_map = {
+            "sidebar_color": "#222222",
+        }
+        validate_config(config_map)
+        assert config_map["sidebar_text_color"] == "#F5F5F5"
+        assert config_map["sidebar_bold_color"] == "#F5F5F5"
+        assert config_map["heading_icon_color"] == "#FFFFFF"
+        assert config_map["bold_color"] == utilities.derive_bold_color("#757575")
+
+    def test_sidebar_bold_color_respects_explicit_value(self) -> None:
+        """Explicit sidebar_bold_color should be preserved."""
+        config_map = {"sidebar_bold_color": "#123456"}
+        validate_config(config_map)
+        assert config_map["sidebar_bold_color"] == "#123456"
+
+    def test_invalid_sidebar_bold_color_format_fails(self) -> None:
+        """Invalid hex color for sidebar bold text should raise."""
+        config_map = {"sidebar_bold_color": "not-a-color"}
+        with pytest.raises(ValueError, match="sidebar_bold_color"):
+            validate_config(config_map, filename="resume.yaml")
+
+    def test_bold_color_derives_from_frame_color(self) -> None:
+        """Bold color should darken the frame color when unspecified."""
+        config_map = {
+            "frame_color": "#336699",
+        }
+        validate_config(config_map)
+        bold_color = config_map["bold_color"]
+        assert isinstance(bold_color, str)
+        assert bold_color == utilities.derive_bold_color("#336699")
+
+    def test_invalid_bold_color_format_fails(self) -> None:
+        """Explicit bold_color must be a valid hex string."""
+        config_map = {"bold_color": "not-a-color"}
+        with pytest.raises(ValueError, match="bold_color"):
+            validate_config(config_map, filename="resume.yaml")
+
+    def test_palette_registry_block(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        palette = Palette(
+            name="demo",
+            swatches=("#111111", "#222222", "#333333", "#444444", "#555555"),
+            source="test",
+        )
+
+        class DummyRegistry:
+            def get(self, _key: str) -> Palette:
+                return palette
+
+        monkeypatch.setattr(
+            "simple_resume.utilities.get_palette_registry", lambda: DummyRegistry()
+        )
+
+        config_map = {
+            "palette": {"source": "registry", "name": "demo"},
+        }
+        validate_config(config_map)
+        theme_color = config_map["theme_color"]
+        color_scheme = config_map["color_scheme"]
+        heading_icon_color = config_map["heading_icon_color"]
+        bold_color = config_map["bold_color"]
+        assert isinstance(theme_color, str)
+        assert isinstance(color_scheme, str)
+        assert isinstance(heading_icon_color, str)
+        assert isinstance(bold_color, str)
+        assert theme_color == "#111111"
+        assert color_scheme == "demo"
+        # heading_icon_color is derived for contrast with sidebar
+        assert heading_icon_color == "#F5F5F5"  # Contrast-derived from dark sidebar
+        assert bold_color == utilities.derive_bold_color("#111111")
+
+    def test_palette_generator_block(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(
+            "simple_resume.utilities.generate_hcl_palette",
+            lambda size, **_: ["#AAAAAA", "#BBBBBB", "#CCCCCC"][:size],
+        )
+
+        config_map = {
+            "palette": {
+                "source": "generator",
+                "size": 3,
+                "seed": 1,
+                "hue_range": [100, 120],
+                "luminance_range": [0.4, 0.8],
+            }
+        }
+
+        validate_config(config_map)
+        theme_color = config_map["theme_color"]
+        sidebar_color = config_map["sidebar_color"]
+        bar_background_color = config_map["bar_background_color"]
+        heading_icon_color = config_map["heading_icon_color"]
+        bold_color = config_map["bold_color"]
+        assert isinstance(theme_color, str)
+        assert isinstance(sidebar_color, str)
+        assert isinstance(bar_background_color, str)
+        assert isinstance(heading_icon_color, str)
+        assert isinstance(bold_color, str)
+        assert theme_color == "#AAAAAA"
+        assert sidebar_color == "#BBBBBB"
+        # bar_background_color cycles to the first color (theme, sidebar,
+        # sidebar_text, bar_background, ...).
+        assert bar_background_color == "#AAAAAA"
+        # heading_icon_color is derived for contrast with sidebar
+        assert heading_icon_color == "#FFFFFF"  # Contrast-derived from gray sidebar
+        assert bold_color == utilities.derive_bold_color(str(config_map["frame_color"]))
+
     def test_validate_config_coerces_string_numbers(self) -> None:
         """Quoted numeric values should be coerced to numeric types."""
         config_map = {
@@ -740,11 +1037,15 @@ class TestValidateConfig:
             "sidebar_width": "60",
         }
         validate_config(config_map)
-        assert config_map["page_width"] == 190
-        assert config_map["page_height"] == 270
-        assert config_map["sidebar_width"] == 60
-        for key in ("page_width", "page_height", "sidebar_width"):
-            assert isinstance(config_map[key], int)
+        width = config_map["page_width"]
+        height = config_map["page_height"]
+        sidebar = config_map["sidebar_width"]
+        assert isinstance(width, int)
+        assert isinstance(height, int)
+        assert isinstance(sidebar, int)
+        assert width == 190
+        assert height == 270
+        assert sidebar == 60
 
     def test_validate_config_rejects_non_numeric_strings(self) -> None:
         """Non-numeric strings should produce a descriptive ValueError."""
@@ -766,3 +1067,268 @@ class TestValidateConfig:
     def test_empty_config_passes(self) -> None:
         """Empty config should pass validation (no-op)."""
         validate_config({})
+
+
+class TestUtilityEdgeCases:
+    """Additional edge-case coverage for utility helpers."""
+
+    def test_hex_to_rgb_rejects_invalid_digits(self, story: Scenario) -> None:
+        """Ensure invalid hex strings surface ValueError."""
+        story.given("a malformed hex color string containing non-hex characters")
+        story.when("the helper converts the color to RGB")
+        with pytest.raises(ValueError):
+            hex_to_rgb("#GGGGGG")
+        story.then("a ValueError is raised to signal invalid input")
+
+    @pytest.mark.parametrize("value", [True, False])
+    def test_coerce_number_rejects_boolean_inputs(
+        self,
+        story: Scenario,
+        value: bool,
+    ) -> None:
+        """Boolean values are not accepted as numeric configuration."""
+        story.given(f"a boolean value {value!r} supplied for page_width")
+        story.when("the value is coerced to a number")
+        with pytest.raises(ValueError):
+            prepare_config({"page_width": value}, filename="resume.yaml")
+        story.then("the converter rejects boolean inputs with a ValueError")
+
+    def test_coerce_number_rejects_empty_string(self, story: Scenario) -> None:
+        """Empty strings should raise descriptive errors."""
+        story.given("an empty string is provided for page_height")
+        story.when("the coercion helper validates the value")
+        with pytest.raises(ValueError):
+            prepare_config({"page_height": "   "}, filename="resume.yaml")
+        story.then("a ValueError explains the numeric requirement")
+
+    def test_coerce_number_rejects_non_numeric_iterable(self, story: Scenario) -> None:
+        """Non-numeric iterable values are invalid."""
+        story.given("a list containing numeric text is supplied as sidebar_width")
+        story.when("the coercion helper attempts conversion")
+        with pytest.raises(ValueError):
+            prepare_config({"sidebar_width": ["100"]}, filename="resume.yaml")
+        story.then("the helper raises ValueError for unsupported iterable input")
+
+    # NOTE: Color utility tests (calculate_text_color, calculate_luminance)
+    # have been moved to test_api_colors.py as these are now part of the
+    # simple_resume.api.colors module
+
+
+class TestNormalizeConfigEdgeCases:
+    """Regression coverage for normalize_config validation branches."""
+
+    def test_normalize_config_rejects_non_positive_page_dimensions(
+        self,
+        story: Scenario,
+    ) -> None:
+        """Both page width and height must be positive numbers."""
+        story.given("resume config includes a non-positive page_height")
+        story.when("normalize_config validates the dimension")
+        with pytest.raises(ValueError):
+            utilities.normalize_config({"page_height": 0}, filename="resume.yaml")
+        story.then("a ValueError explains the positive requirement")
+
+    def test_normalize_config_validates_sidebar_width_bounds(
+        self,
+        story: Scenario,
+    ) -> None:
+        """Sidebar width cannot be equal to or exceed page width."""
+        story.given("sidebar width equals page width in the config")
+        story.when("normalize_config processes the data")
+        config_data = {"page_width": 210, "sidebar_width": 210}
+        with pytest.raises(ValueError):
+            utilities.normalize_config(config_data, filename="resume.yaml")
+        story.then("the helper raises ValueError about sidebar bounds")
+
+    def test_normalize_config_sets_default_color_scheme_for_non_string(
+        self, story: Scenario
+    ) -> None:
+        """Non-string color_scheme values fall back to default."""
+        story.given("color_scheme is provided as a non-string value")
+        story.when("normalize_config processes the configuration")
+        normalized, _ = utilities.normalize_config({"color_scheme": 123})
+        story.then("the scheme defaults to 'default'")
+        assert normalized["color_scheme"] == "default"
+
+    def test_normalize_config_rejects_non_string_color_values(
+        self,
+        story: Scenario,
+    ) -> None:
+        """Color fields must be strings containing hex codes."""
+        story.given("theme_color is provided as a list instead of a string")
+        story.when("normalize_config runs validation")
+        with pytest.raises(ValueError):
+            utilities.normalize_config(
+                {"theme_color": ["#FFF"]}, filename="resume.yaml"
+            )
+        story.then("a ValueError surfaces for invalid color value types")
+
+
+class TestPaletteHandling:
+    """Ensure palette helpers handle error and success scenarios."""
+
+    def test_apply_palette_block_wraps_expected_errors(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        story: Scenario,
+    ) -> None:
+        """Expected exceptions are wrapped in PaletteGenerationError."""
+
+        def type_error(_input: object) -> tuple[list[str], dict[str, Any]]:
+            raise TypeError("Invalid type")
+
+        monkeypatch.setattr(utilities, "_resolve_palette_block", type_error)
+        config_data = {"palette": {"source": "registry", "name": "modern"}}
+        story.given("palette resolution raises a TypeError")
+        with pytest.raises(
+            PaletteGenerationError,
+            match="Invalid palette block: Invalid type",
+        ):
+            utilities._apply_palette_block(config_data)
+        story.then("the TypeError is wrapped in PaletteGenerationError")
+
+    def test_apply_palette_block_does_not_wrap_unexpected_errors(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        story: Scenario,
+    ) -> None:
+        """Unexpected exceptions (like RuntimeError) are not caught and propagate."""
+
+        def boom(_input: object) -> tuple[list[str], dict[str, Any]]:
+            raise RuntimeError("boom")
+
+        monkeypatch.setattr(utilities, "_resolve_palette_block", boom)
+        config_data = {"palette": {"source": "registry", "name": "modern"}}
+        story.given("palette resolution raises an unexpected RuntimeError")
+        with pytest.raises(RuntimeError, match="boom"):
+            utilities._apply_palette_block(config_data)
+        story.then("the RuntimeError propagates without being wrapped")
+
+    def test_apply_palette_block_returns_none_for_empty_swatches(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        story: Scenario,
+    ) -> None:
+        """Empty swatch lists result in no palette metadata."""
+
+        def empty(_input: object) -> tuple[list[str], dict[str, Any]]:
+            return [], {"source": "custom"}
+
+        monkeypatch.setattr(utilities, "_resolve_palette_block", empty)
+        config_data = {"palette": {"source": "registry", "name": "modern"}}
+        story.given("palette resolution returns no swatches")
+        story.when("the palette block applies the swatches")
+        result = utilities._apply_palette_block(config_data)
+        story.then("no palette metadata is produced when swatches are empty")
+        assert result is None
+
+    def test_resolve_palette_block_requires_registry_name(
+        self,
+        story: Scenario,
+    ) -> None:
+        """Registry source without a palette name raises PaletteLookupError."""
+        story.given("a palette block specifies registry source without a name")
+        with pytest.raises(PaletteLookupError):
+            utilities._resolve_palette_block({"source": "registry"})
+        story.then("palette lookup errors to inform missing name")
+
+    def test_resolve_palette_block_validates_generator_ranges(
+        self,
+        story: Scenario,
+    ) -> None:
+        """Generator sources must provide valid hue and luminance ranges."""
+        block = {
+            "source": "generator",
+            "hue_range": (0,),
+            "luminance_range": (0.2, 0.8),
+        }
+        story.given("generator palette block has malformed hue_range")
+        with pytest.raises(PaletteGenerationError):
+            utilities._resolve_palette_block(block)
+        story.then("palette generation errors to highlight invalid ranges")
+
+    def test_resolve_palette_block_remote_success(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        story: Scenario,
+    ) -> None:
+        """Remote palette lookups hydrate configuration metadata."""
+
+        class DummyPalette:
+            name = "Example"
+            swatches = ("#111111", "#222222", "#333333")
+            metadata = {"creator": "api"}
+
+        class DummyClient:
+            def fetch(self, **_: Any) -> list[DummyPalette]:
+                return [DummyPalette()]
+
+        monkeypatch.setattr(utilities, "ColourLoversClient", lambda: DummyClient())
+        story.given("the remote palette provider returns a palette")
+        story.when("the palette block resolves the remote palette")
+        swatches, metadata = utilities._resolve_palette_block({"source": "remote"})
+        story.then("metadata reflects remote source details")
+        assert swatches == list(DummyPalette.swatches)
+        assert metadata["source"] == "remote"
+        assert metadata["name"] == DummyPalette.name
+
+    def test_resolve_palette_block_remote_without_results(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        story: Scenario,
+    ) -> None:
+        """Remote palette lookup must return at least one palette."""
+
+        class DummyClient:
+            def fetch(self, **_: Any) -> list[Any]:
+                return []
+
+        monkeypatch.setattr(utilities, "ColourLoversClient", lambda: DummyClient())
+        story.given("the remote provider returns no palettes")
+        with pytest.raises(PaletteLookupError):
+            utilities._resolve_palette_block({"source": "remote"})
+        story.then("a PaletteLookupError communicates missing palettes")
+
+
+class TestSkillFormatting:
+    """Additional coverage for format_skill_groups helpers."""
+
+    # NOTE: test_coerce_items_handles_none_and_sets removed - _coerce_items
+    # was a redundant alias that has been eliminated during API cleanup
+
+    def test_format_skill_groups_with_dict_input(self, story: Scenario) -> None:
+        """Dictionary inputs produce titled groups."""
+        story.given("skill groups provided as a dictionary")
+        story.when("the formatter processes the entries")
+        result = utilities.format_skill_groups({"Languages": ["Python", "Go"]})
+        story.then("each key becomes a titled group")
+        assert result == [
+            {"title": "Languages", "items": ["Python", "Go"]},
+        ]
+
+    def test_format_skill_groups_with_nested_iterables(self, story: Scenario) -> None:
+        """Nested iterables expand into multiple groups."""
+        payload: list[Any] = [
+            {"Frameworks": ["FastAPI"]},
+            "Docker",
+        ]
+        story.given("skills contain nested dictionaries and strings")
+        story.when("the formatter normalizes the payload")
+        result = utilities.format_skill_groups(payload)
+        story.then("groups reflect nested structure with proper titles")
+        assert result[0]["title"] == "Frameworks"
+        first_items = result[0]["items"]
+        assert isinstance(first_items, list)
+        assert "FastAPI" in first_items
+        assert result[1]["title"] is None
+        second_items = result[1]["items"]
+        assert isinstance(second_items, list)
+        assert second_items == ["Docker"]
+
+    def test_format_skill_groups_simple_string(self, story: Scenario) -> None:
+        """Simple strings become untitled groups."""
+        story.given("a single string skill is provided")
+        story.when("the formatter converts it into groups")
+        result = utilities.format_skill_groups("pytest")
+        story.then("the result contains a single untitled group with the value")
+        assert result == [{"title": None, "items": ["pytest"]}]

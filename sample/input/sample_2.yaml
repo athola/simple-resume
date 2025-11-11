@@ -111,10 +111,11 @@ config:
 
   # Sizes
   padding: 12
-  page_width: 190
-  page_height: 270
+  page_width: 210
+  page_height: 297
 
   sidebar_width: 60
+  sidebar_padding_top: 5
   profile_image_padding_bottom: 6
 
   pitch_padding_top: 4
@@ -122,6 +123,7 @@ config:
   pitch_padding_left: 4
 
   h2_padding_left: 4
+  h3_padding_top: 5
   date_container_width: 13
   date_container_padding_left: 8
   description_container_padding_left: 3
@@ -134,3 +136,11 @@ config:
   cover_padding_top: 10
   cover_padding_bottom: 20
   cover_padding_h: 25
+
+  # Section heading icon layout customization
+  section_icon_circle_size: "7.8mm"
+  section_icon_circle_x_offset: "-0.5mm"
+  section_icon_design_size: "4mm"
+  section_icon_design_x_offset: "-0.1mm"
+  section_icon_design_y_offset: "-0.4mm"
+  section_heading_text_margin: "-6mm"

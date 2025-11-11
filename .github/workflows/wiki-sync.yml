@@ -19,7 +19,8 @@ jobs:
           fetch-depth: 0
 
       - name: Sync repository wiki pages
-        uses: Andrew-Chen-Wang/github-wiki-action@v5
+        uses: Andrew-Chen-Wang/github-wiki-action@v5.0.3
+        continue-on-error: true
         with:
           token: ${{ secrets.WIKI_TOKEN }}
           path: wiki

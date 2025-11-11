@@ -13,8 +13,8 @@ from typing import Any, TypedDict
 
 import yaml
 
-import easyresume
-from easyresume.utilities import get_content
+from simple_resume.config import Paths
+from simple_resume.utilities import get_content
 
 
 class ContactScenario(TypedDict):
@@ -451,7 +451,7 @@ in software development.
                     "description": (
                         "This is a detailed description of my qualifications and "
                         "experience that makes me suitable for this position. I have "
-                        "extensive knowledge in various technologies and I'm very "
+                        "knowledge in various technologies and I'm "
                         "passionate about learning new things and contributing to the "
                         "team's success with my skills and dedication."
                     ),
@@ -613,17 +613,17 @@ in software development.
 
         return True  # Default to valid for unknown templates
 
-    def _get_resume_content_length(self, resume_data: dict[str, Any]) -> int:
+    def _get_resume_content_length(self, resume_data: dict[str, object]) -> int:
         """Calculate total content length of Resume."""
         content_parts = [
             resume_data.get("description", ""),
             resume_data.get("full_name", ""),
-            " ".join(resume_data.get("expertise", [])),
+            " ".join(resume_data.get("expertise", [])),  # type: ignore[arg-type]
         ]
 
         # Add body content
         body = resume_data.get("body", {})
-        for section in body.values():
+        for section in body.values():  # type: ignore[attr-defined]
             for item in section:
                 content_parts.extend(
                     [
@@ -647,15 +647,17 @@ in software development.
         # Test input directory
         test_input_dir = temp_dir / "input"
         test_input_dir.mkdir(exist_ok=True)
+        test_output_dir = temp_dir / "output"
+        test_output_dir.mkdir(exist_ok=True)
         (test_input_dir / "test_resume.yaml").write_text(resume_file.read_text())
 
+        # Create Paths object for testing
+        paths = Paths(
+            data=temp_dir,
+            input=test_input_dir,
+            output=test_output_dir,
+        )
+
         # Process through business logic
-
-        original_path = easyresume.utilities.PATH_INPUT
-        easyresume.utilities.PATH_INPUT = str(test_input_dir) + "/"
-
-        try:
-            processed_resume = get_content("test_resume")
-            return processed_resume
-        finally:
-            easyresume.utilities.PATH_INPUT = original_path
+        processed_resume = get_content("test_resume", paths=paths)
+        return processed_resume

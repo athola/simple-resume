@@ -31,6 +31,10 @@ nosetests.xml
 pylint.xml
 */pylint.xml
 
+# Temporary files from build processes
+*.tmp
+*.temp
+
 # Packaging / build output
 build/
 dist/
@@ -49,6 +53,19 @@ resume_private/
 
 # Generated samples
 sample/output/
+resume_private/output/
+
+# Generated output files (but keep source templates)
+*.pdf
+*.html
+*.tex
+!src/simple_resume/templates/*.html
+!src/simple_resume/templates/latex/*.tex
+
+# Preview images (but keep main preview.jpg/png for README)
+*preview_new*
+*preview_temp*
+test_preview-*.png
 
 # Playground notebooks and temporary files
 */test.ipynb
@@ -71,3 +88,4 @@ src/static/images/*
 .DS_Store
 *.swp
 commit_msg.txt
+bandit-report.json

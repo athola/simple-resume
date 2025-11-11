@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - "pyproject.toml"
-      - "src/easyresume/__init__.py"
+      - "src/simple_resume/__init__.py"
   workflow_dispatch:
 
 permissions:
@@ -53,7 +53,7 @@ jobs:
       - name: PyPI Token Missing
         if: ${{ github.ref == 'refs/heads/main' && steps.detect-token.outputs.present == 'false' }}
         run: |
-          echo "⚠️  PYPI_API_TOKEN secret not configured"
+          echo "PYPI_API_TOKEN secret not configured"
           echo "To enable PyPI publishing:"
           echo "1. Visit https://pypi.org/manage/account/token/"
           echo "2. Create an API token scoped to this project"
@@ -62,6 +62,6 @@ jobs:
 
       - name: GitHub Packages Info
         run: |
-          echo "ℹ️  Python packages are published to PyPI only."
+          echo "Python packages are published to PyPI only."
           echo "GitHub Packages does not host PyPI distributions for this project."
           echo "See https://docs.github.com/en/packages for alternative package types."

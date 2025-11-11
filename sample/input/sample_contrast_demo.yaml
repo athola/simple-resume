@@ -1,0 +1,106 @@
+template: resume_with_bars
+
+full_name: Casey Contrast
+job_title: Color Contrast Specialist
+
+address:
+  - 101 Spectrum Way
+  - Austin, TX
+
+phone: "(512) 555-2025"
+email: casey.contrast@example.com
+web: https://caseycontrast.dev
+
+titles:
+  contact: Contact
+  skills: Skills
+  expertise: Strengths
+  certification: Certifications
+  keyskills: Tools
+  languages: Languages
+
+description: |
+  Demo showcasing **automatic text contrast adjustment**. This configuration uses
+  a dark purple sidebar, and all text in the sidebar automatically adjusts to
+  light colors for optimal readability.
+
+skills:
+  Color Accessibility: 55
+  UI/UX Design: 48
+  WCAG Compliance: 52
+  Color Theory: 45
+  A11y Testing: 40
+
+expertise:
+  - Color accessibility
+  - WCAG compliance
+  - UI/UX design
+
+certification:
+  - Certified Professional in Accessibility
+  - WCAG Specialist
+
+keyskills:
+  - Color theory
+  - Contrast ratios
+  - Palette design
+  - A11y testing
+
+languages:
+  English: 60
+  Spanish: 28
+
+body:
+  Experience:
+    -
+      start: 2022
+      end: Present
+      title: Accessibility Specialist
+      company: Color Labs
+      description: |
+        - Implemented automatic contrast adjustment for dark themes.
+        - Ensured WCAG AA compliance across all color combinations.
+        - Developed responsive color systems for mobile and web.
+  Education:
+    -
+      start: 2014
+      end: 2018
+      title: B.S. Color Science
+      company: Design Institute
+
+config:
+  color_scheme: generator deep_purple
+  palette:
+    source: generator
+    type: hcl
+    size: 6
+    seed: 42
+    hue_range: [260, 280]  # Purple range
+    luminance_range: [0.12, 0.25]  # Dark to medium-dark
+    chroma: 0.3  # Rich saturation
+
+  padding: 12
+  page_width: 210
+  page_height: 297
+  sidebar_width: 60
+  sidebar_padding_top: 5
+  profile_image_padding_bottom: 6
+  pitch_padding_top: 4
+  pitch_padding_bottom: 4
+  pitch_padding_left: 4
+  h2_padding_left: 4
+  h3_padding_top: 5
+  date_container_width: 13
+  date_container_padding_left: 8
+  description_container_padding_left: 3
+  frame_padding: 10
+  frame_color: "#757575"
+  bold_color: "#585858"  # Darkened frame for bold text
+
+  # Section heading icon layout customization
+  section_icon_circle_size: "7.8mm"
+  section_icon_circle_x_offset: "-0.5mm"
+  section_icon_design_size: "4mm"
+  section_icon_design_x_offset: "-0.1mm"
+  section_icon_design_y_offset: "-0.4mm"
+  section_heading_text_margin: "-6mm"

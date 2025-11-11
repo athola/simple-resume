@@ -1,0 +1,106 @@
+template: resume_with_bars
+
+full_name: Casey Dark Mode
+job_title: Design Technologist
+
+address:
+  - 101 Dark Way
+  - Austin, TX
+
+phone: "(512) 555-2025"
+email: casey.dark@example.com
+web: https://caseydark.dev
+
+titles:
+  contact: Contact
+  skills: Skills
+  expertise: Strengths
+  certification: Certifications
+  keyskills: Tools
+  languages: Languages
+
+description: |
+  Demonstration resume with a **dark sidebar** to showcase automatic text color
+  adjustment. The sidebar text should automatically switch to light colors when
+  the sidebar background is dark.
+
+skills:
+  Creative Coding: 50
+  Design Systems: 48
+  Accessibility: 52
+  Frontend Dev: 45
+  Prototyping: 40
+
+expertise:
+  - Creative coding
+  - Design systems
+  - Accessibility
+
+certification:
+  - Accessibility Auditor
+  - Frontend Specialist
+
+keyskills:
+  - Python
+  - Figma
+  - WebGL
+  - Storybook
+
+languages:
+  English: 58
+  Spanish: 30
+
+body:
+  Experience:
+    -
+      start: 2022
+      end: Present
+      title: Design Technologist
+      company: Spectrum Labs
+      description: |
+        - Partnered with design to ship a component library used across 12 product teams.
+        - Automated theme generation using YAML palettes and codemods.
+        - Led accessibility audits that removed 180+ contrast violations.
+  Education:
+    -
+      start: 2014
+      end: 2018
+      title: B.S. Human-Centered Design
+      company: University of Texas
+
+config:
+  color_scheme: generator dark_dusk
+  palette:
+    source: generator
+    type: hcl
+    size: 6
+    seed: 1957
+    hue_range: [240, 280]  # Blue-purple range for dark colors
+    luminance_range: [0.08, 0.2]  # Very dark to dark
+    chroma: 0.25  # Moderate saturation
+
+  padding: 12
+  page_width: 210
+  page_height: 297
+  sidebar_width: 60
+  sidebar_padding_top: 5
+  profile_image_padding_bottom: 6
+  pitch_padding_top: 4
+  pitch_padding_bottom: 4
+  pitch_padding_left: 4
+  h2_padding_left: 4
+  h3_padding_top: 5
+  date_container_width: 13
+  date_container_padding_left: 8
+  description_container_padding_left: 3
+  frame_padding: 10
+  frame_color: "#757575"
+  bold_color: "#585858"  # Darkened frame for bold text
+
+  # Section heading icon layout customization
+  section_icon_circle_size: "7.8mm"
+  section_icon_circle_x_offset: "-0.5mm"
+  section_icon_design_size: "4mm"
+  section_icon_design_x_offset: "-0.1mm"
+  section_icon_design_y_offset: "-0.4mm"
+  section_heading_text_margin: "-6mm"

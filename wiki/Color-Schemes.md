@@ -1,136 +1,114 @@
 # Color Scheme Guide
 
-Customize Resume colors by defining them in your YAML `config` section.
+This guide explains how to customize the colors of your resume. You can use preset color schemes, define your own colors, or use palette files for more advanced configurations.
 
 ## Color Properties
 
-```yaml
-config:
-  theme_color: "#0395DE"          # Headings, icons, and accents
-  sidebar_color: "#F6F6F6"        # Sidebar background
-  bar_background_color: "#DFDFDF"  # Progress bar background (in `resume_with_bars` template)
-  date2_color: "#616161"          # Secondary date text
-  frame_color: "#757575"          # Preview frame (web preview only)
-```
+The following color properties can be set in the `config` section of your YAML file. All colors must be specified as quoted hexadecimal strings (e.g., `"#0395DE"`).
 
-## Preset Schemes
-
-Copy a preset into your YAML `config` section.
-
-### Professional Blue (Default)
-
-High-contrast blue for on-screen and print readability.
+-   `theme_color`: The primary color for headings and other accent elements.
+-   `sidebar_color`: The background color of the sidebar.
+-   `sidebar_text_color`: The text color in the sidebar. If not provided, this color is automatically calculated based on the `sidebar_color` to ensure readability. Contact icons also use this color.
+-   `bar_background_color`: The background color of skill bars.
+-   `date2_color`: The color for secondary date text.
+-   `frame_color`: The color of the preview frame in the web preview.
+-   `bold_color`: The color for bolded text. If not provided, it is derived from the `frame_color`.
 
 ```yaml
 config:
   theme_color: "#0395DE"
   sidebar_color: "#F6F6F6"
+  sidebar_text_color: "#000000"
   bar_background_color: "#DFDFDF"
   date2_color: "#616161"
   frame_color: "#757575"
+  bold_color: "#585858"
 ```
 
-### Creative Purple
+## Using Color Schemes
 
-A saturated purple that is optimized for screen viewing.
+### Preset Schemes
+
+The easiest way to change the look of your resume is to use one of the built-in color schemes.
 
 ```yaml
 config:
-  theme_color: "#7B3FF2"
-  sidebar_color: "#F5F3FF"
-  bar_background_color: "#E9D5FF"
-  date2_color: "#6B21A8"
-  frame_color: "#9333EA"
+  color_scheme: "Professional Blue"
 ```
 
-### Minimal Dark
+The following presets are available:
 
-Charcoal and neutral grays for reliable printing.
+-   **Professional Blue** (default): A high-contrast blue suitable for both screen and print.
+-   **Creative Purple**: A saturated purple, best for screen viewing.
+-   **Minimal Dark**: A theme with charcoal and neutral grays.
+-   **Energetic Orange**: A high-saturation orange.
+-   **Modern Teal**: A medium-saturation teal.
+-   **Classic Green**: A WCAG AA compliant green.
+
+### Custom Schemes
+
+You can define your own color scheme by setting the color properties directly in your YAML file.
 
 ```yaml
 config:
-  theme_color: "#1F2937"
-  sidebar_color: "#F9FAFB"
-  bar_background_color: "#E5E7EB"
-  date2_color: "#6B7280"
-  frame_color: "#374151"
+  theme_color: "#0395DE"
+  sidebar_color: "#F6F6F6"
 ```
 
-### Energetic Orange
+## Using Palette Files
 
-High-saturation orange. May lose detail on lower-quality paper.
+For more advanced and reusable color configurations, you can use palette files. A palette file is a YAML file that defines a set of colors.
+
+To use a palette file, pass the path to the file using the `--palette` command-line argument.
+
+```bash
+uv run simple-resume generate --palette resume_private/palettes/my-theme.yaml
+```
+
+### Direct Color Palettes
+
+A direct color palette file defines the exact colors to be used.
+
+**`resume_private/palettes/direct-theme.yaml`**
 
 ```yaml
-config:
-  theme_color: "#EA580C"
-  sidebar_color: "#FFF7ED"
-  bar_background_color: "#FFEDD5"
-  date2_color: "#9A3412"
-  frame_color: "#C2410C"
+palette:
+  theme_color: "#4060A0"
+  sidebar_color: "#D0D8E8"
+  bar_background_color: "#B8B8B8"
+  date2_color: "#444444"
+  sidebar_text_color: "#333333"
+  frame_color: "#324970"
+  bold_color: "#263657"
 ```
 
-### Modern Teal
+### Generated Palettes
 
-Medium saturation teal with good screen-to-print consistency.
+You can also generate a palette of colors based on a set of parameters. This is useful for creating a consistent set of colors from a single seed color.
+
+**`resume_private/palettes/generated-theme.yaml`**
 
 ```yaml
-config:
-  theme_color: "#0891B2"
-  sidebar_color: "#F0FDFA"
-  bar_background_color: "#CCFBF1"
-  date2_color: "#134E4A"
-  frame_color: "#0E7490"
+palette:
+  source: generator
+  type: hcl
+  size: 6
+  seed: 42
+  hue_range: [200, 220]
+  luminance_range: [0.25, 0.7]
+  chroma: 0.25
 ```
 
-### Classic Green
+## Verifying Colors
 
-WCAG AA compliant green for text on white backgrounds.
+To check how your colors will look, generate the resume in both HTML and PDF formats. The HTML preview is useful for quick iteration, but the PDF will give you the most accurate representation of the final printed colors.
 
-```yaml
-config:
-  theme_color: "#059669"
-  sidebar_color: "#F0FDF4"
-  bar_background_color: "#D1FAE5"
-  date2_color: "#065F46"
-  frame_color: "#047857"
+```bash
+uv run simple-resume generate --format html --open
+uv run simple-resume generate --format pdf --open
 ```
-
-## Guidelines
-
-### Color Format
-
-All colors must be quoted hexadecimal strings with a leading `#`.
-
-- `"#0395DE"` (Correct)
-- `"#000"` (Short form is valid)
-- `"0395DE"` (Invalid: missing `#`)
-- `"rgb(3, 149, 222)"` (Invalid: RGB not supported)
-- `"blue"` (Invalid: named colors not supported)
-
-### Testing
-
-1. **Web Preview**: Run `uv run python src/easyresume/index.py`. Follow the walkthrough in
-   [../README.md#quick-start](../README.md#quick-start).
-2. **PDF Generation**: Run `uv run python src/easyresume/generate_pdf.py`.
-3. **Print Test**: Print a sample page to check paper output.
-
-## Template-Specific Colors
-
-- **`resume_no_bars`**: Uses `theme_color`, `sidebar_color`, and `date2_color`.
-- **`resume_with_bars`**: Uses all colors.
-  `bar_background_color` sets the empty portion of skill bars.
-- **`frame_color`**: Only used in the web preview border.
-
-## Creating Custom Schemes
-
-Start with a `theme_color`. Choose a neutral `sidebar_color`.
-Derive other colors from the primary, such as a desaturated `bar_background`
-or a darker `date2_color`. See the sample palettes in
-[../sample/input/sample_1.yaml](../sample/input/sample_1.yaml) and
-[../sample/input/sample_2.yaml](../sample/input/sample_2.yaml) for examples.
 
 ## Troubleshooting
 
-- **Colors not appearing**: Ensure values are quoted strings with a leading `#`.
-- **Poor readability**: Check contrast between text and background colors.
-- **PDF color differences**: Colors can render differently in PDFs. Always generate a test PDF.
+-   **Colors are not being applied:** Ensure that the color values are enclosed in quotes and start with a `#`.
+-   **Text is hard to read:** Check the contrast between your text and background colors. You can use an online contrast checker to ensure your color combinations are accessible.

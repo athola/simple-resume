@@ -1,0 +1,249 @@
+template: resume_with_bars
+full_name: Taylor Santos
+job_title: Full Stack Developer
+address:
+- 101 Color Way
+- Austin, TX
+phone: (512) 555-2667
+email: taylor.santos.856q9t8b@example.com
+web: https://taylorsantos.dev
+linkedin: in/taylor-santos-98dm
+github: taylorsantos
+titles:
+  contact: Contact
+  skills: Skills
+  expertise: Strengths
+  certification: Certifications
+  programming: Technical Tooling
+  keyskills: Key Skills
+  languages: Languages
+description: 'Experienced with microservices architecture and modern development practices.
+  Experienced with automated testing and modern development practices.
+
+
+  Experienced with performance optimization and modern development practices. Experienced
+  with containerization and modern development practices.'
+skills:
+  UI/UX Design: 55
+  Frontend Development: 48
+  Design Systems: 52
+  Prototyping: 46
+  User Research: 42
+  Data Visualization: 38
+expertise:
+  Product Strategy:
+  - Journey mapping
+  - Experiment design
+  Delivery:
+  - Design systems
+  - Rapid prototyping
+  Research & Analytics:
+  - Field studies
+  - Accessibility audits
+certification:
+- DesignOps Professional
+- Accessibility Auditor
+- ScrumMaster (PSM I)
+programming:
+  Prototyping:
+  - TypeScript
+  - React
+  - WebGL
+  Data & Automation:
+  - Python
+  - dbt
+  - SQL
+  Infrastructure:
+  - Terraform
+  - GitHub Actions
+  - Docker
+keyskills:
+- Service blueprints
+- Usability testing
+- Domain modeling
+- API design
+- Accessibility audits
+- Stakeholder facilitation
+- Experiment analysis
+languages:
+  English: 60
+  Spanish: 35
+  French: 25
+body:
+  Experience:
+  - start: 2022
+    end: Present
+    title: Principal Design Technologist
+    title_link: https://spectrumlabs.design/systems
+    company: Quantum Dynamics
+    company_link: https://spectrumlabs.design
+    description: '- Streamlined development workflow reducing build time by 65%
+
+      - Architected scalable solution handling 434K requests/day
+
+      - Increased test coverage from 56% to 94%'
+    tech_stack: TypeScript, React, Styled Components, Figma API, Python, PostgreSQL
+  - start: 2018
+    end: 2022
+    title: Senior UX Engineer
+    company: DevStack
+    company_link: https://auroraanalytics.io
+    description: '- Reduced latency by 46% through optimization
+
+      - Reduced latency by 78% through optimization
+
+      - Implemented monitoring system tracking 85+ metrics
+
+      - Architected scalable solution handling 675K requests/day'
+    tech_stack: React, TypeScript, Jest, Storybook, Webpack, Node.js
+  Projects:
+  - start: 2024
+    end: 2024
+    title: Adaptive Palette Generator
+    title_link: https://github.com/caseypalette/adaptive-palettes
+    company: Personal Project
+    description: '- Built distributed system to handle multi-tenant operations
+
+      - Created automated deployment pipeline reducing manual effort by 71%
+
+      - Created automated code review process reducing manual effort by 58%'
+  - start: 2023
+    end: 2023
+    title: Voice of Customer Pipeline
+    company: Open Source Collective
+    company_link: https://github.com/caseypalette/voc-pipeline
+    description: '- Built distributed system to handle multi-tenant operations
+
+      - Optimized frontend rendering achieving 99.9% uptime
+
+      - Built distributed system to handle multi-tenant operations'
+  Awards & Honors:
+  - start: 2023
+    end: 2023
+    title: "UX Awards \u2014 Best Systems Initiative"
+    company: DesignOps Summit
+    description: '- Experienced with caching strategies and modern development practices.
+
+      - Experienced with performance optimization and modern development practices.
+
+      - Experienced with containerization and modern development practices.'
+  - start: 2022
+    end: 2022
+    title: "Webby Awards \u2014 People\u2019s Voice (Productivity)"
+    company: The Webby Awards
+    description: '- Experienced with cloud infrastructure and modern development practices.
+
+      - Experienced with system monitoring and modern development practices.
+
+      - Experienced with API design and modern development practices.'
+  Publications:
+  - start: 2022
+    end: 2022
+    title: Designing Color Systems for Accessibility
+    title_link: https://medium.com/@caseypalette/color-systems-accessibility
+    company: Medium
+    description: '- Experienced with orchestration and modern development practices.
+
+      - Experienced with CI/CD pipelines and modern development practices.
+
+      - Experienced with automated testing and modern development practices.'
+  - start: 2021
+    end: 2021
+    title: Measuring Design Impact with Product Analytics
+    company: Design Leadership Forum
+    description: '- Experienced with cloud infrastructure and modern development practices.
+
+      - Experienced with automated testing and modern development practices.
+
+      - Experienced with performance optimization and modern development practices.'
+  Speaking Engagements:
+  - start: 2024
+    end: 2024
+    title: "Keynote \u2014 Measuring Design Impact"
+    company: ColorConf
+    description: '- Experienced with CI/CD pipelines and modern development practices.
+
+      - Experienced with microservices architecture and modern development practices.'
+  - start: 2023
+    end: 2023
+    title: "Workshop \u2014 Accessible Theming in Practice"
+    company: Config by Figma
+    description: '- Experienced with API design and modern development practices.
+
+      - Experienced with containerization and modern development practices.
+
+      - Experienced with caching strategies and modern development practices.
+
+      - Experienced with CI/CD pipelines and modern development practices.'
+  Volunteer Service:
+  - start: 2021
+    end: Present
+    title: "Mentor \u2014 Inclusive Design"
+    company: ADPList
+    description: '- Experienced with database design and modern development practices.
+
+      - Experienced with cloud infrastructure and modern development practices.
+
+      - Experienced with database design and modern development practices.'
+  - start: 2020
+    end: Present
+    title: "Organizer \u2014 Civic Tech Nights"
+    company: Austin Design Week
+    description: '- Experienced with database design and modern development practices.
+
+      - Experienced with cloud infrastructure and modern development practices.
+
+      - Experienced with cloud infrastructure and modern development practices.
+
+      - Experienced with orchestration and modern development practices.'
+  Education:
+  - start: 2014
+    end: 2018
+    title: B.S. Human-Centered Design
+    company: University of Texas at Austin
+    description: '- Experienced with API design and modern development practices.
+
+      - Experienced with API design and modern development practices.'
+config:
+  color_scheme: Safe_5
+  palette:
+    source: generator
+    type: hcl
+    size: 5
+    seed: 1957
+    hue_range:
+    - 260
+    - 330
+    luminance_range:
+    - 0.25
+    - 0.78
+    chroma: 0.18
+  padding: 12
+  page_width: 210
+  page_height: 297
+  sidebar_width: 60
+  sidebar_padding_top: 6
+  profile_image_padding_bottom: 6
+  pitch_padding_top: 4
+  pitch_padding_bottom: 4
+  pitch_padding_left: 4
+  h2_padding_left: 4
+  h3_padding_top: 5
+  date_container_width: 12
+  date_container_padding_left: 6
+  description_container_padding_left: 2
+  frame_padding: 10
+  frame_color: '#644F4F'
+  bold_color: '#4B3B3B'
+  section_icon_circle_size: 7.8mm
+  section_icon_circle_x_offset: -0.5mm
+  section_icon_design_size: 4mm
+  section_icon_design_x_offset: -0.1mm
+  section_icon_design_y_offset: -0.4mm
+  section_heading_text_margin: -6mm
+  output_mode: markdown
+  theme_color: '#88CCEE'
+  sidebar_color: '#CC6677'
+  sidebar_text_color: '#DDCC77'
+  bar_background_color: '#117733'
+  date2_color: '#332288'

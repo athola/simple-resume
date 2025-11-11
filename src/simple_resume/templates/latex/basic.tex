@@ -1,0 +1,95 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.55in]{geometry}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage[T1]{fontenc}
+\usepackage{titlesec}
+\usepackage{tabularx}
+{{ fontawesome_block }}
+\renewcommand{\familydefault}{\sfdefault}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.12em}
+
+\setlist[itemize]{leftmargin=1.2em,itemsep=0.02em,topsep=0.02em,parsep=0.01em}
+\setlist[enumerate]{leftmargin=1.2em,itemsep=0.02em,topsep=0.02em,parsep=0.01em}
+
+\titleformat{\section}{\Large\bfseries\scshape}{\thesection}{0.3em}{}
+\titlespacing*{\section}{0pt}{0.4em}{0.2em}
+
+\hypersetup{
+    colorlinks=true,
+    urlcolor=black,
+    linkcolor=black
+}
+
+\begin{document}
+
+\begin{tabularx}{\textwidth}{@{} X r @{}}
+    {\huge \textbf{ {{ full_name }} }} &
+    {% if headline -%}
+    {\normalsize {{ headline }}}
+    {%- endif %}
+\end{tabularx}
+\hrule height 0.6pt
+\vspace{0.2em}
+
+{% macro render_block(block) -%}
+{% if block["kind"] == "paragraph" -%}
+\noindent {{ block["text"] }}\par
+{% elif block["kind"] == "itemize" -%}
+\begin{itemize}
+{% for item in block["items"] -%}
+\item {{ item }}
+{% endfor -%}
+\end{itemize}
+{% elif block["kind"] == "enumerate" -%}
+\begin{enumerate}
+{% for item in block["items"] -%}
+\item {{ item }}
+{% endfor -%}
+\end{enumerate}
+{% endif -%}
+{%- endmacro %}
+
+\setlength{\tabcolsep}{0pt}
+
+\begin{tabularx}{\textwidth}{@{}p{0.36\textwidth}@{\hspace{1em}}X@{}}
+\begin{minipage}[t]{\linewidth}
+\raggedright\small
+{% if contact_lines -%}
+{\large\textbf{CONTACT}}\\[0.2em]
+{{ contact_lines|join(" \\\\ ") }}\\[0.5em]
+{% endif -%}
+{% if summary_blocks -%}
+{\large\textbf{SUMMARY}}\\[0.2em]
+{% for block in summary_blocks -%}
+{{- render_block(block) -}}
+{% endfor -%}
+\vspace{0.35em}
+{% endif -%}
+{% for skill in skill_sections if skill["items"] -%}
+{\large\textbf{ {{- skill["title"]|upper -}} }}\\[0.2em]
+{{ skill["items"]|join(" \\\\ ") }}\\[0.5em]
+{% endfor -%}
+\end{minipage}
+&
+\begin{minipage}[t]{\linewidth}
+\raggedright\small
+
+{% for section in sections -%}
+\section*{ {{- section.title|trim -}} }
+{% for entry in section.entries -%}
+\noindent\textbf{ {{- entry.title|trim -}} }%
+{% if entry.subtitle -%}{\normalsize\ \textit{ {{- entry.subtitle|trim -}} }}{% endif -%}
+{% if entry.date_range -%}\hfill {{ entry.date_range }}{% endif -%}\par
+{% for block in entry.blocks -%}
+{{- render_block(block) -}}
+{% endfor -%}
+\vspace{0.12em}
+{% endfor -%}
+{% endfor -%}
+\end{minipage}
+\end{tabularx}
+
+\end{document}

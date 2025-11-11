@@ -29,8 +29,8 @@ jobs:
 
     - name: Run Bandit (security linter)
       run: |
-        uv run bandit -r src/easyresume/ -f json -o bandit-report.json || true
-        uv run bandit -r src/easyresume/
+        uv run bandit -r src/simple_resume/ -f json -o bandit-report.json || true
+        uv run bandit -r src/simple_resume/
 
     - name: Run Safety (dependency security)
       run: |
@@ -70,12 +70,12 @@ jobs:
 
     - name: Run Radon (cyclomatic complexity)
       run: |
-        uv run radon cc src/easyresume/ --min B
-        uv run radon mi src/easyresume/ --min B
-        uv run radon cc src/easyresume/ --json > radon-report.json || true
+        uv run radon cc src/simple_resume/ --min B
+        uv run radon mi src/simple_resume/ --min B
+        uv run radon cc src/simple_resume/ --json > radon-report.json || true
 
     - name: Run Xenon (complexity monitoring)
-      run: uv run xenon --max-absolute B --max-modules A --max-average A src/easyresume/ || true
+      run: uv run xenon --max-absolute B --max-modules A --max-average A src/simple_resume/ || true
 
     - name: Upload complexity reports
       uses: actions/upload-artifact@v4
@@ -106,7 +106,7 @@ jobs:
 
     - name: Check docstring coverage
       run: |
-        uv run interrogate src/easyresume/ --fail-under 80 --quiet || true
+        uv run interrogate src/simple_resume/ --fail-under 80 --quiet || true
 
     - name: Check README links
       run: |
@@ -115,4 +115,4 @@ jobs:
 
     - name: Validate Markdown files
       run: |
-        find . -name "*.md" -not -path "./.git/*" -not -path "./.venv/*" -not -path "./htmlcov/*" -exec sh -c 'uv run python -c "import markdown; content=open(\"\\$1\").read(); markdown.markdown(content); print(\"✓ \\$1 is valid markdown\")"' _ {} \;
+        find . -name "*.md" -not -path "./.git/*" -not -path "./.venv/*" -not -path "./htmlcov/*" -exec sh -c 'uv run python -c "import markdown; content=open(\"\\$1\").read(); markdown.markdown(content); print(\"\\$1 is valid markdown\")"' _ {} \;

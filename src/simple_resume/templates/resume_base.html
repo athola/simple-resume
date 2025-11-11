@@ -1,0 +1,860 @@
+{%- macro dynamic_font_size(text, max_width_mm=38, base_font_pt=8.5, min_font_pt=7) -%}
+{%- set text_length = text | length -%}
+{%- set char_width_ratio = 0.5 -%}
+{%- set estimated_width_mm = (text_length * base_font_pt * char_width_ratio * 0.3527) -%}
+{%- if estimated_width_mm > max_width_mm -%}
+  {%- set scale_factor = max_width_mm / estimated_width_mm -%}
+  {%- set calculated_font = (base_font_pt * scale_factor) | round(1) -%}
+  {%- if calculated_font >= min_font_pt -%}
+    {{ calculated_font }}pt
+  {%- endif -%}
+{%- else -%}
+  {{ base_font_pt }}pt
+{%- endif -%}
+{%- endmacro %}
+
+{%- macro render_sidebar_entries(entries, available_width, base_font_pt=9, min_font_pt=7) -%}
+{%- set ns = namespace(normalized=[]) -%}
+{%- if entries is mapping -%}
+  {%- for value in entries.values() -%}
+    {%- if value is iterable and value is not mapping and value is not string -%}
+      {%- for item in value -%}
+        {%- set item_str = item | string | trim -%}
+        {%- if item_str -%}{%- set ns.normalized = ns.normalized + [item_str] -%}{%- endif -%}
+      {%- endfor -%}
+    {%- else -%}
+      {%- set item_str = value | string | trim -%}
+      {%- if item_str -%}{%- set ns.normalized = ns.normalized + [item_str] -%}{%- endif -%}
+    {%- endif -%}
+  {%- endfor -%}
+{%- elif entries is string -%}
+  {%- set ns.normalized = [entries] -%}
+{%- elif entries is iterable -%}
+  {%- for value in entries -%}
+    {%- if value is iterable and value is not mapping and value is not string -%}
+      {%- for item in value -%}
+        {%- set item_str = item | string | trim -%}
+        {%- if item_str -%}{%- set ns.normalized = ns.normalized + [item_str] -%}{%- endif -%}
+      {%- endfor -%}
+    {%- else -%}
+      {%- set item_str = value | string | trim -%}
+      {%- if item_str -%}{%- set ns.normalized = ns.normalized + [item_str] -%}{%- endif -%}
+    {%- endif -%}
+  {%- endfor -%}
+{%- else -%}
+  {%- set ns.normalized = [entries | string] -%}
+{%- endif -%}
+{%- set delimiter = resume_config.get("sidebar_inline_delimiter") %}
+{%- if delimiter %}
+  {%- set clean_delimiter = delimiter.strip() %}
+  {%- if clean_delimiter %}
+    {%- set join_token = " " ~ clean_delimiter ~ " " %}
+  {%- else %}
+    {%- set join_token = " " %}
+  {%- endif %}
+  {%- set joined = ns.normalized | join(join_token) %}
+  <p>{{ joined }}</p>
+{%- else %}
+  {%- for entry in ns.normalized %}
+    {%- set text = entry %}
+    <p style="margin-left: 0.5mm; position: relative; padding-left: 2mm;">
+      <span style="position: absolute; left: 0; top: 0; color: {{ section_icon_color }}; opacity: 0.6;">•</span>
+      {{ text }}
+    </p>
+  {%- endfor %}
+{%- endif %}
+{%- endmacro %}
+
+{%- macro section_icon_svg(section_name) -%}
+{%- set name_lower = section_name.lower() -%}
+{% if 'experience' in name_lower or 'work' in name_lower or 'employment' in name_lower %}
+  {# Briefcase icon #}
+  <svg viewBox="0 0 490 490" role="presentation" focusable="false" fill="{{ section_icon_color }}">
+    <path d="M294.4 322.8c0 7.4-6.2 13.6-13.6 13.6h-71.6c-7.4 0-13.6-6.2-13.6-13.6v-62.2L0 174.6V490h490V175l-195.6 85.6v62.2z"/>
+    <path d="M174.3 71.2c0-27.6 22.4-50 50-50h41.4c27.3 0 49.7 22.4 49.7 50v10.1h25V67.7c0-37.3-30.3-67.7-67.3-67.7h-56c-37.3 0-67.7 30.3-67.7 67.7v13.6h25V71.2z"/>
+    <path d="M0 108.5v36.2L245.4 251.2 490 145.1v-36.6z"/>
+  </svg>
+{% elif 'education' in name_lower or 'school' in name_lower or 'university' in name_lower %}
+  {# Graduation cap icon #}
+  <svg viewBox="0 0 24 24" role="presentation" focusable="false" fill="{{ section_icon_color }}">
+    <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/>
+  </svg>
+{% elif 'project' in name_lower %}
+  {# Projects gear icon #}
+  <svg viewBox="0 0 24 24" role="presentation" focusable="false" fill="{{ section_icon_color }}">
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M9.99996 2C9.44768 2 8.99996 2.44772 8.99996 3V4.58178C8.30471 4.86318 7.65844 5.23923 7.07704 5.69365L5.70573 4.90193C5.47605 4.76932 5.20309 4.73338 4.94691 4.80202C4.69073 4.87067 4.47232 5.03827 4.33971 5.26795L2.33971 8.73205C2.06357 9.21034 2.22744 9.82193 2.70573 10.0981L4.07654 10.8895C4.02603 11.2528 3.99997 11.6236 3.99997 12C3.99997 12.3764 4.02603 12.7471 4.07654 13.1105L2.70574 13.9019C2.47605 14.0345 2.30846 14.2529 2.23981 14.5091C2.17117 14.7653 2.2071 15.0382 2.33971 15.2679L4.33971 18.732C4.47232 18.9617 4.69074 19.1293 4.94692 19.198C5.2031 19.2666 5.47605 19.2307 5.70574 19.0981L7.07706 18.3063C7.65846 18.7607 8.30472 19.1368 8.99996 19.4182V21C8.99996 21.5523 9.44768 22 9.99996 22H14C14.5522 22 15 21.5523 15 21V19.4182C15.6952 19.1368 16.3415 18.7607 16.9229 18.3063L18.2942 19.0981C18.5239 19.2307 18.7968 19.2666 19.053 19.198C19.3092 19.1293 19.5276 18.9617 19.6602 18.7321L21.6602 15.268C21.7928 15.0383 21.8288 14.7653 21.7601 14.5091C21.6915 14.253 21.5239 14.0345 21.2942 13.9019L19.9234 13.1105C19.9739 12.7472 20 12.3764 20 12C20 11.6236 19.9739 11.2528 19.9234 10.8895L21.2942 10.0981C21.7725 9.82191 21.9364 9.21032 21.6602 8.73203L19.6602 5.26793C19.5276 5.03824 19.3092 4.87065 19.053 4.802C18.7968 4.73336 18.5239 4.76929 18.2942 4.9019L16.9229 5.69364C16.3415 5.23922 15.6952 4.86318 15 4.58178V3C15 2.44772 14.5522 2 14 2H9.99996ZM11 5.28986V4H13V5.28986C13 5.73228 13.2907 6.12211 13.7147 6.24831C14.6258 6.51947 15.4475 7.00198 16.1223 7.64029C16.4436 7.94424 16.9264 8.00099 17.3095 7.77984L18.4282 7.13395L19.4282 8.866L18.3109 9.51107C17.9281 9.73205 17.7358 10.1781 17.8379 10.6081C17.9437 11.0538 18 11.5197 18 12C18 12.4803 17.9437 12.9462 17.8379 13.3919C17.7358 13.8219 17.9281 14.2679 18.3109 14.4889L19.4282 15.134L18.4282 16.866L17.3094 16.2201C16.9264 15.999 16.4436 16.0557 16.1222 16.3597C15.4475 16.998 14.6258 17.4805 13.7147 17.7516C13.2907 17.8778 13 18.2677 13 18.7101V20H11V18.7101C11 18.2677 10.7092 17.8778 10.2852 17.7516C9.37409 17.4805 8.55246 16.998 7.87767 16.3597C7.55635 16.0557 7.07352 15.999 6.69048 16.2201L5.57176 16.866L4.57176 15.134L5.68905 14.4889C6.0718 14.2679 6.26409 13.8219 6.16201 13.3919C6.05621 12.9462 5.99997 12.4803 5.99997 12C5.99997 11.5197 6.0562 11.0538 6.16201 10.6081C6.26409 10.1781 6.07179 9.73207 5.68905 9.51109L4.57176 8.86603L5.57176 7.13398L6.69046 7.77986C7.07351 8.00101 7.55633 7.94425 7.87766 7.6403C8.55245 7.00199 9.37409 6.51948 10.2852 6.24831C10.7092 6.12211 11 5.73228 11 5.28986ZM9.99998 12C9.99998 10.8954 10.8954 10 12 10C13.1046 10 14 10.8954 14 12C14 13.1046 13.1046 14 12 14C10.8954 14 9.99998 13.1046 9.99998 12ZM12 8C9.79084 8 7.99998 9.79086 7.99998 12C7.99998 14.2091 9.79084 16 12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8Z" fill="{{ section_icon_color }}"/>
+  </svg>
+{% elif 'speak' in name_lower or 'talk' in name_lower or 'presentation' in name_lower %}
+  {# Microphone icon for speaking engagements #}
+  <svg viewBox="0 0 24 24" role="presentation" focusable="false" fill="none" stroke="{{ section_icon_color }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 10V12C19 15.866 15.866 19 12 19M5 10V12C5 15.866 8.13401 19 12 19M12 19V22M8 22H16M15 6H13M15 10H13M12 15C10.3431 15 9 13.6569 9 12V5C9 3.34315 10.3431 2 12 2C13.6569 2 15 3.34315 15 5V12C15 13.6569 13.6569 15 12 15Z"/>
+  </svg>
+{% elif 'volunteer' in name_lower or 'service' in name_lower %}
+  {# Volunteer service icon #}
+  <svg viewBox="0 0 50 50" role="presentation" focusable="false" fill="{{ section_icon_color }}">
+    <path d="M46.79248 24.23a4.05389 4.05389 0 0 0-5.689-.14l-7.69872 6.84a5.25608 5.25608 0 0 1 .58993 2.43 5.39055 5.39055 0 0 1-3.4794 5.02l-6.46895 2.43a1.00694 1.00694 0 0 1-1.27975-.59.98322.98322 0 0 1 .57986-1.28l6.46895-2.43a3.38021 3.38021 0 0 0 2.77637-3.62A3.45753 3.45753 0 0 0 28.63555 30H9.99866A1.99982 1.99982 0 0 0 7.999 28H3.99966A1.99982 1.99982 0 0 0 2 30v16a1.99986 1.99986 0 0 0 1.99966 2H7.999a1.99986 1.99986 0 0 0 1.99967-2H14.048l1.24979.51A19.61328 19.61328 0 0 0 37.924 40.87l9.10846-11.01a4.20182 4.20182 0 0 0-.24094-5.63ZM12.99816 44H9.99866V32h2.9995ZM30.41809 2a8.59142 8.59142 0 0 0-5.42194 1.9082A8.59147 8.59147 0 0 0 19.5742 2a8.68822 8.68822 0 0 0-8.66651 8.68945c0 9.14258 13.03 16.85059 13.58463 17.17481a1.00289 1.00289 0 0 0 1.00765 0C26.05456 27.54 39.08461 19.832 39.08461 10.68945A8.68822 8.68822 0 0 0 30.41809 2Zm-1.772 18.6571a.98319.98319 0 0 1-.65022.2229.99554.99554 0 0 1-.65047-1.7423c3.70153-3.1709 5.74025-6.17188 5.74025-8.44825A2.68158 2.68158 0 0 0 30.41809 8a1 1 0 0 1 0-2 4.68337 4.68337 0 0 1 4.66719 4.68945c.00005 2.67865-3.50123 6.45008-6.43818 8.96765Z"/>
+  </svg>
+{% elif 'publication' in name_lower or 'paper' in name_lower or 'journal' in name_lower %}
+  {# Publications icon #}
+  <svg viewBox="0 0 24 24" width="256" height="256" role="presentation" focusable="false" fill="none" stroke="{{ section_icon_color }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 6h8"/>
+    <path d="M6 10h12"/>
+    <path d="M12 14h6"/>
+    <path d="M12 18h6"/>
+    <path d="M2 21.4V2.6c0-.331.269-.6.6-.6h15.652a.6.6 0 01.424.176l3.148 3.148a.6.6 0 01.176.424V21.4a.6.6 0 01-.6.6H2.6a.6.6 0 01-.6-.6z"/>
+    <path d="M18 5.4V2.354a.354.354 0 01.354-.354c.094 0 .184.037.25.103l3.293 3.293a.354.354 0 01-.25.603H18.6a.6.6 0 01-.6-.6z" fill="{{ section_icon_color }}"/>
+    <path d="M6 18v-4h2v4H6z" fill="{{ section_icon_color }}"/>
+  </svg>
+{% elif 'award' in name_lower or 'honor' in name_lower or 'achievement' in name_lower %}
+  {# Award/trophy icon - Simple Flat UI Design #}
+  <svg viewBox="0 0 512 512" role="presentation" focusable="false" fill="{{ section_icon_color }}">
+    <path d="M348.375 384.758c-12.811-25.137-32.785-44.594-56.582-54.492v-38.5l.047-9.133c-.016 0-.031 0-.047.004v-.242c-11.588 2.262-23.551 3.481-35.791 3.481-11.369 0-22.476-1.094-33.291-3.055-.752-.152-1.516-.262-2.264-.426v.043c-.08-.016-.16-.028-.24-.043v47.871c-12.209 5.078-23.393 12.695-33.137 22.293-.348.34-.705.66-1.049 1.004-1.072 1.082-2.1 2.219-3.133 3.348-.705.77-1.426 1.512-2.115 2.305-.61.703-1.184 1.442-1.78 2.156-1.07 1.289-2.14 2.574-3.168 3.918-.088.117-.17.238-.26.355-4.392 5.789-8.406 12.078-11.939 18.875h.131c-.043.082-.09.16-.131.238h233.654z"/>
+    <path d="M115.046 416v95.371l-.002.387h.002V512h281.911v-96z"/>
+    <path d="M498.331 29.387c-8.027-9.094-19.447-14.312-31.328-14.312h-47.744V0h-326.52v15.074H44.999c-11.887 0-23.306 5.218-31.336 14.312C3.906 40.442-0.305 56.43 1.775 74.465c.369 7.922 4.367 49.316 47.211 78.77 24.732 17.008 48.424 24.629 69.44 27.938 29.008 45.328 79.76 75.398 137.576 75.398 57.805 0 108.558-30.07 137.568-75.398 21.016-3.305 44.709-10.93 69.445-27.938 42.84-29.453 46.842-70.848 47.211-78.77 2.08-18.035-2.131-34.023-11.893-45.078zm-22.093 41.629-.125.852-.002 1.031c-.029 1.246-1.115 30.656-32.447 52.195-8.976 6.172-17.635 10.719-26.041 14.184-1.836.711-3.668 1.43-5.553 2.043 4.664-15.184 7.19-31.297 7.19-48.008V49.226h47.744c1.498 0 3.711.481 5.726 2.758 2.021 2.257 3.3 9.191 2.25 17.57zm-222.274 84.203-33.658 18.73c-1.422.793-3.174.688-4.49-.274-1.312-.949-1.959-2.586-1.644-4.18l7.412-37.801c.279-1.418-.193-2.883-1.254-3.863l-28.213-26.23c-1.191-1.106-1.633-2.805-1.129-4.352s1.859-2.664 3.474-2.859l38.236-4.633c1.436-.172 2.678-1.078 3.291-2.391l16.219-34.93c.687-1.477 2.162-2.422 3.795-2.422 1.625 0 3.102.945 3.787 2.422l16.22 34.93c.612 1.312 1.854 2.219 3.289 2.391l38.236 4.633c1.615.195 2.971 1.312 3.474 2.859.504 1.547.063 3.246-1.127 4.352l-28.215 26.23c-1.059.98-1.541 2.445-1.26 3.863l7.418 37.801c.313 1.594-.328 3.23-1.648 4.18-1.316.961-3.06 1.066-4.486.274l-33.664-18.73c-1.266-.699-2.805-.699-4.071 0zm-185.633-30.125c-31.326-21.539-32.41-50.949-32.438-52.016l-.006-1.035-.131-1.027c-1.043-8.379.232-15.312 3.516-19.031 2.01-2.277 4.222-2.758 5.726-2.758h47.742v44.086c0 14.246 1.928 28.02 5.357 41.192.559 2.308 1.076 4.629 1.725 6.926-10.427-1.758-20.902-6.957-31.828-14.465z"/>
+  </svg>
+{% else %}
+  {# Default icon - document/file #}
+  <svg viewBox="0 0 24 24" role="presentation" focusable="false" fill="{{ section_icon_color }}">
+    <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+  </svg>
+{% endif %}
+{%- endmacro %}
+
+{%- macro section_icon(section_name) -%}
+<div class="timeline-icon" style="background-color: {{ resume_config['sidebar_color'] }}; border: 2px solid {{ resume_config['sidebar_color'] }};">
+  <span class="icon" aria-hidden="true" style="color: {{ section_icon_color }}">
+    {{ section_icon_svg(section_name) }}
+  </span>
+</div>
+{%- endmacro %}
+
+{%- macro section_icon_inline(section_name) -%}
+<span class="icon-inline" aria-hidden="true" style="color: {{ section_icon_color }}">
+  {{ section_icon_svg(section_name) }}
+</span>
+{%- endmacro %}
+
+{% macro contact_icon(kind) -%}
+<span class="icon" aria-hidden="true" style="color: {{ section_icon_color }}; opacity: 0.8;">
+  {% if kind == "address" %}
+    <svg viewBox="0 0 24 24" role="presentation" focusable="false" fill="{{ section_icon_color }}">
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+    </svg>
+  {% elif kind == "phone" %}
+    <svg viewBox="0 0 24 24" role="presentation" focusable="false" fill="{{ section_icon_color }}">
+      <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+    </svg>
+  {% elif kind == "email" %}
+    <svg viewBox="0 0 24 24" role="presentation" focusable="false" fill="{{ section_icon_color }}">
+      <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+    </svg>
+  {% elif kind == "web" %}
+    <svg viewBox="0 0 24 24" role="presentation" focusable="false" fill="{{ section_icon_color }}">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+    </svg>
+  {% elif kind == "linkedin" %}
+    <svg viewBox="0 0 24 24" role="presentation" focusable="false" fill="{{ section_icon_color }}">
+      <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+    </svg>
+  {% elif kind == "github" %}
+    <svg viewBox="0 0 24 24" role="presentation" focusable="false" fill="{{ section_icon_color }}">
+      <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+    </svg>
+  {% else %}
+    <svg viewBox="0 0 24 24" role="presentation" focusable="false" fill="{{ section_icon_color }}">
+      <circle cx="12" cy="12" r="9"/>
+    </svg>
+  {% endif %}
+</span>
+{%- endmacro %}
+{# ========================================================================== #}
+{# ICON COLOR CALCULATION WITH WCAG CONTRAST CHECKING                        #}
+{# ========================================================================== #}
+{# This section calculates the optimal icon color to ensure accessibility    #}
+{# by checking WCAG contrast ratios against the sidebar background.          #}
+{# ========================================================================== #}
+
+{%- set sidebar_color = resume_config.get("sidebar_color", "#FFFFFF") -%}
+{%- set sidebar_luminance = none -%}
+{%- set sidebar_parse_error = false -%}
+
+{# Parse sidebar background color and calculate luminance #}
+{%- if sidebar_color and sidebar_color.startswith('#') -%}
+  {%- set hex_sidebar = sidebar_color[1:] -%}
+  {%- if hex_sidebar|length == 3 -%}
+    {%- set r_bg = (hex_sidebar[0:1] * 2) | int(base=16) -%}
+    {%- set g_bg = (hex_sidebar[1:2] * 2) | int(base=16) -%}
+    {%- set b_bg = (hex_sidebar[2:3] * 2) | int(base=16) -%}
+  {%- elif hex_sidebar|length == 6 -%}
+    {%- set r_bg = hex_sidebar[0:2] | int(base=16) -%}
+    {%- set g_bg = hex_sidebar[2:4] | int(base=16) -%}
+    {%- set b_bg = hex_sidebar[4:6] | int(base=16) -%}
+  {%- else -%}
+    {# Invalid hex format - set error flag #}
+    {%- set sidebar_parse_error = true -%}
+    {%- set r_bg = 255 -%}
+    {%- set g_bg = 255 -%}
+    {%- set b_bg = 255 -%}
+  {%- endif -%}
+
+  {# Calculate relative luminance (ITU-R BT.601) #}
+  {%- set sidebar_luminance = (0.299 * r_bg + 0.587 * g_bg + 0.114 * b_bg) / 255 -%}
+{%- else -%}
+  {# Non-hex color - assume light background as fallback #}
+  {%- set sidebar_parse_error = true -%}
+  {%- set sidebar_luminance = 0.9 -%}
+{%- endif -%}
+
+{# Determine automatic high-contrast icon color based on sidebar luminance #}
+{# Using luminance threshold of 0.5 (midpoint) to decide light vs dark icons #}
+{%- set icon_contrast_color = none -%}
+{%- if sidebar_luminance is not none -%}
+  {%- if sidebar_luminance < 0.5 -%}
+    {# Dark background -> use white icons #}
+    {%- set icon_contrast_color = "#FFFFFF" -%}
+  {%- else -%}
+    {# Light background -> use dark icons #}
+    {%- set icon_contrast_color = "#2c3e50" -%}
+  {%- endif -%}
+{%- else -%}
+  {# Fallback if luminance couldn't be calculated #}
+  {%- set icon_contrast_color = "#2c3e50" -%}
+{%- endif -%}
+
+{# ========================================================================== #}
+{# RESOLVE FINAL ICON COLOR WITH WCAG CONTRAST VALIDATION                    #}
+{# ========================================================================== #}
+
+{# Check if user explicitly requested a sidebar icon color #}
+{%- set requested_sidebar_icon_color = resume_config.get("sidebar_icon_color") -%}
+{%- set section_icon_color = requested_sidebar_icon_color if requested_sidebar_icon_color else icon_contrast_color -%}
+
+{# Parse the requested/initial icon color and calculate its luminance #}
+{%- set icon_luminance = none -%}
+{%- set icon_parse_error = false -%}
+{%- if section_icon_color and section_icon_color.startswith('#') -%}
+  {%- set hex_icon = section_icon_color[1:] -%}
+  {%- if hex_icon|length == 3 -%}
+    {%- set r_icon = (hex_icon[0:1] * 2) | int(base=16) -%}
+    {%- set g_icon = (hex_icon[1:2] * 2) | int(base=16) -%}
+    {%- set b_icon = (hex_icon[2:3] * 2) | int(base=16) -%}
+  {%- elif hex_icon|length == 6 -%}
+    {%- set r_icon = hex_icon[0:2] | int(base=16) -%}
+    {%- set g_icon = hex_icon[2:4] | int(base=16) -%}
+    {%- set b_icon = hex_icon[4:6] | int(base=16) -%}
+  {%- else -%}
+    {%- set icon_parse_error = true -%}
+    {%- set r_icon = none -%}
+    {%- set g_icon = none -%}
+    {%- set b_icon = none -%}
+  {%- endif -%}
+  {%- if r_icon is not none and g_icon is not none and b_icon is not none -%}
+    {%- set icon_luminance = (0.299 * r_icon + 0.587 * g_icon + 0.114 * b_icon) / 255 -%}
+  {%- endif -%}
+{%- else -%}
+  {%- set icon_parse_error = true -%}
+{%- endif -%}
+
+{# Calculate WCAG contrast ratio and validate accessibility #}
+{%- set contrast_ratio = none -%}
+{%- set contrast_check_passed = false -%}
+{%- if icon_luminance is not none and sidebar_luminance is not none -%}
+  {# WCAG contrast ratio formula: (L1 + 0.05) / (L2 + 0.05) where L1 >= L2 #}
+  {%- if icon_luminance > sidebar_luminance -%}
+    {%- set contrast_ratio = (icon_luminance + 0.05) / (sidebar_luminance + 0.05) -%}
+  {%- else -%}
+    {%- set contrast_ratio = (sidebar_luminance + 0.05) / (icon_luminance + 0.05) -%}
+  {%- endif -%}
+
+  {# WCAG AA requires 3.0:1 for large text/icons, 4.5:1 for normal text #}
+  {# Using 3.0 threshold for icons (they're similar to large text) #}
+  {%- if contrast_ratio >= 3.0 -%}
+    {%- set contrast_check_passed = true -%}
+  {%- endif -%}
+{%- endif -%}
+
+{# Override with high-contrast color if WCAG check failed or colors couldn't be parsed #}
+{%- if not contrast_check_passed or icon_parse_error or sidebar_parse_error -%}
+  {%- set section_icon_color = icon_contrast_color -%}
+  {# Recalculate contrast ratio for debug output #}
+  {%- if icon_contrast_color == "#FFFFFF" -%}
+    {%- set final_icon_luminance = 1.0 -%}
+  {%- elif icon_contrast_color == "#2c3e50" -%}
+    {%- set final_icon_luminance = 0.196 -%}
+  {%- else -%}
+    {%- set final_icon_luminance = none -%}
+  {%- endif -%}
+  {%- if final_icon_luminance is not none and sidebar_luminance is not none -%}
+    {%- if final_icon_luminance > sidebar_luminance -%}
+      {%- set contrast_ratio = (final_icon_luminance + 0.05) / (sidebar_luminance + 0.05) -%}
+    {%- else -%}
+      {%- set contrast_ratio = (sidebar_luminance + 0.05) / (final_icon_luminance + 0.05) -%}
+    {%- endif -%}
+  {%- endif -%}
+{%- endif -%}
+
+<!-- DEBUG: Color Contrast Calculation Results -->
+<!-- Sidebar: {{ sidebar_color }} (luminance: {{ "%.3f"|format(sidebar_luminance) if sidebar_luminance is not none else "PARSE_ERROR" }}) -->
+<!-- Requested Icon: {{ requested_sidebar_icon_color if requested_sidebar_icon_color else "auto" }} -->
+<!-- Auto Contrast: {{ icon_contrast_color }} -->
+<!-- Final Icon: {{ section_icon_color }} (luminance: {{ "%.3f"|format(icon_luminance) if icon_luminance is not none else "N/A" }}) -->
+<!-- Contrast Ratio: {{ "%.2f"|format(contrast_ratio) if contrast_ratio is not none else "N/A" }}:1 (WCAG AA minimum: 3.0:1) -->
+<!-- WCAG Check: {{ "PASS" if contrast_check_passed else "FAIL - using auto contrast" }} -->
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <!-- Avenir fonts (https://www.onlinewebfonts.com/package/Avenir_LT_Std) -->
+    <style>
+      @font-face {
+        font-family: "Avenir 35";
+        src: url("{{ url_for('static', filename='fonts/AvenirLTStd-Light.otf') }}");
+        font-weight: 300;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: "Avenir 45";
+        src: url("{{ url_for('static', filename='fonts/AvenirLTStd-Book.otf') }}");
+        font-weight: 400;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: "Avenir 55";
+        src: url("{{ url_for('static', filename='fonts/AvenirLTStd-Roman.otf') }}");
+        font-weight: 500;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: "Avenir 65";
+        src: url("{{ url_for('static', filename='fonts/AvenirLTStd-Medium.otf') }}");
+        font-weight: 700;
+        font-style: normal;
+      }
+    </style>
+
+    <!-- Documents styles -->
+    <!-- TODO (long-term): Migrate to external stylesheets
+         Separated, modular CSS files have been created in src/simple_resume/static/css/:
+         - common.css: Shared styles for PDF and web preview
+         - print.css: PDF-specific styles and WeasyPrint workarounds
+         - preview.css: Web preview enhancements
+
+         Current: Inline styles (for WeasyPrint compatibility)
+         Future: <link> tags to external CSS files
+
+         See: src/simple_resume/static/css/README.md for migration guide
+         See: wiki/PDF-Renderer-Evaluation.md for PDF renderer options
+    -->
+    <style>
+      /* General style */
+      html, body {
+        margin: 0;
+        padding: 0;
+      }
+
+      p, ul, li {
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: linear-gradient(
+          to right,
+          {{ resume_config["sidebar_color"] }} 0,
+          {{ resume_config["sidebar_color"] }} {{ resume_config["sidebar_width"] }}mm,
+          white {{ resume_config["sidebar_width"] }}mm,
+          white 100%
+        );
+        background-repeat: no-repeat;
+        background-size: 100% 100%;
+      }
+
+      html {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      /* Titles */
+      h1, h2, h3, h4, h5, h6 {
+        font-weight: normal;
+        margin: 0px;
+      }
+      h1, h2, h3, h5 {
+        color: {{ resume_config["theme_color"] }};
+      }
+      h1 {
+        font-size: 30pt;
+        font-family: 'Avenir 35';
+        padding-top: 0;
+        padding-bottom: 0;
+        padding-right: {{ resume_config["padding"] }}mm;
+        text-align: center;
+        border-bottom: none;
+      }
+      .markdown-strong {
+        font-family: 'Avenir 65', 'Avenir 55', 'Avenir 45', 'Helvetica Neue', Arial, sans-serif !important;
+        font-weight: 700 !important;
+      }
+      h2 {
+        font-size: 16pt;
+        font-family: 'Avenir 55';
+        width: {{ resume_config["page_width"] - resume_config["sidebar_width"] - resume_config["h2_padding_left"] - 18}}mm;
+        padding-top: 1.5mm;
+        padding-bottom: 0.5mm;
+        padding-left: {{ resume_config["h2_padding_left"] + 18 }}mm;
+        page-break-after: avoid;
+      }
+      h2:first-of-type {
+        padding-top: {{ resume_config["pitch_padding_top"] }}mm;
+      }
+      h3 {
+        font-size: 14pt;
+        font-family: 'Avenir 45';
+        padding-top: {{ resume_config["h3_padding_top"] }}mm;
+      }
+      h4 {
+        font-size: 10pt;
+        font-family: 'Avenir 45';
+      }
+      h5 {
+        font-size: 10pt;
+        font-family: 'Avenir 55';
+        padding-right: {{ resume_config["padding"] }}mm;
+        position:absolute;
+        right:0px;
+        top:0px;
+        text-align: right;
+      }
+      .sidebar h5 {
+        color: {{ resume_config["sidebar_text_color"] }};
+      }
+      .sidebar h1, .sidebar h2, .sidebar h3, .sidebar h4 {
+        color: {{ resume_config["sidebar_text_color"] }};
+      }
+      .sidebar p, .sidebar ul, .sidebar li, .sidebar a {
+        color: {{ resume_config["sidebar_text_color"] }};
+      }
+      a {
+        color: inherit; /* blue colors for links too */
+        text-decoration: inherit; /* no underline */
+      }
+
+      /* List styles */
+      ul {
+        list-style-type: none;
+      }
+      li:before {
+        content: "- ";
+      }
+
+      /* Layout styles */
+      .frame {
+        padding-top: {{ resume_config["frame_padding"] }}mm;
+        padding-bottom: {{ resume_config["frame_padding"] }}mm;
+        padding-left: {{ resume_config["frame_padding"] }}mm;
+        padding-right: {{ resume_config["frame_padding"] }}mm;
+        background-color: {{ resume_config["frame_color"] }};
+      }
+      @page {
+        size: {{ resume_config["page_width"] }}mm {{ resume_config["page_height"] }}mm;
+        margin: 0;
+      }
+
+      /* Define named pages for content flow */
+      @page resume {
+        size: {{ resume_config["page_width"] }}mm {{ resume_config["page_height"] }}mm;
+        margin: 0;
+      }
+      .page {
+        width: {{ resume_config["page_width"] }}mm;
+        min-height: {{ resume_config["page_height"] }}mm;
+        font-size: 8.5pt;
+        line-height: 1;
+        font-family: 'Avenir 35';
+        background: linear-gradient(
+          to right,
+          {{ resume_config["sidebar_color"] }} 0,
+          {{ resume_config["sidebar_color"] }} {{ resume_config["sidebar_width"] }}mm,
+          white {{ resume_config["sidebar_width"] }}mm,
+          white 100%
+        );
+        background-repeat: no-repeat;
+        background-size: 100% 100%;
+        margin: 0;
+        padding: 0;
+        position: relative;
+        border: none;
+        /* Clear floats to prevent layout issues */
+        overflow: hidden;
+        /* Ensure proper page height to prevent extra pages */
+        height: {{ resume_config["page_height"] }}mm;
+        max-height: {{ resume_config["page_height"] }}mm;
+      }
+      .sidebar-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: {{ resume_config["sidebar_width"] }}mm;
+        margin: 0;
+        padding: 0;
+        background-color: transparent;
+        /* Allow content to flow across pages - KEY FIX */
+        page-break-inside: auto;
+        break-inside: auto;
+        overflow: visible;
+      }
+      .sidebar {
+        padding-top: {{ resume_config["sidebar_padding_top"] }}mm;
+        padding-bottom: {{ resume_config["sidebar_padding_bottom"] }}mm;
+        padding-left: {{ resume_config["sidebar_padding_left"] }}mm;
+        padding-right: {{ resume_config["sidebar_padding_right"] }}mm;
+        color: {{ resume_config["sidebar_text_color"] }};
+        overflow: visible;
+        position: relative;
+        z-index: 10;
+      }
+      .body {
+	margin-left: {{ resume_config["sidebar_width"] }}mm;
+        width: {{ resume_config["page_width"] - resume_config["sidebar_width"] }}mm;
+        min-height: {{ resume_config["page_height"] }}mm;
+	position: relative;
+      }
+
+      /* Content styles */
+      .pitch {
+        padding-top: {{ resume_config["pitch_padding_top"] }}mm;
+        padding-bottom: {{ resume_config["pitch_padding_bottom"] }}mm;
+        padding-left: {{ resume_config["pitch_padding_left"] }}mm;
+        padding-right: {{ resume_config["padding"] }}mm;
+        border-bottom: 2px solid {{ resume_config["sidebar_color"] }};
+      }
+      .skill-container {
+        padding-top: {{ resume_config["skill_container_padding_top"] }}mm;
+      }
+      .skill-spacer {
+        padding-top: 0.5mm;
+        clear: both;
+      }
+      .contact-block {
+        display: flex;
+        align-items: flex-start;
+        gap: 4mm;
+        width: 100%;
+      }
+      .contact-container {
+        flex: 1;
+        min-width: 0;
+        overflow-wrap: break-word;
+      }
+      .contact-text {
+        font-size: 8.5pt;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+      }
+      .content {
+        display: grid;
+        grid-template-columns: {{ resume_config["date_container_width"] }}mm auto;
+        column-gap: 3mm;
+        padding-top: 0.5mm;
+        align-items: flex-start;
+        page-break-inside: auto;
+      }
+      .spacer {
+        clear: both;
+      }
+      .body .spacer {
+        clear: left;
+      }
+      .date-container {
+        padding-left: 3mm;
+      }
+      .description-container {
+        margin-bottom: 1.2mm;
+      }
+      .entry-spacer {
+        clear: both;
+        height: 1.5mm;
+      }
+      .date2, .description {
+        padding-top: 0.5mm;
+      }
+      .date1 {
+        font-size: 9pt;
+      }
+      .date2 {
+        font-size: 8pt;
+        color: {{ resume_config["date2_color"] }};
+      }
+      .date1, .date2 {
+        text-align: center;
+      }
+      .description-container {
+        position:relative;
+        padding-left: {{ resume_config["description_container_padding_left"] }}mm;
+        padding-right: {{ resume_config["padding"] }}mm;
+        border-left: 2px solid {{ resume_config["sidebar_color"] }};
+      }
+      .content .date-container {
+        grid-column: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .content .description-container {
+        grid-column: 2;
+      }
+      .tech-stack-label {
+        font-size: 8pt;
+        font-family: 'Avenir 45';
+        color: {{ resume_config["date2_color"] }};
+        margin: 0;
+      }
+      .tech-stack-value {
+        font-size: 8pt;
+        font-family: 'Avenir 45';
+        line-height: 1.25;
+        margin: 0;
+      }
+      .tech-stack-label-container {
+        align-self: center;
+        padding-top: 2mm;
+      }
+      .tech-stack-value-container {
+        border-left: none;
+        padding-left: {{ resume_config["description_container_padding_left"] }}mm;
+        padding-top: 2mm;
+      }
+      .heading-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        column-gap: 3mm;
+        row-gap: 0.5mm;
+        align-items: flex-start;
+        width: 100%;
+      }
+      .heading-title {
+        min-width: 0;
+      }
+      .heading-title h4,
+      .heading-title p {
+        margin-top: 0;
+      }
+      .heading-company {
+        justify-self: end;
+        text-align: right;
+        min-width: 0;
+      }
+      .heading-company h5 {
+        margin: 0 !important;
+        word-wrap: break-word;
+        overflow-wrap: anywhere;
+        position: static;
+        right: auto;
+        top: auto;
+        padding-right: 0;
+        text-align: right;
+      }
+      .description {
+        line-height: 1.35;
+      }
+
+      /* Space between lines */
+      .pitch p {
+        font-size: 9pt;
+        line-height: 1.4;
+      }
+
+      .description p, .description li {
+        line-height: 1.2;
+      }
+
+      /* Bars */
+      .bar-container {
+        padding-top: 1mm;
+      }
+      .bar-grey, .bar-blue {
+        height: 1mm;
+        float: left;
+      }
+      .bar-grey {
+        background-color: {{ resume_config["bar_background_color"] }};
+      }
+      .bar-blue {
+        background-color: {{ resume_config["theme_color"] }};
+      }
+
+      /* Contact icons */
+      .icon {
+        width: 5mm;
+        height: 5mm;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: {{ resume_config["sidebar_text_color"] }};
+        flex-shrink: 0;
+        line-height: 0;
+        margin-top: 0.5mm;
+        margin-right: 2mm;
+      }
+      .icon svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      .icon svg * {
+        fill: currentColor;
+      }
+      /* Adjust this to change the position of the icon design */
+      .section-heading-icon .icon-inline {
+        width: {{ resume_config["section_icon_design_size"] }};
+        height: {{ resume_config["section_icon_design_size"] }};
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 0;
+        flex-shrink: 0;
+        position: relative;
+        transform: translate({{ resume_config["section_icon_design_x_offset"] }}, {{ resume_config["section_icon_design_y_offset"] }});
+      }
+      .icon-inline svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      .icon-inline svg * {
+        fill: currentColor;
+      }
+      .profile {
+        width: {{ resume_config["sidebar_width"] - 2*resume_config["padding"] }}mm;
+        height: {{ resume_config["sidebar_width"] - 2*resume_config["padding"] }}mm;
+        padding-bottom: {{ resume_config["profile_image_padding_bottom"] }}mm;
+      }
+
+      /* Timeline icons */
+      .timeline-icon {
+        position: absolute;
+        left: -6mm;
+        top: -16mm;
+        width: 10mm;
+        height: 10mm;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+      }
+      .timeline-icon .icon {
+        width: 5mm;
+        height: 5mm;
+      }
+      .timeline-icon .icon svg {
+        width: 100%;
+        height: 100%;
+      }
+      .section-heading {
+        display: flex;
+        align-items: center;
+        margin: 1mm 0 0.6mm;
+      }
+      .section-heading-marker {
+        position: relative;
+        width: {{ resume_config["section_icon_circle_size"] }};
+        height: {{ resume_config["section_icon_circle_size"] }};
+        display: block;
+        margin-left: -{{ (resume_config["h2_padding_left"] + 18) - (resume_config["date_container_width"] + 3) + 3 }}mm;
+        flex: 0 0 {{ resume_config["section_icon_circle_size"] }};
+        overflow: visible;
+        z-index: 10;
+      }
+      .section-heading-marker::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        height: calc(2.8mm + {{ resume_config["section_icon_circle_size"] }});
+        border-left: 2px solid {{ resume_config["sidebar_color"] }};
+      }
+      /* Adjust this to change the position of the icon circle */
+      .section-heading-icon {
+        width: {{ resume_config["section_icon_circle_size"] }};
+        height: {{ resume_config["section_icon_circle_size"] }};
+        border-radius: 50%;
+        background-color: {{ resume_config["sidebar_color"] }};
+        border: 2px solid {{ resume_config["sidebar_color"] }};
+        color: {{ resume_config["heading_icon_color"] }};
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        position: relative;
+        transform: translateX({{ resume_config["section_icon_circle_x_offset"] }});
+        z-index: 10;
+        line-height: 0;
+        overflow: visible;
+      }
+      /* This changes the position of the section heading text */
+      .section-heading-text {
+        display: inline-flex;
+        align-items: center;
+        line-height: 1;
+        margin-left: {{ resume_config["section_heading_text_margin"] }};
+      }
+
+      /* Smart color selection for section headers based on luminance analysis */
+      {% set theme_color = resume_config["theme_color"] %}
+      {% set section_header_color = theme_color %}
+
+      {% if theme_color.startswith('#') %}
+        {% set hex_color = theme_color[1:] %}
+        {% if hex_color|length == 3 %}
+          {% set r = (hex_color[0:1] * 2) | int(base=16) %}
+          {% set g = (hex_color[1:2] * 2) | int(base=16) %}
+          {% set b = (hex_color[2:3] * 2) | int(base=16) %}
+        {% elif hex_color|length == 6 %}
+          {% set r = hex_color[0:2] | int(base=16) %}
+          {% set g = hex_color[2:4] | int(base=16) %}
+          {% set b = hex_color[4:6] | int(base=16) %}
+        {% else %}
+          {% set r = 0 %}
+          {% set g = 0 %}
+          {% set b = 0 %}
+        {% endif %}
+
+        {% set luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255 %}
+        {% if luminance >= 0.5 %}
+          {% set section_header_color = "#2c3e50" %}
+        {% endif %}
+      {% else %}
+        {# Fallback for non-hex colors #}
+        {% set section_header_color = "#2c3e50" %}
+      {% endif %}
+
+      .section-heading-text {
+        color: {{ section_header_color }} !important;
+      }
+      .section-heading + .content {
+        padding-top: 0;
+      }
+      .description-container {
+        position: relative;
+      }
+    </style>
+  </head>
+
+  <body>{% if preview %}<div class="frame">{% endif %}<div class="page">
+        <div class="sidebar-container">
+          <div class="sidebar">
+            {% block sidebar %}{% endblock %}
+          </div>
+        </div>
+
+        <div class="body">
+          {% block body %}{% endblock %}
+        </div>
+      </div>{% if preview %}</div>{% endif %}
+  </body>
+</html>
