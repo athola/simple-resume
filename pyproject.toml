@@ -70,10 +70,12 @@ palette-list = "simple_resume.palettes.cli:list"
 generate-random-palette-demo = "simple_resume.cli_random_palette_demo:main"
 
 [tool.hatch.build.targets.sdist]
-# Hatch doesn't include non Python files in subdirectories in source distributions by default,
-# so we force including the entire package and declare its src prefix.
-include = ["src/simple_resume"]
-sources = ["src"]
+include = ["src"]  # Only include content from src
+sources = ["src"]  # Map src/ to the root of the package
+
+[tool.hatch.build.targets.wheel]
+# wheel builder applies gitignore without the src/ prefix
+ignore-vcs = true
 
 [dependency-groups]
 dev = [
