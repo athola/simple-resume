@@ -69,12 +69,11 @@ palette-snapshot = "simple_resume.palettes.cli:snapshot"
 palette-list = "simple_resume.palettes.cli:list"
 generate-random-palette-demo = "simple_resume.cli_random_palette_demo:main"
 
-[tool.hatch.build]
-include = [
-    "src/simple_resume/templates/**/*",
-    "src/simple_resume/static/**/*",
-    "src/simple_resume/palettes/**/*",
-]
+[tool.hatch.build.targets.sdist]
+# Hatch doesn't include non Python files in subdirectories in source distributions by default,
+# so we force including the entire package and declare its src prefix.
+include = ["src/simple_resume"]
+sources = ["src"]
 
 [dependency-groups]
 dev = [
@@ -90,9 +89,6 @@ dev = [
     "pdf2image>=1.17.0,<2.0",
     "types-pyyaml>=6.0.12.20250915",
 ]
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/simple_resume"]
 
 [tool.ruff]
 line-length = 88
