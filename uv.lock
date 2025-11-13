@@ -2094,6 +2094,7 @@ name = "simple-resume"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "jinja2" },
     { name = "markdown" },
     { name = "oyaml" },
     { name = "palettable" },
@@ -2129,6 +2130,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "jinja2", specifier = ">=3.0,<4.0" },
     { name = "markdown", specifier = ">=3.7,<4.0" },
     { name = "mypy", marker = "extra == 'utils'", specifier = ">=1.11.0,<2.0" },
     { name = "oyaml", specifier = ">=1.0,<2.0" },
