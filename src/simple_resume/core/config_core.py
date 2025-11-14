@@ -2,39 +2,28 @@
 
 from __future__ import annotations
 
+from itertools import cycle
 from typing import Any
 
-from .color_utils import (
-    calculate_icon_contrast_color,
-    darken_color,
-    get_contrasting_text_color,
-    is_valid_color,
+from simple_resume.constants import (
+    BOLD_DARKEN_FACTOR,
+    CONFIG_COLOR_FIELDS,
+    CONFIG_DIRECT_COLOR_KEYS,
+    DEFAULT_BOLD_COLOR,
+    DEFAULT_COLOR_SCHEME,
 )
+from simple_resume.palettes.common import PaletteSource
+from simple_resume.palettes.exceptions import (
+    PaletteError,
+    PaletteGenerationError,
+    PaletteLookupError,
+)
+from simple_resume.palettes.generators import generate_hcl_palette
+from simple_resume.palettes.registry import get_palette_registry
+from simple_resume.palettes.sources import ColourLoversClient
 
-DEFAULT_BOLD_COLOR = "#585858"
-DEFAULT_COLOR_SCHEME = {
-    "theme_color": "#0395DE",
-    "sidebar_color": "#F6F6F6",
-    "sidebar_text_color": "#000000",
-    "bar_background_color": "#DFDFDF",
-    "date2_color": "#616161",
-    "frame_color": "#757575",
-    "heading_icon_color": "#0395DE",
-    "bold_color": DEFAULT_BOLD_COLOR,
-}
-
-COLOR_FIELD_ORDER = [
-    "theme_color",
-    "sidebar_color",
-    "sidebar_text_color",
-    "bar_background_color",
-    "date2_color",
-    "frame_color",
-    "heading_icon_color",
-]
-
-DIRECT_COLOR_KEYS = COLOR_FIELD_ORDER + ["bold_color", "sidebar_bold_color"]
-BOLD_DARKEN_FACTOR = 0.75
+from .color_service import ColorCalculationService
+from .colors import darken_color, get_contrasting_text_color, is_valid_color
 
 
 def _coerce_number(value: Any, *, field: str, prefix: str) -> float | int | None:
@@ -125,7 +114,7 @@ def _normalize_color_scheme(config: dict[str, Any]) -> None:
 
 
 def _validate_color_fields(config: dict[str, Any], filename_prefix: str) -> None:
-    for field in COLOR_FIELD_ORDER:
+    for field in CONFIG_COLOR_FIELDS:
         value = config.get(field)
         if not value:
             default_value = DEFAULT_COLOR_SCHEME.get(field)
@@ -147,9 +136,9 @@ def _validate_color_fields(config: dict[str, Any], filename_prefix: str) -> None
 
 
 def _auto_calculate_sidebar_text_color(config: dict[str, Any]) -> None:
-    sidebar_color = config.get("sidebar_color")
-    if isinstance(sidebar_color, str) and is_valid_color(sidebar_color):
-        config["sidebar_text_color"] = get_contrasting_text_color(sidebar_color)
+    config["sidebar_text_color"] = ColorCalculationService.calculate_sidebar_text_color(
+        config
+    )
 
 
 def _handle_sidebar_bold_color(config: dict[str, Any], filename_prefix: str) -> None:
@@ -167,18 +156,8 @@ def _handle_sidebar_bold_color(config: dict[str, Any], filename_prefix: str) -> 
             )
         return
 
-    sidebar_color = config.get("sidebar_color")
-    if isinstance(sidebar_color, str) and is_valid_color(sidebar_color):
-        config["sidebar_bold_color"] = get_contrasting_text_color(sidebar_color)
-        return
-
-    sidebar_text_color = config.get("sidebar_text_color")
-    if isinstance(sidebar_text_color, str) and is_valid_color(sidebar_text_color):
-        config["sidebar_bold_color"] = sidebar_text_color
-        return
-
-    config["sidebar_bold_color"] = DEFAULT_COLOR_SCHEME.get(
-        "sidebar_bold_color", DEFAULT_COLOR_SCHEME["sidebar_text_color"]
+    config["sidebar_bold_color"] = ColorCalculationService.calculate_sidebar_bold_color(
+        config
     )
 
 
@@ -196,16 +175,11 @@ def _handle_icon_color(config: dict[str, Any], filename_prefix: str) -> None:
                 f"{heading_icon_color}. Expected hex color like '#0395DE' or '#FFF'"
             )
 
-    sidebar_color = config.get("sidebar_color", "#FFFFFF")
-    theme_color = config.get("theme_color", "#0395DE")
-
-    config["heading_icon_color"] = calculate_icon_contrast_color(
-        heading_icon_color,
-        theme_color,
+    config["heading_icon_color"] = ColorCalculationService.calculate_heading_icon_color(
+        config
     )
-    config["sidebar_icon_color"] = calculate_icon_contrast_color(
-        None,
-        sidebar_color,
+    config["sidebar_icon_color"] = ColorCalculationService.calculate_sidebar_icon_color(
+        config
     )
 
 
@@ -256,11 +230,185 @@ def finalize_config(
     _handle_sidebar_bold_color(config, filename_prefix)
 
 
+# ============================================================================
+# Configuration Processing (Consolidated from configuration_processor.py)
+# ============================================================================
+
+
+def _is_direct_color_block(block: dict[str, Any]) -> bool:
+    """Check if block contains direct color definitions (not palette config)."""
+    if not isinstance(block, dict):
+        return False
+
+    has_direct_colors = any(field in block for field in CONFIG_DIRECT_COLOR_KEYS)
+    palette_block_keys = {
+        "source",
+        "name",
+        "colors",
+        "size",
+        "seed",
+        "hue_range",
+        "luminance_range",
+        "chroma",
+        "keywords",
+        "num_results",
+        "order_by",
+    }
+    has_palette_config = any(key in block for key in palette_block_keys)
+    return has_direct_colors and not has_palette_config
+
+
+def _process_direct_colors(
+    config: dict[str, Any],
+    block: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Process direct color definitions by merging into config."""
+    # Direct color definitions: merge into config directly
+    for field in CONFIG_DIRECT_COLOR_KEYS:
+        if field in block:
+            config[field] = block[field]
+
+    # Automatically calculate sidebar text color based on sidebar background
+    if config.get("sidebar_color"):
+        config["sidebar_text_color"] = get_contrasting_text_color(
+            config["sidebar_color"]
+        )
+
+    # Return metadata indicating a direct color definition
+    return {
+        "source": "direct",
+        "fields": [f for f in CONFIG_DIRECT_COLOR_KEYS if f in block],
+    }
+
+
+def _resolve_palette_block(block: dict[str, Any]) -> tuple[list[str], dict[str, Any]]:
+    """Resolve palette block to color swatches and metadata."""
+    RANGE_LENGTH = 2  # Moved from utilities.py
+
+    try:
+        source = PaletteSource.normalize(block.get("source"), param_name="palette")
+    except (TypeError, ValueError) as exc:
+        raise PaletteLookupError(
+            f"Unsupported palette source: {block.get('source')}"
+        ) from exc
+
+    if source is PaletteSource.REGISTRY:
+        name = block.get("name")
+        if not name:
+            raise PaletteLookupError("registry source requires 'name'")
+        registry = get_palette_registry()
+        palette = registry.get(str(name))
+        metadata = {
+            "source": source.value,
+            "name": palette.name,
+            "size": len(palette.swatches),
+            "attribution": palette.metadata,
+        }
+        return list(palette.swatches), metadata
+
+    if source is PaletteSource.GENERATOR:
+        size = int(block.get("size", len(CONFIG_COLOR_FIELDS)))
+        seed = block.get("seed")
+        hue_range = tuple(block.get("hue_range", (0, 360)))
+        luminance_range = tuple(block.get("luminance_range", (0.35, 0.85)))
+        chroma = float(block.get("chroma", 0.12))
+        if len(hue_range) != RANGE_LENGTH or len(luminance_range) != RANGE_LENGTH:
+            raise PaletteGenerationError(
+                "hue_range and luminance_range must have two values"
+            )
+        swatches = generate_hcl_palette(
+            size,
+            seed=int(seed) if seed is not None else None,
+            hue_range=(float(hue_range[0]), float(hue_range[1])),
+            chroma=chroma,
+            luminance_range=(float(luminance_range[0]), float(luminance_range[1])),
+        )
+        metadata = {
+            "source": source.value,
+            "size": len(swatches),
+            "seed": int(seed) if seed is not None else None,
+            "hue_range": [float(hue_range[0]), float(hue_range[1])],
+            "luminance_range": [float(luminance_range[0]), float(luminance_range[1])],
+            "chroma": chroma,
+        }
+        return swatches, metadata
+
+    if source is PaletteSource.REMOTE:
+        client = ColourLoversClient()
+        palettes = client.fetch(
+            keywords=block.get("keywords"),
+            num_results=int(block.get("num_results", 1)),
+            order_by=str(block.get("order_by", "score")),
+        )
+        if not palettes:
+            raise PaletteLookupError("ColourLovers returned no palettes")
+        palette = palettes[0]
+        metadata = {
+            "source": source.value,
+            "name": palette.name,
+            "attribution": palette.metadata,
+            "size": len(palette.swatches),
+        }
+        return list(palette.swatches), metadata
+
+    raise PaletteLookupError(f"Unsupported palette source: {source.value}")
+
+
+def _process_palette_colors(
+    config: dict[str, Any],
+    block: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Process palette block by resolving colors and applying to config."""
+    try:
+        swatches, palette_meta = _resolve_palette_block(block)
+    except PaletteError:
+        raise
+    except (TypeError, ValueError, KeyError, AttributeError) as exc:
+        # Common errors when palette configuration is malformed
+        raise PaletteError(f"Invalid palette block: {exc}") from exc
+
+    if not swatches:
+        return None
+
+    # Cycle through swatches to cover all required fields
+    iterator = cycle(swatches)
+    for field in CONFIG_COLOR_FIELDS:
+        if field not in config or not config[field]:
+            config[field] = next(iterator)
+
+    # Automatically calculate sidebar text color based on sidebar background
+    if config.get("sidebar_color"):
+        config["sidebar_text_color"] = get_contrasting_text_color(
+            config["sidebar_color"]
+        )
+
+    # Set color scheme name if provided
+    if "color_scheme" not in config and "name" in block:
+        config["color_scheme"] = str(block["name"])
+
+    return palette_meta
+
+
+def apply_palette_block(config: dict[str, Any]) -> dict[str, Any] | None:
+    """Apply a palette block to the configuration using simplified logic."""
+    block = config.get("palette")
+    if not isinstance(block, dict):
+        return None
+
+    # Simple conditional logic instead of complex Strategy pattern
+    if _is_direct_color_block(block):
+        return _process_direct_colors(config, block)
+    else:
+        return _process_palette_colors(config, block)
+
+
 __all__ = [
-    "COLOR_FIELD_ORDER",
+    "CONFIG_COLOR_FIELDS",
     "DEFAULT_BOLD_COLOR",
     "DEFAULT_COLOR_SCHEME",
-    "DIRECT_COLOR_KEYS",
+    "CONFIG_DIRECT_COLOR_KEYS",
+    "apply_palette_block",
     "finalize_config",
     "prepare_config",
+    "_resolve_palette_block",
 ]

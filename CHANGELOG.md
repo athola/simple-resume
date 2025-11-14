@@ -9,11 +9,11 @@ Initial public release.
 ### Added
 
 -   Resume generation from YAML files with HTML/PDF output.
--   Generation API returns structured result objects with execution metadata.
+-   Generation API now returns detailed result objects.
 -   Session management system for consistent configuration.
 -   Support for remote and procedurally generated color palettes.
 -   LaTeX rendering support.
--   Template resolution mechanism with secondary lookup path.
+-   Improved template resolution with a secondary lookup path.
 -   Validation system with detailed error reporting.
 -   CLI tool to demonstrate random palette generation.
 -   Support for multi-page resumes with correct page breaking.
@@ -21,24 +21,24 @@ Initial public release.
 -   FontAwesome icon integration.
 -   Palette registry with support for Palettable, procedural HCL, and ColourLovers.
 -   Consolidated CLI entry point: `simple-resume generate`.
--   **New sample resumes**: Added comprehensive demo files showcasing features:
+-   **New sample resumes**: Added demo files for features:
 -   `sample_multipage_demo.yaml` - Multi-page resume with proper pagination
 -   `sample_palette_demo.yaml` - Color scheme demonstrations
 -   `sample_dark_sidebar.yaml` - Dark theme with sidebar layout
 -   `sample_latex.yaml` - LaTeX-specific formatting examples
 -   `sample_contrast_demo.yaml` - Color contrast accessibility examples
 -   **Architecture documentation**: Added functional core-shell inventory and API surface design documentation.
--   **Enhanced wiki**: Added new guides for color schemes, migration, and PDF renderer evaluation.
--   **LaTeX documentation**: Added comprehensive LaTeX support documentation to README.md with configuration examples and compilation instructions
--   **Enhanced README**: Improved Custom Styling section with LaTeX subsection and proper linking to Usage Guide
+-   **Wiki**: Added new guides for color schemes, migration, and PDF renderer evaluation.
+-   **LaTeX documentation**: Added LaTeX support documentation to README.md with configuration examples and compilation instructions.
+-   **README**: Improved Custom Styling section with LaTeX subsection and linking to the Usage Guide.
 
 ### Changed
 
--   **Major architectural refactor**: Migrated to functional core, imperative shell architecture with redesigned API surface (commit 0a0b231)
--   **Enhanced session management**: Improved ResumeSession with better caching, statistics tracking, and configuration handling
--   **Core resume functionality**: Refactored Resume class with pandas-like API and method chaining support
--   **Improved error handling**: Enhanced exception hierarchy with more detailed error reporting
--   **Template resolution**: Fixed template handling issues and improved secondary lookup path mechanism
+-   **Major architectural refactor**: Migrated to functional core, imperative shell architecture with a redesigned API surface (commit 0a0b231).
+-   **Session management**: Improved ResumeSession with better caching, statistics tracking, and configuration handling.
+-   **Core resume functionality**: Refactored Resume class with a pandas-like API and method chaining support.
+-   **Error handling**: Refined exception hierarchy with more detailed error reporting.
+-   **Template resolution**: Fixed template handling issues and improved the secondary lookup path.
 -   Refactored core architecture to be more modular.
 -   Improved CLI user experience and error messages.
 -   Optimized PDF generation.
@@ -46,12 +46,12 @@ Initial public release.
 
 ### Fixed
 
--   **Template resolution**: Fixed sidebar pagination issues and template lookup problems
--   **Color handling**: Corrected color contrast calculations and palette application
--   **Path resolution**: Improved file path handling across different operating systems
--   **Validation**: Enhanced configuration validation with better error messages
+-   **Template resolution**: Fixed sidebar pagination issues and template lookup problems.
+-   **Color handling**: Corrected color contrast calculations and palette application.
+-   **Path resolution**: Improved file path handling across different operating systems.
+-   **Validation**: Improved configuration validation with better error messages.
 -   Resolved LaTeX path handling issue to ensure sample resumes compile correctly with XeLaTeX and pdflatex.
--   Fixed several edge cases in template resolution; improved error reporting.
+-   Fixed several edge cases in template resolution and improved error reporting.
 -   Corrected color contrast calculations to improve accessibility.
 -   Resolved dependency injection issues in core components.
 

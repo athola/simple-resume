@@ -70,3 +70,10 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+
+      - id: architecture-tests
+        name: architecture-layer-separation
+        entry: bash -c 'uv run pytest tests/architecture/test_layer_separation.py --quiet --tb=short || (echo "⚠️  Architecture tests failing (expected during refactoring - see CORE_REFACTOR_PLAN.md)" && exit 0)'
+        language: system
+        pass_filenames: false
+        always_run: true

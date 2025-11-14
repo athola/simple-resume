@@ -6,24 +6,17 @@ import os
 from pathlib import Path
 from typing import Any
 
-from .config import FILE_DEFAULT, Paths
+from .config import Paths
 from .core.hydration_core import hydrate_resume_structure
-from .core.io_utils import candidate_yaml_path, resolve_paths_for_read
 from .exceptions import FileSystemError
-from .utilities import _read_yaml, normalize_config, render_markdown_content
-
-
-def _select_resume_name(name: str | os.PathLike[str]) -> str:
-    """Normalize resume identifiers by stripping extensions and defaults."""
-    if not name:
-        return FILE_DEFAULT
-    if isinstance(name, (str, os.PathLike)):
-        candidate = Path(name)
-        suffix = candidate.suffix.lower()
-        if suffix in {".yaml", ".yml"}:
-            return candidate.stem
-        return candidate.name or str(name)
-    return str(name)
+from .utilities import normalize_config, render_markdown_content
+from .utils.io import (
+    candidate_yaml_path,
+    find_resume_file,
+    normalize_resume_name,
+    read_yaml_file,
+    resolve_paths_for_read,
+)
 
 
 def load_resume_yaml(
@@ -46,24 +39,15 @@ def load_resume_yaml(
             )
 
         resolved_paths = resolve_paths_for_read(paths, overrides, candidate_path)
-        yaml_content = _read_yaml(candidate_path)
+        yaml_content = read_yaml_file(candidate_path)
         return yaml_content, candidate_path.name, resolved_paths
 
-    resume_name = _select_resume_name(name)
+    resume_name = normalize_resume_name(name)
     resolved_paths = resolve_paths_for_read(paths, overrides, None)
     input_path = resolved_paths.input
 
-    candidates: list[Path] = []
-    for ext in ("yaml", "yml"):
-        candidates.extend(input_path.glob(f"{resume_name}.{ext}"))
-        candidates.extend(input_path.glob(f"{resume_name}.{ext.upper()}"))
-
-    if candidates:
-        source_path = candidates[0]
-    else:
-        source_path = input_path / f"{resume_name}.yaml"
-
-    yaml_content = _read_yaml(source_path)
+    source_path = find_resume_file(resume_name, input_path)
+    yaml_content = read_yaml_file(source_path)
     return yaml_content, source_path.name, resolved_paths
 
 

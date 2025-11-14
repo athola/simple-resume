@@ -10,8 +10,97 @@ from ..constants import RenderMode
 from ..exceptions import ValidationError
 from ..palettes.exceptions import PaletteGenerationError
 from ..utilities import normalize_config, render_markdown_content
-from .color_utils import is_valid_color
+from .colors import is_valid_color
 from .models import RenderPlan, ResumeConfig, ValidationResult
+
+
+def _validate_color_fields(config: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
+    """Validate color fields in configuration.
+
+    Args:
+        config: Configuration dictionary to validate.
+
+    Returns:
+        Tuple of (cleaned_config, color_errors).
+
+    """
+    working_config = copy.deepcopy(config)
+    errors: list[str] = []
+
+    color_fields = [
+        "theme_color",
+        "sidebar_color",
+        "sidebar_text_color",
+        "sidebar_bold_color",
+        "bar_background_color",
+        "date2_color",
+        "frame_color",
+        "heading_icon_color",
+        "bold_color",
+    ]
+
+    for field in color_fields:
+        if field not in working_config:
+            continue
+        candidate = working_config.get(field)
+        candidate_str = str(candidate) if candidate is not None else ""
+        if not is_valid_color(candidate_str):
+            errors.append(
+                f"Invalid color format for '{field}': {candidate}. "
+                "Expected hex color like '#0395DE' or '#FFF'"
+            )
+            working_config.pop(field, None)
+
+    return working_config, errors
+
+
+def _build_resume_config(normalized_config: dict[str, Any]) -> ResumeConfig:
+    """Build ResumeConfig from normalized configuration.
+
+    Args:
+        normalized_config: Normalized configuration dictionary.
+
+    Returns:
+        ResumeConfig instance.
+
+    """
+    return ResumeConfig(
+        page_width=normalized_config.get("page_width"),
+        page_height=normalized_config.get("page_height"),
+        sidebar_width=normalized_config.get("sidebar_width"),
+        output_mode=str(normalized_config.get("output_mode", "markdown"))
+        .strip()
+        .lower(),
+        template=normalized_config.get("template", "resume_no_bars"),
+        color_scheme=normalized_config.get("color_scheme", "default"),
+        theme_color=normalized_config.get("theme_color", "#0395DE"),
+        sidebar_color=normalized_config.get("sidebar_color", "#F6F6F6"),
+        sidebar_text_color=normalized_config.get("sidebar_text_color", "#000000"),
+        sidebar_bold_color=normalized_config.get("sidebar_bold_color", "#000000"),
+        bar_background_color=normalized_config.get("bar_background_color", "#DFDFDF"),
+        date2_color=normalized_config.get("date2_color", "#616161"),
+        frame_color=normalized_config.get("frame_color", "#757575"),
+        heading_icon_color=normalized_config.get("heading_icon_color", "#0395DE"),
+        bold_color=normalized_config.get("bold_color", "#585858"),
+        section_icon_circle_size=normalized_config.get(
+            "section_icon_circle_size", "7.8mm"
+        ),
+        section_icon_circle_x_offset=normalized_config.get(
+            "section_icon_circle_x_offset", "-0.5mm"
+        ),
+        section_icon_design_size=normalized_config.get(
+            "section_icon_design_size", "4mm"
+        ),
+        section_icon_design_x_offset=normalized_config.get(
+            "section_icon_design_x_offset", "-0.1mm"
+        ),
+        section_icon_design_y_offset=normalized_config.get(
+            "section_icon_design_y_offset", "-0.4mm"
+        ),
+        section_heading_text_margin=normalized_config.get(
+            "section_heading_text_margin", "-6mm"
+        ),
+    )
 
 
 def validate_resume_config(
@@ -22,74 +111,17 @@ def validate_resume_config(
     warnings: list[str] = []
 
     try:
-        working_config = copy.deepcopy(raw_config)
+        # Validate color fields
+        working_config, color_errors = _validate_color_fields(raw_config)
+        errors.extend(color_errors)
 
-        color_fields = [
-            "theme_color",
-            "sidebar_color",
-            "sidebar_text_color",
-            "sidebar_bold_color",
-            "bar_background_color",
-            "date2_color",
-            "frame_color",
-            "heading_icon_color",
-            "bold_color",
-        ]
-        for field in color_fields:
-            if field not in working_config:
-                continue
-            candidate = working_config.get(field)
-            candidate_str = str(candidate) if candidate is not None else ""
-            if not is_valid_color(candidate_str):
-                errors.append(
-                    f"Invalid color format for '{field}': {candidate}. "
-                    "Expected hex color like '#0395DE' or '#FFF'"
-                )
-                working_config.pop(field, None)
-
+        # Normalize configuration
         normalized_config, palette_meta = normalize_config(
             working_config, filename=filename
         )
 
-        config = ResumeConfig(
-            page_width=normalized_config.get("page_width"),
-            page_height=normalized_config.get("page_height"),
-            sidebar_width=normalized_config.get("sidebar_width"),
-            output_mode=str(normalized_config.get("output_mode", "markdown"))
-            .strip()
-            .lower(),
-            template=normalized_config.get("template", "resume_no_bars"),
-            color_scheme=normalized_config.get("color_scheme", "default"),
-            theme_color=normalized_config.get("theme_color", "#0395DE"),
-            sidebar_color=normalized_config.get("sidebar_color", "#F6F6F6"),
-            sidebar_text_color=normalized_config.get("sidebar_text_color", "#000000"),
-            sidebar_bold_color=normalized_config.get("sidebar_bold_color", "#000000"),
-            bar_background_color=normalized_config.get(
-                "bar_background_color", "#DFDFDF"
-            ),
-            date2_color=normalized_config.get("date2_color", "#616161"),
-            frame_color=normalized_config.get("frame_color", "#757575"),
-            heading_icon_color=normalized_config.get("heading_icon_color", "#0395DE"),
-            bold_color=normalized_config.get("bold_color", "#585858"),
-            section_icon_circle_size=normalized_config.get(
-                "section_icon_circle_size", "7.8mm"
-            ),
-            section_icon_circle_x_offset=normalized_config.get(
-                "section_icon_circle_x_offset", "-0.5mm"
-            ),
-            section_icon_design_size=normalized_config.get(
-                "section_icon_design_size", "4mm"
-            ),
-            section_icon_design_x_offset=normalized_config.get(
-                "section_icon_design_x_offset", "-0.1mm"
-            ),
-            section_icon_design_y_offset=normalized_config.get(
-                "section_icon_design_y_offset", "-0.4mm"
-            ),
-            section_heading_text_margin=normalized_config.get(
-                "section_heading_text_margin", "-6mm"
-            ),
-        )
+        # Build configuration object
+        config = _build_resume_config(normalized_config)
 
         if errors:
             return ValidationResult(
@@ -248,7 +280,7 @@ def prepare_render_data(
         )
 
     template = transformed_data.get("template", "resume_no_bars")
-    template_name = f"{template}.html"
+    template_name = f"html/{template}.html"
 
     context = dict(transformed_data)
     context["resume_config"] = normalized_config_dict or {}

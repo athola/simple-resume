@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from simple_resume.palettes.cli import build_parser, cmd_list, cmd_snapshot, main
+from simple_resume.cli.palette import build_parser, cmd_list, cmd_snapshot, main
 from tests.bdd import Scenario
 
 
@@ -20,7 +20,7 @@ class TestCmdSnapshot:
         args = argparse.Namespace(output=None)
 
         with patch(
-            "simple_resume.palettes.cli.build_palettable_registry_snapshot"
+            "simple_resume.cli.palette.build_palettable_registry_snapshot"
         ) as mock_snapshot:
             mock_snapshot.return_value = {"test": "data"}
 
@@ -42,7 +42,7 @@ class TestCmdSnapshot:
             args = argparse.Namespace(output=file_obj)
 
             with patch(
-                "simple_resume.palettes.cli.build_palettable_registry_snapshot"
+                "simple_resume.cli.palette.build_palettable_registry_snapshot"
             ) as mock_snapshot:
                 mock_snapshot.return_value = {"palettes": ["red", "blue", "green"]}
 
@@ -62,7 +62,7 @@ class TestCmdSnapshot:
         args = argparse.Namespace(output=None)
 
         with patch(
-            "simple_resume.palettes.cli.build_palettable_registry_snapshot"
+            "simple_resume.cli.palette.build_palettable_registry_snapshot"
         ) as mock_snapshot:
             mock_snapshot.return_value = {}
 
@@ -102,7 +102,7 @@ class TestCmdList:
             "#000000",
         ]
 
-        with patch("simple_resume.palettes.cli.get_palette_registry") as mock_registry:
+        with patch("simple_resume.cli.palette.get_palette_registry") as mock_registry:
             mock_registry.return_value.list.return_value = [
                 mock_palette1,
                 mock_palette2,
@@ -126,7 +126,7 @@ class TestCmdList:
     def test_cmd_list_handles_empty_registry(self, story: Scenario) -> None:
         args = argparse.Namespace()
 
-        with patch("simple_resume.palettes.cli.get_palette_registry") as mock_registry:
+        with patch("simple_resume.cli.palette.get_palette_registry") as mock_registry:
             mock_registry.return_value.list.return_value = []
 
             with patch("builtins.print") as mock_print:
@@ -152,7 +152,7 @@ class TestCmdList:
             "#9400D3",
         ]
 
-        with patch("simple_resume.palettes.cli.get_palette_registry") as mock_registry:
+        with patch("simple_resume.cli.palette.get_palette_registry") as mock_registry:
             mock_registry.return_value.list.return_value = [mock_palette]
 
             with patch("builtins.print") as mock_print:
@@ -219,7 +219,7 @@ class TestMainFunction:
     """Test the main CLI entry point."""
 
     def test_main_calls_correct_command_function(self, story: Scenario) -> None:
-        with patch("simple_resume.palettes.cli.build_parser") as mock_build_parser:
+        with patch("simple_resume.cli.palette.build_parser") as mock_build_parser:
             mock_parser = Mock()
             mock_parser.parse_args.return_value = Mock(func=Mock(return_value=42))
             mock_build_parser.return_value = mock_parser
@@ -236,7 +236,7 @@ class TestMainFunction:
         assert result == 42
 
     def test_main_uses_default_argv(self, story: Scenario) -> None:
-        with patch("simple_resume.palettes.cli.build_parser") as mock_build_parser:
+        with patch("simple_resume.cli.palette.build_parser") as mock_build_parser:
             mock_parser = Mock()
             mock_parser.parse_args.return_value = Mock(func=Mock(return_value=0))
             mock_build_parser.return_value = mock_parser
@@ -251,7 +251,7 @@ class TestMainFunction:
 
     def test_main_handles_custom_argv(self) -> None:
         """Main function handles custom argv list."""
-        with patch("simple_resume.palettes.cli.build_parser") as mock_build_parser:
+        with patch("simple_resume.cli.palette.build_parser") as mock_build_parser:
             mock_parser = Mock()
             mock_parser.parse_args.return_value = Mock(func=Mock(return_value=0))
             mock_build_parser.return_value = mock_parser
@@ -265,7 +265,7 @@ class TestMainFunction:
 
     def test_main_propagates_function_return_value(self) -> None:
         """Main function returns the same value as the command function."""
-        with patch("simple_resume.palettes.cli.build_parser") as mock_build_parser:
+        with patch("simple_resume.cli.palette.build_parser") as mock_build_parser:
             mock_parser = Mock()
             mock_parser.parse_args.return_value = Mock(func=Mock(return_value=123))
             mock_build_parser.return_value = mock_parser

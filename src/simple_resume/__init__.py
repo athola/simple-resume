@@ -29,8 +29,10 @@ from __future__ import annotations
 # Public API namespaces
 from . import api
 
+# New unified generation API (lazy-loaded)
 # Core classes
-from .core.resume import RenderPlan, Resume, ResumeConfig
+from .core.models import GenerationConfig, RenderPlan, ResumeConfig
+from .core.resume import Resume
 
 # Exception hierarchy
 from .exceptions import (
@@ -43,10 +45,7 @@ from .exceptions import (
     TemplateError,
     ValidationError,
 )
-
-# New unified generation API
-from .generation import (
-    GenerationConfig,
+from .generate import (
     generate,
     generate_all,
     generate_html,
@@ -55,11 +54,27 @@ from .generation import (
     preview,
 )
 
-# Rich result objects
-from .result import BatchGenerationResult, GenerationMetadata, GenerationResult
+# Rich result objects (lazy-loaded)
+from .utils.lazy_import import (
+    lazy_BatchGenerationResult as BatchGenerationResult,
+)
 
-# Session management
-from .session import ResumeSession, SessionConfig, create_session
+# Session management (lazy-loaded)
+from .utils.lazy_import import (
+    lazy_create_session as create_session,
+)
+from .utils.lazy_import import (
+    lazy_GenerationMetadata as GenerationMetadata,
+)
+from .utils.lazy_import import (
+    lazy_GenerationResult as GenerationResult,
+)
+from .utils.lazy_import import (
+    lazy_ResumeSession as ResumeSession,
+)
+from .utils.lazy_import import (
+    lazy_SessionConfig as SessionConfig,
+)
 
 # Version
 __version__ = "0.1.0"

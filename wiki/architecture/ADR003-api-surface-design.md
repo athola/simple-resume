@@ -8,7 +8,7 @@ Accepted (2025-11-09)
 
 Original API surface had organizational issues:
 
-1. Redundant wrapper functions adding no abstraction (`utilities.calculate_text_color()` wrapping `get_contrasting_text_color()`)
+1. Redundant wrapper functions adding no abstraction (`utilities.calculate_text_color()` wrapping `core.colors.get_contrasting_text_color()`)
 2. Utility functions incorrectly exposed as `Resume` class methods (e.g., `Resume.calculate_text_color()`)
 3. No clear public API namespace; users imported from internal `core.*` modules
 4. Inconsistent function naming (`is_valid_color()` and `validate_color()` coexisting)
@@ -46,8 +46,8 @@ Following research into pandas and requests API design:
 
 - `utilities.calculate_text_color()` - wrapper removed
 - `utilities.calculate_luminance()` - wrapper removed
-- `color_utils.calculate_text_color()` - wrapper removed
-- `color_utils.validate_color()` - wrapper removed
+- `color_utils.calculate_text_color()` - wrapper removed (module renamed to `core.colors`)
+- `color_utils.validate_color()` - wrapper removed (module renamed to `core.colors`)
 - `Resume.calculate_text_color()` - removed from class
 - `Resume.validate_color()` - removed from class
 - `Resume.calculate_luminance()` - removed from class
@@ -79,15 +79,20 @@ Following research into pandas and requests API design:
 
 Core module functions represent the canonical implementation:
 
-- `core.color_utils.calculate_luminance()` - canonical
-- `core.color_utils.get_contrasting_text_color()` - canonical
-- `core.color_utils.is_valid_color()` - canonical
+- `core.colors.calculate_luminance()` - canonical
+- `core.colors.get_contrasting_text_color()` - canonical
+- `core.colors.is_valid_color()` - canonical
 
 Public API re-exports or simplifies:
 
 - `api.colors.calculate_luminance` - direct re-export
 - `api.colors.is_valid_color` - direct re-export
-- `api.colors.calculate_text_color()` - simplified interface
+- `api.colors.calculate_text_color()` - simplified interface that calls `core.colors.get_contrasting_text_color()`
+
+### 5. Compatibility Shims
+
+- `simple_resume.utils.colors` re-exports the canonical helpers and emits a `DeprecationWarning` when imported. This gives downstream projects a migration window.
+- `core.color_service.ColorCalculationService` wraps the low-level helpers for sidebar/icon-specific behavior so shell modules no longer reach into deprecated wrappers.
 
 ## Rationale
 
@@ -170,6 +175,8 @@ lum = colors.calculate_luminance("#808080")
 
 ```text
 
+Use `from simple_resume.api import colors` in all new code. The legacy `simple_resume.utils.colors` shim still works but emits a `DeprecationWarning` to encourage migration.
+
 ### Monitoring
 
 - Track import patterns in user code (if telemetry added)
@@ -182,9 +189,10 @@ lum = colors.calculate_luminance("#808080")
 2. ✅ Create `simple_resume.api.colors` public module
 3. ✅ Move color utility tests to `test_api_colors.py`
 4. ✅ Update `__all__` exports to reflect authoritative functions only
-5. 🔲 Review other utility functions for similar issues (e.g., skill_utils)
-6. 🔲 Document public API in user guide
-7. 🔲 Add API stability policy to CONTRIBUTING.md
+5. ✅ Ship `simple_resume.utils.colors` shim with `DeprecationWarning`
+6. 🔲 Review other utility functions for similar issues (e.g., skill_utils)
+7. 🔲 Document public API in user guide
+8. 🔲 Add API stability policy to CONTRIBUTING.md
 
 ## References
 

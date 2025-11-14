@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 
 from simple_resume.core import plan
-from simple_resume.core.resume import RenderMode, ResumeConfig
+from simple_resume.core.models import RenderMode, ResumeConfig
 from simple_resume.exceptions import ValidationError
 from simple_resume.palettes.exceptions import PaletteGenerationError
 from tests.bdd import Scenario

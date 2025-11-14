@@ -66,9 +66,9 @@ utils = [
 simple-resume = "simple_resume.cli:main"
 
 # Palette utilities
-palette-snapshot = "simple_resume.palettes.cli:snapshot"
-palette-list = "simple_resume.palettes.cli:list"
-generate-random-palette-demo = "simple_resume.cli_random_palette_demo:main"
+palette-snapshot = "simple_resume.cli.palette:snapshot"
+palette-list = "simple_resume.cli.palette:palette_list"
+generate-random-palette-demo = "simple_resume.cli.random_palette_demo:main"
 
 [tool.hatch.build.targets.sdist]
 include = ["src"]  # Only include content from src
@@ -125,6 +125,7 @@ extend-ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "**/__init__.py" = ["F401"]  # Allow unused imports in __init__.py
+"**/generate/lazy.py" = ["PLC0415"]  # Allow import-outside-toplevel for lazy loading
 "tests/**/*.py" = [
     "PLR2004",  # Allow magic numbers in tests (e.g., test data)
     "PLR0913",  # Allow more arguments in test functions (many fixtures)

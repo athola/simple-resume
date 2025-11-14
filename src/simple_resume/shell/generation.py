@@ -20,7 +20,9 @@ from pathlib import Path
 from typing import Any, Protocol, TextIO, cast
 
 from .. import config
-from ..core.resume import RenderMode, RenderPlan, Resume
+from ..constants import RenderMode
+from ..core.models import RenderPlan
+from ..core.plan import prepare_render_data
 from ..exceptions import GenerationError
 from ..latex_renderer import (
     LatexCompilationError,
@@ -292,7 +294,7 @@ class ResumeGenerator:
         raw_data = get_content(name, paths=paths, transform_markdown=False)
 
         # Create render plan using core logic (pure)
-        plan = Resume.prepare_render_data(
+        plan = prepare_render_data(
             source_yaml_content=raw_data, preview=False, base_path=str(paths.content)
         )
 
@@ -321,7 +323,7 @@ class ResumeGenerator:
         raw_data = get_content(name, paths=paths, transform_markdown=False)
 
         # Create render plan using core logic (pure)
-        plan = Resume.prepare_render_data(
+        plan = prepare_render_data(
             source_yaml_content=raw_data, preview=True, base_path=str(paths.content)
         )
 

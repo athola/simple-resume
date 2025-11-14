@@ -11,7 +11,7 @@ from typing import Any
 from .constants import (
     MAX_FILE_SIZE_MB,
     SUPPORTED_FORMATS,
-    YAML_EXTENSIONS,
+    SUPPORTED_YAML_EXTENSIONS,
     OutputFormat,
 )
 from .exceptions import ConfigurationError, FileSystemError, ValidationError
@@ -195,7 +195,7 @@ def validate_yaml_file(file_path: str | Path) -> Path:
         file_path,
         must_exist=True,
         must_be_file=True,
-        allowed_extensions=YAML_EXTENSIONS,
+        allowed_extensions=tuple(SUPPORTED_YAML_EXTENSIONS),
     )
 
 

@@ -14,7 +14,7 @@ permissions:
   packages: write
 
 jobs:
-  publish:
+  verify-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -30,6 +30,97 @@ jobs:
       - name: Build package
         run: uv build
 
+      - name: Verify source distribution matches wheel contents
+        run: |
+          set -e
+
+          # Extract tarball
+          mkdir -p dist/extracted-tar
+          tar -xzf dist/*.tar.gz -C dist/extracted-tar --strip-components=1
+
+          # Extract wheel
+          mkdir -p dist/extracted-wheel
+          python -m zipfile -e dist/*.whl dist/extracted-wheel/
+
+          # Compare source files (excluding metadata)
+          echo "Comparing source files between tarball and wheel..."
+
+          # List files in both, excluding metadata directories
+          (cd dist/extracted-tar && find src -type f | sort) > /tmp/tar-files.txt
+          (cd dist/extracted-wheel && find simple_resume* -name "*.py" -type f | sort) > /tmp/wheel-files.txt
+
+          # Check that all Python files in src are in the wheel
+          echo "Checking Python source files..."
+          MISSING_FILES=0
+          while IFS= read -r file; do
+            # Convert src/simple_resume/foo.py to simple_resume/foo.py for comparison
+            wheel_file=$(echo "$file" | sed 's|^src/||')
+
+            if ! grep -q "$wheel_file" /tmp/wheel-files.txt; then
+              echo "ERROR: File missing in wheel: $file"
+              MISSING_FILES=1
+            fi
+          done < <(grep "\.py$" /tmp/tar-files.txt)
+
+          if [ $MISSING_FILES -eq 0 ]; then
+            echo "SUCCESS: All Python source files from tarball are present in wheel"
+          else
+            echo "ERROR: Some files are missing in the wheel"
+            exit 1
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: verify-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Check if version changed
+        id: version-check
+        run: |
+          # Get current version from pyproject.toml
+          CURRENT_VERSION=$(grep -m 1 'version = ' pyproject.toml | cut -d'"' -f2)
+
+          # Get previous version from git (if exists)
+          git show HEAD~1:pyproject.toml > /tmp/prev-pyproject.toml 2>/dev/null || echo 'version = "0.0.0"' > /tmp/prev-pyproject.toml
+          PREVIOUS_VERSION=$(grep -m 1 'version = ' /tmp/prev-pyproject.toml | cut -d'"' -f2)
+
+          echo "Current version: $CURRENT_VERSION"
+          echo "Previous version: $PREVIOUS_VERSION"
+
+          if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
+            echo "Version changed from $PREVIOUS_VERSION to $CURRENT_VERSION"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "current=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+            echo "previous=$PREVIOUS_VERSION" >> "$GITHUB_OUTPUT"
+          else
+            echo "Version unchanged ($CURRENT_VERSION)"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download build artifacts
+        if: steps.version-check.outputs.changed == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
       - name: Detect PyPI token
         id: detect-token
         env:
@@ -41,8 +132,17 @@ jobs:
             echo "present=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Skip publish (version unchanged)
+        if: steps.version-check.outputs.changed == 'false'
+        run: |
+          echo "Skipping PyPI publish - version unchanged"
+          echo "Current version: $(grep -m 1 'version = ' pyproject.toml | cut -d'"' -f2)"
+          echo "To publish a new version:"
+          echo "1. Update version in pyproject.toml"
+          echo "2. Commit and push to main branch"
+
       - name: Publish to PyPI
-        if: ${{ github.ref == 'refs/heads/main' && steps.detect-token.outputs.present == 'true' }}
+        if: ${{ github.ref == 'refs/heads/main' && steps.version-check.outputs.changed == 'true' && steps.detect-token.outputs.present == 'true' }}
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
@@ -51,7 +151,7 @@ jobs:
           uv tool run twine upload dist/*
 
       - name: PyPI Token Missing
-        if: ${{ github.ref == 'refs/heads/main' && steps.detect-token.outputs.present == 'false' }}
+        if: ${{ github.ref == 'refs/heads/main' && steps.version-check.outputs.changed == 'true' && steps.detect-token.outputs.present == 'false' }}
         run: |
           echo "PYPI_API_TOKEN secret not configured"
           echo "To enable PyPI publishing:"

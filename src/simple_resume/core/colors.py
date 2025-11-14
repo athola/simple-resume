@@ -1,28 +1,43 @@
-"""Provide color helpers shared between shell and core modules."""
+"""Color calculation helpers that belong to the core domain layer.
+
+This module centralizes hex parsing, luminance math, and contrast helpers so
+domain services (and legacy utility shims) do not need to re-implement
+workarounds to avoid circular imports.
+"""
 
 from __future__ import annotations
 
 import re
 
-HEX_COLOR_SHORT_LENGTH = 3
-HEX_COLOR_FULL_LENGTH = 6
+from simple_resume.constants import (
+    HEX_COLOR_FULL_LENGTH,
+    HEX_COLOR_SHORT_LENGTH,
+    ICON_CONTRAST_THRESHOLD,
+    LUMINANCE_DARK,
+    LUMINANCE_VERY_DARK,
+    LUMINANCE_VERY_LIGHT,
+    WCAG_LINEARIZATION_DIVISOR,
+    WCAG_LINEARIZATION_EXPONENT,
+    WCAG_LINEARIZATION_OFFSET,
+    WCAG_LINEARIZATION_THRESHOLD,
+)
 
-LINEARIZATION_THRESHOLD = 0.03928
-LINEARIZATION_DIVISOR = 12.92
-LINEARIZATION_EXPONENT = 2.4
-LINEARIZATION_OFFSET = 0.055
-
-VERY_DARK_THRESHOLD = 0.15
-DARK_THRESHOLD = 0.5
-VERY_LIGHT_THRESHOLD = 0.8
-ICON_CONTRAST_THRESHOLD = 3.0
+__all__ = [
+    "calculate_contrast_ratio",
+    "calculate_icon_contrast_color",
+    "calculate_luminance",
+    "darken_color",
+    "get_contrasting_text_color",
+    "hex_to_rgb",
+    "is_valid_color",
+]
 
 
 def hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
-    """Convert hex color to RGB tuple."""
+    """Convert hex color to an RGB tuple."""
     processed = hex_color.lstrip("#")
     if len(processed) == HEX_COLOR_SHORT_LENGTH:
-        processed = "".join([char * 2 for char in processed])
+        processed = "".join(char * 2 for char in processed)
     if len(processed) != HEX_COLOR_FULL_LENGTH:
         raise ValueError(f"Invalid hex color: {hex_color}")
     try:
@@ -30,7 +45,7 @@ def hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
         g = int(processed[2:4], 16)
         b = int(processed[4:6], 16)
         return r, g, b
-    except ValueError as exc:
+    except ValueError as exc:  # pragma: no cover - defensive
         raise ValueError(f"Invalid hex color: {hex_color}") from exc
 
 
@@ -51,22 +66,16 @@ def _calculate_luminance_from_rgb(rgb: tuple[int, int, int]) -> float:
     def _linearize(component: int) -> float:
         value = component / 255.0
         return (
-            value / LINEARIZATION_DIVISOR
-            if value <= LINEARIZATION_THRESHOLD
-            else ((value + LINEARIZATION_OFFSET) / (1 + LINEARIZATION_OFFSET))
-            ** LINEARIZATION_EXPONENT
+            value / WCAG_LINEARIZATION_DIVISOR
+            if value <= WCAG_LINEARIZATION_THRESHOLD
+            else ((value + WCAG_LINEARIZATION_OFFSET) / (1 + WCAG_LINEARIZATION_OFFSET))
+            ** WCAG_LINEARIZATION_EXPONENT
         )
 
     r_linear = _linearize(r)
     g_linear = _linearize(g)
     b_linear = _linearize(b)
 
-    # Calculate relative luminance using sRGB BT.709 coefficients
-    # These coefficients represent human eye sensitivity to different color wavelengths:
-    # - 0.2126: Red channel contribution (humans are least sensitive to red)
-    # - 0.7152: Green channel contribution (humans are most sensitive to green)
-    # - 0.0722: Blue channel contribution (humans are least sensitive to blue)
-    # Formula from WCAG 2.0 and ITU-R BT.709 standards for accessibility calculations
     return 0.2126 * r_linear + 0.7152 * g_linear + 0.0722 * b_linear
 
 
@@ -77,7 +86,7 @@ def calculate_luminance(hex_color: str) -> float:
 
 
 def calculate_contrast_ratio(color1: str, color2: str) -> float:
-    """Return WCAG contrast ratio between two hex colors."""
+    """Return the WCAG contrast ratio between two hex colors."""
     rgb1 = hex_to_rgb(color1)
     rgb2 = hex_to_rgb(color2)
     lum1 = _calculate_luminance_from_rgb(rgb1)
@@ -88,17 +97,17 @@ def calculate_contrast_ratio(color1: str, color2: str) -> float:
 
 
 def get_contrasting_text_color(background_color: str) -> str:
-    """Return a readable text color for the given background."""
+    """Return a readable text color for the provided background."""
     try:
         luminance = calculate_luminance(background_color)
-        if luminance <= VERY_DARK_THRESHOLD:
+        if luminance <= LUMINANCE_VERY_DARK:
             return "#F5F5F5"
-        if luminance <= DARK_THRESHOLD:
+        if luminance <= LUMINANCE_DARK:
             return "#FFFFFF"
-        if luminance >= VERY_LIGHT_THRESHOLD:
+        if luminance >= LUMINANCE_VERY_LIGHT:
             return "#333333"
         return "#000000"
-    except (ValueError, TypeError):
+    except (ValueError, TypeError):  # pragma: no cover - defensive
         return "#000000"
 
 
@@ -121,14 +130,3 @@ def is_valid_color(color: str) -> bool:
     if not color:
         return False
     return bool(re.match(r"^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$", color))
-
-
-__all__ = [
-    "calculate_contrast_ratio",
-    "calculate_icon_contrast_color",
-    "calculate_luminance",
-    "darken_color",
-    "get_contrasting_text_color",
-    "hex_to_rgb",
-    "is_valid_color",
-]

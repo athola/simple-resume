@@ -89,6 +89,7 @@ class GenerationConfig:
 
 __all__ = [
     "GenerationConfig",
+    "RenderMode",
     "RenderPlan",
     "ResumeConfig",
     "ValidationResult",
