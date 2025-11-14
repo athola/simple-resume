@@ -47,6 +47,7 @@ dependencies = [
     "oyaml>=1.0,<2.0",
     "weasyprint>=62.1,<63.0",
     "palettable>=3.3.3,<4.0",
+    "jinja2>=3.0,<4.0",
 ]
 
 [project.optional-dependencies]
