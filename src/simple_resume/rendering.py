@@ -31,7 +31,7 @@ def build_html_context(
     context["resume_config"] = resume_config
     context["preview"] = preview
 
-    return f"{template_name}.html", context
+    return f"html/{template_name}.html", context
 
 
 def load_resume(

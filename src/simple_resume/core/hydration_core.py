@@ -6,7 +6,7 @@ import copy
 from collections.abc import Mapping
 from typing import Any, Callable
 
-from ..skill_utils import format_skill_groups
+from ..utils.skills import format_skill_groups
 
 NormalizeConfigFn = Callable[
     [dict[str, Any], str], tuple[dict[str, Any], dict[str, Any] | None]

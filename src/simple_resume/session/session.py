@@ -10,41 +10,25 @@ import time
 import uuid
 from collections.abc import Generator
 from contextlib import contextmanager
-from dataclasses import dataclass, field
 from dataclasses import replace as dataclass_replace
 from pathlib import Path
 from types import TracebackType
 from typing import Any
 
-from .config import Paths, resolve_paths
-from .constants import OutputFormat
-from .core.resume import Resume
-from .exceptions import ConfigurationError, SessionError
-from .result import BatchGenerationResult, GenerationResult
+from simple_resume.config import Paths, resolve_paths
+from simple_resume.constants import OutputFormat
+from simple_resume.core.file_operations import find_yaml_files
+from simple_resume.core.resume import Resume
+from simple_resume.dependencies import (
+    DefaultResumeConfigurator,
+    DefaultResumeLoader,
+    DIContainer,
+    MemoryResumeCache,
+)
+from simple_resume.exceptions import ConfigurationError, SessionError
+from simple_resume.result import BatchGenerationResult, GenerationResult
 
-
-@dataclass
-class SessionConfig:
-    """Configuration for a `ResumeSession`."""
-
-    paths: Paths | None = None
-    default_template: str | None = None
-    default_palette: str | None = None
-    default_format: OutputFormat | str = OutputFormat.PDF
-    auto_open: bool = False
-    preview_mode: bool = False
-    output_dir: Path | None = None
-    # Additional session-wide settings
-    session_metadata: dict[str, Any] = field(default_factory=dict)
-
-    def __post_init__(self) -> None:
-        """Normalize enum-backed fields."""
-        try:
-            self.default_format = OutputFormat.normalize(self.default_format)
-        except (ValueError, TypeError) as exc:
-            raise ConfigurationError(
-                f"Invalid default format: {self.default_format}"
-            ) from exc
+from .config import SessionConfig
 
 
 class ResumeSession:
@@ -110,10 +94,17 @@ class ResumeSession:
             self._paths = dataclass_replace(self._paths, output=self._config.output_dir)
             self._config.paths = self._paths
 
+        # Initialize dependency injection
+        container = DIContainer(
+            resume_loader=DefaultResumeLoader(),
+            resume_cache=MemoryResumeCache(),
+            resume_configurator=DefaultResumeConfigurator(),
+        )
+        self._repository = container.create_resume_repository()
+
         # Track session statistics
         self._operation_count = 0
         self._generation_times: list[float] = []
-        self._resumes_loaded: dict[str, Resume] = {}
 
     @property
     def session_id(self) -> str:
@@ -168,29 +159,13 @@ class ResumeSession:
             )
 
         try:
-            # Check cache first
-            cache_key = name
-            if use_cache and cache_key in self._resumes_loaded:
-                return self._resumes_loaded[cache_key]
-
-            # Load resume with session paths
-            resume = Resume.read_yaml(
-                name=name, paths=self._paths, transform_markdown=True
+            # Use dependency injection for resume loading
+            resume = self._repository.get_resume(
+                name=name,
+                paths=self._paths,
+                use_cache=use_cache,
+                config=self._config,
             )
-
-            # Apply session defaults
-            if self._config.default_template:
-                resume = resume.with_template(self._config.default_template)
-
-            if self._config.default_palette:
-                resume = resume.with_palette(self._config.default_palette)
-
-            if self._config.preview_mode:
-                resume = resume.preview()
-
-            # Cache the resume
-            if use_cache:
-                self._resumes_loaded[cache_key] = resume
 
             self._operation_count += 1
             return resume
@@ -301,32 +276,8 @@ class ResumeSession:
         )
 
     def _find_yaml_files(self, pattern: str = "*") -> list[Path]:
-        """Find YAML files matching the given pattern.
-
-        Args:
-            pattern: Glob pattern for matching files.
-
-        Returns:
-            List of matching YAML file paths.
-
-        """
-        try:
-            input_path = self._paths.input
-            if not input_path.exists():
-                return []
-
-            # Find files matching pattern with .yaml/.yml extension
-            yaml_files = []
-            for file_path in input_path.glob(f"{pattern}.yaml"):
-                if file_path.is_file():
-                    yaml_files.append(file_path)
-            for file_path in input_path.glob(f"{pattern}.yml"):
-                if file_path.is_file():
-                    yaml_files.append(file_path)
-
-            return sorted(yaml_files)
-        except Exception:
-            return []
+        """Find YAML files matching the given pattern."""
+        return find_yaml_files(self._paths.input, pattern)
 
     def invalidate_cache(self, name: str | None = None) -> None:
         """Invalidate cached resume data.
@@ -335,10 +286,7 @@ class ResumeSession:
             name: Specific resume name to invalidate, or `None` for all.
 
         """
-        if name is None:
-            self._resumes_loaded.clear()
-        elif name in self._resumes_loaded:
-            del self._resumes_loaded[name]
+        self._repository.invalidate_cache(name)
 
     def get_cache_info(self) -> dict[str, Any]:
         """Return information about cached resume data.
@@ -348,11 +296,9 @@ class ResumeSession:
 
         """
         return {
-            "cached_resumes": list(self._resumes_loaded.keys()),
-            "cache_size": len(self._resumes_loaded),
-            "memory_usage_estimate": sum(
-                len(str(resume._data)) for resume in self._resumes_loaded.values()
-            ),
+            "cached_resumes": self._repository.get_cache_keys(),
+            "cache_size": self._repository.get_cache_size(),
+            "memory_usage_estimate": self._repository.get_memory_usage(),
         }
 
     def close(self) -> None:
@@ -362,7 +308,7 @@ class ResumeSession:
         """
         if self._is_active:
             # Clear cache
-            self._resumes_loaded.clear()
+            self._repository.clear_cache()
             self._generation_times.clear()
             self._is_active = False
 

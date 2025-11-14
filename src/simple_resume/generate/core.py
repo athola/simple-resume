@@ -1,9 +1,12 @@
-"""Provide high-level functions for generating resumes.
+"""Core generation functions with immediate imports.
 
-This module acts as the primary public API for generating resumes, offering
-functions to create PDFs, HTML files, or both from a GenerationConfig object.
-It uses a planning step to translate configuration into a series of commands,
-which are then executed.
+This module provides high-level functions for generating resumes with immediate
+import loading. These functions are ideal for:
+- Applications that will definitely use generation functionality
+- Situations where predictability is preferred over optimization
+- Web applications where import time is less critical than request time
+
+For lazy-loaded versions with better startup performance, see `generate.lazy`.
 """
 
 from __future__ import annotations
@@ -14,23 +17,27 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .constants import DEFAULT_FORMAT, OutputFormat
-from .core.generation_plan import (
+from ..constants import DEFAULT_FORMAT, OutputFormat
+from ..core.generation_plan import (
     CommandType,
     GeneratePlanOptions,
     GenerationCommand,
     build_generation_plan,
 )
-from .core.models import GenerationConfig
-from .exceptions import (
+from ..core.models import GenerationConfig
+from ..exceptions import (
     ConfigurationError,
     FileSystemError,
     GenerationError,
     ValidationError,
 )
-from .result import BatchGenerationResult, GenerationResult
-from .session import ResumeSession, SessionConfig
-from .validation import validate_directory_path, validate_format, validate_template_name
+from ..result import BatchGenerationResult, GenerationResult
+from ..session import ResumeSession, SessionConfig
+from ..validation import (
+    validate_directory_path,
+    validate_format,
+    validate_template_name,
+)
 
 _YAML_SUFFIXES = {".yaml", ".yml"}
 CommandResult = (

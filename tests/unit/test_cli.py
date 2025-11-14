@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from simple_resume.cli import (
+from simple_resume.cli.main import (
     _handle_unexpected_error,
     _run_session_generation,
     create_parser,
@@ -23,15 +23,15 @@ from simple_resume.core.generation_plan import (
     CommandType,
     GenerationCommand,
 )
+from simple_resume.core.models import GenerationConfig
 from simple_resume.exceptions import (
     GenerationError,
     SimpleResumeError,
     TemplateError,
     ValidationError,
 )
-from simple_resume.generation import GenerationConfig
 from simple_resume.result import BatchGenerationResult
-from simple_resume.session import ResumeSession
+from simple_resume.session.session import ResumeSession
 from tests.bdd import Scenario
 
 
@@ -100,7 +100,7 @@ class TestCreateParser:
 class TestHandleGenerateCommand:
     """Test the generate command handler."""
 
-    @patch("simple_resume.cli.execute_generation_commands")
+    @patch("simple_resume.cli.main.execute_generation_commands")
     def test_generate_single_resume_success(
         self, mock_execute: Mock, story: Scenario
     ) -> None:
@@ -139,7 +139,7 @@ class TestHandleGenerateCommand:
         assert captured_commands
         assert captured_commands[0].kind is CommandType.SINGLE
 
-    @patch("simple_resume.cli.execute_generation_commands")
+    @patch("simple_resume.cli.main.execute_generation_commands")
     def test_generate_multiple_resumes_success(
         self, mock_execute: Mock, story: Scenario
     ) -> None:
@@ -174,7 +174,7 @@ class TestHandleGenerateCommand:
         assert result == 0
         mock_execute.assert_called_once()
 
-    @patch("simple_resume.cli.execute_generation_commands")
+    @patch("simple_resume.cli.main.execute_generation_commands")
     def test_generate_with_config_overrides(
         self, mock_execute: Mock, story: Scenario
     ) -> None:
@@ -215,7 +215,7 @@ class TestHandleGenerateCommand:
         assert overrides["page_width"] == 210
         assert overrides["page_height"] == 297
 
-    @patch("simple_resume.cli.execute_generation_commands")
+    @patch("simple_resume.cli.main.execute_generation_commands")
     def test_generate_multiple_formats(
         self, mock_execute: Mock, story: Scenario
     ) -> None:
@@ -305,12 +305,9 @@ class TestHandleGenerateCommand:
         ) -> list[tuple[GenerationCommand, object]]:
             return [(commands[0], batch_result)]
 
-        monkeypatch.setattr(
-            "simple_resume.cli.execute_generation_commands", fake_execute
-        )
-
-        with patch("sys.stdout", new=io.StringIO()) as buffer:
-            result = handle_generate_command(args)
+        with patch("simple_resume.cli.main.execute_generation_commands", fake_execute):
+            with patch("sys.stdout", new=io.StringIO()) as buffer:
+                result = handle_generate_command(args)
 
         story.then("the handler reports skips instead of failures")
         assert result == 0
@@ -319,7 +316,7 @@ class TestHandleGenerateCommand:
         assert "Failed: 0" in output
         assert "ℹ️ Skipped LaTeX template(s): resume2" in output
 
-    @patch("simple_resume.cli.execute_generation_commands")
+    @patch("simple_resume.cli.main.execute_generation_commands")
     def test_generate_command_error_handling(self, mock_execute: Mock) -> None:
         """Test error handling in generate command."""
         args = Mock()
@@ -330,7 +327,7 @@ class TestHandleGenerateCommand:
         result = handle_generate_command(args)
         assert result == 1
 
-    @patch("simple_resume.cli.execute_generation_commands")
+    @patch("simple_resume.cli.main.execute_generation_commands")
     def test_generate_keyboard_interrupt(self, mock_execute: Mock) -> None:
         """Test keyboard interrupt handling."""
         args = Mock()
@@ -345,9 +342,9 @@ class TestHandleGenerateCommand:
 class TestHandleSessionCommand:
     """Test the session command handler."""
 
-    @patch("simple_resume.cli.ResumeSession")
-    @patch("simple_resume.cli.SessionConfig")
-    @patch("simple_resume.cli.input")
+    @patch("simple_resume.cli.main.ResumeSession")
+    @patch("simple_resume.cli.main.SessionConfig")
+    @patch("builtins.input")
     def test_session_command_basic_flow(
         self, mock_input: Mock, mock_session_config: Mock, mock_resume_session: Mock
     ) -> None:
@@ -378,7 +375,7 @@ class TestHandleSessionCommand:
         assert result == 0
         mock_resume_session.assert_called_once()
 
-    @patch("simple_resume.cli.ResumeSession")
+    @patch("simple_resume.cli.main.ResumeSession")
     def test_session_command_error(self, mock_resume_session: Mock) -> None:
         """Test session command error handling."""
         # Mock args
@@ -396,8 +393,8 @@ class TestHandleSessionCommand:
 class TestHandleValidateCommand:
     """Test the validate command handler."""
 
-    @patch("simple_resume.cli.Resume")
-    def test_validate_single_resume_success(self, mock_resume_class: Mock) -> None:
+    @patch("simple_resume.cli.main.Resume.read_yaml")
+    def test_validate_single_resume_success(self, mock_read_yaml: Mock) -> None:
         """Test successful single resume validation."""
         # Mock args
         args = Mock()
@@ -411,13 +408,13 @@ class TestHandleValidateCommand:
         mock_resume.validate_or_raise.return_value = (
             mock_validation_result  # No exception = success
         )
-        mock_resume_class.read_yaml.return_value = mock_resume
+        mock_read_yaml.return_value = mock_resume
 
         result = handle_validate_command(args)
         assert result == 0
 
-    @patch("simple_resume.cli.Resume")
-    def test_validate_single_resume_failure(self, mock_resume_class: Mock) -> None:
+    @patch("simple_resume.cli.main.Resume.read_yaml")
+    def test_validate_single_resume_failure(self, mock_read_yaml: Mock) -> None:
         """Test single resume validation with errors."""
         # Mock args
         args = Mock()
@@ -431,12 +428,12 @@ class TestHandleValidateCommand:
             errors=["Missing required field: name"],
             filename="test_resume.yaml",
         )
-        mock_resume_class.read_yaml.return_value = mock_resume
+        mock_read_yaml.return_value = mock_resume
 
         result = handle_validate_command(args)
         assert result == 1
 
-    @patch("simple_resume.session.ResumeSession")
+    @patch("simple_resume.cli.main.ResumeSession")
     def test_validate_all_resumes(self, mock_resume_session_class: Mock) -> None:
         """Test validating all resumes."""
         # Mock args
@@ -489,7 +486,7 @@ class TestHandleValidateCommand:
 class TestMainFunction:
     """Test the main CLI entry point."""
 
-    @patch("simple_resume.cli.create_parser")
+    @patch("simple_resume.cli.main.create_parser")
     def test_main_generate_command(self, mock_create_parser: Mock) -> None:
         """Test main with generate command."""
         mock_parser = Mock()
@@ -499,13 +496,13 @@ class TestMainFunction:
         mock_create_parser.return_value = mock_parser
 
         with patch(
-            "simple_resume.cli.handle_generate_command", return_value=0
+            "simple_resume.cli.main.handle_generate_command", return_value=0
         ) as mock_handle:
             result = main()
             assert result == 0
             mock_handle.assert_called_once_with(mock_args)
 
-    @patch("simple_resume.cli.create_parser")
+    @patch("simple_resume.cli.main.create_parser")
     def test_main_session_command(self, mock_create_parser: Mock) -> None:
         """Test main with session command."""
         mock_parser = Mock()
@@ -515,13 +512,13 @@ class TestMainFunction:
         mock_create_parser.return_value = mock_parser
 
         with patch(
-            "simple_resume.cli.handle_session_command", return_value=0
+            "simple_resume.cli.main.handle_session_command", return_value=0
         ) as mock_handle:
             result = main()
             assert result == 0
             mock_handle.assert_called_once_with(mock_args)
 
-    @patch("simple_resume.cli.create_parser")
+    @patch("simple_resume.cli.main.create_parser")
     def test_main_validate_command(
         self, mock_create_parser: Mock, story: Scenario
     ) -> None:
@@ -532,7 +529,7 @@ class TestMainFunction:
         mock_create_parser.return_value = mock_parser
 
         with patch(
-            "simple_resume.cli.handle_validate_command", return_value=0
+            "simple_resume.cli.main.handle_validate_command", return_value=0
         ) as mock_handle:
             result = main()
 
@@ -540,7 +537,7 @@ class TestMainFunction:
         assert result == 0
         mock_handle.assert_called_once_with(mock_args)
 
-    @patch("simple_resume.cli.create_parser")
+    @patch("simple_resume.cli.main.create_parser")
     def test_main_unknown_command(
         self, mock_create_parser: Mock, story: Scenario
     ) -> None:
@@ -555,7 +552,7 @@ class TestMainFunction:
         assert result == 1
         mock_parser.print_help.assert_called_once()
 
-    @patch("simple_resume.cli.create_parser")
+    @patch("simple_resume.cli.main.create_parser")
     def test_main_keyboard_interrupt(
         self, mock_create_parser: Mock, story: Scenario
     ) -> None:
@@ -569,7 +566,7 @@ class TestMainFunction:
         story.then("the keyboard interrupt maps to exit code 130")
         assert result == 130
 
-    @patch("simple_resume.cli.create_parser")
+    @patch("simple_resume.cli.main.create_parser")
     def test_main_unexpected_error(
         self, mock_create_parser: Mock, story: Scenario
     ) -> None:
@@ -580,7 +577,7 @@ class TestMainFunction:
         mock_create_parser.return_value = mock_parser
 
         with patch(
-            "simple_resume.cli.handle_generate_command",
+            "simple_resume.cli.main.handle_generate_command",
             side_effect=Exception("Unexpected error"),
         ):
             result = main()
@@ -591,8 +588,8 @@ class TestMainFunction:
 class TestHandleUnexpectedError:
     """Test the new error handling function."""
 
-    @patch("simple_resume.cli.print")
-    @patch("simple_resume.cli.logging.getLogger")
+    @patch("builtins.print")
+    @patch("logging.getLogger")
     def test_handle_file_system_error(
         self, mock_logger: Mock, mock_print: Mock
     ) -> None:
@@ -604,8 +601,8 @@ class TestHandleUnexpectedError:
         mock_print.assert_any_call("Suggestion: Check file permissions and disk space")
         mock_logger.return_value.error.assert_called_once()
 
-    @patch("simple_resume.cli.print")
-    @patch("simple_resume.cli.logging.getLogger")
+    @patch("builtins.print")
+    @patch("logging.getLogger")
     def test_handle_internal_error(self, mock_logger: Mock, mock_print: Mock) -> None:
         error = AttributeError("Missing attribute")
         result = _handle_unexpected_error(error, "test context")
@@ -615,8 +612,8 @@ class TestHandleUnexpectedError:
         mock_print.assert_any_call("Suggestion: This may be a bug - please report it")
         mock_logger.return_value.error.assert_called_once()
 
-    @patch("simple_resume.cli.print")
-    @patch("simple_resume.cli.logging.getLogger")
+    @patch("builtins.print")
+    @patch("logging.getLogger")
     def test_handle_memory_error(self, mock_logger: Mock, mock_print: Mock) -> None:
         error = MemoryError("Out of memory")
         result = _handle_unexpected_error(error, "test context")
@@ -626,8 +623,8 @@ class TestHandleUnexpectedError:
         mock_print.assert_any_call("Suggestion: System ran out of memory")
         mock_logger.return_value.error.assert_called_once()
 
-    @patch("simple_resume.cli.print")
-    @patch("simple_resume.cli.logging.getLogger")
+    @patch("builtins.print")
+    @patch("logging.getLogger")
     def test_handle_input_error(self, mock_logger: Mock, mock_print: Mock) -> None:
         error = ValueError("Invalid value")
         result = _handle_unexpected_error(error, "test context")
@@ -637,8 +634,8 @@ class TestHandleUnexpectedError:
         mock_print.assert_any_call("Suggestion: Check your input files and parameters")
         mock_logger.return_value.error.assert_called_once()
 
-    @patch("simple_resume.cli.print")
-    @patch("simple_resume.cli.logging.getLogger")
+    @patch("builtins.print")
+    @patch("logging.getLogger")
     def test_handle_generic_error(self, mock_logger: Mock, mock_print: Mock) -> None:
         error = RuntimeError("Something went wrong")
         result = _handle_unexpected_error(error, "test context")
@@ -677,7 +674,7 @@ class TestRunSessionGeneration:
         )
         resume.to_pdf.return_value = pdf_result
 
-        with patch("simple_resume.cli.print") as mock_print:
+        with patch("builtins.print") as mock_print:
             _run_session_generation(resume, session, commands)
 
         resume.to_pdf.assert_called_once_with(
@@ -710,7 +707,7 @@ class TestRunSessionGeneration:
         html_result = SimpleNamespace(exists=True, output_path=custom_path)
         resume.to_html.return_value = html_result
 
-        with patch("simple_resume.cli.print") as mock_print:
+        with patch("builtins.print") as mock_print:
             _run_session_generation(resume, session, commands)
 
         resume.to_html.assert_called_once_with(
@@ -735,7 +732,7 @@ class TestRunSessionGeneration:
             )
         ]
 
-        with patch("simple_resume.cli.print") as mock_print:
+        with patch("builtins.print") as mock_print:
             _run_session_generation(resume, session, commands)
 
         resume.to_pdf.assert_not_called()
@@ -761,7 +758,7 @@ class TestRunSessionGeneration:
         ]
         resume.to_pdf.side_effect = SimpleResumeError("boom")
 
-        with patch("simple_resume.cli.print") as mock_print:
+        with patch("builtins.print") as mock_print:
             _run_session_generation(resume, session, commands)
 
         mock_print.assert_any_call("Generation error for demo: boom")

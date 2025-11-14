@@ -7,70 +7,44 @@ without external dependencies or side effects.
 from __future__ import annotations
 
 import copy
-
-# subprocess is used to launch viewer tooling with controlled arguments during
-# optional preview flows.
-import subprocess  # nosec B404
-import time
-from contextlib import contextmanager
 from pathlib import Path
-from types import ModuleType
 from typing import Any
 
-from weasyprint import CSS, HTML
+from simple_resume.shell.strategies import (
+    LatexStrategy,
+    PdfGenerationRequest,
+    PdfGenerationStrategy,
+    WeasyPrintStrategy,
+)
 
 from ..config import Paths
-from ..constants import OutputFormat, RenderMode
+from ..constants import OutputFormat
 
 # Import new API components
 from ..exceptions import (
     ConfigurationError,
     FileSystemError,
     GenerationError,
-    TemplateError,
     ValidationError,
 )
-from ..latex_renderer import (
-    LatexCompilationError,
-    compile_tex_to_pdf,
-    render_resume_latex_from_data,
-)
-from ..rendering import get_template_environment
-from ..result import GenerationMetadata, GenerationResult
+from ..result import GenerationResult
+from ..shell.rendering_operations import generate_html_with_jinja, open_file_in_browser
 from ..utilities import (
     get_content,
     load_palette_from_file,
     normalize_config,
     render_markdown_content,
 )
-from . import html_generation as _html_generation
-from . import pdf_generation as _pdf_generation
-from .io_utils import candidate_yaml_path, resolve_paths_for_read
-from .models import RenderPlan, ResumeConfig, ValidationResult
-from .pdf_generation import LatexGenerationContext
+from ..utils.io import candidate_yaml_path, resolve_paths_for_read
+from .models import RenderPlan, ValidationResult
 from .plan import (
-    prepare_render_data as plan_prepare_render_data,
-)
-from .plan import (
+    prepare_render_data,
     validate_resume_config,
-    validate_resume_config_or_raise,
 )
-
-
-@contextmanager
-def _temporary_backend_bindings(
-    module: ModuleType, **overrides: Any
-) -> Any:  # pragma: no cover - simple helper
-    """Temporarily override module attributes during backend execution."""
-    originals: dict[str, Any] = {}
-    for name, value in overrides.items():
-        originals[name] = getattr(module, name, None)
-        setattr(module, name, value)
-    try:
-        yield
-    finally:
-        for name, original in originals.items():
-            setattr(module, name, original)
+from .rendering_coordinator import (
+    prepare_html_generation_request,
+    prepare_pdf_generation_request,
+)
 
 
 class Resume:
@@ -236,72 +210,38 @@ class Resume:
             `ValidationError`: If resume data is invalid.
 
         """
-        start_time = time.time()
+        # Prepare render plan.
+        render_plan = self._prepare_render_plan(preview=False)
 
-        try:
-            # Validate data first.
-            self.validate_or_raise()
+        # Determine output path.
+        if output_path is None:
+            if self._paths is None:
+                raise ConfigurationError(
+                    "No paths available - provide output_path or create with paths",
+                    filename=self._filename,
+                )
+            output_path = self._paths.output / f"{self._name}.pdf"
+        else:
+            output_path = Path(output_path)
 
-            # Prepare render plan.
-            render_plan = self._prepare_render_plan(preview=False)
+        # Create generation request.
+        request = PdfGenerationRequest(
+            render_plan=render_plan,
+            output_path=output_path,
+            open_after=open_after,
+            filename=self._filename,
+            resume_name=self._name,
+        )
 
-            # Determine output path.
-            if output_path is None:
-                if self._paths is None:
-                    raise ConfigurationError(
-                        "No paths available - provide output_path or create with paths",
-                        filename=self._filename,
-                    )
-                output_path = self._paths.output / f"{self._name}.pdf"
-            else:
-                output_path = Path(output_path)
+        # Select appropriate strategy.
+        strategy: PdfGenerationStrategy
+        if render_plan.mode.value == "latex":
+            strategy = LatexStrategy()
+        else:
+            strategy = WeasyPrintStrategy()
 
-            # Generate PDF using backend selected by render mode.
-            backend_result = self._generate_pdf(
-                render_plan,
-                output_path,
-                **kwargs,
-            )
-
-            # Normalize backend result to consistent format.
-            raw_output_path, file_size, page_count = self._normalize_backend_result(
-                backend_result
-            )
-
-            # Create rich result object.
-            generation_time = time.time() - start_time
-            template_name = (
-                (render_plan.template_name or "latex/basic.tex")
-                if render_plan.mode is RenderMode.LATEX
-                else (render_plan.template_name or "unknown")
-            )
-
-            metadata = GenerationMetadata(
-                format_type="pdf",
-                template_name=template_name,
-                generation_time=generation_time,
-                file_size=file_size,
-                resume_name=self._name,
-                palette_info=render_plan.palette_metadata,
-                page_count=page_count,
-            )
-
-            generation_result = GenerationResult(raw_output_path, "pdf", metadata)
-
-            if open_after:
-                generation_result.open()
-
-            return generation_result
-
-        except Exception as exc:
-            if isinstance(exc, (ValidationError, GenerationError, ConfigurationError)):
-                raise
-            raise GenerationError(
-                f"Failed to generate PDF: {exc}",
-                format_type="pdf",
-                output_path=output_path,
-                filename=self._filename,
-            ) from exc
+        # Generate PDF using strategy.
+        return strategy.generate_pdf(request)
 
     def to_html(
         self,
@@ -327,8 +267,6 @@ class Resume:
             `ValidationError`: If resume data is invalid.
 
         """
-        start_time = time.time()
-
         try:
             # Validate data first.
             self.validate_or_raise()
@@ -348,35 +286,18 @@ class Resume:
                 output_path = Path(output_path)
 
             # Generate HTML.
-            result = self._generate_html(render_plan, output_path, **kwargs)
-
-            # Create rich result object.
-            generation_time = time.time() - start_time
-            metadata = GenerationMetadata(
-                format_type="html",
-                template_name=render_plan.template_name or "unknown",
-                generation_time=generation_time,
-                file_size=result.size,
-                resume_name=self._name,
-                palette_info=render_plan.palette_metadata,
+            result = generate_html_with_jinja(
+                render_plan, output_path, filename=self._filename
             )
 
-            generation_result = GenerationResult(output_path, "html", metadata)
-
+            # Update result with open handling
             if open_after:
                 if browser:
-                    # Use specified browser command for opening the file.
-                    # Bandit: browser executable originates from user input and
-                    # is invoked with a single file.
-                    subprocess.Popen(  # noqa: S603  # nosec B603
-                        [browser, output_path],
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                    )
+                    open_file_in_browser(result.output_path, browser)
                 else:
-                    generation_result.open()
+                    result.open()
 
-            return generation_result
+            return result
 
         except Exception as exc:
             if isinstance(exc, (ValidationError, GenerationError, ConfigurationError)):
@@ -557,115 +478,28 @@ class Resume:
             except OSError:
                 continue
 
-    def _generate_pdf_with_weasyprint(
-        self, render_plan: RenderPlan, output_path: Path
-    ) -> tuple[GenerationResult, int | None]:
-        """Delegate to the HTML-to-PDF backend with patchable dependencies."""
-        resume_name = self._name or render_plan.name
-        weasy_html = HTML
-        weasy_css = CSS
-        with _temporary_backend_bindings(
-            _pdf_generation,
-            get_template_environment=get_template_environment,
-            WEASYPRINT_HTML=weasy_html,
-            WEASYPRINT_CSS=weasy_css,
-        ):
-            return _pdf_generation.generate_pdf_with_weasyprint(
-                render_plan,
-                output_path,
-                resume_name=resume_name,
-                filename=self._filename,
-            )
-
-    def _generate_pdf_with_latex(
-        self, render_plan: RenderPlan, output_path: Path
-    ) -> tuple[GenerationResult, int | None]:
-        """Delegate to the LaTeX backend while exposing legacy hooks."""
-        raw_data = self._raw_data if hasattr(self, "_raw_data") else None
-        bindings = {
-            "render_resume_latex_from_data": render_resume_latex_from_data,
-            "compile_tex_to_pdf": compile_tex_to_pdf,
-            "LatexCompilationError": LatexCompilationError,
-            "cleanup_latex_artifacts": self._cleanup_latex_artifacts,
-        }
-        with _temporary_backend_bindings(_pdf_generation, **bindings):
-            context = LatexGenerationContext(
-                raw_data=raw_data,
-                processed_data=self._data,
-                paths=self._paths,
-                filename=self._filename,
-            )
-            return _pdf_generation.generate_pdf_with_latex(
-                render_plan,
-                output_path,
-                context,
-            )
-
-    def _generate_html_with_jinja(
-        self, render_plan: RenderPlan, output_path: Path
-    ) -> GenerationResult:
-        """Render HTML via Jinja with injectable template environment."""
-        with _temporary_backend_bindings(
-            _html_generation,
-            get_template_environment=get_template_environment,
-        ):
-            return _html_generation.generate_html_with_jinja(
-                render_plan,
-                output_path,
-                filename=self._filename,
-            )
-
-    def _normalize_backend_result(
-        self,
-        generation_output: GenerationResult | tuple[GenerationResult, int | None],
-    ) -> tuple[Path, int, int | None]:
-        """Normalize backend result to a consistent format.
-
-        Args:
-            generation_output: Result from PDF/HTML generation (tuple or
-                `GenerationResult`).
-
-        Returns:
-            Tuple of (output_path, file_size, page_count).
-
-        """
-        # Extract result object and page count
-        page_count: int | None
-        if isinstance(generation_output, tuple):
-            result_object, page_count_candidate = generation_output
-            page_count = (
-                page_count_candidate
-                if isinstance(page_count_candidate, int) and page_count_candidate >= 0
-                else None
-            )
-        else:
-            result_object = generation_output
-            metadata = getattr(result_object, "metadata", None)
-            count_candidate = (
-                getattr(metadata, "page_count", None) if metadata else None
-            )
-            page_count = (
-                count_candidate
-                if isinstance(count_candidate, int) and count_candidate >= 0
-                else None
-            )
-
-        # Extract output path
-        output_file_path = getattr(result_object, "output_path", None)
-        if not isinstance(output_file_path, Path):
-            output_file_path = (
-                Path(str(output_file_path)) if output_file_path else Path()
-            )
-
-        # Extract file size
-        reported_size = getattr(result_object, "size", None)
-        file_size: int = (
-            reported_size
-            if isinstance(reported_size, int) and reported_size >= 0
-            else 0
+    def _prepare_pdf_generation_request(
+        self, render_plan: RenderPlan, output_path: Path, **kwargs: Any
+    ) -> dict[str, Any]:
+        """Prepare PDF generation request for shell layer."""
+        return prepare_pdf_generation_request(
+            render_plan,
+            output_path,
+            resume_name=self._name,
+            filename=self._filename,
+            **kwargs,
         )
 
-        return output_file_path, file_size, page_count
+    def _prepare_html_generation_request(
+        self, render_plan: RenderPlan, output_path: Path, **kwargs: Any
+    ) -> dict[str, Any]:
+        """Prepare HTML generation request for shell layer."""
+        return prepare_html_generation_request(
+            render_plan,
+            output_path,
+            filename=self._filename,
+            **kwargs,
+        )
 
     def generate(
         self,
@@ -741,7 +575,7 @@ class Resume:
         if self._validation_result is None:
             raw_config = self._data.get("config", {})
             filename = self._filename or ""
-            self._validation_result = self.validate_config(raw_config, filename)
+            self._validation_result = validate_resume_config(raw_config, filename)
         return self._validation_result
 
     def validate_or_raise(self) -> ValidationResult:
@@ -801,7 +635,7 @@ class Resume:
                 if hasattr(self, "_raw_data") and self._raw_data is not None
                 else self._data
             )
-            self._render_plan = plan_prepare_render_data(
+            self._render_plan = prepare_render_data(
                 source_data,
                 preview=actual_preview,
                 base_path=base_path,
@@ -812,68 +646,4 @@ class Resume:
             raise RuntimeError("Render plan was not prepared")
         return self._render_plan
 
-    def _generate_pdf(
-        self, render_plan: RenderPlan, output_path: Path, **kwargs: Any
-    ) -> GenerationResult | tuple[GenerationResult, int | None]:
-        """Dispatch PDF generation to the appropriate backend."""
-        if render_plan.mode is RenderMode.LATEX:
-            return self._generate_pdf_with_latex(render_plan, output_path)
-
-        return self._generate_pdf_with_weasyprint(render_plan, output_path)
-
-    def _generate_html(
-        self, render_plan: RenderPlan, output_path: Path, **kwargs: Any
-    ) -> GenerationResult:
-        """Generate HTML using the configured backend."""
-        if render_plan.mode is RenderMode.LATEX:
-            raise TemplateError(
-                "LaTeX mode not supported in HTML generation method",
-                template_name="latex",
-                filename=self._filename,
-            )
-        return self._generate_html_with_jinja(render_plan, output_path)
-
-    @staticmethod
-    def prepare_render_data(
-        source_yaml_content: dict[str, Any],
-        *,
-        preview: bool = False,
-        base_path: Path | str = "",
-    ) -> RenderPlan:
-        """Transform raw resume data into a render plan.
-
-        Args:
-            source_yaml_content: Unprocessed resume data from YAML file.
-            preview: Whether this is for preview mode.
-            base_path: Base path for resolving assets.
-
-        Returns:
-            `RenderPlan` with all necessary information for rendering.
-
-        """
-        return plan_prepare_render_data(
-            source_yaml_content,
-            preview=preview,
-            base_path=base_path,
-        )
-
-    # ------------------------------------------------------------------
-    # Compatibility helpers (public API surface)
-    # ------------------------------------------------------------------
-
-    @staticmethod
-    def validate_config(
-        raw_config: dict[str, Any], filename: str = ""
-    ) -> ValidationResult:
-        """Validate and normalize resume configuration (compat layer)."""
-        return validate_resume_config(raw_config, filename)
-
-    @staticmethod
-    def validate_config_or_raise(
-        raw_config: dict[str, Any], filename: str = ""
-    ) -> ResumeConfig:
-        """Validate configuration and raise ``ValidationError`` on failure."""
-        return validate_resume_config_or_raise(raw_config, filename)
-
-
-__all__ = ["Resume", "ResumeConfig", "RenderPlan", "ValidationResult", "RenderMode"]
+    __all__ = ["Resume", "ResumeConfig", "RenderPlan", "ValidationResult", "RenderMode"]

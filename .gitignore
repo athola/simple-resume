@@ -12,6 +12,8 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.pre-commit-cache/
+.npm-cache/
 
 # Jupyter checkpoints
 /.ipynb_checkpoints
@@ -30,6 +32,7 @@ nosetests.xml
 */nosetests.xml
 pylint.xml
 */pylint.xml
+.coverage*
 
 # Temporary files from build processes
 *.tmp

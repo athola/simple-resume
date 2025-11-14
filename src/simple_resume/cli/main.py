@@ -10,20 +10,20 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Protocol, cast
 
-from . import __version__
-from .config import resolve_paths
-from .constants import OutputFormat
-from .core.generation_plan import (
+from simple_resume import __version__
+from simple_resume.config import resolve_paths
+from simple_resume.constants import OutputFormat
+from simple_resume.core.generation_plan import (
     CommandType,
     GeneratePlanOptions,
     GenerationCommand,
     build_generation_plan,
 )
-from .core.resume import Resume
-from .exceptions import GenerationError, SimpleResumeError, ValidationError
-from .generation import execute_generation_commands
-from .result import BatchGenerationResult, GenerationResult
-from .session import ResumeSession, SessionConfig
+from simple_resume.core.resume import Resume
+from simple_resume.exceptions import GenerationError, SimpleResumeError, ValidationError
+from simple_resume.generate.core import execute_generation_commands
+from simple_resume.result import BatchGenerationResult, GenerationResult
+from simple_resume.session import ResumeSession, SessionConfig
 
 
 class GenerationResultProtocol(Protocol):

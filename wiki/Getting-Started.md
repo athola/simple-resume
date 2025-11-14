@@ -1,59 +1,55 @@
 # Getting Started
 
-This guide covers installing the tool, creating a resume from a YAML file, and generating PDF or HTML output.
+This guide provides a hands-on walkthrough to install `simple-resume`, create your first resume from a YAML file, and generate it as a PDF or HTML document.
 
-## Installation
+## 1. Installation and Setup
 
-Prerequisites: Python 3.9+ and `uv` installed.
+First, ensure you have Python 3.9+ and `uv` installed.
 
-1.  Clone the repository:
+Then, clone the repository and install the required dependencies:
 
-    ```bash
-    git clone https://github.com/athola/simple-resume.git
-    cd simple-resume
-    ```
+```bash
+git clone https://github.com/athola/simple-resume.git
+cd simple-resume
+uv sync
+```
 
-2.  Install dependencies:
+## 2. Create and Generate Your Resume
 
-    ```bash
-    uv sync
-    ```
+Now you're ready to create and generate your resume.
 
-## Creating Your Resume
+### Start with a Sample
 
-1.  **Start with a sample:**
+Copy a sample file to use as a starting point for your own resume. This is the easiest way to get started.
 
-    Copy a sample file to use as a starting point.
+```bash
+cp sample/input/sample_1.yaml resume_private/input/my_resume.yaml
+```
 
-    ```bash
-    cp sample/input/sample_1.yaml resume_private/input/my_resume.yaml
-    ```
+### Edit the Content
 
-2.  **Edit the YAML file:**
+Open `resume_private/input/my_resume.yaml` in your favorite editor and replace the placeholder content with your own information.
 
-    Open `resume_private/input/my_resume.yaml` and replace the placeholder content with your own information.
+```yaml
+full_name: "Your Name"
+job_title: "Your Job Title"
+email: "your.email@example.com"
+# ... and so on
+```
 
-    ```yaml
-    full_name: "Your Name"
-    job_title: "Your Job Title"
-    email: "your.email@example.com"
+### Generate the Output
 
-    body:
-      experience:
-        - company: "Your Company"
-          position: "Your Position"
-    ```
+Run the `generate` command to create your resume. The `--open` flag will automatically open the generated file.
 
-3.  **Generate the resume:**
+```bash
+# Generate an HTML resume
+uv run simple-resume generate --format html --open
 
-    Run the following command to generate your resume. The `--open` flag opens the output file in your default application (e.g., browser for HTML, PDF viewer for PDF).
+# Generate a PDF resume
+uv run simple-resume generate --format pdf --open
+```
 
-    ```bash
-    uv run simple-resume generate --format html --open
-    uv run simple-resume generate --format pdf --open
-    ```
-
-    To generate multiple resumes at once, point the `--data-dir` argument to a directory containing your YAML files.
+To generate multiple resumes at once, point the `--data-dir` argument to a directory containing your YAML files.
 
 ### Using the Python API
 
@@ -75,18 +71,20 @@ with ResumeSession(data_dir="resume_private") as session:
     result = styled_resume.to_pdf()
 ```
 
-## Customization
+## 3. Customize Your Resume
 
-### Templates
+You can easily customize the appearance of your resume.
 
-You can change the resume's layout by specifying a different template in your YAML file.
+### Change the Template
+
+Change the resume's layout by specifying a different `template` in your YAML file.
 
 ```yaml
 template: resume_no_bars  # A minimalist design
 # template: resume_with_bars  # A design that includes skill level bars
 ```
 
-### Color Schemes
+### Apply a Color Scheme
 
 Apply a color scheme by adding the `color_scheme` key under a `config` section in your YAML.
 
@@ -113,10 +111,10 @@ The `sample/` directory contains examples demonstrating different features:
 -   **`sample_latex.yaml`** - LaTeX-specific formatting examples
 -   **`sample_contrast_demo.yaml`** - Color contrast accessibility examples
 
-## Troubleshooting
+## Troubleshooting Common Issues
 
--   **PDF generation fails**: This tool supports WeasyPrint and LaTeX for PDF creation. Ensure their dependencies are installed.
--   **YAML syntax errors**: YAML is sensitive to indentation. Use a linter or validator to check your syntax.
--   **Template not found**: Check the template name in your YAML file. Available templates include `resume_base`, `resume_no_bars`, and `resume_with_bars`.
+-   **PDF Generation Fails**: PDF creation relies on WeasyPrint or LaTeX. Ensure their dependencies are installed correctly.
+-   **YAML Syntax Errors**: YAML is sensitive to indentation. Use a YAML linter in your editor to catch syntax errors.
+-   **Template Not Found**: Double-check that the `template` name in your YAML file matches an available template (e.g., `resume_base`, `resume_no_bars`).
 
 For other issues, please open an issue on [GitHub](https://github.com/athola/simple-resume/issues).

@@ -44,16 +44,16 @@ For programmatic use, you can import functions like `generate` and `preview`.
 
 ### Generating Resumes Programmatically
 
-The `generate` function accepts a resume file path and a `GenerateOptions` object.
+The `generate` function accepts a resume file path and a `GenerationConfig` object.
 
 ```python
 from simple_resume import generate
-from simple_resume.generation import GenerateOptions
+from simple_resume.core.models import GenerationConfig
 
 # Generate both PDF and HTML formats
 results = generate(
     "resume_private/input/my_resume.yaml",
-    GenerateOptions(formats=("pdf", "html"))
+    GenerationConfig(formats=["pdf", "html"])
 )
 ```
 

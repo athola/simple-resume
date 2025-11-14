@@ -33,7 +33,7 @@ def test_load_resume_returns_template_and_context(
     template, context = load_resume("test", preview=False)
 
     story.then("the HTML template name and context metadata are returned")
-    assert template == "resume_no_bars.html"
+    assert template == "html/resume_no_bars.html"
     assert context["full_name"] == "Test User"
     assert context["preview"] is False
     assert context["resume_config"] == {"page_width": 190, "page_height": 270}

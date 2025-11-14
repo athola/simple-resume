@@ -66,11 +66,9 @@ from typing import Any
 
 
 class SimpleResumeError(Exception):
-    """Define the base exception for all simple-resume errors.
+    """Raise for any simple-resume specific error.
 
-    All other exceptions in `simple-resume` inherit from this base class,
-    allowing users to catch all `simple-resume`-specific errors with a single
-    except clause.
+    This is the base exception for all custom errors in the application.
     """
 
     def __init__(
@@ -100,10 +98,7 @@ class SimpleResumeError(Exception):
 class ValidationError(SimpleResumeError, ValueError):
     """Raise when resume data validation fails.
 
-    This exception is raised when the provided resume data doesn't meet
-    the required structure, contains invalid values, or fails validation rules.
-
-    Inherits from both `SimpleResumeError` and `ValueError` for backwards compatibility.
+    Inherits from `ValueError` for backwards compatibility.
     """
 
     def __init__(
@@ -121,11 +116,7 @@ class ValidationError(SimpleResumeError, ValueError):
 
 
 class ConfigurationError(SimpleResumeError):
-    """Raise when configuration is invalid.
-
-    This covers issues with resume configuration, color schemes, page dimensions,
-    template settings, and other configuration-related problems.
-    """
+    """Raise when configuration is invalid."""
 
     def __init__(
         self,
@@ -149,11 +140,7 @@ class ConfigurationError(SimpleResumeError):
 
 
 class TemplateError(SimpleResumeError):
-    """Raise when template processing fails.
-
-    This exception covers issues with template loading, rendering, missing
-    templates, and Jinja2 template errors.
-    """
+    """Raise when template processing fails."""
 
     def __init__(
         self,
@@ -170,11 +157,7 @@ class TemplateError(SimpleResumeError):
 
 
 class GenerationError(SimpleResumeError):
-    """Raise when PDF/HTML generation fails.
-
-    This exception covers issues during the actual generation process,
-    including WeasyPrint errors, file I/O problems, and rendering failures.
-    """
+    """Raise when PDF/HTML generation fails."""
 
     def __init__(
         self,
@@ -206,11 +189,7 @@ class GenerationError(SimpleResumeError):
 
 
 class PaletteError(SimpleResumeError):
-    """Raise when color palette operations fail.
-
-    This exception covers issues with palette loading, generation, color
-    validation, and palette-related errors.
-    """
+    """Raise when color palette operations fail."""
 
     def __init__(
         self,
@@ -227,11 +206,7 @@ class PaletteError(SimpleResumeError):
 
 
 class FileSystemError(SimpleResumeError):
-    """Raise when file system operations fail.
-
-    This exception covers issues with file reading, writing, path resolution,
-    and directory operations.
-    """
+    """Raise when file system operations fail."""
 
     def __init__(
         self,
@@ -256,11 +231,7 @@ class FileSystemError(SimpleResumeError):
 
 
 class SessionError(SimpleResumeError):
-    """Raise when session operations fail.
-
-    This exception covers issues with `ResumeSession` operations, context
-    management, and session-related errors.
-    """
+    """Raise when session operations fail."""
 
     def __init__(
         self, message: str, *, session_id: str | None = None, **kwargs: Any
