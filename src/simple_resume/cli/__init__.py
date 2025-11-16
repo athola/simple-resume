@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast
 
+from simple_resume.core.resume import Resume
+from simple_resume.generate.core import execute_generation_commands
+from simple_resume.session.config import SessionConfig
+from simple_resume.session.session import ResumeSession
+
 from . import main as _main_module
 
 if TYPE_CHECKING:  # pragma: no cover - type checking helper only
-    from simple_resume.core.resume import Resume
-    from simple_resume.generate.core import execute_generation_commands
-    from simple_resume.session.config import SessionConfig
-    from simple_resume.session.session import ResumeSession
-
     from .main import (
         _build_config_overrides,
         _handle_unexpected_error,
@@ -26,11 +26,6 @@ if TYPE_CHECKING:  # pragma: no cover - type checking helper only
     )
 else:
     _main_entry = _main_module.main
-    # Runtime imports for classes not in main module
-    from simple_resume.core.resume import Resume
-    from simple_resume.generate.core import execute_generation_commands
-    from simple_resume.session.config import SessionConfig
-    from simple_resume.session.session import ResumeSession
 
 TMainCallable = TypeVar("TMainCallable", bound=Callable[..., int])
 
