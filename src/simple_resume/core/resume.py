@@ -229,6 +229,9 @@ class Resume:
             open_after=open_after,
             filename=self._filename,
             resume_name=self._name,
+            raw_data=copy.deepcopy(self._raw_data),
+            processed_data=copy.deepcopy(self._data),
+            paths=self._paths,
         )
 
         # Select appropriate strategy.

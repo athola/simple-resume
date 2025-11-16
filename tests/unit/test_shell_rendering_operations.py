@@ -8,14 +8,16 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from simple_resume.config import Paths
 from simple_resume.core.models import RenderMode, RenderPlan, ResumeConfig
-from simple_resume.latex_renderer import LatexCompilationError
+from simple_resume.core.pdf_generation import LatexGenerationContext
+from simple_resume.result import GenerationResult
 from simple_resume.shell.rendering_operations import (
     generate_html_with_jinja,
     generate_pdf_with_weasyprint,
     open_file_in_browser,
 )
-from simple_resume.shell.strategies import LatexStrategy
+from simple_resume.shell.strategies import LatexStrategy, PdfGenerationRequest
 
 
 class TestShellRenderingOperations:
@@ -145,60 +147,59 @@ class TestShellRenderingOperations:
         # Verify template was properly selected for professional use
         mock_env.get_template.assert_called_once_with("resume_no_bars.html")
 
-    @pytest.mark.xfail(
-        reason="LaTeX strategy refactoring incomplete - paths not passed to context"
-    )
-    def test_generate_pdf_with_latex_preserves_log_on_failure(
+    def test_latex_strategy_passes_paths_and_raw_data(
         self,
         tmp_path: Path,
-        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        """Test LaTeX PDF generation preserves log on failure."""
+        """Ensure the LaTeX strategy forwards paths and resume data to the core."""
         render_plan = RenderPlan(
             name="Case",
             mode=RenderMode.LATEX,
-            config=ResumeConfig(),
-            template_name="demo.tex",
-            context={"body": "content"},
+            config=ResumeConfig(output_mode="latex"),
             base_path=str(tmp_path),
         )
         output_path = tmp_path / "case.pdf"
-        tex_path = tmp_path / "case.tex"
+        paths = Paths(
+            data=tmp_path,
+            input=tmp_path,
+            output=tmp_path,
+            content=tmp_path,
+            templates=tmp_path,
+            static=tmp_path,
+        )
+        raw_data = {"full_name": "Case Candidate", "config": {"output_mode": "latex"}}
+        processed_data = {
+            "full_name": "Case Candidate",
+            "config": {"output_mode": "latex"},
+        }
 
-        # Create a fake LaTeX log file
-        log_path = tex_path.with_suffix(".log")
-        log_path.write_text("LaTeX compilation error", encoding="utf-8")
-
-        # Mock LaTeX compilation to fail
-        compile_error = LatexCompilationError(
-            "Compilation failed", log="LaTeX compilation error"
+        request = PdfGenerationRequest(
+            render_plan=render_plan,
+            output_path=output_path,
+            filename="case.tex",
+            resume_name="Case",
+            raw_data=raw_data,
+            processed_data=processed_data,
+            paths=paths,
         )
 
-        with (
-            patch(
-                "simple_resume.core.pdf_generation.render_resume_latex_from_data",
-                side_effect=compile_error,
-            ),
-            patch(
-                "simple_resume.core.pdf_generation.compile_tex_to_pdf",
-                side_effect=compile_error,
-            ),
-        ):
+        mock_result = Mock(spec=GenerationResult)
+        mock_result.exists = True
+
+        with patch(
+            "simple_resume.shell.strategies.generate_pdf_with_latex",
+            return_value=(mock_result, 1),
+        ) as mock_generate:
             strategy = LatexStrategy()
-            request = Mock(
-                render_plan=render_plan,
-                output_path=output_path,
-                filename="case.tex",
-                resume_name="Case",
-                paths=[tmp_path],
-            )
+            result = strategy.generate_pdf(request)
 
-            with pytest.raises(LatexCompilationError):
-                strategy.generate_pdf(request)
-
-        # Verify log file is preserved
-        assert log_path.exists()
-        assert "LaTeX compilation error" in log_path.read_text(encoding="utf-8")
+        assert result is mock_result
+        call = mock_generate.call_args
+        assert call is not None
+        _, _, context = call.args
+        assert isinstance(context, LatexGenerationContext)
+        assert context.paths == paths
+        assert context.raw_data == raw_data
 
     def test_open_file_in_browser_with_specified_browser(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

@@ -848,6 +848,44 @@ class TestResumeIOBehaviour:
             "No PDF should be created when LaTeX compilation fails"
         )
 
+    def test_resume_to_pdf_passes_paths_to_latex_strategy(
+        self,
+        tmp_path: Path,
+        story: Scenario,
+    ) -> None:
+        story.given(
+            "a candidate needs LaTeX output with bundled templates and palettes"
+        )
+        resume_data = {
+            "full_name": "Case Candidate",
+            "email": "case@example.com",
+            "template": "resume_with_bars",
+            "config": {
+                "output_mode": "latex",
+                "page_width": 210,
+                "page_height": 297,
+                "sidebar_width": 60,
+            },
+        }
+        paths = _make_paths(tmp_path)
+        resume = Resume.from_data(resume_data, paths=paths, name="Case Candidate")
+        output_path = paths.output / "case_candidate.pdf"
+
+        mock_result = Mock(spec=GenerationResult)
+        mock_result.exists = False
+
+        with patch(
+            "simple_resume.shell.strategies.generate_pdf_with_latex",
+            return_value=(mock_result, 1),
+        ) as mock_generate:
+            resume.to_pdf(output_path=output_path)
+
+        call = mock_generate.call_args
+        assert call is not None
+        _, _, context = call.args
+        assert context.paths == paths
+        assert context.raw_data["full_name"] == "Case Candidate"
+
     def test_generate_html_with_jinja_injects_base_href(
         self,
         tmp_path: Path,

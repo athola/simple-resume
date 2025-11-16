@@ -12,6 +12,12 @@ from simple_resume.constants.colors import (
     DEFAULT_BOLD_COLOR,
     DEFAULT_COLOR_SCHEME,
 )
+from simple_resume.core.color_service import ColorCalculationService
+from simple_resume.core.colors import (
+    darken_color,
+    get_contrasting_text_color,
+    is_valid_color,
+)
 from simple_resume.palettes.common import PaletteSource
 from simple_resume.palettes.exceptions import (
     PaletteError,
@@ -21,9 +27,6 @@ from simple_resume.palettes.exceptions import (
 from simple_resume.palettes.generators import generate_hcl_palette
 from simple_resume.palettes.registry import get_palette_registry
 from simple_resume.palettes.sources import ColourLoversClient
-
-from .color_service import ColorCalculationService
-from .colors import darken_color, get_contrasting_text_color, is_valid_color
 
 
 def _coerce_number(value: Any, *, field: str, prefix: str) -> float | int | None:

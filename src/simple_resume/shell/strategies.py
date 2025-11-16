@@ -11,9 +11,11 @@ import shutil
 import subprocess  # nosec B404
 import sys
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from simple_resume.config import Paths
 from simple_resume.core.models import RenderPlan
 from simple_resume.core.pdf_generation import (
     LatexGenerationContext,
@@ -37,22 +39,18 @@ class PdfGenerationStrategy(ABC):
         pass
 
 
+@dataclass(slots=True)
 class PdfGenerationRequest:
     """Request data for PDF generation."""
 
-    def __init__(
-        self,
-        render_plan: RenderPlan,
-        output_path: Path,
-        open_after: bool = False,
-        filename: str | None = None,
-        resume_name: str = "resume",
-    ) -> None:
-        self.render_plan = render_plan
-        self.output_path = output_path
-        self.open_after = open_after
-        self.filename = filename
-        self.resume_name = resume_name
+    render_plan: RenderPlan
+    output_path: Path
+    open_after: bool = False
+    filename: str | None = None
+    resume_name: str = "resume"
+    raw_data: dict[str, Any] | None = None
+    processed_data: dict[str, Any] | None = None
+    paths: Paths | None = None
 
 
 class WeasyPrintStrategy(PdfGenerationStrategy):
@@ -104,9 +102,9 @@ class LatexStrategy(PdfGenerationStrategy):
         """Generate PDF using LaTeX backend."""
         # Create generation context
         context = LatexGenerationContext(
-            raw_data=None,  # Will be set by the calling code
-            processed_data={},  # Empty dict for now, populated by generation logic
-            paths=None,  # Will be set by the calling code
+            raw_data=request.raw_data,
+            processed_data=request.processed_data or {},
+            paths=request.paths,
             filename=request.filename,
         )
 
