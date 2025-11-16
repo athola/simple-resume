@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from simple_resume.cli import _build_config_overrides
+from simple_resume.cli.main import _build_config_overrides
 from tests.bdd import Scenario
 
 
