@@ -26,6 +26,28 @@ To contribute code, please follow these steps:
 
 6.  Push your changes to your fork and open a pull request against the `main` branch.
 
+### Commit Signing Requirement
+
+All commits must be GPG-signed so GitHub can mark them as **Verified**. Configure
+your signing key before opening a pull request:
+
+```bash
+# Export or create a key, then tell git which one to use
+git config user.signingkey <YOUR_KEY_FINGERPRINT>
+
+# Sign every commit in this repo by default
+git config commit.gpgsign true
+
+# Optional: ensure the right GPG program is used (gpg vs gpg2)
+git config gpg.program gpg
+```
+
+Make sure the corresponding public key is uploaded to your GitHub account under
+**Settings → SSH and GPG keys**. If you use a hardware token or SSH signing,
+follow GitHub's [official guide](https://docs.github.com/authentication/managing-commit-signature-verification)
+to register the signer. Commits without a trusted signature will be blocked from
+merging.
+
 ## Development Guidelines
 
 -   **Code Style**: This project uses `ruff` for linting and formatting. Run `make format` before committing your changes, and maintain consistency with the existing code style.
