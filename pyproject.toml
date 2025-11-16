@@ -63,7 +63,7 @@ utils = [
 ]
 
 [project.scripts]
-simple-resume = "simple_resume.cli:main"
+simple-resume = "simple_resume.cli:main_entry"
 
 # Palette utilities
 palette-snapshot = "simple_resume.cli.palette:snapshot"
