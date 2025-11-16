@@ -5,7 +5,7 @@ from __future__ import annotations
 from itertools import cycle
 from typing import Any
 
-from simple_resume.constants import (
+from simple_resume.constants.colors import (
     BOLD_DARKEN_FACTOR,
     CONFIG_COLOR_FIELDS,
     CONFIG_DIRECT_COLOR_KEYS,

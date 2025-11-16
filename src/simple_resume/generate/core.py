@@ -17,23 +17,23 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ..constants import DEFAULT_FORMAT, OutputFormat
-from ..core.generation_plan import (
+from simple_resume.constants import DEFAULT_FORMAT, OutputFormat
+from simple_resume.core.generation_plan import (
     CommandType,
     GeneratePlanOptions,
     GenerationCommand,
     build_generation_plan,
 )
-from ..core.models import GenerationConfig
-from ..exceptions import (
+from simple_resume.core.models import GenerationConfig
+from simple_resume.exceptions import (
     ConfigurationError,
     FileSystemError,
     GenerationError,
     ValidationError,
 )
-from ..result import BatchGenerationResult, GenerationResult
-from ..session import ResumeSession, SessionConfig
-from ..validation import (
+from simple_resume.result import BatchGenerationResult, GenerationResult
+from simple_resume.session import ResumeSession, SessionConfig
+from simple_resume.validation import (
     validate_directory_path,
     validate_format,
     validate_template_name,

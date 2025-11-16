@@ -125,7 +125,6 @@ extend-ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "**/__init__.py" = ["F401"]  # Allow unused imports in __init__.py
-"**/generate/lazy.py" = ["PLC0415"]  # Allow import-outside-toplevel for lazy loading
 "tests/**/*.py" = [
     "PLR2004",  # Allow magic numbers in tests (e.g., test data)
     "PLR0913",  # Allow more arguments in test functions (many fixtures)

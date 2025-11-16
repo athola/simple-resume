@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide helps users migrate their code to use the new `simple_resume.generate` module structure introduced in v0.2.0. The reorganization improves performance through lazy loading and provides better code organization.
+This guide helps users migrate their code to use the new `simple_resume.generate` module structure introduced in v0.1.1. The reorganization improves performance through lazy loading and provides better code organization.
 
 ## Breaking Changes
 
@@ -112,9 +112,9 @@ from simple_resume.generate.core import generate_pdf  # Eager loaded
 
 | Previous Import | New Import | Compatibility |
 |----------------|------------|---------------|
-| `simple_resume.generation` | `simple_resume` | ✅ Drop-in replacement |
-| `simple_resume.generation.GenerationConfig` | `simple_resume.core.models.GenerationConfig` | ⚠️ Path changed |
-| `simple_resume.generation.*functions` | `simple_resume.generate.*functions` | ⚠️ Path changed |
+| `simple_resume.generation` | `simple_resume` | Drop-in replacement |
+| `simple_resume.generation.GenerationConfig` | `simple_resume.core.models.GenerationConfig` | Path changed |
+| `simple_resume.generation.*functions` | `simple_resume.generate.*functions` | Path changed |
 
 ## Common Migration Patterns
 
@@ -192,43 +192,58 @@ from simple_resume.generate.core import generate_pdf
 
 ### Basic Functionality Test
 ```python
+from simple_resume import generate_pdf, generate_html, generate_all
+from simple_resume.generate import core, lazy
+from simple_resume.core.models import GenerationConfig
+
 def test_migration():
     """Test that imports work correctly after migration."""
     try:
         # Test main API
-        from simple_resume import generate_pdf, generate_html, generate_all
-        print("✓ Main API imports work")
+        print("OK Main API imports work")
 
         # Test module structure
-        from simple_resume.generate import core, lazy
-        print("✓ Module structure works")
+        print("OK Module structure works")
 
         # Test GenerationConfig
-        from simple_resume.core.models import GenerationConfig
         config = GenerationConfig()
-        print("✓ GenerationConfig works")
+        print("OK GenerationConfig works")
 
         return True
     except Exception as e:
-        print(f"❌ Migration failed: {e}")
+        print(f"Migration failed: {e}")
         return False
 ```
 
 ### Performance Test
 ```python
 import time
+import sys
+import importlib
 
 def test_import_performance():
     """Compare import performance between approaches."""
 
+    # Clear any existing imports
+    modules_to_remove = [k for k in sys.modules.keys() if "simple_resume" in k]
+    for module in modules_to_remove:
+        del sys.modules[module]
+
     # Test lazy loading
     start = time.time()
-    from simple_resume import generate_pdf
+    simple_resume = importlib.import_module("simple_resume")
+    generate_pdf = simple_resume.generate_pdf
     lazy_time = time.time() - start
+
+    # Clear imports between tests
+    modules_to_remove = [k for k in sys.modules.keys() if "simple_resume" in k]
+    for module in modules_to_remove:
+        del sys.modules[module]
 
     # Test eager loading
     start = time.time()
-    from simple_resume.generate.core import generate_pdf
+    simple_resume_generate_core = importlib.import_module("simple_resume.generate.core")
+    eager_pdf = simple_resume_generate_core.generate_pdf
     eager_time = time.time() - start
 
     print(f"Lazy loading: {lazy_time:.4f}s")
@@ -254,11 +269,3 @@ def test_import_performance():
 - Check the [Usage Guide](Usage-Guide.md) for detailed usage examples
 - Review the [Architecture Decisions](../architecture/) for technical details
 - Open an issue for questions or problems
-
-## Timeline
-
-- **v0.2.0**: New module structure introduced
-- **v0.3.0**: Old imports will show deprecation warnings
-- **v0.4.0**: Old imports will be removed
-
-Migration is recommended but not immediately required. Old imports will continue to work in v0.2.x with warnings.

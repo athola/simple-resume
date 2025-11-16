@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ..config import TEMPLATE_LOC
-from ..constants import RenderMode
-from ..exceptions import TemplateError
-from ..rendering import get_template_environment
-from ..result import GenerationResult
-from .models import RenderPlan
+from simple_resume.config import TEMPLATE_LOC
+from simple_resume.constants import RenderMode
+from simple_resume.core.models import RenderPlan
+from simple_resume.exceptions import TemplateError
+from simple_resume.rendering import get_template_environment
+from simple_resume.result import GenerationResult
 
 
 def generate_html_with_jinja(

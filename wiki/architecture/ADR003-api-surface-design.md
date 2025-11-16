@@ -89,11 +89,6 @@ Public API re-exports or simplifies:
 - `api.colors.is_valid_color` - direct re-export
 - `api.colors.calculate_text_color()` - simplified interface that calls `core.colors.get_contrasting_text_color()`
 
-### 5. Compatibility Shims
-
-- `simple_resume.utils.colors` re-exports the canonical helpers and emits a `DeprecationWarning` when imported. This gives downstream projects a migration window.
-- `core.color_service.ColorCalculationService` wraps the low-level helpers for sidebar/icon-specific behavior so shell modules no longer reach into deprecated wrappers.
-
 ## Rationale
 
 ### Why Remove Utilities from Resume Class?
@@ -175,7 +170,7 @@ lum = colors.calculate_luminance("#808080")
 
 ```text
 
-Use `from simple_resume.api import colors` in all new code. The legacy `simple_resume.utils.colors` shim still works but emits a `DeprecationWarning` to encourage migration.
+Use `from simple_resume.api import colors` in all new code.
 
 ### Monitoring
 
@@ -185,14 +180,13 @@ Use `from simple_resume.api import colors` in all new code. The legacy `simple_r
 
 ## Follow-up Tasks
 
-1. ✅ Remove color utility wrappers from `utilities.py`, `color_utils.py`, and `Resume`
-2. ✅ Create `simple_resume.api.colors` public module
-3. ✅ Move color utility tests to `test_api_colors.py`
-4. ✅ Update `__all__` exports to reflect authoritative functions only
-5. ✅ Ship `simple_resume.utils.colors` shim with `DeprecationWarning`
-6. 🔲 Review other utility functions for similar issues (e.g., skill_utils)
-7. 🔲 Document public API in user guide
-8. 🔲 Add API stability policy to CONTRIBUTING.md
+1. Remove color utility wrappers from `utilities.py`, `color_utils.py`, and `Resume`
+2. Create `simple_resume.api.colors` public module
+3. Move color utility tests to `test_api_colors.py`
+4. Update `__all__` exports to reflect authoritative functions only
+5. Review other utility functions for similar issues (e.g., skill_utils)
+6. Document public API in user guide
+7. Add API stability policy to CONTRIBUTING.md
 
 ## References
 

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <!-- Avenir fonts (https://www.onlinewebfonts.com/package/Avenir_LT_Std) -->
+    <style>
+      @font-face {
+        font-family: "Avenir 35";
+        src: url("{{ url_for('static', filename='fonts/AvenirLTStd-Light.otf') }}");
+        font-weight: 300;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: "Avenir 45";
+        src: url("{{ url_for('static', filename='fonts/AvenirLTStd-Book.otf') }}");
+        font-weight: 400;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: "Avenir 55";
+        src: url("{{ url_for('static', filename='fonts/AvenirLTStd-Roman.otf') }}");
+        font-weight: 500;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: "Avenir 65";
+        src: url("{{ url_for('static', filename='fonts/AvenirLTStd-Medium.otf') }}");
+        font-weight: 700;
+        font-style: normal;
+      }
+    </style>
+
+    <!-- Documents styles -->
+    <style>
+      /* General style */
+      html, body, p, ul, li {
+        margin: 0;
+        padding: 0;
+        font-size: 10pt;
+        line-height: 1.8;
+        font-family: 'Avenir 35';
+      }
+
+      /* Titles */
+      h1, h2, h3, h4, h5, h6 {
+        font-weight: normal;
+      }
+      h1, h2, h3, h5 {
+        color: {{ resume_config["theme_color"] }};
+      }
+      h1 {
+        font-size: 30pt;
+        font-family: 'Avenir 35';
+        padding-top: 11mm;
+        padding-bottom: 8.5mm;
+        padding-right: {{ resume_config["padding"] }}mm;
+        text-align: center;
+        border-bottom: 3px solid {{ resume_config["sidebar_color"] }};
+      }
+      h2 {
+        font-size: 16pt;
+        font-family: 'Avenir 55';
+        margin-top: 4mm;
+        margin-bottom: 0mm;
+      }
+      h3 {
+        font-size: 14pt;
+        font-family: 'Avenir 45';
+        margin-top: 2mm;
+        margin-bottom: 0mm;
+      }
+      h4 {
+        font-size: 10pt;
+        font-family: 'Avenir 45';
+      }
+      .markdown-strong {
+        font-family: 'Avenir 65', 'Avenir 55', 'Avenir 45', 'Helvetica Neue', Arial, sans-serif !important;
+        font-weight: 700 !important;
+      }
+
+      /* List styles */
+      ul {
+        list-style-type: none;
+      }
+      li:before {
+        content: "- ";
+      }
+
+      /* Layout styles */
+      .frame {
+        padding-top: {{ resume_config["frame_padding"] }}mm;
+        padding-bottom: {{ resume_config["frame_padding"] }}mm;
+        padding-left: {{ resume_config["frame_padding"] }}mm;
+        padding-right: {{ resume_config["frame_padding"] }}mm;
+        background-color: {{ resume_config["frame_color"] }};
+      }
+      .page {
+        page-break-after: always;
+        width: {{ resume_config["page_width"] }}mm;
+        height: {{ resume_config["page_height"] }}mm;
+        background-color: white;
+      }
+      .body {
+        float: left;
+        width: {{ resume_config["page_width"] }}mm;
+        height: {{ resume_config["page_height"] }}mm;
+      }
+
+      /* Content styles */
+      .description {
+        padding-top: {{ resume_config["cover_padding_top"] }}mm;
+        padding-bottom: {{ resume_config["cover_padding_bottom"] }}mm;
+        padding-left: {{ resume_config["cover_padding_h"] }}mm;
+        padding-right: {{ resume_config["cover_padding_h"] }}mm;
+      }
+
+      code {
+        font-size: 85%;
+        margin: 0;
+        background-color: rgba(27,31,35,.05);
+        padding: .2em .4em;
+      }
+
+    </style>
+  </head>
+
+  <body>
+
+    <!-- This will add a nice frame when previewing but not when printing -->
+    {% if preview %}<div class="frame">{% endif %}
+
+      <div class="page">
+        <div class="body">
+          <h1>{{ full_name }}</h1>
+
+          {% if description %}
+          <div class="description">
+            {% autoescape false %}
+              {{ description }}
+            {% endautoescape %}
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+
+    <!-- And the closing of the frame -->
+    {% if preview %}</div>{% endif %}
+
+  </body>
+</html>

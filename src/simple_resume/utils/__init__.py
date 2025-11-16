@@ -2,6 +2,6 @@
 
 from __future__ import annotations
 
-from . import colors, io, skills
+from . import io, skills
 
-__all__ = ["colors", "io", "skills"]
+__all__ = ["io", "skills"]

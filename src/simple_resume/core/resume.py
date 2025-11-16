@@ -10,41 +10,39 @@ import copy
 from pathlib import Path
 from typing import Any
 
+from simple_resume.config import Paths
+from simple_resume.constants import OutputFormat
+from simple_resume.core.models import RenderPlan, ValidationResult
+from simple_resume.core.plan import (
+    prepare_render_data,
+    validate_resume_config,
+)
+
+# Import new API components
+from simple_resume.exceptions import (
+    ConfigurationError,
+    FileSystemError,
+    GenerationError,
+    ValidationError,
+)
+from simple_resume.result import GenerationResult
+from simple_resume.shell.rendering_operations import (
+    generate_html_with_jinja,
+    open_file_in_browser,
+)
 from simple_resume.shell.strategies import (
     LatexStrategy,
     PdfGenerationRequest,
     PdfGenerationStrategy,
     WeasyPrintStrategy,
 )
-
-from ..config import Paths
-from ..constants import OutputFormat
-
-# Import new API components
-from ..exceptions import (
-    ConfigurationError,
-    FileSystemError,
-    GenerationError,
-    ValidationError,
-)
-from ..result import GenerationResult
-from ..shell.rendering_operations import generate_html_with_jinja, open_file_in_browser
-from ..utilities import (
+from simple_resume.utilities import (
     get_content,
     load_palette_from_file,
     normalize_config,
     render_markdown_content,
 )
-from ..utils.io import candidate_yaml_path, resolve_paths_for_read
-from .models import RenderPlan, ValidationResult
-from .plan import (
-    prepare_render_data,
-    validate_resume_config,
-)
-from .rendering_coordinator import (
-    prepare_html_generation_request,
-    prepare_pdf_generation_request,
-)
+from simple_resume.utils.io import candidate_yaml_path, resolve_paths_for_read
 
 
 class Resume:
@@ -478,29 +476,6 @@ class Resume:
             except OSError:
                 continue
 
-    def _prepare_pdf_generation_request(
-        self, render_plan: RenderPlan, output_path: Path, **kwargs: Any
-    ) -> dict[str, Any]:
-        """Prepare PDF generation request for shell layer."""
-        return prepare_pdf_generation_request(
-            render_plan,
-            output_path,
-            resume_name=self._name,
-            filename=self._filename,
-            **kwargs,
-        )
-
-    def _prepare_html_generation_request(
-        self, render_plan: RenderPlan, output_path: Path, **kwargs: Any
-    ) -> dict[str, Any]:
-        """Prepare HTML generation request for shell layer."""
-        return prepare_html_generation_request(
-            render_plan,
-            output_path,
-            filename=self._filename,
-            **kwargs,
-        )
-
     def generate(
         self,
         format: OutputFormat | str = OutputFormat.PDF,
@@ -646,4 +621,5 @@ class Resume:
             raise RuntimeError("Render plan was not prepared")
         return self._render_plan
 
-    __all__ = ["Resume", "ResumeConfig", "RenderPlan", "ValidationResult", "RenderMode"]
+
+__all__ = ["Resume"]

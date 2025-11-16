@@ -51,11 +51,6 @@ resume = load_resume_from_yaml("my_resume")
 resume.to_pdf("output.pdf")
 ```
 
-**Backward Compatibility:**
-- `Resume.read_yaml()` will continue to work with a deprecation warning
-- Warning added in v1.x
-- Method will be removed in v2.0 (future)
-
 ---
 
 ## Detailed Migration Examples
@@ -211,9 +206,9 @@ def test_resume_generation():
 **Status:** Deprecation warnings added
 
 **Changes:**
-- ⚠️ `Resume.read_yaml()` - Deprecated, use `shell.resume_loaders.load_resume_from_yaml()`
-- ✨ `Resume.from_data()` - New pure factory method
-- ✨ `shell.resume_loaders.load_resume_from_yaml()` - New loader function
+- `Resume.read_yaml()` - Deprecated, use `shell.resume_loaders.load_resume_from_yaml()`
+- `Resume.from_data()` - New pure factory method
+- `shell.resume_loaders.load_resume_from_yaml()` - New loader function
 
 **Backward Compatibility:** All old APIs continue to work with warnings.
 
@@ -222,8 +217,8 @@ def test_resume_generation():
 **Status:** Planned (no date set)
 
 **Breaking Changes:**
-- ❌ `Resume.read_yaml()` - Removed
-- ✅ Must use `shell.resume_loaders.load_resume_from_yaml()` or `Resume.from_data()`
+- `Resume.read_yaml()` - Removed
+- Must use `shell.resume_loaders.load_resume_from_yaml()` or `Resume.from_data()`
 
 ---
 
@@ -585,7 +580,6 @@ class TestResumeGeneration(unittest.TestCase):
 **Documentation:**
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Architecture guide
 - [ADR002](architecture/ADR002-functional-core-imperative-shell.md) - Decision rationale
-- [CORE_REFACTOR_PLAN.md](../CORE_REFACTOR_PLAN.md) - Implementation plan
 
 **Support:**
 - GitHub Issues: Report migration problems

@@ -6,12 +6,12 @@ import copy
 from pathlib import Path
 from typing import Any
 
-from ..constants import RenderMode
-from ..exceptions import ValidationError
-from ..palettes.exceptions import PaletteGenerationError
-from ..utilities import normalize_config, render_markdown_content
-from .colors import is_valid_color
-from .models import RenderPlan, ResumeConfig, ValidationResult
+from simple_resume.constants import RenderMode
+from simple_resume.core.colors import is_valid_color
+from simple_resume.core.models import RenderPlan, ResumeConfig, ValidationResult
+from simple_resume.exceptions import ValidationError
+from simple_resume.palettes.exceptions import PaletteGenerationError
+from simple_resume.utilities import normalize_config, render_markdown_content
 
 
 def _validate_color_fields(config: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:

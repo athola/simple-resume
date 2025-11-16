@@ -1,8 +1,8 @@
 # Development Guide
 
-To set up a local development environment for `simple-resume`, first fork and clone the repository.
+This guide explains how to set up a local development environment for `simple-resume`.
 
-This project uses `uv` for dependency management. Install all development and optional dependencies with:
+First, fork and clone the repository. This project uses `uv` for dependency management. To install all development and optional dependencies, run the following command:
 
 ```bash
 uv sync --dev --extra utils
@@ -10,11 +10,11 @@ uv sync --dev --extra utils
 
 ## Running Code Quality Checks
 
-A `Makefile` simplifies common development tasks.
+The `Makefile` provides commands for running common development tasks.
 
 ### Running Tests
 
-Run the full test suite, including unit and integration tests, with:
+To run the full test suite, including unit and integration tests, use the following command:
 
 ```bash
 make test
@@ -22,14 +22,14 @@ make test
 
 ### Linting and Formatting
 
-`ruff` handles linting and code formatting. Run all checks, including linting, formatting, type-checking, and security scans, with:
+The `ruff` tool is used for linting and code formatting. To run all checks, including linting, formatting, type-checking, and security scans, use the following command:
 
 ```bash
 make check-all
-make validate  # validates README preview + release assets
+make validate  # Validates the README preview and release assets.
 ```
 
-You can also run individual checks:
+Individual checks can also be run:
 
 ```bash
 # Run the linter
@@ -41,23 +41,23 @@ make format
 
 ## Architecture
 
-The project is built on a **functional core, imperative shell** pattern, which separates pure data transformations from code that produces side effects.
+The project uses a **functional core, imperative shell** pattern to separate pure data transformations from code that produces side effects.
 
--   **Functional Core (`src/simple_resume/core/`)**: Contains pure functions for data manipulation. These functions are predictable and have no side effects, which makes them easy to test.
--   **Imperative Shell (`src/simple_resume/shell/`)**: Manages I/O, user interaction, and integrations with external services. This is where side effects are handled.
--   **API Surface (`src/simple_resume/`)**: The public API provides a clear and consistent interface for reading and writing resume data, inspired by the symmetric I/O patterns found in libraries like pandas (e.g., `read_yaml()`, `to_pdf()`).
+-   **Functional Core (`src/simple_resume/core/`)**: Contains pure functions for data manipulation. These functions are predictable and do not have side effects, which makes them easy to test.
+-   **Imperative Shell (`src/simple_resume/shell/`)**: Manages I/O, user interaction, and integrations with external services. Side effects are handled in this layer.
+-   **API Surface (`src/simple_resume/`)**: The public API provides an interface for reading and writing resume data (e.g., `read_yaml()`, `to_pdf()`).
 
 ### Key Components
 
--   **`Resume` class**: The main entrypoint for the public API. It provides methods like `read_yaml()`, `to_pdf()`, and `to_html()`.
--   **`ResumeSession`**: A class that manages configuration settings to ensure they are applied consistently across multiple operations.
--   **Palette System**: A flexible system for color management that supports built-in themes, remote palettes from APIs, and procedurally generated color schemes.
+-   **`Resume` class**: The main entry point for the public API. It provides methods such as `read_yaml()`, `to_pdf()`, and `to_html()`.
+-   **`ResumeSession`**: A class that manages configuration settings for consistency across multiple operations.
+-   **Palette System**: A system for color management that supports built-in themes, remote palettes, and generated color schemes.
 -   **Template System**: Uses Jinja2 for HTML and LaTeX templating.
--   **Validation**: A validation layer that provides detailed error messages for configuration and data issues.
+-   **Validation**: A validation layer that provides error messages for configuration and data issues.
 
 ## Testing
 
-The project maintains >85% test coverage with comprehensive unit and integration tests:
+The project maintains over 85% test coverage with unit and integration tests.
 
 ```bash
 # Run all tests
@@ -73,49 +73,31 @@ make test-coverage
 
 ## Documentation
 
-Project documentation is organized into several key areas:
+The project documentation is organized into the following key areas:
 
-### Documentation Structure
+-   **[Architecture Decisions (ADRs)](../architecture/)**: Records the history and reasoning behind significant technical decisions.
+-   **[Usage Guide](Usage-Guide.md)**: Explains how to use the library's features with practical examples.
+-   **[Migration Guide](Migration-Guide-Generate-Module.md)**: Provides instructions for upgrading between major versions.
+-   **[Lazy Loading Guide](Lazy-Loading-Guide.md)**: Describes performance optimization strategies.
+-   **[API Reference](../docs/reference.md)**: A reference for the public API.
 
-- **[Architecture Decisions (ADRs)](../architecture/)**: Records the history and reasoning behind significant technical decisions.
-- **[Usage Guide](Usage-Guide.md)**: Explains how to use the library's features with practical examples.
-- **[Migration Guide](Migration-Guide-Generate-Module.md)**: Provides instructions for upgrading between major versions.
-- **[Lazy Loading Guide](Lazy-Loading-Guide.md)**: Describes performance optimization strategies available in the library.
-- **[API Reference](../docs/reference.md)**: A comprehensive reference for the public API.
+When contributing to the documentation, please adhere to the following best practices:
 
-### Key Architecture Decisions
-
-Recent important ADRs to understand:
-
-- **[ADR 008: Constants Consolidation](../architecture/ADR008-constants-consolidation.md)** - Why constants were reorganized
-- **[ADR 002: Functional Core, Imperative Shell](../architecture/ADR002-functional-core-imperative-shell.md)** - Core architecture pattern
-- **[ADR 007: Color Palette System](../architecture/ADR007-color-palette-system.md)** - Color management strategy
-
-### Documentation Best Practices
-
-When contributing:
-
-1. **Update ADRs for significant changes** - Document architectural decisions
-2. **Add examples to Usage Guide** - Show practical usage patterns
-3. **Create migration guides** - Help users upgrade between versions
-4. **Document performance implications** - Include lazy loading considerations
-5. **Maintain docstrings** - Keep module and function documentation current
-
-### Writing Documentation
-
-- Use clear, concise language
-- Include code examples for all major features
-- Document both lazy and eager loading approaches
-- Explain performance trade-offs
-- Provide migration paths for breaking changes
+-   Use clear and concise language.
+-   Include code examples for all major features.
+-   Document both lazy and eager loading approaches.
+-   Explain performance trade-offs.
+-   Provide migration paths for breaking changes.
+-   Update ADRs for significant architectural changes.
+-   Keep docstrings up to date.
 
 ## Contributing
 
-Before starting, read the [Contributing Guide](Contributing.md) for information on the development process, coding standards, and submitting pull requests.
+Please read the [Contributing Guide](Contributing.md) for information on the development process, coding standards, and how to submit pull requests.
 
 ### Development Workflow
 
-1. Create a feature branch from main
-2. Make your changes with comprehensive tests
-3. Run `make check-all` and `make validate` to ensure all automated checks pass
-4. Submit a pull request with clear description of changes
+1.  Create a feature branch from `main`.
+2.  Make your changes and add tests.
+3.  Run `make check-all` and `make validate` to ensure that all automated checks pass.
+4.  Submit a pull request with a clear description of your changes.

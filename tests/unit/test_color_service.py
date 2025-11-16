@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from simple_resume.constants import DEFAULT_COLOR_SCHEME, ICON_CONTRAST_THRESHOLD
+from simple_resume.constants.colors import DEFAULT_COLOR_SCHEME, ICON_CONTRAST_THRESHOLD
 from simple_resume.core.color_service import ColorCalculationService
 
 

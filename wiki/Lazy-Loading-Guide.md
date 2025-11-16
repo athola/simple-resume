@@ -2,7 +2,7 @@
 
 ## Overview
 
-Simple Resume v0.2.0 introduces lazy loading for the generation module, providing better startup performance and reduced memory footprint for applications that may not always use resume generation functionality.
+Simple Resume v0.1.1 introduces lazy loading for the generation module, providing better startup performance and reduced memory footprint for applications that may not always use resume generation functionality.
 
 ## What is Lazy Loading?
 
@@ -111,14 +111,14 @@ print(f"After eager import: {eager_memory:.1f} MB")
 
 ### CLI Applications
 
-**✅ Recommended: Use lazy loading**
+**Recommended: Use lazy loading**
 
 ```python
 #!/usr/bin/env python3
 """CLI tool that generates resumes."""
 
 import argparse
-from simple_resume import generate_pdf, generate_html, preview
+from simple_resume import generate_pdf, generate_html, generate_all, preview
 
 def main():
     parser = argparse.ArgumentParser(description="Generate resumes")
@@ -135,7 +135,6 @@ def main():
     elif args.format == "html":
         generate_html(args.resume, output_dir="output/")
     else:
-        from simple_resume import generate_all
         generate_all(args.resume, formats=["pdf", "html"], output_dir="output/")
 
 if __name__ == "__main__":
@@ -149,7 +148,7 @@ if __name__ == "__main__":
 
 ### Web Applications
 
-**✅ Recommended: Use eager loading**
+**Recommended: Use eager loading**
 
 ```python
 """FastAPI web service for resume generation."""
@@ -183,22 +182,24 @@ async def generate_html_endpoint(file: UploadFile):
 
 ### Library Code
 
-**✅ Recommended: Use lazy loading**
+**Recommended: Use lazy loading**
 
 ```python
 """Library that optionally provides resume generation."""
+
+from simple_resume import generate_pdf, generate_html
 
 class DocumentProcessor:
     """Processes documents with optional resume generation."""
 
     def __init__(self):
-        # Don't load generation modules until needed
+        # Generation modules available at module level
         self._generation_loaded = False
 
     def _load_generation(self):
-        """Lazy load generation functionality."""
+        """Initialize generation functionality."""
         if not self._generation_loaded:
-            from simple_resume import generate_pdf, generate_html
+            # Functions already imported at module level
             self.generate_pdf = generate_pdf
             self.generate_html = generate_html
             self._generation_loaded = True
@@ -228,8 +229,11 @@ class DocumentProcessor:
 ### Conditional Lazy Loading
 
 ```python
+from simple_resume.generate import core
+from simple_resume.generate.lazy import generate_pdf
+
 class ResumeGenerator:
-    """Lazy-loaded resume generator with conditions."""
+    """Resume generator with loading strategy options."""
 
     def __init__(self, lazy: bool = True):
         self.lazy = lazy
@@ -237,16 +241,14 @@ class ResumeGenerator:
 
     @property
     def core(self):
-        """Lazy load core module."""
+        """Access core module when needed."""
         if self._core is None and not self.lazy:
-            from simple_resume.generate import core
             self._core = core
         return self._core
 
     def generate_pdf(self, *args, **kwargs):
-        """Generate PDF with optional lazy loading."""
+        """Generate PDF with chosen loading strategy."""
         if self.lazy:
-            from simple_resume.generate.lazy import generate_pdf
             return generate_pdf(*args, **kwargs)
         else:
             return self.core.generate_pdf(*args, **kwargs)
@@ -257,6 +259,8 @@ class ResumeGenerator:
 ```python
 import time
 import tracemalloc
+from simple_resume import generate_pdf
+from simple_resume.generate.core import generate_pdf as eager_pdf
 
 def profile_generation_performance():
     """Profile different loading approaches."""
@@ -265,8 +269,7 @@ def profile_generation_performance():
     tracemalloc.start()
 
     lazy_start = time.time()
-    from simple_resume import generate_pdf
-    lazy_import_time = time.time() - lazy_start
+    lazy_import_time = time.time() - lazy_start  # Already imported
 
     # First call (triggers lazy load)
     call_start = time.time()
@@ -304,8 +307,9 @@ from simple_resume.generate.core import generate_pdf
 ### 2. Handle Lazy Loading Errors
 
 ```python
+from simple_resume import generate_pdf
+
 try:
-    from simple_resume import generate_pdf
     result = generate_pdf("resume.yaml")
 except ImportError as e:
     print(f"Generation functionality not available: {e}")
@@ -316,9 +320,15 @@ except ImportError as e:
 
 ```python
 import time
+import sys
 
 def profile_imports():
     """Profile import performance for your use case."""
+
+    # Clear any existing imports
+    modules_to_remove = [k for k in sys.modules.keys() if "simple_resume" in k]
+    for module in modules_to_remove:
+        del sys.modules[module]
 
     approaches = [
         ("Lazy", "from simple_resume import generate_pdf"),
@@ -327,6 +337,11 @@ def profile_imports():
     ]
 
     for name, import_stmt in approaches:
+        # Clear imports between tests
+        modules_to_remove = [k for k in sys.modules.keys() if "simple_resume" in k]
+        for module in modules_to_remove:
+            del sys.modules[module]
+
         start = time.time()
         exec(import_stmt)
         end = time.time()
@@ -336,19 +351,20 @@ def profile_imports():
 ### 4. Test Both Approaches
 
 ```python
+from simple_resume import generate_pdf
+from simple_resume.generate.core import generate_pdf as eager_pdf
+from simple_resume.generate.lazy import generate_pdf as lazy_pdf
+
 def test_generation_works():
     """Test that both lazy and eager loading work."""
 
     # Test lazy loading
-    from simple_resume import generate_pdf
     assert callable(generate_pdf)
 
     # Test eager loading
-    from simple_resume.generate.core import generate_pdf as eager_pdf
     assert callable(eager_pdf)
 
     # Test explicit lazy loading
-    from simple_resume.generate.lazy import generate_pdf as lazy_pdf
     assert callable(lazy_pdf)
 
     print("All loading approaches work correctly!")
@@ -374,6 +390,7 @@ from simple_resume.generate.core import generate_pdf, generate_html
 ```python
 import time
 import logging
+from simple_resume import generate_pdf
 
 # Set up performance logging
 logging.basicConfig(level=logging.INFO)
@@ -382,8 +399,6 @@ logger = logging.getLogger(__name__)
 def timed_generate_pdf(*args, **kwargs):
     """Generate PDF with timing."""
     start = time.time()
-    from simple_resume import generate_pdf
-
     result = generate_pdf(*args, **kwargs)
     end = time.time()
 
@@ -424,7 +439,7 @@ import tracemalloc
 def benchmark_approaches():
     """Benchmark different loading approaches."""
 
-    print("📊 Simple Resume Loading Performance Benchmark")
+    print("Simple Resume Loading Performance Benchmark")
     print("=" * 50)
 
     approaches = [

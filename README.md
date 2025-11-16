@@ -27,13 +27,15 @@ _A CLI tool for generating resumes from YAML files._
   https://github.com/athola/simple-resume/pulls
 )
 
-# Simple-Resume
+# simple-resume
 
-Generate PDF, HTML, and LaTeX resumes from a YAML source. This tool allows you to manage resume content under version control and apply different templates and color schemes. It can be used as a command-line utility or a Python library.
+`simple-resume` is a command-line tool and Python library for generating PDF, HTML, and LaTeX resumes from a YAML source file. It is designed to help you maintain a version-controlled resume and easily switch between different templates and color schemes.
 
 ## Getting Started
 
 ### Installation
+
+To install the latest stable version, run one of the following commands:
 
 ```bash
 # Install with uv (recommended)
@@ -45,42 +47,47 @@ pip install simple-resume
 
 ### Development Setup
 
+To set up a development environment, clone the repository and install the project in editable mode with development dependencies.
+
 ```bash
 git clone https://github.com/athola/simple-resume.git
 cd simple-resume
 
-# Development install with uv
+# Install for development with uv
 uv sync --dev --extra utils
 
-# Development install with pip
-pip install -e .
+# Install for development with pip
+pip install -e .[dev,utils]
 ```
 
 ## Quick Start
 
-First, create a YAML file with your resume content. The `template` field specifies which base template to use.
+First, create a YAML file to store your resume content. The `template` field specifies which base template to use.
 
 ```yaml
 # resume_private/input/my_resume.yaml
+
+# The base template to use for the resume.
 template: resume_base
 
+# Your personal information.
 full_name: Jane Doe
 job_title: Software Engineer
-
 address:
   - 123 Tech Street
   - San Francisco, CA
-
 phone: "(555) 123-4567"
 email: jane.doe@example.com
 web: https://jandoe.dev
 linkedin: in/janedoe
 github: janedoe
 
+# A short description of your professional background.
 description: |
   Software engineer with 5+ years of experience building scalable
   web applications and leading cross-functional teams.
 
+# The main body of your resume.
 body:
   experience:
     - title: Senior Software Engineer
@@ -104,37 +111,41 @@ body:
 
 ### Generate from the Command Line
 
-Use `simple-resume generate` to create your resume in PDF or HTML format.
+Use the `simple-resume generate` command to create your resume in PDF or HTML format.
 
 ```bash
-# Generate a PDF
+# Generate a PDF version of your resume.
 uv run simple-resume generate --format pdf
 
-# Generate an HTML file and open it
+# Generate an HTML version and open it in your browser.
 uv run simple-resume generate --format html --open
 ```
 
 ### Use the Python API
 
-The library's API supports method chaining for applying configurations.
+The library can also be used as a Python API, which supports method chaining for applying configurations.
 
 ```python
 from simple_resume import Resume
 from simple_resume.session import ResumeSession
 
 # Method 1: Direct, single-file conversion
+# This method is useful for simple, one-off conversions.
 resume = Resume.read_yaml("resume_private/input/my_resume.yaml")
 result = resume.to_pdf(open_after=True)
 html_result = resume.to_html()
 
-# Method 2: Use a session for consistent settings across multiple resumes
+# Method 2: Use a session for consistent settings
+# A session is useful for managing multiple resumes with consistent settings.
 with ResumeSession(data_dir="resume_private") as session:
+    # Load a resume from the session's data directory.
     resume = session.resume("my_resume")
-    # Apply different styles with method chaining
+
+    # Use method chaining to apply different styles.
     dark_resume = resume.with_palette("Professional Blue").with_template("resume_base")
     result = dark_resume.to_pdf(open_after=True)
 
-    # Generate all resumes in batch
+    # Generate all resumes in the session in batch.
     batch_results = session.generate_all(format="pdf", open_after=False)
 ```
 
@@ -177,13 +188,13 @@ assert accent == "#000000"
 
 ## Documentation
 
-- **[Getting Started](wiki/Getting-Started.md)**: A detailed walkthrough of installation and basic setup.
-- **[Usage Guide](wiki/Usage-Guide.md)**: Comprehensive guide to all features, including templates, palettes, and LaTeX output.
-- **[Development Guide](wiki/Development-Guide.md)**: Instructions for setting up a development environment and contributing.
-- **[Migration Guide](wiki/Migration-Guide.md)**: Instructions for upgrading from earlier versions.
+- **[Getting Started](wiki/Getting-Started.md)**: A detailed guide to installation and basic setup.
+- **[Usage Guide](wiki/Usage-Guide.md)**: A comprehensive guide to all features, including templates, palettes, and LaTeX output.
+- **[Development Guide](wiki-Development-Guide.md)**: Instructions for setting up a development environment and contributing to the project.
+- **[Migration Guide](wiki/Migration-Guide.md)**: Instructions for upgrading from previous versions.
 - **[Color Schemes](wiki/Color-Schemes.md)**: A guide to creating and using custom color palettes.
-- **[Workflows](wiki/Workflows.md)**: Examples of common patterns and use cases.
-- **[API Reference](docs/reference.md)**: Full reference for the Python API.
+- **[Workflows](wiki/Workflows.md)**: Examples of common use cases and patterns.
+- **[API Reference](docs/reference.md)**: A full reference for the Python API.
 
 ## Getting Help
 

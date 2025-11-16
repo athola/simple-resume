@@ -1,63 +1,4 @@
-"""Define the exception hierarchy for simple-resume.
-
-This module defines a structured exception hierarchy similar to pandas and requests
-to provide clear error handling and debugging capabilities.
-
-## Error Handling Pattern
-
-`simple-resume` uses a two-tier error handling pattern:
-
-**Tier 1: Inspection (returns results)**
-- Use when you want to check validation status, log warnings, or collect errors.
-- Methods: `Resume.validate()` → `ValidationResult`.
-- Never raises exceptions, always returns a result object.
-- Example: Check validation without stopping execution.
-  ```python
-  result = resume.validate()
-  if result.warnings:
-      log.warning(result.warnings)
-  if not result.is_valid:
-      print(f"Errors: {result.errors}")
-  ```
-
-**Tier 2: Action (raises on invalid)**
-- Use when operations require valid data (fail-fast approach).
-- Methods: `Resume.validate_or_raise()` → `None` or raises `ValidationError`.
-- Used internally by `to_pdf()`, `to_html()`, and CLI commands.
-- Example: Ensure data is valid before proceeding.
-  ```python
-  resume.validate_or_raise()  # Raises ValidationError if invalid
-  resume.to_pdf("output.pdf")  # Only runs if validation passed
-  ```
-
-This pattern is similar to:
-- **pandas**: `df.empty` (returns bool) vs operations that raise on empty DataFrames.
-- **requests**: `response.status_code` vs `response.raise_for_status()`.
-
-## Exception Hierarchy
-
-All exceptions inherit from `SimpleResumeError`, allowing users to catch all
-`simple-resume` errors with a single except clause:
-
-```python
-try:
-    resume = Resume.read_yaml("resume.yaml")
-    resume.to_pdf()
-except SimpleResumeError as e:
-    # Catches all simple-resume specific errors
-    print(f"Error: {e}")
-```
-
-Exception classes should be raised directly (not through helper functions):
-
-```python
-# Correct
-raise ValidationError("Invalid data", errors=["Missing field"], filename="resume.yaml")
-
-# Correct
-raise GenerationError("PDF generation failed", format_type="pdf", output_path="out.pdf")
-```
-"""
+"""Define the exception hierarchy for simple-resume."""
 
 from __future__ import annotations
 
@@ -66,10 +7,7 @@ from typing import Any
 
 
 class SimpleResumeError(Exception):
-    """Raise for any simple-resume specific error.
-
-    This is the base exception for all custom errors in the application.
-    """
+    """Raise for any simple-resume specific error."""
 
     def __init__(
         self,
@@ -78,14 +16,21 @@ class SimpleResumeError(Exception):
         context: dict[str, Any] | None = None,
         filename: str | None = None,
     ) -> None:
-        """Initialize the exception with a message and optional context."""
+        """Initialize the exception.
+
+        Args:
+            message: The error message.
+            context: Optional context for the error.
+            filename: The name of the file being processed.
+
+        """
         super().__init__(message)
         self.message = message
         self.context = context or {}
         self.filename = filename
 
     def __str__(self) -> str:
-        """Return a formatted error message with filename and context."""
+        """Return a formatted error message."""
         base_msg = self.message
         if self.filename:
             base_msg = f"{self.filename}: {base_msg}"
@@ -96,10 +41,7 @@ class SimpleResumeError(Exception):
 
 
 class ValidationError(SimpleResumeError, ValueError):
-    """Raise when resume data validation fails.
-
-    Inherits from `ValueError` for backwards compatibility.
-    """
+    """Raise when resume data validation fails."""
 
     def __init__(
         self,
@@ -109,7 +51,15 @@ class ValidationError(SimpleResumeError, ValueError):
         warnings: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize with message and optional error/warning lists."""
+        """Initialize the exception.
+
+        Args:
+            message: The error message.
+            errors: A list of validation errors.
+            warnings: A list of validation warnings.
+            **kwargs: Additional context.
+
+        """
         super().__init__(message, **kwargs)
         self.errors = errors or []
         self.warnings = warnings or []
@@ -126,13 +76,21 @@ class ConfigurationError(SimpleResumeError):
         config_value: Any | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize with message and optional config details."""
+        """Initialize the exception.
+
+        Args:
+            message: The error message.
+            config_key: The configuration key that caused the error.
+            config_value: The value of the configuration key.
+            **kwargs: Additional context.
+
+        """
         super().__init__(message, **kwargs)
         self.config_key = config_key
         self.config_value = config_value
 
     def __str__(self) -> str:
-        """Return a formatted error message with the config key."""
+        """Return a formatted error message."""
         base_msg = super().__str__()
         if self.config_key:
             base_msg = f"{base_msg} (config_key={self.config_key})"
@@ -150,7 +108,15 @@ class TemplateError(SimpleResumeError):
         template_path: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize with message and optional template details."""
+        """Initialize the exception.
+
+        Args:
+            message: The error message.
+            template_name: The name of the template.
+            template_path: The path to the template.
+            **kwargs: Additional context.
+
+        """
         super().__init__(message, **kwargs)
         self.template_name = template_name
         self.template_path = template_path
@@ -167,13 +133,13 @@ class GenerationError(SimpleResumeError):
         format_type: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize the generation error with a message and optional output details.
+        """Initialize the exception.
 
         Args:
-            message: Error message.
-            output_path: Output path (accepts str or Path objects).
-            format_type: Format type (pdf, html, etc.).
-            **kwargs: Additional context passed to base exception.
+            message: The error message.
+            output_path: The output path.
+            format_type: The output format (e.g., "pdf", "html").
+            **kwargs: Additional context.
 
         """
         super().__init__(message, **kwargs)
@@ -181,7 +147,7 @@ class GenerationError(SimpleResumeError):
         self.format_type = format_type
 
     def __str__(self) -> str:
-        """Return a formatted error message with the format type."""
+        """Return a formatted error message."""
         base_msg = super().__str__()
         if self.format_type:
             base_msg = f"{base_msg} (format={self.format_type})"
@@ -199,7 +165,15 @@ class PaletteError(SimpleResumeError):
         color_values: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize the palette error with a message and optional palette details."""
+        """Initialize the exception.
+
+        Args:
+            message: The error message.
+            palette_name: The name of the palette.
+            color_values: The color values that caused the error.
+            **kwargs: Additional context.
+
+        """
         super().__init__(message, **kwargs)
         self.palette_name = palette_name
         self.color_values = color_values
@@ -216,13 +190,13 @@ class FileSystemError(SimpleResumeError):
         operation: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize the filesystem error with a message and optional path/operation.
+        """Initialize the exception.
 
         Args:
-            message: Error message.
-            path: File path (accepts str or Path objects).
-            operation: Operation type (read, write, etc.).
-            **kwargs: Additional context passed to base exception.
+            message: The error message.
+            path: The file path.
+            operation: The file system operation that failed.
+            **kwargs: Additional context.
 
         """
         super().__init__(message, **kwargs)
@@ -236,7 +210,14 @@ class SessionError(SimpleResumeError):
     def __init__(
         self, message: str, *, session_id: str | None = None, **kwargs: Any
     ) -> None:
-        """Initialize the session error with a message and optional session ID."""
+        """Initialize the exception.
+
+        Args:
+            message: The error message.
+            session_id: The ID of the session.
+            **kwargs: Additional context.
+
+        """
         super().__init__(message, **kwargs)
         self.session_id = session_id
 

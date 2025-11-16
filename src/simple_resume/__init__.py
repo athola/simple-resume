@@ -27,15 +27,15 @@ deprecation policy.
 from __future__ import annotations
 
 # Public API namespaces
-from . import api
+from simple_resume import api
 
 # New unified generation API (lazy-loaded)
 # Core classes
-from .core.models import GenerationConfig, RenderPlan, ResumeConfig
-from .core.resume import Resume
+from simple_resume.core.models import GenerationConfig, RenderPlan, ResumeConfig
+from simple_resume.core.resume import Resume
 
 # Exception hierarchy
-from .exceptions import (
+from simple_resume.exceptions import (
     ConfigurationError,
     FileSystemError,
     GenerationError,
@@ -45,6 +45,7 @@ from .exceptions import (
     TemplateError,
     ValidationError,
 )
+
 from .generate import (
     generate,
     generate_all,

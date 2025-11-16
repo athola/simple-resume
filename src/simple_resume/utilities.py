@@ -11,19 +11,22 @@ from typing import Any, Protocol, cast
 
 from markdown import markdown
 
-from simple_resume.constants import (
+from simple_resume import config as config_module
+from simple_resume.config import FILE_DEFAULT, Paths
+from simple_resume.constants.colors import (
     BOLD_DARKEN_FACTOR,
     DEFAULT_BOLD_COLOR,
     DEFAULT_COLOR_SCHEME,
 )
-
-from . import config as config_module
-from .config import FILE_DEFAULT, Paths
-from .core.colors import darken_color, is_valid_color
-from .core.config_core import apply_palette_block, finalize_config, prepare_config
-from .core.hydration_core import build_skill_group_payload
-from .utils.io import read_yaml_file
-from .utils.skills import format_skill_groups
+from simple_resume.core.colors import darken_color, is_valid_color
+from simple_resume.core.config_core import (
+    apply_palette_block,
+    finalize_config,
+    prepare_config,
+)
+from simple_resume.core.hydration_core import build_skill_group_payload
+from simple_resume.utils.io import read_yaml_file
+from simple_resume.utils.skills import format_skill_groups
 
 PATH_DATA = str(config_module.PATH_DATA)
 PATH_INPUT = str(config_module.PATH_INPUT)
@@ -67,7 +70,7 @@ class _HydrationModule(Protocol):
 
 
 def derive_bold_color(frame_color: str | None) -> str:
-    """Darken the frame color for bold text."""
+    """Return a darkened color for bold text."""
     if isinstance(frame_color, str) and is_valid_color(frame_color):
         return darken_color(frame_color, BOLD_DARKEN_FACTOR)
     return DEFAULT_COLOR_SCHEME.get("bold_color", DEFAULT_BOLD_COLOR)
@@ -89,7 +92,7 @@ def normalize_config(
 
 
 def load_palette_from_file(palette_file: str | Path) -> dict[str, Any]:
-    """Load and return palette configuration from an external YAML file."""
+    """Load and return a palette configuration from a YAML file."""
     path = Path(palette_file)
 
     if not path.exists():
@@ -122,7 +125,7 @@ def load_palette_from_file(palette_file: str | Path) -> dict[str, Any]:
 def apply_external_palette(
     config: dict[str, Any], palette_file: str | Path
 ) -> dict[str, Any]:
-    """Return a new configuration dictionary with palette data applied."""
+    """Return a new configuration with the palette data applied."""
     palette_payload = load_palette_from_file(palette_file)
     updated = copy.deepcopy(config)
     updated["palette"] = palette_payload["palette"]
@@ -130,14 +133,14 @@ def apply_external_palette(
 
 
 def validate_config(config: dict[str, Any], filename: str = "") -> None:
-    """Validate resume configuration for common errors (legacy mutating API).
+    """Validate the resume configuration.
 
     Args:
-        config: Configuration dict from YAML file.
-        filename: Name of the file being validated (for error messages).
+        config: The configuration dictionary from the YAML file.
+        filename: The name of the file being validated.
 
     Raises:
-        `ValueError`: If validation fails with a descriptive error message.
+        ValueError: If validation fails.
 
     """
     if not config:
@@ -168,14 +171,14 @@ def render_markdown_content(resume_data: dict[str, Any]) -> dict[str, Any]:
 
 
 def _apply_bold_color(html: str, color: str) -> str:
-    """Apply color styling to bold (`<strong>`) tags in HTML.
+    """Apply color styling to `<strong>` tags in an HTML string.
 
     Args:
-        html: HTML string that may contain `<strong>` tags.
-        color: Hex color code to apply (e.g., "#0395DE").
+        html: An HTML string.
+        color: A hex color code.
 
     Returns:
-        HTML string with styled `<strong>` tags.
+        An HTML string with styled `<strong>` tags.
 
     """
     if not html:
@@ -198,8 +201,8 @@ def _transform_from_markdown(
     """Convert Markdown fields in a resume data dictionary to HTML in-place.
 
     Args:
-        data: Resume data dictionary.
-        bold_color: Hex color code for bold text (defaults to theme color).
+        data: A resume data dictionary.
+        bold_color: A hex color code for bold text.
 
     """
     # Markdown extensions for enhanced formatting.
@@ -232,12 +235,12 @@ def get_content(
     """Read and parse a resume from a YAML file.
 
     Args:
-        name: Resume identifier without extension.
-        paths: Optional set of resolved content/input/output paths.
-        transform_markdown: When `True` (default), convert Markdown fields to HTML.
+        name: The resume identifier without the extension.
+        paths: An optional set of resolved content, input, and output paths.
+        transform_markdown: If `True`, convert Markdown fields to HTML.
 
     Returns:
-        Parsed resume data dictionary.
+        A dictionary containing the parsed resume data.
 
     """
     hydration_module = cast(

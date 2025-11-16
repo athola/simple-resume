@@ -19,18 +19,18 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol, TextIO, cast
 
-from .. import config
-from ..constants import RenderMode
-from ..core.models import RenderPlan
-from ..core.plan import prepare_render_data
-from ..exceptions import GenerationError
-from ..latex_renderer import (
+from simple_resume import config
+from simple_resume.constants import RenderMode
+from simple_resume.core.models import RenderPlan
+from simple_resume.core.plan import prepare_render_data
+from simple_resume.exceptions import GenerationError
+from simple_resume.latex_renderer import (
     LatexCompilationError,
     compile_tex_to_html,
     compile_tex_to_pdf,
 )
-from ..rendering import get_template_environment
-from ..utilities import get_content
+from simple_resume.rendering import get_template_environment
+from simple_resume.utilities import get_content
 
 try:
     from weasyprint import CSS as WEASYPRINT_CSS

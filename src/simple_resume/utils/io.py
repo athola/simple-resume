@@ -15,7 +15,7 @@ from typing import Any
 
 from oyaml import safe_load
 
-from ..config import FILE_DEFAULT, Paths, resolve_paths
+from simple_resume.config import FILE_DEFAULT, Paths, resolve_paths
 
 
 def candidate_yaml_path(name: str | os.PathLike[str]) -> Path | None:

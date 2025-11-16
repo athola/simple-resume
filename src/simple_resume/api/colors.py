@@ -7,7 +7,7 @@ a stable import path that follows semantic-version guarantees.
 
 from __future__ import annotations
 
-from ..core.colors import calculate_luminance, is_valid_color
+from simple_resume.core.colors import calculate_luminance, is_valid_color
 
 _TEXT_LUMINANCE_THRESHOLD = 0.5
 

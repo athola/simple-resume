@@ -1,12 +1,12 @@
 # Getting Started
 
-This guide provides a hands-on walkthrough to install `simple-resume`, create your first resume from a YAML file, and generate it as a PDF or HTML document.
+This guide provides a walkthrough for installing `simple-resume`, creating a resume from a YAML file, and generating it as a PDF or HTML document.
 
 ## 1. Installation and Setup
 
-First, ensure you have Python 3.9+ and `uv` installed.
+This guide assumes you have a development environment set up. For user installation instructions, see the [README.md](../README.md).
 
-Then, clone the repository and install the required dependencies:
+First, ensure you have Python 3.9+ and `uv` installed. Then, clone the repository and install the required dependencies:
 
 ```bash
 git clone https://github.com/athola/simple-resume.git
@@ -16,11 +16,9 @@ uv sync
 
 ## 2. Create and Generate Your Resume
 
-Now you're ready to create and generate your resume.
-
 ### Start with a Sample
 
-Copy a sample file to use as a starting point for your own resume. This is the easiest way to get started.
+To get started, copy one of the sample files to the `resume_private/input` directory.
 
 ```bash
 cp sample/input/sample_1.yaml resume_private/input/my_resume.yaml
@@ -28,7 +26,7 @@ cp sample/input/sample_1.yaml resume_private/input/my_resume.yaml
 
 ### Edit the Content
 
-Open `resume_private/input/my_resume.yaml` in your favorite editor and replace the placeholder content with your own information.
+Open `resume_private/input/my_resume.yaml` in a text editor and replace the placeholder content with your own information.
 
 ```yaml
 full_name: "Your Name"
@@ -39,7 +37,7 @@ email: "your.email@example.com"
 
 ### Generate the Output
 
-Run the `generate` command to create your resume. The `--open` flag will automatically open the generated file.
+Use the `generate` command to create your resume. The `--open` flag will open the generated file in your default browser or PDF viewer.
 
 ```bash
 # Generate an HTML resume
@@ -49,51 +47,31 @@ uv run simple-resume generate --format html --open
 uv run simple-resume generate --format pdf --open
 ```
 
-To generate multiple resumes at once, point the `--data-dir` argument to a directory containing your YAML files.
-
-### Using the Python API
-
-The tool can also be used as a Python library for programmatic use:
-
-```python
-from simple_resume import Resume
-from simple_resume.session import ResumeSession
-
-# Load and generate a resume
-resume = Resume.read_yaml("resume_private/input/my_resume.yaml")
-result = resume.to_pdf(open_after=True)
-
-# Use a session for consistent settings (e.g., data directory)
-with ResumeSession(data_dir="resume_private") as session:
-    resume = session.resume("my_resume")
-    # Apply different styles
-    styled_resume = resume.with_palette("Professional Blue").with_template("resume_base")
-    result = styled_resume.to_pdf()
-```
+To generate multiple resumes at once, use the `--data-dir` argument to specify a directory containing your YAML files.
 
 ## 3. Customize Your Resume
 
-You can easily customize the appearance of your resume.
+The appearance of your resume can be customized by editing the YAML file.
 
 ### Change the Template
 
-Change the resume's layout by specifying a different `template` in your YAML file.
+To change the layout of your resume, specify a different `template` in your YAML file.
 
 ```yaml
 template: resume_no_bars  # A minimalist design
-# template: resume_with_bars  # A design that includes skill level bars
+# template: resume_with_bars  # A design with skill level bars
 ```
 
 ### Apply a Color Scheme
 
-Apply a color scheme by adding the `color_scheme` key under a `config` section in your YAML.
+To apply a color scheme, add the `color_scheme` key to the `config` section of your YAML file.
 
 ```yaml
 config:
   color_scheme: "Professional Blue"
 ```
 
-For more details, see the [Color Schemes guide](Color-Schemes.md).
+For more information on color schemes, see the [Color Schemes guide](Color-Schemes.md).
 
 ## Next Steps
 
@@ -102,19 +80,19 @@ For more details, see the [Color Schemes guide](Color-Schemes.md).
 
 ## Sample Files
 
-The `sample/` directory contains examples demonstrating different features:
+The `sample/` directory contains the following examples:
 
--   **`sample_1.yaml`**, **`sample_2.yaml`** - Basic resume examples
--   **`sample_multipage_demo.yaml`** - Multi-page resume with proper pagination
--   **`sample_palette_demo.yaml`** - Demonstrates various color schemes
--   **`sample_dark_sidebar.yaml`** - Dark theme with sidebar layout
--   **`sample_latex.yaml`** - LaTeX-specific formatting examples
--   **`sample_contrast_demo.yaml`** - Color contrast accessibility examples
+-   **`sample_1.yaml`** and **`sample_2.yaml`**: Basic resume examples.
+-   **`sample_multipage_demo.yaml`**: A multi-page resume with proper pagination.
+-   **`sample_palette_demo.yaml`**: A demonstration of various color schemes.
+-   **`sample_dark_sidebar.yaml`**: A dark theme with a sidebar layout.
+-   **`sample_latex.yaml`**: Examples of LaTeX-specific formatting.
+-   **`sample_contrast_demo.yaml`**: Examples of color contrast accessibility.
 
-## Troubleshooting Common Issues
+## Troubleshooting
 
--   **PDF Generation Fails**: PDF creation relies on WeasyPrint or LaTeX. Ensure their dependencies are installed correctly.
--   **YAML Syntax Errors**: YAML is sensitive to indentation. Use a YAML linter in your editor to catch syntax errors.
--   **Template Not Found**: Double-check that the `template` name in your YAML file matches an available template (e.g., `resume_base`, `resume_no_bars`).
+-   **PDF Generation Fails**: PDF generation depends on WeasyPrint or LaTeX. Ensure that their dependencies are installed correctly.
+-   **YAML Syntax Errors**: YAML is sensitive to indentation. Use a YAML linter to check for syntax errors.
+-   **Template Not Found**: Ensure that the `template` name in your YAML file matches an available template (e.g., `resume_base`, `resume_no_bars`).
 
 For other issues, please open an issue on [GitHub](https://github.com/athola/simple-resume/issues).

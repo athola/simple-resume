@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 
-from simple_resume.constants import (
+from simple_resume.constants.colors import (
     HEX_COLOR_FULL_LENGTH,
     HEX_COLOR_SHORT_LENGTH,
     ICON_CONTRAST_THRESHOLD,

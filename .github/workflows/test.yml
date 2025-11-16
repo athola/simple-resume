@@ -56,6 +56,6 @@ jobs:
     - name: Report architecture status
       if: failure()
       run: |
-        echo "⚠️ Architectural tests are currently failing (expected during refactoring)"
+        echo "[WARNING] Architectural tests are currently failing (expected during refactoring)"
         echo "See CORE_REFACTOR_PLAN.md for remediation timeline"
         echo "Violations will be fixed in Phases 2-5 of the modernization plan"

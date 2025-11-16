@@ -6,14 +6,21 @@ between core business logic and shell I/O operations.
 
 from __future__ import annotations
 
+import os
+import shutil
+import subprocess  # nosec B404
+import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
-from ..core.models import RenderPlan
-from ..core.pdf_generation import LatexGenerationContext, generate_pdf_with_latex
-from ..result import GenerationResult
-from .rendering_operations import generate_pdf_with_weasyprint
+from simple_resume.core.models import RenderPlan
+from simple_resume.core.pdf_generation import (
+    LatexGenerationContext,
+    generate_pdf_with_latex,
+)
+from simple_resume.result import GenerationResult
+from simple_resume.shell.rendering_operations import generate_pdf_with_weasyprint
 
 
 class PdfGenerationStrategy(ABC):
@@ -59,6 +66,30 @@ class WeasyPrintStrategy(PdfGenerationStrategy):
             resume_name=request.resume_name,
             filename=request.filename,
         )
+
+        # Open file if requested
+        if request.open_after and result.exists:
+            try:
+                if sys.platform.startswith("darwin"):
+                    opener = shutil.which("open") or "open"
+                    subprocess.Popen(  # noqa: S603  # nosec B603
+                        [opener, str(request.output_path)],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                    )
+                elif os.name == "nt":
+                    os.startfile(str(request.output_path))  # type: ignore[attr-defined]  # noqa: S606  # nosec B606
+                else:
+                    opener = shutil.which("xdg-open")
+                    if opener:
+                        subprocess.Popen(  # noqa: S603  # nosec B603
+                            [opener, str(request.output_path)],
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL,
+                        )
+            except Exception as exc:  # noqa: BLE001
+                print(f"Warning: Could not open file: {exc}", file=sys.stderr)
+
         return result
 
     def get_template_name(self, render_plan: RenderPlan) -> str:
@@ -80,11 +111,36 @@ class LatexStrategy(PdfGenerationStrategy):
         )
 
         # Delegate to the existing LaTeX generation logic
-        return generate_pdf_with_latex(
+        result = generate_pdf_with_latex(
             request.render_plan,
             request.output_path,
             context,
         )[0]
+
+        # Open file if requested
+        if request.open_after and result.exists:
+            try:
+                if sys.platform.startswith("darwin"):
+                    opener = shutil.which("open") or "open"
+                    subprocess.Popen(  # noqa: S603  # nosec B603
+                        [opener, str(request.output_path)],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                    )
+                elif os.name == "nt":
+                    os.startfile(str(request.output_path))  # type: ignore[attr-defined]  # noqa: S606  # nosec B606
+                else:
+                    opener = shutil.which("xdg-open")
+                    if opener:
+                        subprocess.Popen(  # noqa: S603  # nosec B603
+                            [opener, str(request.output_path)],
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL,
+                        )
+            except Exception as exc:  # noqa: BLE001
+                print(f"Warning: Could not open file: {exc}", file=sys.stderr)
+
+        return result
 
     def get_template_name(self, render_plan: RenderPlan) -> str:
         """Get template name for LaTeX mode."""

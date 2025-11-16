@@ -24,7 +24,12 @@ def load_resume_yaml(
     *,
     paths: Paths | None = None,
 ) -> tuple[dict[str, Any], str, Paths]:
-    """Read a resume YAML file and return the raw payload, filename, and paths."""
+    """Read a resume YAML file.
+
+    Returns:
+        A tuple containing the raw payload, filename, and paths.
+
+    """
     candidate_path: Path | None = None
     if isinstance(name, (str, os.PathLike)):
         candidate_path = candidate_yaml_path(name)
@@ -57,7 +62,17 @@ def hydrate_resume_data(
     filename: str = "",
     transform_markdown: bool = True,
 ) -> dict[str, Any]:
-    """Return a normalized copy of resume data with optional Markdown expansion."""
+    """Return a normalized copy of resume data.
+
+    Args:
+        source_yaml: The raw resume data.
+        filename: The name of the file being processed.
+        transform_markdown: Whether to transform Markdown content.
+
+    Returns:
+        A normalized copy of the resume data.
+
+    """
     return hydrate_resume_structure(
         source_yaml,
         filename=filename,

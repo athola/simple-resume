@@ -1,46 +1,44 @@
 # Path Handling Guide
 
-`simple-resume` follows the **Path-first principle** for consistent path handling:
+`simple-resume` follows a **path-first principle** for consistent path handling.
 
-1.  **Accept `str | Path` at API boundaries** for flexibility.
-2.  **Normalize to `Path` immediately** after receiving input.
-3.  **Use `Path` objects internally** throughout the codebase.
-4.  **Convert to `str` only when required** by external APIs.
+1.  Accept `str | Path` at API boundaries for flexibility.
+2.  Normalize to `Path` objects immediately after receiving input.
+3.  Use `Path` objects internally throughout the codebase.
+4.  Convert to `str` only when required by an external API.
 
-### When to Convert to String
+### When to Convert to a String
 
-Only convert `Path` to `str` when:
-- External libraries require strings (e.g., WeasyPrint's `write_pdf(str)`).
-- Storing in exception messages (handled automatically in exception `__init__`).
-- Building error messages for display.
+A `Path` object should only be converted to a string when an external library requires it.
+
+- **External libraries**: Some external libraries, such as WeasyPrint, require string paths (e.g., `write_pdf(str(output_path))`).
+- **Exception messages**: When storing a path in an exception message, it is automatically converted to a string.
+- **Error messages**: When building an error message for display, a `Path` object can be used directly in an f-string.
 
 ### Examples
 
 ```python
-# Good: Accept both, normalize early
+# Good: Accept both `str` and `Path` objects, and normalize early.
 def process_file(file_path: str | Path) -> None:
-    path = Path(file_path)  # Normalize immediately
-    path.read_text()  # Use Path methods
+    path = Path(file_path)  # Normalize immediately.
+    path.read_text()  # Use Path methods.
 
 
-# Good: Pass Path objects directly
+# Good: Pass `Path` objects directly.
 output_path = paths.output / "resume.pdf"
-resume.to_pdf(output_path)  # No conversion needed
+resume.to_pdf(output_path)  # No conversion is needed.
 
-# Good: Convert only when external API requires it
-html_doc.write_pdf(str(output_path))  # WeasyPrint needs str
+# Good: Convert to a string only when an external API requires it.
+html_doc.write_pdf(str(output_path))  # WeasyPrint requires a string.
 
-# Bad: Unnecessary conversions
-output_path = str(paths.output) + "/resume.pdf"  # Use Path /
-raise Error(f"Failed: {str(output_path)}")  # Path works in f-strings
+# Bad: Unnecessary conversions.
+output_path = str(paths.output) + "/resume.pdf"  # Use the / operator instead.
+raise Error(f"Failed: {str(output_path)}")  # `Path` objects work in f-strings.
 ```
 
-### Paths Dataclass
+### The `Paths` Dataclass
 
-The `Paths` dataclass stores all paths as `Path` objects:
-- Immutable (`frozen=True`).
-- Type-safe.
-- Supports pathlib operations.
+The `Paths` dataclass stores all paths as `Path` objects. It is immutable (`frozen=True`), type-safe, and supports all `pathlib` operations.
 
 ```python
 paths = resolve_paths(data_dir="resume_private")

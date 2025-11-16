@@ -9,14 +9,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from simple_resume.constants import (
+from simple_resume.constants.colors import (
     DEFAULT_COLOR_SCHEME,
     ICON_CONTRAST_THRESHOLD,
     LUMINANCE_DARK,
     SIDEBAR_BOLD_DARKEN_FACTOR,
 )
-
-from .colors import (
+from simple_resume.core.colors import (
     calculate_contrast_ratio,
     calculate_luminance,
     darken_color,

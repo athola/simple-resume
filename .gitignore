@@ -26,6 +26,8 @@ cover
 */cover
 coverage.xml
 */coverage.xml
+coverage.json
+*/coverage.json
 htmlcov/
 */htmlcov/
 nosetests.xml
@@ -62,7 +64,7 @@ resume_private/output/
 *.pdf
 *.html
 *.tex
-!src/simple_resume/templates/*.html
+!src/simple_resume/templates/html/*.html
 !src/simple_resume/templates/latex/*.tex
 
 # Preview images (but keep main preview.jpg/png for README)

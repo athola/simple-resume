@@ -217,9 +217,9 @@ Each module includes clear docstrings explaining:
 3. **Feedback**: Collect developer feedback on the organization
 
 ### Deprecation Timeline
-- **v0.2.0**: New structure introduced (current)
-- **v0.3.0**: Add deprecation warnings for direct module imports
-- **v0.4.0**: Remove legacy re-exports, require specific module imports
+- **v0.1.1**: New structure introduced (current)
+- **v0.2.0**: Add deprecation warnings for direct module imports
+- **v0.3.0**: Remove legacy re-exports, require specific module imports
 
 ## Alternatives Considered
 

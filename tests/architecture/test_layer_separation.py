@@ -78,6 +78,50 @@ def get_relative_imports(file_path: Path) -> set[str]:
     return relative_imports
 
 
+def get_import_dependencies(file_path: Path) -> set[str]:
+    """Extract all module dependencies from a file using AST."""
+    try:
+        with open(file_path, encoding="utf-8") as f:
+            content = f.read()
+            tree = ast.parse(content, filename=str(file_path))
+    except SyntaxError:
+        return set()
+
+    dependencies = set()
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                dependencies.add(alias.name.split(".")[0])
+        elif isinstance(node, ast.ImportFrom):
+            if node.module:
+                # Handle both absolute and relative imports
+                if node.level == 0:  # Absolute import
+                    dependencies.add(node.module.split(".")[0])
+                else:  # Relative import - resolve to absolute
+                    # Get the parent directory path
+                    parent_path = file_path.parent
+                    # Go up the directory tree based on import level
+                    for _ in range(node.level):
+                        parent_path = parent_path.parent
+
+                    # Resolve the target module
+                    if node.module:
+                        target_path = parent_path / node.module.replace(".", "/")
+                    else:
+                        target_path = parent_path
+
+                    # Convert to simple module name (relative to package root)
+                    try:
+                        relative_to_root = target_path.relative_to(PACKAGE_ROOT)
+                        dependencies.add(str(relative_to_root.parts[0]))
+                    except ValueError:
+                        # Import is outside the package - skip
+                        pass
+
+    return dependencies
+
+
 class TestCoreLayerSeparation:
     """Test that core modules don't violate layer separation."""
 
@@ -261,6 +305,57 @@ class TestShellLayerSeparation:
         assert io_library_usage >= 0, "Shell can use I/O libraries (this is allowed)"
 
 
+def build_dependency_graph(package_root: Path) -> dict[str, set[str]]:
+    """Build a dependency graph showing which modules depend on which."""
+    graph: dict[str, set[str]] = {}
+
+    # Get all Python files in the package
+    all_files = list(package_root.rglob("*.py"))
+
+    for file_path in all_files:
+        if file_path.name == "__init__.py":
+            continue
+
+        try:
+            # Convert file path to module name
+            module_name = str(file_path.relative_to(package_root).with_suffix(""))
+            module_name = module_name.replace("/", ".")
+
+            dependencies = get_import_dependencies(file_path)
+            graph[module_name] = dependencies
+
+        except Exception:  # noqa: S112  # nosec B112
+            continue
+
+    return graph
+
+
+def find_circular_dependencies(graph: dict[str, set[str]]) -> list[tuple[str, ...]]:
+    """Find circular dependencies using DFS."""
+    cycles = []
+
+    def visit(node: str, path: set[str]) -> None:
+        if node in path:
+            # Found a cycle - extract the cycle
+            cycle_start = list(path).index(node)
+            cycle = list(path)[cycle_start:] + [node]
+            cycles.append(tuple(cycle))
+            return
+
+        if node not in graph:
+            return
+
+        path.add(node)
+        for neighbor in graph[node]:
+            visit(neighbor, path.copy())
+        path.remove(node)
+
+    for module in graph:
+        visit(module, set())
+
+    return cycles
+
+
 class TestDependencyDirection:
     """Test overall dependency flow in the architecture."""
 
@@ -272,47 +367,41 @@ class TestDependencyDirection:
     )
     def test_no_circular_dependencies_core_utils(self) -> None:
         """Detect circular dependencies between core and utilities."""
-        # This is a simplified check - full circular dependency detection
-        # would require a more sophisticated graph analysis
+        # Build dependency graph for the entire package
+        graph = build_dependency_graph(PACKAGE_ROOT)
 
-        core_dir = PACKAGE_ROOT / "core"
-        utils_file = PACKAGE_ROOT / "utilities.py"
+        # Find cycles
+        cycles = find_circular_dependencies(graph)
 
-        if not utils_file.exists():
-            pytest.skip("utilities.py not found")
+        # Filter cycles that involve both core and utilities
+        problematic_cycles = []
+        for cycle in cycles:
+            cycle_strs = list(cycle)
+            has_core = any(
+                "core." in module or module == "core" for module in cycle_strs
+            )
+            has_utils = any(
+                "utils." in module or module == "utilities" for module in cycle_strs
+            )
 
-        # Check if core imports utilities
-        core_files = get_python_files(core_dir)
-        core_imports_utils = False
+            if has_core and has_utils:
+                problematic_cycles.append(cycle)
 
-        for file_path in core_files:
-            try:
-                with open(file_path, encoding="utf-8") as f:
-                    content = f.read()
-                    if (
-                        "from ..utilities import" in content
-                        or "from .utilities import" in content
-                    ):
-                        core_imports_utils = True
-                        break
-            except Exception:  # nosec B112  # noqa: BLE001, S112
-                continue
+        if problematic_cycles:
+            # Create a detailed report
+            cycle_report = "\n".join(
+                f"  {' -> '.join(cycle)} (cycle of length {len(cycle)})"
+                for cycle in problematic_cycles
+            )
 
-        # Check if utilities imports core
-        utils_imports_core = False
-        try:
-            with open(utils_file, encoding="utf-8") as f:
-                content = f.read()
-                if "from .core" in content or "from simple_resume.core" in content:
-                    utils_imports_core = True
-        except Exception:  # nosec B110  # noqa: BLE001, S110
-            pass
-
-        if core_imports_utils and utils_imports_core:
             pytest.fail(
-                "Circular dependency detected: core <-> utilities\n"
-                "This creates coupling and makes testing difficult.\n"
-                "Expected: This may fail and will be fixed in Phase 5."
+                f"Circular dependencies detected between core and utilities:\n"
+                f"{cycle_report}\n\n"
+                f"This creates coupling and makes testing difficult.\n"
+                f"Consider refactoring to break these cycles by:\n"
+                f"  1. Moving shared functionality to a separate module\n"
+                f"  2. Using dependency injection instead of direct imports\n"
+                f"  3. Restructuring to avoid bidirectional dependencies"
             )
 
 
@@ -321,12 +410,14 @@ class TestArchitectureDocumentation:
 
     def test_architecture_doc_exists(self) -> None:
         """Architecture documentation should exist."""
-        arch_doc = Path(__file__).parent.parent.parent / "wiki" / "ARCHITECTURE.md"
+        arch_doc = (
+            Path(__file__).parent.parent.parent / "wiki" / "Architecture-Guide.md"
+        )
 
         # This test will initially fail - we'll create the doc in this phase
         assert arch_doc.exists(), (
-            "wiki/ARCHITECTURE.md should exist to document layer separation rules.\n"
-            "This will be created in Phase 1."
+            "wiki/Architecture-Guide.md should exist to document layer separation "
+            "rules.\nThis will be created in Phase 1."
         )
 
     def test_adr002_exists(self) -> None:

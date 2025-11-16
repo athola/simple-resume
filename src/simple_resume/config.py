@@ -35,7 +35,7 @@ PATH_OUTPUT = f"{PATH_DATA}/output"
 
 @dataclass(frozen=True)
 class Paths:
-    """Define resolved filesystem locations used when rendering resumes."""
+    """Define resolved filesystem locations for rendering resumes."""
 
     data: Path
     input: Path
@@ -62,15 +62,14 @@ def resolve_paths(
 
     Args:
         data_dir: Optional directory containing `input/` and `output/` folders.
-            When omitted, the `RESUME_DATA_DIR` environment variable is used. If
-            neither is provided, the default is `./resume_private` relative to the
-            process working directory.
+            If omitted, the `RESUME_DATA_DIR` environment variable is used.
+            If neither is provided, the default is `./resume_private`.
         content_dir: Optional override for the package content directory.
         templates_dir: Optional override for the templates directory.
         static_dir: Optional override for the static assets directory.
 
     Returns:
-        A fully resolved `Paths` dataclass with data, template, and static paths.
+        A `Paths` dataclass with resolved data, template, and static paths.
 
     """
     base = data_dir or os.environ.get("RESUME_DATA_DIR") or PATH_DATA

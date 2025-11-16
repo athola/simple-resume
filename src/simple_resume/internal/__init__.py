@@ -8,8 +8,8 @@ changes between releases.
 
 from __future__ import annotations
 
-from ..api.colors import calculate_luminance, calculate_text_color
-from ..utilities import (
+from simple_resume.api.colors import calculate_luminance, calculate_text_color
+from simple_resume.utilities import (
     get_content,
     normalize_config,
     render_markdown_content,
