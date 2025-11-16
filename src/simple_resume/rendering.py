@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Provide shared helpers for rendering resume templates without relying on Flask."""
+"""Provide helpers for rendering resume templates."""
 
 from __future__ import annotations
 
@@ -9,15 +9,24 @@ from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from . import config
-from .config import FILE_DEFAULT
-from .utilities import get_content
+from simple_resume import config
+from simple_resume.config import FILE_DEFAULT
+from simple_resume.utilities import get_content
 
 
 def build_html_context(
     data: dict[str, Any], *, preview: bool
 ) -> tuple[str, dict[str, Any]]:
-    """Prepare a template name and context from resume data."""
+    """Prepare a template name and context from resume data.
+
+    Args:
+        data: The resume data.
+        preview: Whether to render in preview mode.
+
+    Returns:
+        A tuple containing the template name and context.
+
+    """
     template_name = data.get("template", "resume_no_bars")
 
     context = dict(data)
@@ -31,7 +40,7 @@ def build_html_context(
     context["resume_config"] = resume_config
     context["preview"] = preview
 
-    return f"{template_name}.html", context
+    return f"html/{template_name}.html", context
 
 
 def load_resume(
@@ -40,7 +49,17 @@ def load_resume(
     preview: bool = True,
     paths: config.Paths | None = None,
 ) -> tuple[str, dict[str, Any]]:
-    """Return the template name and render context for a resume."""
+    """Return the template name and render context for a resume.
+
+    Args:
+        name: The name of the resume to load.
+        preview: Whether to render in preview mode.
+        paths: The paths to use for resolving file locations.
+
+    Returns:
+        A tuple containing the template name and render context.
+
+    """
     resume_name = name or FILE_DEFAULT
     resolved_paths = paths or config.resolve_paths()
     data = get_content(resume_name, paths=resolved_paths)
@@ -52,7 +71,7 @@ def load_resume(
 def get_template_environment(
     templates_dir: str | Path | None = None,
 ) -> Environment:
-    """Create (once) and return the Jinja environment used for rendering."""
+    """Create and return the Jinja environment for rendering."""
     template_root = Path(templates_dir or config.TEMPLATE_LOC)
     loader = FileSystemLoader(str(template_root))
     env = Environment(
@@ -79,7 +98,17 @@ def render_resume_html(
     preview: bool = False,
     paths: config.Paths | None = None,
 ) -> tuple[str, str, dict[str, Any]]:
-    """Render a resume to an HTML string and return it with base path and context."""
+    """Render a resume to an HTML string.
+
+    Args:
+        name: The name of the resume to render.
+        preview: Whether to render in preview mode.
+        paths: The paths to use for resolving file locations.
+
+    Returns:
+        A tuple containing the rendered HTML, base path, and context.
+
+    """
     resolved_paths = paths or config.resolve_paths()
     template_name, context = load_resume(name, preview=preview, paths=resolved_paths)
     env = get_template_environment(str(resolved_paths.templates))

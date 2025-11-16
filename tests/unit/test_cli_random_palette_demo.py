@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 import yaml
 
-from simple_resume.cli_random_palette_demo import (
+from simple_resume.cli.random_palette_demo import (
     _random_description,
     _random_email,
     _random_linkedin,
@@ -237,7 +237,7 @@ class TestMainFunction:
         with (
             patch("sys.argv", ["cli_random_palette_demo.py"]),
             patch(
-                "simple_resume.cli_random_palette_demo.generate_random_yaml"
+                "simple_resume.cli.random_palette_demo.generate_random_yaml"
             ) as mock_generate,
         ):
             main()
@@ -271,7 +271,7 @@ class TestMainFunction:
                 ],
             ),
             patch(
-                "simple_resume.cli_random_palette_demo.generate_random_yaml"
+                "simple_resume.cli.random_palette_demo.generate_random_yaml"
             ) as mock_generate,
         ):
             main()
@@ -291,7 +291,7 @@ class TestMainFunction:
         with (
             patch("sys.argv", ["cli_random_palette_demo.py"]),
             patch("builtins.print") as mock_print,
-            patch("simple_resume.cli_random_palette_demo.generate_random_yaml"),
+            patch("simple_resume.cli.random_palette_demo.generate_random_yaml"),
         ):
             main()
 

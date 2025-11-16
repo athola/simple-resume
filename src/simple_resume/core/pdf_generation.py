@@ -8,17 +8,17 @@ from typing import Any, SupportsInt, cast
 
 from weasyprint import CSS, HTML
 
-from ..config import TEMPLATE_LOC
-from ..constants import RenderMode
-from ..exceptions import ConfigurationError, GenerationError, TemplateError
-from ..latex_renderer import (
+from simple_resume.config import TEMPLATE_LOC
+from simple_resume.constants import RenderMode
+from simple_resume.core.models import RenderPlan
+from simple_resume.exceptions import ConfigurationError, GenerationError, TemplateError
+from simple_resume.latex_renderer import (
     LatexCompilationError,
     compile_tex_to_pdf,
     render_resume_latex_from_data,
 )
-from ..rendering import get_template_environment
-from ..result import GenerationMetadata, GenerationResult
-from .models import RenderPlan
+from simple_resume.rendering import get_template_environment
+from simple_resume.result import GenerationMetadata, GenerationResult
 
 
 @dataclass(frozen=True)

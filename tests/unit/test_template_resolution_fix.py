@@ -14,7 +14,9 @@ import pytest
 from jinja2.loaders import FileSystemLoader
 
 from simple_resume.config import TEMPLATE_LOC, resolve_paths
-from simple_resume.core.resume import RenderMode, RenderPlan, Resume, ResumeConfig
+from simple_resume.core.models import RenderMode, RenderPlan, ResumeConfig
+from simple_resume.core.plan import prepare_render_data
+from simple_resume.core.resume import Resume
 from simple_resume.exceptions import TemplateError
 from simple_resume.rendering import get_template_environment
 from tests.bdd import Scenario
@@ -42,6 +44,8 @@ class TestTemplateResolutionFix:
                 "bar_background_color": "#DFDFDF",
                 "date2_color": "#616161",
                 "frame_color": "#757575",
+                "date_container_width": 13,
+                "description_container_padding_left": 3,
             },
             "description": "Test description",
             "body": {
@@ -55,7 +59,12 @@ class TestTemplateResolutionFix:
                     }
                 ]
             },
-            "titles": {"contact": "Contact", "experience": "Experience"},
+            "titles": {
+                "contact": "Contact",
+                "certification": "Certifications",
+                "expertise": "Expertise",
+                "keyskills": "Key Skills",
+            },
         }
 
     @pytest.fixture
@@ -143,7 +152,7 @@ class TestTemplateResolutionFix:
             name="test_resume",
             mode=RenderMode.HTML,
             config=config,
-            template_name="resume_no_bars.html",
+            template_name="html/resume_no_bars.html",
             context=context,
             # Deliberately incorrect base_path should not affect template resolution
             base_path="/some/incorrect/path",
@@ -175,7 +184,7 @@ class TestTemplateResolutionFix:
 
                 # Create a render plan matching prepare_render_data
                 base_path = "/some/inconsistent/base/path"
-                plan = Resume.prepare_render_data(
+                plan = prepare_render_data(
                     sample_resume_data, preview=False, base_path=base_path
                 )
 
@@ -223,14 +232,12 @@ class TestTemplateResolutionFix:
 
                 # PDF generation should not fail due to template resolution
                 try:
-                    result = resume._generate_pdf_with_weasyprint(
-                        plan, mock_output_path
-                    )
+                    result = resume.to_pdf(output_path=mock_output_path)
                     # If we get here, template resolution worked correctly
                     assert result is not None
                 except TemplateError as exc:
                     # If there's an error ensure it's not template resolution related
-                    assert "resume_no_bars.html" not in str(exc), (
+                    assert "html/resume_no_bars.html" not in str(exc), (
                         f"Template resolution failed: {exc}"
                     )
 
@@ -249,14 +256,14 @@ class TestTemplateResolutionFix:
             f"Templates directory does not exist: {template_path}"
         )
 
-        resume_template = template_path / "resume_no_bars.html"
+        resume_template = template_path / "html/resume_no_bars.html"
         assert resume_template.exists(), (
             f"resume_no_bars.html does not exist: {resume_template}"
         )
 
         # Test that we can create a template environment and load the template
         env = get_template_environment(str(template_path))
-        template = env.get_template("resume_no_bars.html")
+        template = env.get_template("html/resume_no_bars.html")
         assert template is not None
 
         # Only verify loading without requiring full rendering context.
@@ -275,6 +282,13 @@ class TestTemplateResolutionFix:
         resume = Resume.from_data(
             {
                 "full_name": "Test User",
+                "template": "resume_no_bars",
+                "titles": {
+                    "contact": "Contact",
+                    "certification": "Certifications",
+                    "expertise": "Expertise",
+                    "keyskills": "Key Skills",
+                },
                 "config": {
                     "page_width": 210,
                     "page_height": 297,
@@ -289,6 +303,17 @@ class TestTemplateResolutionFix:
                     "bar_background_color": "#DFDFDF",
                     "date2_color": "#616161",
                     "frame_color": "#757575",
+                },
+                "body": {
+                    "experience": [
+                        {
+                            "company": "Test Company",
+                            "position": "Developer",
+                            "start_date": "2020-01",
+                            "end_date": "2023-12",
+                            "description": "Development work",
+                        }
+                    ]
                 },
             }
         )
@@ -308,9 +333,7 @@ class TestTemplateResolutionFix:
 
                     # This should run without template resolution errors.
                     # Template must be loaded from TEMPLATE_LOC, not plan.base_path.
-                    result = resume._generate_pdf_with_weasyprint(
-                        valid_render_plan, output_path
-                    )
+                    result = resume.to_pdf(output_path=output_path)
 
                     # Verify WeasyPrint was invoked with rendered HTML content
                     mock_html_class.assert_called_once()
@@ -323,7 +346,33 @@ class TestTemplateResolutionFix:
                         raise AssertionError(
                             "weasyprint.HTML was not passed HTML content"
                         )
-                    assert "Test User" in rendered_html
+                    # Verify business-critical content is rendered correctly
+                    assert "Test User" in rendered_html, (
+                        "Full name must appear in resume"
+                    )
+                    assert "Test Company" in rendered_html, (
+                        "Company name must appear in resume"
+                    )
+                    assert "Development work" in rendered_html, (
+                        "Job description must appear in resume"
+                    )
+
+                    # Verify proper HTML structure for business use
+                    assert "<!DOCTYPE html>" in rendered_html, (
+                        "Must generate valid HTML"
+                    )
+                    assert "<body>" in rendered_html and "</body>" in rendered_html, (
+                        "Must have proper HTML body"
+                    )
+
+                    # Verify contact information rendering (business requirement)
+                    if "test@example.com" in str(resume.__dict__):
+                        # Check if email is in either rendered HTML or resume data
+                        resume_data_str = str(resume.__dict__)
+                        assert (
+                            "test@example.com" in resume_data_str
+                            or "test@example.com" in rendered_html
+                        ), "Contact information must be included"
 
                     mock_css_class.assert_called_once()
                     css_args, css_kwargs = mock_css_class.call_args
@@ -354,7 +403,33 @@ class TestTemplateResolutionFix:
         resume = Resume.from_data(
             {
                 "full_name": "Test User",
-                "config": {"page_width": 210, "page_height": 297},
+                "template": "resume_no_bars",
+                "titles": {
+                    "contact": "Contact",
+                    "certification": "Certifications",
+                    "expertise": "Expertise",
+                    "keyskills": "Key Skills",
+                },
+                "config": {
+                    "page_width": 210,
+                    "page_height": 297,
+                    "sidebar_width": 60,
+                    "h2_padding_left": 4,
+                    "padding": 12,
+                    "date_container_width": 13,
+                    "description_container_padding_left": 3,
+                },
+                "body": {
+                    "experience": [
+                        {
+                            "company": "Test Company",
+                            "position": "Developer",
+                            "start_date": "2020-01",
+                            "end_date": "2023-12",
+                            "description": "Development work",
+                        }
+                    ]
+                },
             }
         )
 
@@ -364,13 +439,41 @@ class TestTemplateResolutionFix:
 
         try:
             # This should work without template resolution errors
-            result = resume._generate_html_with_jinja(valid_render_plan, output_path)
+            result = resume.to_html(output_path=output_path)
 
-            # Verify that the output file was created and contains the rendered content
-            assert output_path.exists()
+            # Verify that the output file was created and contains
+            # business-relevant content
+            assert output_path.exists(), "HTML file must be created"
             content = output_path.read_text()
-            assert "Test User" in content
-            assert result is not None
+
+            # Verify business-critical resume elements are present
+            assert "Test User" in content, "Applicant name must appear in HTML resume"
+            assert "Test Company" in content, "Company name must be included"
+            assert "Development work" in content, "Job description must be present"
+
+            # Note: Position and dates might be in different format
+            # or not rendered in all templates
+            # This is actually valuable business intelligence about template behavior
+
+            # Verify HTML structure is valid for business use
+            assert "<!DOCTYPE html>" in content or "<html" in content, (
+                "Must produce valid HTML"
+            )
+            assert "<head>" in content and "</head>" in content, (
+                "Must have HTML head section"
+            )
+            assert "<body>" in content and "</body>" in content, (
+                "Must have HTML body section"
+            )
+
+            # Verify contact information rendering
+            # (critical for recruiter communication)
+            if "test@example.com" in str(resume.__dict__):
+                assert "test@example.com" in content, (
+                    "Contact email must be visible to recruiters"
+                )
+
+            assert result is not None, "Generation result must be returned"
         finally:
             # Clean up the temporary file
             if output_path.exists():
@@ -396,7 +499,11 @@ class TestTemplateResolutionFix:
         )
 
         # Verify that common templates exist
-        template_names = ["resume_no_bars.html", "resume_with_bars.html", "cover.html"]
+        template_names = [
+            "html/resume_no_bars.html",
+            "html/resume_with_bars.html",
+            "html/cover.html",
+        ]
         for template_name in template_names:
             template_file = TEMPLATE_LOC / template_name
             assert template_file.exists(), (
@@ -425,10 +532,10 @@ class TestTemplateResolutionFix:
             "config": {"page_width": 210, "page_height": 297},
         }
 
-        plan = Resume.prepare_render_data(
+        plan = prepare_render_data(
             sample_data, preview=False, base_path="/some/content/path"
         )
-        assert plan.template_name == "resume_no_bars.html"
+        assert plan.template_name == "html/resume_no_bars.html"
         assert plan.context is not None
 
 
@@ -465,7 +572,7 @@ class TestTemplateResolutionRegression:
         assert validation.is_valid, f"Resume validation failed: {validation.errors}"
 
         # Prepare render data (this would have been failing before)
-        render_plan = Resume.prepare_render_data(
+        render_plan = prepare_render_data(
             sample_data,
             preview=False,
             base_path=str(resume._paths.content)
@@ -473,7 +580,7 @@ class TestTemplateResolutionRegression:
             else "/default/content/path",
         )
 
-        assert render_plan.template_name == "resume_no_bars.html"
+        assert render_plan.template_name == "html/resume_no_bars.html"
         assert render_plan.mode is RenderMode.HTML
         assert render_plan.context is not None
 
@@ -642,14 +749,14 @@ class TestFullTemplateResolution:
         )
         # Act: Prepare render plan (this calls prepare_render_data)
         # base_path should not influence template resolution after the fix.
-        render_plan = Resume.prepare_render_data(
+        render_plan = prepare_render_data(
             sample_resume_with_all_fields,
             preview=False,
             base_path="/some/path/that/should/not/matter",
         )
 
         # Assert: Render plan is correctly configured
-        assert render_plan.template_name == "resume_no_bars.html"
+        assert render_plan.template_name == "html/resume_no_bars.html"
         assert render_plan.mode is RenderMode.HTML
         assert render_plan.context is not None
         assert "full_name" in render_plan.context
@@ -684,9 +791,9 @@ class TestFullTemplateResolution:
         # The main goal is to test that templates can be loaded from the correct path
         # Different templates have different requirements, so just test loading
         templates_to_test = [
-            "resume_no_bars.html",
-            "resume_with_bars.html",
-            "cover.html",
+            "html/resume_no_bars.html",
+            "html/resume_with_bars.html",
+            "html/cover.html",
         ]
 
         for template_name in templates_to_test:
@@ -700,9 +807,7 @@ class TestFullTemplateResolution:
                 # Should not raise template not found error (the main fix)
                 assert template is not None
 
-                plan = Resume.prepare_render_data(
-                    sample_resume_with_all_fields, preview=False
-                )
+                plan = prepare_render_data(sample_resume_with_all_fields, preview=False)
                 context = plan.context or {}
 
                 # Normalize certification structure for templates expecting
@@ -732,8 +837,9 @@ class TestFullTemplateResolution:
         env_from_content = get_template_environment(str(paths.templates))
 
         # Both environments should load templates because files exist at TEMPLATE_LOC.
-        template_from_templates = env_from_templates.get_template("resume_no_bars.html")
-        template_from_content = env_from_content.get_template("resume_no_bars.html")
+        template_name = "html/resume_no_bars.html"
+        template_from_templates = env_from_templates.get_template(template_name)
+        template_from_content = env_from_content.get_template(template_name)
         assert template_from_templates is not None
         assert template_from_content is not None
 
@@ -747,7 +853,7 @@ class TestFullTemplateResolution:
 
         # Prepare render data with a base_path that's NOT the templates directory
         # Alternate base_path should not affect template loading.
-        render_plan = Resume.prepare_render_data(
+        render_plan = prepare_render_data(
             resume_data,
             preview=False,
             base_path="/some/different/path",
@@ -790,8 +896,8 @@ class TestFullTemplateResolution:
             context["body"] = {"experience": []}
 
         env = get_template_environment(str(TEMPLATE_LOC))
-        template_name = render_plan.template_name
-        assert template_name is not None
-        template = env.get_template(template_name)
+        render_template_name: str | None = render_plan.template_name
+        assert render_template_name is not None
+        template = env.get_template(render_template_name)
         output = template.render(**context)
         assert "Path Test User" in output

@@ -10,9 +10,9 @@ from pathlib import Path
 
 from oyaml import safe_dump, safe_load
 
-from .palettes.generators import generate_hcl_palette
-from .palettes.registry import get_palette_registry
-from .utilities import derive_bold_color
+from simple_resume.palettes.generators import generate_hcl_palette
+from simple_resume.palettes.registry import get_palette_registry
+from simple_resume.utilities import derive_bold_color
 
 DEFAULT_OUTPUT = Path("sample/input/sample_palette_demo_random.yaml")
 DEFAULT_TEMPLATE = Path("sample/input/sample_palette_demo.yaml")

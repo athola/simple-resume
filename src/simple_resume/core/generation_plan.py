@@ -9,9 +9,9 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from ..config import Paths
-from ..constants import OutputFormat
-from .models import GenerationConfig
+from simple_resume.config import Paths
+from simple_resume.constants import OutputFormat
+from simple_resume.core.models import GenerationConfig
 
 
 class CommandType(str, Enum):

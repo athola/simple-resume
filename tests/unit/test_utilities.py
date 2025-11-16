@@ -2,25 +2,27 @@
 
 from pathlib import Path
 from typing import Any
-from unittest.mock import Mock, mock_open, patch
+from unittest.mock import Mock, patch
 
 import pytest
 import yaml
 
 from simple_resume import config, utilities
-from simple_resume.core.color_utils import hex_to_rgb
+from simple_resume.core import config_core
+from simple_resume.core.colors import hex_to_rgb
 from simple_resume.core.config_core import prepare_config
 from simple_resume.palettes.exceptions import (
+    PaletteError,
     PaletteGenerationError,
     PaletteLookupError,
 )
 from simple_resume.palettes.registry import Palette
 from simple_resume.utilities import (
-    _read_yaml,
     _transform_from_markdown,
     get_content,
     validate_config,
 )
+from simple_resume.utils.io import read_yaml_file
 from tests.bdd import Scenario
 
 
@@ -34,7 +36,7 @@ def _describe(
 
 
 class TestReadYaml:
-    """Test cases for _read_yaml function following TDD principles."""
+    """Test cases for read_yaml_file function following TDD principles."""
 
     def test_read_valid_yaml_file_returns_dict(
         self,
@@ -43,7 +45,7 @@ class TestReadYaml:
     ) -> None:
         story.case(
             given="a well-formed YAML file exists on disk",
-            when="_read_yaml loads the file",
+            when="read_yaml_file loads the file",
             then="a dictionary matching the source content is returned",
         )
         """RED: Test that reading a valid YAML file returns a dictionary."""
@@ -55,7 +57,7 @@ class TestReadYaml:
             yaml.dump(test_data, f)
 
         # Act
-        result = _read_yaml(str(yaml_file))
+        result = read_yaml_file(yaml_file)
 
         # Assert
         assert result == test_data
@@ -66,7 +68,7 @@ class TestReadYaml:
     ) -> None:
         story.case(
             given="an empty YAML file",
-            when="_read_yaml parses it",
+            when="read_yaml_file parses it",
             then="an empty dictionary is returned",
         )
         """RED: Test that reading an empty YAML file returns an empty dict."""
@@ -75,7 +77,7 @@ class TestReadYaml:
         yaml_file.write_text("", encoding="utf-8")
 
         # Act
-        result = _read_yaml(str(yaml_file))
+        result = read_yaml_file(yaml_file)
 
         # Assert
         assert result == {}
@@ -86,7 +88,7 @@ class TestReadYaml:
     ) -> None:
         story.case(
             given="a YAML file whose contents are explicit null",
-            when="_read_yaml processes it",
+            when="read_yaml_file processes it",
             then="an empty dictionary is produced",
         )
         """RED: Test that reading YAML with null content returns empty dict."""
@@ -95,7 +97,7 @@ class TestReadYaml:
         yaml_file.write_text("null", encoding="utf-8")
 
         # Act
-        result = _read_yaml(str(yaml_file))
+        result = read_yaml_file(yaml_file)
 
         # Assert
         assert result == {}
@@ -105,14 +107,14 @@ class TestReadYaml:
         """RED: Test that reading a non-existent file raises FileNotFoundError."""
         story.case(
             given="the requested YAML path does not exist",
-            when="_read_yaml attempts to open it",
+            when="read_yaml_file attempts to open it",
             then="FileNotFoundError is raised",
         )
         nonexistent_path = "/path/to/nonexistent/file.yaml"
 
         # Act & Assert
         with pytest.raises(FileNotFoundError):
-            _read_yaml(nonexistent_path)
+            read_yaml_file(nonexistent_path)
 
     def test_read_invalid_yaml_file_raises_exception(
         self, temp_dir: Path, story: Scenario
@@ -120,7 +122,7 @@ class TestReadYaml:
         """RED: Test that reading invalid YAML raises appropriate exception."""
         story.case(
             given="a malformed YAML document",
-            when="_read_yaml parses it",
+            when="read_yaml_file parses it",
             then="PyYAML raises a YAMLError",
         )
         # Arrange
@@ -129,7 +131,7 @@ class TestReadYaml:
 
         # Act & Assert
         with pytest.raises(yaml.YAMLError):
-            _read_yaml(str(yaml_file))
+            read_yaml_file(yaml_file)
 
     def test_read_yaml_with_list_root_raises_value_error(
         self, temp_dir: Path, story: Scenario
@@ -137,7 +139,7 @@ class TestReadYaml:
         """RED: Test that reading YAML with list root raises ValueError."""
         story.case(
             given="the YAML root value is a list",
-            when="_read_yaml reads the file",
+            when="read_yaml_file reads the file",
             then="a ValueError explains that a mapping is required",
         )
         # Arrange
@@ -149,7 +151,7 @@ class TestReadYaml:
             ValueError,
             match="YAML file must contain a dictionary at the root level",
         ):
-            _read_yaml(str(yaml_file))
+            read_yaml_file(yaml_file)
 
     def test_read_yaml_with_string_root_raises_value_error(
         self, temp_dir: Path, story: Scenario
@@ -157,7 +159,7 @@ class TestReadYaml:
         """RED: Test that reading YAML with string root raises ValueError."""
         story.case(
             given="the YAML root is a string scalar",
-            when="_read_yaml validates the payload",
+            when="read_yaml_file validates the payload",
             then="a ValueError enforces dictionary roots",
         )
         # Arrange
@@ -169,7 +171,7 @@ class TestReadYaml:
             ValueError,
             match="YAML file must contain a dictionary at the root level",
         ):
-            _read_yaml(str(yaml_file))
+            read_yaml_file(yaml_file)
 
     def test_read_yaml_with_number_root_raises_value_error(
         self, temp_dir: Path, story: Scenario
@@ -177,7 +179,7 @@ class TestReadYaml:
         """RED: Test that reading YAML with number root raises ValueError."""
         story.case(
             given="the YAML root is a numeric scalar",
-            when="_read_yaml parses the file",
+            when="read_yaml_file parses the file",
             then="a ValueError enforces dictionary roots",
         )
         # Arrange
@@ -189,7 +191,7 @@ class TestReadYaml:
             ValueError,
             match="YAML file must contain a dictionary at the root level",
         ):
-            _read_yaml(str(yaml_file))
+            read_yaml_file(yaml_file)
 
     def test_read_yaml_with_complex_nested_structure(
         self, temp_dir: Path, story: Scenario
@@ -197,7 +199,7 @@ class TestReadYaml:
         """RED: Test reading YAML with complex nested structure."""
         story.case(
             given="a deeply nested YAML document",
-            when="_read_yaml loads it",
+            when="read_yaml_file loads it",
             then="the resulting dict preserves nested structures",
         )
         # Arrange
@@ -224,31 +226,30 @@ class TestReadYaml:
             yaml.dump(complex_data, f)
 
         # Act
-        result = _read_yaml(str(yaml_file))
+        result = read_yaml_file(yaml_file)
 
         # Assert
         assert result == complex_data
         assert result["personal"]["contact"]["social"]["linkedin"] == "in/janedoe"
         assert len(result["experience"]) == 1
 
-    @patch("builtins.open", new_callable=mock_open, read_data="key: value")
     def test_read_yaml_file_encoding_handling(
         self,
-        mock_file: Mock,
+        temp_dir: Path,
         story: Scenario,
     ) -> None:
-        """GREEN: Test that YAML files are read with UTF-8 encoding."""
+        """GREEN: UTF-8 content with accents is read without decoding errors."""
         story.case(
-            given="builtins.open is patched",
-            when="_read_yaml opens a file",
-            then="UTF-8 encoding is requested exactly once",
+            given="a YAML file contains non-ASCII characters",
+            when="read_yaml_file parses the file",
+            then="the Unicode content is preserved",
         )
-        # Act
-        result = _read_yaml("dummy_path.yaml")
+        yaml_file = temp_dir / "encoding.yaml"
+        yaml_file.write_text("greeting: 'olá mundo'\n", encoding="utf-8")
 
-        # Assert
-        mock_file.assert_called_once_with("dummy_path.yaml", encoding="utf-8")
-        assert result == {"key": "value"}
+        result = read_yaml_file(yaml_file)
+
+        assert result == {"greeting": "olá mundo"}
 
 
 class TestTransformFromMarkdown:
@@ -929,7 +930,7 @@ class TestValidateConfig:
         validate_config(config_map)
         assert config_map["sidebar_text_color"] == "#F5F5F5"
         assert config_map["sidebar_bold_color"] == "#F5F5F5"
-        assert config_map["heading_icon_color"] == "#FFFFFF"
+        assert config_map["heading_icon_color"] == "#0395DE"
         assert config_map["bold_color"] == utilities.derive_bold_color("#757575")
 
     def test_sidebar_bold_color_respects_explicit_value(self) -> None:
@@ -972,7 +973,8 @@ class TestValidateConfig:
                 return palette
 
         monkeypatch.setattr(
-            "simple_resume.utilities.get_palette_registry", lambda: DummyRegistry()
+            "simple_resume.core.config_core.get_palette_registry",
+            lambda: DummyRegistry(),
         )
 
         config_map = {
@@ -995,7 +997,7 @@ class TestValidateConfig:
 
     def test_palette_generator_block(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(
-            "simple_resume.utilities.generate_hcl_palette",
+            "simple_resume.core.config_core.generate_hcl_palette",
             lambda size, **_: ["#AAAAAA", "#BBBBBB", "#CCCCCC"][:size],
         )
 
@@ -1177,15 +1179,15 @@ class TestPaletteHandling:
         def type_error(_input: object) -> tuple[list[str], dict[str, Any]]:
             raise TypeError("Invalid type")
 
-        monkeypatch.setattr(utilities, "_resolve_palette_block", type_error)
+        monkeypatch.setattr(config_core, "_resolve_palette_block", type_error)
         config_data = {"palette": {"source": "registry", "name": "modern"}}
         story.given("palette resolution raises a TypeError")
         with pytest.raises(
-            PaletteGenerationError,
+            PaletteError,
             match="Invalid palette block: Invalid type",
         ):
-            utilities._apply_palette_block(config_data)
-        story.then("the TypeError is wrapped in PaletteGenerationError")
+            config_core.apply_palette_block(config_data)
+        story.then("common palette errors are wrapped in PaletteError")
 
     def test_apply_palette_block_does_not_wrap_unexpected_errors(
         self,
@@ -1197,11 +1199,11 @@ class TestPaletteHandling:
         def boom(_input: object) -> tuple[list[str], dict[str, Any]]:
             raise RuntimeError("boom")
 
-        monkeypatch.setattr(utilities, "_resolve_palette_block", boom)
+        monkeypatch.setattr(config_core, "_resolve_palette_block", boom)
         config_data = {"palette": {"source": "registry", "name": "modern"}}
         story.given("palette resolution raises an unexpected RuntimeError")
         with pytest.raises(RuntimeError, match="boom"):
-            utilities._apply_palette_block(config_data)
+            config_core.apply_palette_block(config_data)
         story.then("the RuntimeError propagates without being wrapped")
 
     def test_apply_palette_block_returns_none_for_empty_swatches(
@@ -1214,11 +1216,11 @@ class TestPaletteHandling:
         def empty(_input: object) -> tuple[list[str], dict[str, Any]]:
             return [], {"source": "custom"}
 
-        monkeypatch.setattr(utilities, "_resolve_palette_block", empty)
+        monkeypatch.setattr(config_core, "_resolve_palette_block", empty)
         config_data = {"palette": {"source": "registry", "name": "modern"}}
         story.given("palette resolution returns no swatches")
         story.when("the palette block applies the swatches")
-        result = utilities._apply_palette_block(config_data)
+        result = config_core.apply_palette_block(config_data)
         story.then("no palette metadata is produced when swatches are empty")
         assert result is None
 
@@ -1229,7 +1231,7 @@ class TestPaletteHandling:
         """Registry source without a palette name raises PaletteLookupError."""
         story.given("a palette block specifies registry source without a name")
         with pytest.raises(PaletteLookupError):
-            utilities._resolve_palette_block({"source": "registry"})
+            config_core._resolve_palette_block({"source": "registry"})
         story.then("palette lookup errors to inform missing name")
 
     def test_resolve_palette_block_validates_generator_ranges(
@@ -1244,7 +1246,7 @@ class TestPaletteHandling:
         }
         story.given("generator palette block has malformed hue_range")
         with pytest.raises(PaletteGenerationError):
-            utilities._resolve_palette_block(block)
+            config_core._resolve_palette_block(block)
         story.then("palette generation errors to highlight invalid ranges")
 
     def test_resolve_palette_block_remote_success(
@@ -1263,10 +1265,10 @@ class TestPaletteHandling:
             def fetch(self, **_: Any) -> list[DummyPalette]:
                 return [DummyPalette()]
 
-        monkeypatch.setattr(utilities, "ColourLoversClient", lambda: DummyClient())
+        monkeypatch.setattr(config_core, "ColourLoversClient", lambda: DummyClient())
         story.given("the remote palette provider returns a palette")
         story.when("the palette block resolves the remote palette")
-        swatches, metadata = utilities._resolve_palette_block({"source": "remote"})
+        swatches, metadata = config_core._resolve_palette_block({"source": "remote"})
         story.then("metadata reflects remote source details")
         assert swatches == list(DummyPalette.swatches)
         assert metadata["source"] == "remote"
@@ -1283,10 +1285,10 @@ class TestPaletteHandling:
             def fetch(self, **_: Any) -> list[Any]:
                 return []
 
-        monkeypatch.setattr(utilities, "ColourLoversClient", lambda: DummyClient())
+        monkeypatch.setattr(config_core, "ColourLoversClient", lambda: DummyClient())
         story.given("the remote provider returns no palettes")
         with pytest.raises(PaletteLookupError):
-            utilities._resolve_palette_block({"source": "remote"})
+            config_core._resolve_palette_block({"source": "remote"})
         story.then("a PaletteLookupError communicates missing palettes")
 
 

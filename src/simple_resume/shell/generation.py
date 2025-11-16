@@ -19,16 +19,18 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol, TextIO, cast
 
-from .. import config
-from ..core.resume import RenderMode, RenderPlan, Resume
-from ..exceptions import GenerationError
-from ..latex_renderer import (
+from simple_resume import config
+from simple_resume.constants import RenderMode
+from simple_resume.core.models import RenderPlan
+from simple_resume.core.plan import prepare_render_data
+from simple_resume.exceptions import GenerationError
+from simple_resume.latex_renderer import (
     LatexCompilationError,
     compile_tex_to_html,
     compile_tex_to_pdf,
 )
-from ..rendering import get_template_environment
-from ..utilities import get_content
+from simple_resume.rendering import get_template_environment
+from simple_resume.utilities import get_content
 
 try:
     from weasyprint import CSS as WEASYPRINT_CSS
@@ -292,7 +294,7 @@ class ResumeGenerator:
         raw_data = get_content(name, paths=paths, transform_markdown=False)
 
         # Create render plan using core logic (pure)
-        plan = Resume.prepare_render_data(
+        plan = prepare_render_data(
             source_yaml_content=raw_data, preview=False, base_path=str(paths.content)
         )
 
@@ -321,7 +323,7 @@ class ResumeGenerator:
         raw_data = get_content(name, paths=paths, transform_markdown=False)
 
         # Create render plan using core logic (pure)
-        plan = Resume.prepare_render_data(
+        plan = prepare_render_data(
             source_yaml_content=raw_data, preview=True, base_path=str(paths.content)
         )
 

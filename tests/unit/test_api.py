@@ -18,12 +18,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-import simple_resume.generation as generation_module
 from simple_resume import (
-    BatchGenerationResult,
     ConfigurationError,
     GenerationError,
-    GenerationResult,
     Resume,
     ValidationError,
     generate,
@@ -31,15 +28,19 @@ from simple_resume import (
 )
 from simple_resume.config import Paths
 from simple_resume.constants import OutputFormat
+from simple_resume.core.models import GenerationConfig
 from simple_resume.exceptions import SimpleResumeError
-from simple_resume.generation import (
-    GenerateOptions,
-    GenerationConfig,
+
+# Import module first to avoid name conflicts
+from simple_resume.generate import core as gen_core
+from simple_resume.generate import (
     generate_all,
     generate_html,
     generate_pdf,
     generate_resume,
 )
+from simple_resume.generate.core import GenerateOptions
+from simple_resume.result import BatchGenerationResult, GenerationResult
 from simple_resume.session import ResumeSession, SessionConfig
 from tests.bdd import Scenario
 
@@ -55,10 +56,27 @@ class TestResumeSymmetricIO:
             "email": "john@example.com",
             "phone": "+1-555-0123",
             "description": "Software engineer with 5 years experience",
+            "template": "resume_no_bars",
+            "titles": {
+                "contact": "Contact",
+                "certification": "Certifications",
+                "expertise": "Expertise",
+                "keyskills": "Key Skills",
+            },
             "config": {
                 "page_width": 210,
                 "page_height": 297,
                 "theme_color": "#0395DE",
+                "sidebar_width": 60,
+                "h2_padding_left": 4,
+                "padding": 12,
+                "sidebar_color": "#F6F6F6",
+                "sidebar_text_color": "#000000",
+                "bar_background_color": "#DFDFDF",
+                "date2_color": "#616161",
+                "frame_color": "#757575",
+                "date_container_width": 13,
+                "description_container_padding_left": 3,
             },
             "body": {
                 "experience": [
@@ -156,25 +174,37 @@ class TestResumeSymmetricIO:
         sample_resume_data: dict[str, object],
         temp_paths: tuple[Paths, Path],
     ) -> None:
-        story.given("a Resume bound to resolved paths and mocked generators")
+        story.given("a Resume bound to resolved paths")
         paths, _ = temp_paths
         resume = Resume.from_data(sample_resume_data, paths=paths)
 
+        # Mock the actual strategy execution to avoid template/config issues
         with (
-            patch.object(resume, "_generate_pdf") as mock_pdf,
-            patch.object(resume, "_generate_html") as mock_html,
+            patch(
+                "simple_resume.shell.strategies.WeasyPrintStrategy.generate_pdf"
+            ) as mock_pdf,
+            patch(
+                "simple_resume.core.html_generation.generate_html_with_jinja"
+            ) as mock_html,
         ):
             mock_result = Mock(spec=GenerationResult)
+            mock_result.output_path = Path("output.pdf")
+            mock_result.size = 1024
+            mock_result.open = Mock()
             mock_pdf.return_value = mock_result
             mock_html.return_value = mock_result
 
             story.when("calling generate for PDF, HTML, then an unsupported format")
-            resume.generate(format="pdf")
-            resume.generate(format="html")
+            result_pdf = resume.generate(format="pdf")
+            result_html = resume.generate(format="html")
 
-            story.then("the appropriate generator is invoked and invalid formats fail")
+            story.then("the appropriate generator is invoked and returns results")
             mock_pdf.assert_called_once()
             mock_html.assert_called_once()
+            assert result_pdf == mock_result
+            assert result_html == mock_result
+
+            story.then("invalid formats raise ValueError")
             with pytest.raises(ValueError, match="Unsupported format"):
                 resume.generate(format="invalid")
 
@@ -453,6 +483,7 @@ class TestGenerationResult:
         for i in range(3):
             mock_result = Mock(spec=GenerationResult)
             mock_result.exists = True
+            mock_result.size = 1024
             results[f"resume{i}"] = mock_result
 
         story.when("assembling a BatchGenerationResult")
@@ -592,7 +623,7 @@ config:
 
             yield input_dir, output_dir, templates_dir, static_dir
 
-    @patch("simple_resume.generation.ResumeSession")
+    @patch("simple_resume.generate.core.ResumeSession")
     def test_generate_pdf_function(
         self,
         mock_session_class: Mock,
@@ -603,6 +634,7 @@ config:
         input_dir, _, _, _ = temp_generation_paths
         mock_session = Mock()
         mock_result = Mock(spec=GenerationResult)
+        mock_result.size = 1024
         mock_resume = Mock()
         mock_resume.with_config.return_value.to_pdf.return_value = mock_result
         mock_session.resume.return_value = mock_resume
@@ -623,7 +655,7 @@ config:
         mock_resume.with_config.assert_called_once_with(theme_color="#FF0000")
         mock_resume.with_config.return_value.to_pdf.assert_called_once()
 
-    @patch("simple_resume.generation.ResumeSession")
+    @patch("simple_resume.generate.core.ResumeSession")
     def test_generate_html_function(
         self,
         mock_session_class: Mock,
@@ -634,6 +666,7 @@ config:
         input_dir, _, _, _ = temp_generation_paths
         mock_session = Mock()
         mock_result = Mock(spec=GenerationResult)
+        mock_result.size = 1024
         mock_session.resume.return_value.to_html.return_value = mock_result
         mock_session_class.return_value.__enter__.return_value = mock_session
 
@@ -652,7 +685,7 @@ config:
             open_after=False, browser="firefox"
         )
 
-    @patch("simple_resume.generation.ResumeSession")
+    @patch("simple_resume.generate.core.ResumeSession")
     def test_generate_all_function(
         self,
         mock_session_class: Mock,
@@ -676,7 +709,7 @@ config:
         story.then("a mapping of formats to results is returned")
         assert results == {"pdf": mock_pdf_result, "html": mock_html_result}
 
-    @patch("simple_resume.generation.ResumeSession")
+    @patch("simple_resume.generate.core.ResumeSession")
     def test_generate_resume_function(
         self,
         mock_session_class: Mock,
@@ -687,6 +720,7 @@ config:
         input_dir, _, _, _ = temp_generation_paths
         mock_session = Mock()
         mock_result = Mock(spec=GenerationResult)
+        mock_result.size = 1024
         mock_session.resume.return_value.to_pdf.return_value = mock_result
         mock_session_class.return_value.__enter__.return_value = mock_session
 
@@ -798,9 +832,11 @@ class TestConvenienceHelpers:
         ) -> GenerationResult:
             nonlocal captured_config
             captured_config = config
-            return Mock(spec=GenerationResult)
+            mock_result = Mock(spec=GenerationResult)
+            mock_result.size = 1024
+            return mock_result
 
-        monkeypatch.setattr(generation_module, "generate_pdf", fake_generate_pdf)
+        monkeypatch.setattr(gen_core, "generate_pdf", fake_generate_pdf)
 
         story.when("generate() runs with default parameters")
         results = generate(resume_path, GenerateOptions())
@@ -831,7 +867,7 @@ class TestConvenienceHelpers:
                 results[label] = f"result-{label}"
             return results
 
-        monkeypatch.setattr(generation_module, "generate_all", fake_generate_all)
+        monkeypatch.setattr(gen_core, "generate_all", fake_generate_all)
 
         story.when("generate() is called with pdf and html formats")
         results = generate(
@@ -861,7 +897,7 @@ class TestConvenienceHelpers:
             captured_config = config
             return "HTML"
 
-        monkeypatch.setattr(generation_module, "generate_html", fake_generate_html)
+        monkeypatch.setattr(gen_core, "generate_html", fake_generate_html)
 
         story.when("preview() is invoked")
         result = preview(resume_path)

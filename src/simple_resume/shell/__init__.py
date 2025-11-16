@@ -9,6 +9,19 @@ from .generation import (
     ResumeGenerator,
     WeasyPrintWriter,
 )
+from .rendering_operations import (
+    create_backend_injector,
+    create_generation_result,
+    generate_html_with_jinja,
+    generate_pdf_with_weasyprint,
+    open_file_in_browser,
+)
+from .strategies import (
+    LatexStrategy,
+    PdfGenerationRequest,
+    PdfGenerationStrategy,
+    WeasyPrintStrategy,
+)
 
 __all__ = [
     "ResumeGenerator",
@@ -18,4 +31,13 @@ __all__ = [
     "HtmlWriter",
     "PrintLogger",
     "PageSpec",
+    "create_backend_injector",
+    "create_generation_result",
+    "generate_html_with_jinja",
+    "generate_pdf_with_weasyprint",
+    "open_file_in_browser",
+    "PdfGenerationStrategy",
+    "WeasyPrintStrategy",
+    "LatexStrategy",
+    "PdfGenerationRequest",
 ]

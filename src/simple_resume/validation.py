@@ -1,8 +1,4 @@
-"""Provide validation functions for resume inputs and files.
-
-These functions validate entities like YAML files, paths, and data structures,
-raising a `ValidationError` or `FileSystemError` on failure.
-"""
+"""Provide validation functions for resume inputs and files."""
 
 import re
 from pathlib import Path
@@ -11,9 +7,9 @@ from typing import Any
 from .constants import (
     MAX_FILE_SIZE_MB,
     SUPPORTED_FORMATS,
-    YAML_EXTENSIONS,
     OutputFormat,
 )
+from .constants.files import SUPPORTED_YAML_EXTENSIONS
 from .exceptions import ConfigurationError, FileSystemError, ValidationError
 
 EMAIL_REGEX = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -26,14 +22,14 @@ def validate_format(
     """Validate and normalize a format string.
 
     Args:
-        format_str: Format string/enum to validate (pdf, html, latex).
-        param_name: Parameter name for error messages.
+        format_str: The format string or enum to validate.
+        param_name: The parameter name for error messages.
 
     Returns:
-        `OutputFormat` enum value.
+        An `OutputFormat` enum value.
 
     Raises:
-        `ValidationError`: If the format is not supported.
+        ValidationError: If the format is not supported.
 
     """
     if not format_str:
@@ -64,16 +60,16 @@ def validate_file_path(
     """Validate a file path.
 
     Args:
-        file_path: Path to validate.
+        file_path: The path to validate.
         must_exist: If `True`, the path must exist.
-        must_be_file: If `True`, the path must be a file (not a directory).
+        must_be_file: If `True`, the path must be a file.
         allowed_extensions: If provided, the file must have one of these extensions.
 
     Returns:
-        Validated `Path` object.
+        A validated `Path` object.
 
     Raises:
-        `FileSystemError`: If path validation fails.
+        FileSystemError: If path validation fails.
 
     """
     if not file_path:
@@ -114,15 +110,15 @@ def validate_directory_path(
     """Validate a directory path.
 
     Args:
-        dir_path: Directory path to validate.
+        dir_path: The directory path to validate.
         must_exist: If `True`, the directory must exist.
         create_if_missing: If `True`, create the directory if it doesn't exist.
 
     Returns:
-        Validated `Path` object.
+        A validated `Path` object.
 
     Raises:
-        `FileSystemError`: If path validation fails.
+        FileSystemError: If path validation fails.
 
     """
     if not dir_path:
@@ -152,13 +148,13 @@ def validate_template_name(template: str) -> str:
     """Validate a template name.
 
     Args:
-        template: Template name to validate.
+        template: The template name to validate.
 
     Returns:
-        Validated template name.
+        The validated template name.
 
     Raises:
-        `ConfigurationError`: If the template is invalid.
+        ConfigurationError: If the template name is invalid.
 
     """
     if not template:
@@ -182,31 +178,31 @@ def validate_yaml_file(file_path: str | Path) -> Path:
     """Validate a YAML resume file.
 
     Args:
-        file_path: Path to YAML file.
+        file_path: The path to the YAML file.
 
     Returns:
-        Validated `Path` object.
+        A validated `Path` object.
 
     Raises:
-        `FileSystemError`: If file validation fails.
+        FileSystemError: If file validation fails.
 
     """
     return validate_file_path(
         file_path,
         must_exist=True,
         must_be_file=True,
-        allowed_extensions=YAML_EXTENSIONS,
+        allowed_extensions=tuple(SUPPORTED_YAML_EXTENSIONS),
     )
 
 
 def validate_resume_data(data: dict[str, Any]) -> None:
-    """Validate basic resume data structure.
+    """Validate the basic structure of the resume data.
 
     Args:
-        data: Resume data dictionary.
+        data: A resume data dictionary.
 
     Raises:
-        `ValidationError`: If the data structure is invalid.
+        ValidationError: If the data structure is invalid.
 
     """
     if not isinstance(data, dict):
@@ -236,14 +232,14 @@ def validate_output_path(output_path: str | Path, format_type: str) -> Path:
     """Validate the output file path for a generated resume.
 
     Args:
-        output_path: Output file path.
-        format_type: Format type (pdf, html).
+        output_path: The output file path.
+        format_type: The output format (e.g., "pdf", "html").
 
     Returns:
-        Validated `Path` object.
+        A validated `Path` object.
 
     Raises:
-        `FileSystemError`: If path validation fails.
+        FileSystemError: If path validation fails.
 
     """
     path = Path(output_path) if isinstance(output_path, str) else output_path

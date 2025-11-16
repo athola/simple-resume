@@ -7,8 +7,8 @@ import argparse
 import json
 import sys
 
-from .registry import get_palette_registry
-from .sources import build_palettable_registry_snapshot
+from simple_resume.palettes.registry import get_palette_registry
+from simple_resume.palettes.sources import build_palettable_registry_snapshot
 
 
 def cmd_snapshot(args: argparse.Namespace) -> int:
@@ -57,6 +57,16 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     result = args.func(args)
     return int(result) if result is not None else 0
+
+
+def snapshot() -> None:
+    """Entry point for palette-snapshot command."""
+    sys.exit(main(["snapshot"]))
+
+
+def palette_list() -> None:
+    """Entry point for palette-list command."""
+    sys.exit(main(["list"]))
 
 
 if __name__ == "__main__":

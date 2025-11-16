@@ -8,7 +8,7 @@ Accepted (2025-11-09)
 
 Original API surface had organizational issues:
 
-1. Redundant wrapper functions adding no abstraction (`utilities.calculate_text_color()` wrapping `get_contrasting_text_color()`)
+1. Redundant wrapper functions adding no abstraction (`utilities.calculate_text_color()` wrapping `core.colors.get_contrasting_text_color()`)
 2. Utility functions incorrectly exposed as `Resume` class methods (e.g., `Resume.calculate_text_color()`)
 3. No clear public API namespace; users imported from internal `core.*` modules
 4. Inconsistent function naming (`is_valid_color()` and `validate_color()` coexisting)
@@ -46,8 +46,8 @@ Following research into pandas and requests API design:
 
 - `utilities.calculate_text_color()` - wrapper removed
 - `utilities.calculate_luminance()` - wrapper removed
-- `color_utils.calculate_text_color()` - wrapper removed
-- `color_utils.validate_color()` - wrapper removed
+- `color_utils.calculate_text_color()` - wrapper removed (module renamed to `core.colors`)
+- `color_utils.validate_color()` - wrapper removed (module renamed to `core.colors`)
 - `Resume.calculate_text_color()` - removed from class
 - `Resume.validate_color()` - removed from class
 - `Resume.calculate_luminance()` - removed from class
@@ -79,15 +79,15 @@ Following research into pandas and requests API design:
 
 Core module functions represent the canonical implementation:
 
-- `core.color_utils.calculate_luminance()` - canonical
-- `core.color_utils.get_contrasting_text_color()` - canonical
-- `core.color_utils.is_valid_color()` - canonical
+- `core.colors.calculate_luminance()` - canonical
+- `core.colors.get_contrasting_text_color()` - canonical
+- `core.colors.is_valid_color()` - canonical
 
 Public API re-exports or simplifies:
 
 - `api.colors.calculate_luminance` - direct re-export
 - `api.colors.is_valid_color` - direct re-export
-- `api.colors.calculate_text_color()` - simplified interface
+- `api.colors.calculate_text_color()` - simplified interface that calls `core.colors.get_contrasting_text_color()`
 
 ## Rationale
 
@@ -170,6 +170,8 @@ lum = colors.calculate_luminance("#808080")
 
 ```text
 
+Use `from simple_resume.api import colors` in all new code.
+
 ### Monitoring
 
 - Track import patterns in user code (if telemetry added)
@@ -178,13 +180,13 @@ lum = colors.calculate_luminance("#808080")
 
 ## Follow-up Tasks
 
-1. ✅ Remove color utility wrappers from `utilities.py`, `color_utils.py`, and `Resume`
-2. ✅ Create `simple_resume.api.colors` public module
-3. ✅ Move color utility tests to `test_api_colors.py`
-4. ✅ Update `__all__` exports to reflect authoritative functions only
-5. 🔲 Review other utility functions for similar issues (e.g., skill_utils)
-6. 🔲 Document public API in user guide
-7. 🔲 Add API stability policy to CONTRIBUTING.md
+1. Remove color utility wrappers from `utilities.py`, `color_utils.py`, and `Resume`
+2. Create `simple_resume.api.colors` public module
+3. Move color utility tests to `test_api_colors.py`
+4. Update `__all__` exports to reflect authoritative functions only
+5. Review other utility functions for similar issues (e.g., skill_utils)
+6. Document public API in user guide
+7. Add API stability policy to CONTRIBUTING.md
 
 ## References
 

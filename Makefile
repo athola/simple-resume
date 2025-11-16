@@ -25,6 +25,18 @@ PREVIEW_PNG := $(ASSETS_DIR)/preview.png
 UV_CMD := uv
 PYTHON_CMD := python3
 
+# uv cache location (avoid read-only $HOME)
+UV_CACHE_DIR ?= $(abspath ./.uv-cache)
+export UV_CACHE_DIR
+
+PRE_COMMIT_HOME ?= $(abspath ./.pre-commit-cache)
+export PRE_COMMIT_HOME
+
+export VIRTUALENV_SUPPRESS_APP_DATA=1
+export VIRTUALENV_HOME:=$(PRE_COMMIT_HOME)/venvs
+export VIRTUALENV_APP_DATA:=$(PRE_COMMIT_HOME)/app-data
+export NPM_CONFIG_CACHE:=$(abspath ./.npm-cache)
+
 # Tool commands with fallbacks
 OPEN_CMD := $(shell command -v xdg-open 2>/dev/null || echo wslview)
 ifeq ($(OPEN_CMD),wslview)
@@ -115,15 +127,17 @@ check-deps:
 
 install-deps: check-deps ## Install all dependencies
 	@echo "$(BLUE)Installing dependencies...$(RESET)"
+	@mkdir -p $(UV_CACHE_DIR)
 	$(UV_CMD) sync --extra utils --group dev
-	@echo "$(GREEN)✓ Dependencies installed$(RESET)"
+	@echo "$(GREEN)[OK] Dependencies installed$(RESET)"
 
 install: install-deps ## Install all dependencies including dev tools
 	@echo ""
 	@echo "$(BLUE)You can now run:$(RESET)"
 	@echo "  $(GREEN)make typecheck$(RESET)    # Run type checking"
 	@echo "  $(GREEN)make lint$(RESET)         # Run linting"
-	@echo "  $(GREEN)make check-all$(RESET)    # Run all checks"
+	@echo "  $(GREEN)make check-all$(RESET)    # Run lint/format/type/security"
+	@echo "  $(GREEN)make validate$(RESET)     # Validate README preview & artifacts"
 
 # =============================================================================
 # CODE QUALITY TOOLS
@@ -202,33 +216,33 @@ demo-%: ## Generate and preview demo resume (pattern: demo-<name>)
 		exit 1; \
 	fi
 	$(UV_CMD) run $(PROJECT_NAME) generate $(DEMO_NAME) --formats $(FORMATS) --data-dir $(SAMPLE_DIR)
-	@echo "$(GREEN)✓ Demo generated: $(OUTPUT_PDF)$(RESET)"
+	@echo "$(GREEN)[OK] Demo generated: $(OUTPUT_PDF)$(RESET)"
 	$(call open_file,$(OUTPUT_PDF))
 
 # Specific demo targets for backward compatibility
 demo-palette: ## Generate and preview the palette demo resume
 	@echo "$(BLUE)Generating palette demo...$(RESET)"
 	$(UV_CMD) run $(PROJECT_NAME) generate sample_palette_demo --formats $(FORMATS) --data-dir $(SAMPLE_DIR)
-	@echo "$(GREEN)✓ Palette demo generated: $(OUTPUT_DIR)/sample_palette_demo.pdf$(RESET)"
+	@echo "$(GREEN)[OK] Palette demo generated: $(OUTPUT_DIR)/sample_palette_demo.pdf$(RESET)"
 	$(call open_file,$(OUTPUT_DIR)/sample_palette_demo.pdf)
 
 demo-multipage: ## Generate and preview the multipage demo resume
 	@echo "$(BLUE)Generating multipage demo...$(RESET)"
 	$(UV_CMD) run $(PROJECT_NAME) generate sample_multipage_demo --formats $(FORMATS) --data-dir $(SAMPLE_DIR)
-	@echo "$(GREEN)✓ Multipage demo generated: $(OUTPUT_DIR)/sample_multipage_demo.pdf$(RESET)"
+	@echo "$(GREEN)[OK] Multipage demo generated: $(OUTPUT_DIR)/sample_multipage_demo.pdf$(RESET)"
 	$(call open_file,$(OUTPUT_DIR)/sample_multipage_demo.pdf)
 
 demo-latex: ## Generate and preview the LaTeX-only sample resume
 	@echo "$(BLUE)Generating LaTeX demo (no icons/colors)...$(RESET)"
 	$(UV_CMD) run $(PROJECT_NAME) generate sample_latex --data-dir $(SAMPLE_DIR) --format $(DEFAULT_FORMAT)
-	@echo "$(GREEN)✓ LaTeX demo generated: $(OUTPUT_DIR)/sample_latex.pdf$(RESET)"
+	@echo "$(GREEN)[OK] LaTeX demo generated: $(OUTPUT_DIR)/sample_latex.pdf$(RESET)"
 	$(call open_file,$(OUTPUT_DIR)/sample_latex.pdf)
 
 demo-palette-random: ## Generate and preview a randomized palette demo resume
 	@echo "$(BLUE)Generating randomized palette demo...$(RESET)"
 	$(UV_CMD) run generate-random-palette-demo --output $(SAMPLE_DIR)/input/sample_palette_demo_random.yaml --template $(SAMPLE_DIR)/input/sample_palette_demo.yaml
 	$(UV_CMD) run $(PROJECT_NAME) generate --format $(DEFAULT_FORMAT) --data-dir $(SAMPLE_DIR)
-	@echo "$(GREEN)✓ Random palette demo generated: $(OUTPUT_DIR)/sample_palette_demo_random.pdf$(RESET)"
+	@echo "$(GREEN)[OK] Random palette demo generated: $(OUTPUT_DIR)/sample_palette_demo_random.pdf$(RESET)"
 	$(call open_file,$(OUTPUT_DIR)/sample_palette_demo_random.pdf)
 
 view-sample: generate-pdf-sample ## Generate and view sample PDF output
@@ -248,7 +262,7 @@ view-sample: generate-pdf-sample ## Generate and view sample PDF output
 check-preview-prereqs:
 	@echo "$(BLUE)Checking prerequisites...$(RESET)"
 	@if command -v pdftoppm >/dev/null 2>&1; then \
-		echo "$(GREEN)✓ pdftoppm found$(RESET)"; \
+		echo "$(GREEN)[OK] pdftoppm found$(RESET)"; \
 	else \
 		echo "$(RED)Error: pdftoppm is required$(RESET)"; \
 		echo "Install poppler-utils:"; \
@@ -273,7 +287,7 @@ update-preview-image: check-preview-prereqs ## Update README preview image with 
 		mv $(ASSETS_DIR)/preview_temp.png $(PREVIEW_PNG); \
 		sed -i 's/preview\.jpg/preview.png/g' README.md; \
 	fi
-	@echo "$(GREEN)✓ Preview image updated$(RESET)"
+	@echo "$(GREEN)[OK] Preview image updated$(RESET)"
 
 validate-readme-preview: ## Validate that README preview is up-to-date
 	@echo "$(BLUE)Checking preview image status...$(RESET)"
@@ -311,9 +325,9 @@ validate-readme-preview: ## Validate that README preview is up-to-date
 	if [ "$$needs_update" = true ]; then \
 		echo "$(BLUE)Updating preview image...$(RESET)"; \
 		$(MAKE) update-preview-image; \
-		echo "$(GREEN)✓ Preview image updated$(RESET)"; \
+		echo "$(GREEN)[OK] Preview image updated$(RESET)"; \
 	else \
-		echo "$(GREEN)✓ Preview image is up-to-date$(RESET)"; \
+		echo "$(GREEN)[OK] Preview image is up-to-date$(RESET)"; \
 	fi
 
 validate: validate-readme-preview ## Validate current commit is ready for PR
@@ -322,34 +336,36 @@ validate: validate-readme-preview ## Validate current commit is ready for PR
 	@echo "$(BOLD)========================================$(RESET)"
 	@echo ""
 	@echo "$(YELLOW)[1/7] Installing dependencies...$(RESET)"
+	@mkdir -p $(UV_CACHE_DIR)
 	$(UV_CMD) sync --extra utils --group dev
 	@echo ""
 	@echo "$(YELLOW)[2/7] Running tests...$(RESET)"
 	$(UV_CMD) run $(TEST_RUNNER) || (echo "$(RED)Tests failed$(RESET)" && exit 1)
-	@echo "$(GREEN)✓ Tests passed$(RESET)"
+	@echo "$(GREEN)[OK] Tests passed$(RESET)"
 	@echo ""
 	@echo "$(YELLOW)[3/7] Running linting...$(RESET)"
 	$(UV_CMD) run $(LINTER) check . || (echo "$(RED)Linting failed$(RESET)" && exit 1)
 	$(UV_CMD) run $(FORMATTER) format --check . || (echo "$(RED)Formatting issues$(RESET)" && exit 1)
-	@echo "$(GREEN)✓ Linting passed$(RESET)"
+	@echo "$(GREEN)[OK] Linting passed$(RESET)"
 	@echo ""
 	@echo "$(YELLOW)[4/7] Running type checking...$(RESET)"
 	$(call run_typechecker,mypy,. --strict)
 	$(call run_typechecker,ty,check . --ignore invalid-assignment --ignore invalid-return-type --ignore no-matching-overload)
-	@echo "$(GREEN)✓ Type checking passed$(RESET)"
+	@echo "$(GREEN)[OK] Type checking passed$(RESET)"
 	@echo ""
 	@echo "$(YELLOW)[5/7] Running security analysis...$(RESET)"
 	$(UV_CMD) run $(SECURITY_TOOL) -r $(SRC_DIR) tests -x .venv,.uv-cache,.git -s B101,B404,B603 || (echo "$(RED)Security check failed$(RESET)" && exit 1)
-	@echo "$(GREEN)✓ Security analysis passed$(RESET)"
+	@echo "$(GREEN)[OK] Security analysis passed$(RESET)"
 	@echo ""
 	@echo "$(YELLOW)[6/7] Running pre-commit hooks...$(RESET)"
+	@mkdir -p $(PRE_COMMIT_HOME)
 	$(UV_CMD) run pre-commit run --all-files --show-diff-on-failure || (echo "$(RED)Pre-commit failed$(RESET)" && exit 1)
-	@echo "$(GREEN)✓ Pre-commit hooks passed$(RESET)"
+	@echo "$(GREEN)[OK] Pre-commit hooks passed$(RESET)"
 	@echo ""
 	@echo "$(YELLOW)[7/7] Validating development environment...$(RESET)"
-	$(UV_CMD) run python -c "import $(PROJECT_MODULE).utilities; print('  ✓ $(PROJECT_MODULE).utilities imports correctly')"
-	$(UV_CMD) run python -c "from $(PROJECT_MODULE).utilities import get_content; print('  ✓ get_content imports correctly')"
-	@echo "$(GREEN)✓ Development environment validated$(RESET)"
+	$(UV_CMD) run python -c "import $(PROJECT_MODULE).utilities; print('  [OK] $(PROJECT_MODULE).utilities imports correctly')"
+	$(UV_CMD) run python -c "from $(PROJECT_MODULE).utilities import get_content; print('  [OK] get_content imports correctly')"
+	@echo "$(GREEN)[OK] Development environment validated$(RESET)"
 	@echo ""
 	@echo "$(BOLD)========================================$(RESET)"
 	@echo "$(GREEN)ALL CHECKS PASSED!$(RESET)"
@@ -369,23 +385,23 @@ clean-cache: ## Clean cache files only
 	rm -rf .mypy_cache
 	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true
-	@echo "$(GREEN)✓ Cache cleaned$(RESET)"
+	@echo "$(GREEN)[OK] Cache cleaned$(RESET)"
 
 clean: clean-cache ## Clean up all generated files and caches
 	@echo "$(BLUE)Cleaning all generated files...$(RESET)"
 	rm -rf .venv
 	rm -rf $(OUTPUT_DIR)
-	@echo "$(GREEN)✓ All files cleaned$(RESET)"
+	@echo "$(GREEN)[OK] All files cleaned$(RESET)"
 
 # =============================================================================
 # WORKFLOW TARGETS
 # =============================================================================
 
 dev-setup: install ## Set up development environment
-	@echo "$(GREEN)✓ Development environment setup complete!$(RESET)"
+	@echo "$(GREEN)[OK] Development environment setup complete!$(RESET)"
 
 ci: install check-all ## Run CI checks
-	@echo "$(GREEN)✓ CI checks completed successfully!$(RESET)"
+	@echo "$(GREEN)[OK] CI checks completed successfully!$(RESET)"
 
 # =============================================================================
 # DEBUG AND UTILITIES

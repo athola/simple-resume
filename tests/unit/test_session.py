@@ -100,7 +100,7 @@ class TestResumeSessionInit:
         self,
         story: Scenario,
     ) -> None:
-        with patch("simple_resume.session.resolve_paths") as mock_resolve:
+        with patch("simple_resume.session.session.resolve_paths") as mock_resolve:
             mock_resolve.side_effect = Exception("Invalid path")
 
             story.when("ResumeSession attempts to resolve an invalid data_dir")
@@ -245,7 +245,8 @@ class TestResumeSessionResume:
         resume2 = session.resume("test_resume")
 
         assert resume1 is resume2
-        assert session.operation_count == 1  # Only one load operation
+        assert session.operation_count == 2  # Counts total resume() calls
+        assert session.get_cache_info()["cache_size"] == 1
         session.close()
 
     def test_resume_bypasses_cache_when_disabled(self, tmp_path: Path) -> None:
@@ -665,11 +666,11 @@ class TestResumeSessionCaching:
         session.resume("resume1")
         session.resume("resume2")
 
-        assert len(session._resumes_loaded) == 2
+        assert session.get_cache_info()["cache_size"] == 2
 
         session.invalidate_cache()
 
-        assert len(session._resumes_loaded) == 0
+        assert session.get_cache_info()["cache_size"] == 0
         session.close()
 
     def test_invalidate_cache_specific(self, tmp_path: Path) -> None:
@@ -683,12 +684,13 @@ class TestResumeSessionCaching:
         session.resume("resume1")
         session.resume("resume2")
 
-        assert len(session._resumes_loaded) == 2
+        assert session.get_cache_info()["cache_size"] == 2
 
         session.invalidate_cache("resume1")
 
-        assert len(session._resumes_loaded) == 1
-        assert "resume2" in session._resumes_loaded
+        cache_info = session.get_cache_info()
+        assert cache_info["cache_size"] == 1
+        assert "resume2" in cache_info["cached_resumes"]
         session.close()
 
     def test_invalidate_cache_nonexistent_key(self, tmp_path: Path) -> None:
@@ -768,13 +770,13 @@ class TestResumeSessionContextManager:
         session.resume("test")
         session._generation_times.append(1.5)
 
-        assert len(session._resumes_loaded) > 0
+        assert session.get_cache_info()["cache_size"] > 0
         assert len(session._generation_times) > 0
         assert session.is_active is True
 
         session.close()
 
-        assert len(session._resumes_loaded) == 0
+        assert session.get_cache_info()["cache_size"] == 0
         assert len(session._generation_times) == 0
         assert session.is_active is False
 
@@ -851,3 +853,8 @@ class TestCreateSessionConvenience:
             data_dir=str(tmp_path), content_dir=str(tmp_path / "custom")
         ) as session:
             assert session.is_active is True
+
+    def test_session_config_invalid_default_format(self) -> None:
+        """SessionConfig raises ConfigurationError for invalid format."""
+        with pytest.raises(ConfigurationError, match="Invalid default format"):
+            SessionConfig(default_format="invalid_format")

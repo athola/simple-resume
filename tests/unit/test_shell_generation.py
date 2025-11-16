@@ -14,7 +14,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from simple_resume import config
-from simple_resume.core.resume import RenderMode, RenderPlan, ResumeConfig
+from simple_resume.core.models import RenderMode, RenderPlan, ResumeConfig
 from simple_resume.latex_renderer import LatexCompilationError
 from simple_resume.shell.generation import (
     GenerationDeps,

@@ -17,8 +17,8 @@ from typing import Any, Literal, TypedDict
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from . import config
-from .utilities import format_skill_groups, get_content
+from simple_resume import config
+from simple_resume.utilities import format_skill_groups, get_content
 
 LATEX_SPECIAL_CHARS = {
     "\\": r"\textbackslash{}",
@@ -35,12 +35,12 @@ LATEX_SPECIAL_CHARS = {
 
 
 def escape_latex(text: str) -> str:
-    """Escape LaTeX special characters in text."""
+    """Escape LaTeX special characters."""
     return "".join(LATEX_SPECIAL_CHARS.get(char, char) for char in text)
 
 
 def escape_url(url: str) -> str:
-    """Escape characters that break LaTeX hyperlink URLs."""
+    """Escape characters in URLs that break LaTeX hyperlinks."""
     replacements = {"%": r"\%", "#": r"\#", "&": r"\&", "_": r"\_"}
     return "".join(replacements.get(char, char) for char in url)
 
@@ -64,7 +64,7 @@ Block = ParagraphBlock | ListBlock
 
 @dataclass(frozen=True)
 class LatexEntry:
-    """Define a single entry inside a resume section."""
+    """Define a single entry in a resume section."""
 
     title: str
     subtitle: str | None
@@ -74,7 +74,7 @@ class LatexEntry:
 
 @dataclass(frozen=True)
 class LatexSection:
-    """Define a top-level resume section (Experience, Education, etc.)."""
+    """Define a top-level resume section."""
 
     title: str
     entries: list[LatexEntry]
@@ -82,7 +82,7 @@ class LatexSection:
 
 @dataclass(frozen=True)
 class LatexRenderResult:
-    """Define rendered LaTeX output plus context for debugging or tests."""
+    """Define the result of a LaTeX render operation."""
 
     tex: str
     context: dict[str, Any]
@@ -103,7 +103,7 @@ class _InlineConverter:
         self._counter = itertools.count()
 
     def convert(self, text: str) -> str:
-        """Return a LaTeX-safe string."""
+        """Return a string that is safe for LaTeX."""
         working = text
         working = re.sub(r"`([^`]+)`", self._code_replacement, working)
         working = re.sub(
@@ -155,7 +155,7 @@ def _convert_inline(text: str) -> str:
 
 
 def _normalize_iterable(value: Any) -> list[str]:
-    """Return a list of string entries regardless of input type."""
+    """Return a list of strings, regardless of the input type."""
     if value is None:
         return []
     if isinstance(value, dict):
@@ -385,7 +385,7 @@ def build_latex_context(
     *,
     static_dir: Path | None = None,
 ) -> dict[str, Any]:
-    """Prepare LaTeX template context from raw resume data."""
+    """Prepare the LaTeX template context from raw resume data."""
     full_name = _convert_inline(str(data.get("full_name", "")))
     headline = data.get("job_title")
     rendered_headline = _convert_inline(str(headline)) if headline else None
@@ -410,7 +410,7 @@ def build_latex_context(
 
 
 def _fontawesome_support_block(fontawesome_dir: str | None) -> str:
-    """Return a LaTeX block that defines contact icons."""
+    """Return a LaTeX block that defines the contact icons."""
     fallback = textwrap.dedent(
         r"""
         \IfFileExists{fontawesome.sty}{%
@@ -478,7 +478,7 @@ def render_resume_latex_from_data(
     paths: config.Paths | None = None,
     template_name: str = "latex/basic.tex",
 ) -> LatexRenderResult:
-    """Render a LaTeX template with prepared context."""
+    """Render a LaTeX template with the prepared context."""
     resolved_paths = paths or config.resolve_paths()
     context = build_latex_context(data, static_dir=resolved_paths.static)
     env = _jinja_environment(resolved_paths.templates)
@@ -493,7 +493,7 @@ def render_resume_latex(
     paths: config.Paths | None = None,
     template_name: str = "latex/basic.tex",
 ) -> LatexRenderResult:
-    """Read resume data and render to a LaTeX string."""
+    """Read resume data and render it to a LaTeX string."""
     resolved_paths = paths or config.resolve_paths()
     data = get_content(name, paths=resolved_paths, transform_markdown=False)
     return render_resume_latex_from_data(
@@ -505,7 +505,13 @@ class LatexCompilationError(RuntimeError):
     """Raise when LaTeX compilation fails."""
 
     def __init__(self, message: str, *, log: str | None = None) -> None:
-        """Initialize the LaTeX compilation error with a message and optional log."""
+        """Initialize the exception.
+
+        Args:
+            message: The error message.
+            log: The compilation log.
+
+        """
         super().__init__(message)
         self.log = log
 
@@ -563,16 +569,7 @@ def compile_tex_to_html(
     *,
     tools: Iterable[str] = ("pandoc", "htlatex"),
 ) -> Path:
-    """Compile a `.tex` file to HTML using available tooling.
-
-    Preference order:
-        1. pandoc (fast, single-shot)
-        2. htlatex (requires TeX4ht distribution)
-
-    Raises:
-        `LatexCompilationError`: When no tools are available or compilation fails.
-
-    """
+    """Compile a `.tex` file to HTML using an available tool."""
     html_path = tex_path.with_suffix(".html")
     tex_argument = str(tex_path) if tex_path.is_absolute() else tex_path.name
 
