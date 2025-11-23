@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers migrating to the new `simple_resume.generate` module structure (v0.1.1). The reorganization improves performance with lazy loading and enhances code organization.
+This guide covers migrating to the new `simple_resume.shell.generate` module structure (v0.1.1). The reorganization improves performance with lazy loading and enhances code organization.
 
 ## Breaking Changes
 
@@ -20,7 +20,7 @@ from simple_resume.generation import GenerationConfig
 from simple_resume import generate_pdf, generate_html, generate_all
 
 # Or direct module access
-from simple_resume.generate import generate_pdf, generate_html, generate_all
+from simple_resume.shell.generate import generate_pdf, generate_html, generate_all
 
 # GenerationConfig moved to core.models
 from simple_resume.core.models import GenerationConfig
@@ -56,10 +56,10 @@ from simple_resume import generate_pdf, generate_html
 import simple_resume.generation
 
 # After
-import simple_resume.generate
+import simple_resume.shell.generate
 
 # Function access remains the same
-result = simple_resume.generate.generate_pdf(resume_data)
+result = simple_resume.shell.generate.generate_pdf(resume_data)
 ```
 
 #### GenerationConfig Access
@@ -81,7 +81,7 @@ from simple_resume import generate_pdf, generate_html, generate_all
 from simple_resume.core.models import GenerationConfig
 
 # Test module access
-from simple_resume.generate import core, lazy
+from simple_resume.shell.generate import core, lazy
 
 print("Migration successful!")
 ```
@@ -105,7 +105,7 @@ from simple_resume import generate_pdf  # Lazy loaded
 - **Usage**: Direct core module imports
 
 ```python
-from simple_resume.generate.core import generate_pdf  # Eager loaded
+from simple_resume.shell.generate.core import generate_pdf  # Eager loaded
 ```
 
 ## Compatibility Matrix
@@ -114,7 +114,7 @@ from simple_resume.generate.core import generate_pdf  # Eager loaded
 |----------------|------------|---------------|
 | `simple_resume.generation` | `simple_resume` | Drop-in replacement |
 | `simple_resume.generation.GenerationConfig` | `simple_resume.core.models.GenerationConfig` | Path changed |
-| `simple_resume.generation.*functions` | `simple_resume.generate.*functions` | Path changed |
+| `simple_resume.generation.*functions` | `simple_resume.shell.generate.*functions` | Path changed |
 
 ## Common Migration Patterns
 
@@ -128,7 +128,7 @@ from simple_resume import generate_pdf
 from simple_resume.core.models import GenerationConfig
 
 # Or direct import for slightly better performance
-from simple_resume.generate.lazy import generate_pdf
+from simple_resume.shell.generate.lazy import generate_pdf
 ```
 
 ### Web Applications
@@ -137,7 +137,7 @@ from simple_resume.generate.lazy import generate_pdf
 from simple_resume.generation import generate_all, GenerationConfig
 
 # After (recommended - eager loading)
-from simple_resume.generate.core import generate_all
+from simple_resume.shell.generate.core import generate_all
 from simple_resume.core.models import GenerationConfig
 ```
 
@@ -185,7 +185,7 @@ If you experience slower first-time generation calls, this is expected due to la
 from simple_resume import generate_pdf
 
 # Use eager loading
-from simple_resume.generate.core import generate_pdf
+from simple_resume.shell.generate.core import generate_pdf
 ```
 
 ## Testing Your Migration
@@ -193,7 +193,7 @@ from simple_resume.generate.core import generate_pdf
 ### Basic Functionality Test
 ```python
 from simple_resume import generate_pdf, generate_html, generate_all
-from simple_resume.generate import core, lazy
+from simple_resume.shell.generate import core, lazy
 from simple_resume.core.models import GenerationConfig
 
 def test_migration():
@@ -232,7 +232,7 @@ def test_import_performance():
     # Test lazy loading
     start = time.time()
     simple_resume = importlib.import_module("simple_resume")
-    generate_pdf = simple_resume.generate_pdf
+    generate_pdf = simple_resume.shell.generate_pdf
     lazy_time = time.time() - start
 
     # Clear imports between tests
@@ -242,7 +242,7 @@ def test_import_performance():
 
     # Test eager loading
     start = time.time()
-    simple_resume_generate_core = importlib.import_module("simple_resume.generate.core")
+    simple_resume_generate_core = importlib.import_module("simple_resume.shell.generate.core")
     eager_pdf = simple_resume_generate_core.generate_pdf
     eager_time = time.time() - start
 
