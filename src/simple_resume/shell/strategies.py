@@ -15,14 +15,17 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from simple_resume.config import Paths
-from simple_resume.core.models import RenderPlan
-from simple_resume.core.pdf_generation import (
+from simple_resume.core.exceptions import GenerationError
+from simple_resume.core.generate.pdf import (
     LatexGenerationContext,
-    generate_pdf_with_latex,
+    prepare_pdf_with_latex,
 )
-from simple_resume.result import GenerationResult
-from simple_resume.shell.rendering_operations import generate_pdf_with_weasyprint
+from simple_resume.core.models import RenderPlan
+from simple_resume.core.paths import Paths
+from simple_resume.core.result import GenerationResult
+from simple_resume.shell.effect_executor import EffectExecutor
+from simple_resume.shell.render.latex import LatexCompilationError
+from simple_resume.shell.render.operations import generate_pdf_with_weasyprint
 
 
 class PdfGenerationStrategy(ABC):
@@ -71,17 +74,17 @@ class WeasyPrintStrategy(PdfGenerationStrategy):
                 if sys.platform.startswith("darwin"):
                     opener = shutil.which("open") or "open"
                     subprocess.Popen(  # noqa: S603  # nosec B603
-                        [opener, str(request.output_path)],
+                        [opener, str(result.output_path)],
                         stdout=subprocess.DEVNULL,
                         stderr=subprocess.DEVNULL,
                     )
                 elif os.name == "nt":
-                    os.startfile(str(request.output_path))  # type: ignore[attr-defined]  # noqa: S606  # nosec B606
+                    os.startfile(str(result.output_path))  # type: ignore[attr-defined]  # noqa: S606  # nosec B606
                 else:
                     opener = shutil.which("xdg-open")
                     if opener:
                         subprocess.Popen(  # noqa: S603  # nosec B603
-                            [opener, str(request.output_path)],
+                            [opener, str(result.output_path)],
                             stdout=subprocess.DEVNULL,
                             stderr=subprocess.DEVNULL,
                         )
@@ -108,37 +111,58 @@ class LatexStrategy(PdfGenerationStrategy):
             filename=request.filename,
         )
 
-        # Delegate to the existing LaTeX generation logic
-        result = generate_pdf_with_latex(
-            request.render_plan,
-            request.output_path,
-            context,
-        )[0]
+        # Prepare LaTeX generation (pure function returns effects)
+        try:
+            tex_content, effects, metadata = prepare_pdf_with_latex(
+                request.render_plan,
+                request.output_path,
+                context,
+            )
+
+            # Execute the effects to create files and run pdflatex
+            executor = EffectExecutor()
+            executor.execute_many(effects)
+
+        except LatexCompilationError as exc:
+            # Convert shell-layer exception to core-layer exception
+            raise GenerationError(
+                f"LaTeX compilation failed: {exc}",
+                output_path=request.output_path,
+                format_type="pdf",
+                resume_name=request.resume_name,
+            ) from exc
+
+        # Create result from metadata
+        generation_result = GenerationResult(
+            output_path=request.output_path,
+            format_type="pdf",
+            metadata=metadata,
+        )
 
         # Open file if requested
-        if request.open_after and result.exists:
+        if request.open_after and generation_result.output_path.exists():
             try:
                 if sys.platform.startswith("darwin"):
                     opener = shutil.which("open") or "open"
                     subprocess.Popen(  # noqa: S603  # nosec B603
-                        [opener, str(request.output_path)],
+                        [opener, str(generation_result.output_path)],
                         stdout=subprocess.DEVNULL,
                         stderr=subprocess.DEVNULL,
                     )
                 elif os.name == "nt":
-                    os.startfile(str(request.output_path))  # type: ignore[attr-defined]  # noqa: S606  # nosec B606
+                    os.startfile(str(generation_result.output_path))  # type: ignore[attr-defined]  # noqa: S606  # nosec B606
                 else:
                     opener = shutil.which("xdg-open")
                     if opener:
                         subprocess.Popen(  # noqa: S603  # nosec B603
-                            [opener, str(request.output_path)],
+                            [opener, str(generation_result.output_path)],
                             stdout=subprocess.DEVNULL,
                             stderr=subprocess.DEVNULL,
                         )
             except Exception as exc:  # noqa: BLE001
                 print(f"Warning: Could not open file: {exc}", file=sys.stderr)
 
-        return result
+        return generation_result
 
     def get_template_name(self, render_plan: RenderPlan) -> str:
         """Get template name for LaTeX mode."""

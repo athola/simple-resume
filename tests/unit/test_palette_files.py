@@ -8,9 +8,9 @@ from pathlib import Path
 import pytest
 import yaml
 
+from simple_resume.core.exceptions import ConfigurationError
 from simple_resume.core.resume import Resume
-from simple_resume.exceptions import ConfigurationError
-from simple_resume.utilities import (
+from simple_resume.shell.runtime.content import (
     apply_external_palette,
     load_palette_from_file,
 )
@@ -135,6 +135,26 @@ def test_load_palette_from_file_non_dict_content(story: Scenario) -> None:
         with pytest.raises(
             ValueError,
             match="YAML file must contain a dictionary at the root level",
+        ):
+            load_palette_from_file(temp_path)
+    finally:
+        temp_path.unlink()
+
+
+def test_load_palette_from_file_palette_value_not_dict(story: Scenario) -> None:
+    story.given("a palette file where palette key maps to a string")
+    invalid_content = """
+palette: "this-is-not-a-dict"
+"""
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        f.write(invalid_content)
+        temp_path = Path(f.name)
+
+    try:
+        story.then("a ValueError explains palette must be a dictionary")
+        with pytest.raises(
+            ValueError, match="Palette configuration must be a dictionary"
         ):
             load_palette_from_file(temp_path)
     finally:
@@ -345,6 +365,32 @@ config:
         assert result["palette"]["theme_color"] == "#123456"
         assert result["palette"]["sidebar_color"] == "#FAFAFA"
         assert result["palette"]["text_color"] == "#222222"
+    finally:
+        temp_path.unlink()
+
+
+def test_load_palette_from_file_deeply_nested_palette(story: Scenario) -> None:
+    """Test loading palette with config.palette nested structure."""
+    story.given("a palette file with deeply nested palette in config block")
+    palette_content = """
+palette:
+  config:
+    palette:
+      primary: "#003366"
+      secondary: "#006699"
+"""
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        f.write(palette_content)
+        temp_path = Path(f.name)
+
+    try:
+        story.when("load_palette_from_file extracts the deeply nested palette")
+        result = load_palette_from_file(temp_path)
+
+        story.then("the nested palette values are returned")
+        assert result["palette"]["primary"] == "#003366"
+        assert result["palette"]["secondary"] == "#006699"
     finally:
         temp_path.unlink()
 

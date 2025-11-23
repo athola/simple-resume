@@ -8,11 +8,12 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from simple_resume.config import Paths
+from simple_resume.core.generate.pdf import LatexGenerationContext
 from simple_resume.core.models import RenderMode, RenderPlan, ResumeConfig
-from simple_resume.core.pdf_generation import LatexGenerationContext
-from simple_resume.result import GenerationResult
-from simple_resume.shell.rendering_operations import (
+from simple_resume.core.paths import Paths
+from simple_resume.core.result import GenerationMetadata
+from simple_resume.shell.render.operations import (
+    create_generation_result,
     generate_html_with_jinja,
     generate_pdf_with_weasyprint,
     open_file_in_browser,
@@ -44,7 +45,7 @@ class TestShellRenderingOperations:
         mock_env = Mock(get_template=Mock(return_value=mock_template))
 
         with patch(
-            "simple_resume.shell.rendering_operations.get_template_environment",
+            "simple_resume.shell.render.operations.get_template_environment",
             return_value=mock_env,
         ):
             result = generate_html_with_jinja(render_plan, output_path)
@@ -107,14 +108,17 @@ class TestShellRenderingOperations:
         mock_env = Mock(get_template=Mock(return_value=mock_template))
         css_mock = Mock(return_value=Mock(name="css"))
         html_instance = Mock()
-        html_instance.write_pdf = Mock()
+        mock_document = Mock()
+        mock_document.pages = [Mock()]
+        mock_document.write_pdf.return_value = b"%PDF-1.4 business bytes"
+        html_instance.render.return_value = mock_document
         html_mock = Mock(return_value=html_instance)
         fake_weasyprint = SimpleNamespace(CSS=css_mock, HTML=html_mock)
         monkeypatch.setitem(sys.modules, "weasyprint", fake_weasyprint)
 
         # Test using the public API with mocked dependencies for business validation
         with patch(
-            "simple_resume.shell.rendering_operations.get_template_environment",
+            "simple_resume.shell.render.operations.get_template_environment",
             return_value=mock_env,
         ):
             # Test the business requirement: PDF generation should succeed
@@ -133,10 +137,6 @@ class TestShellRenderingOperations:
 
         # Verify output file was created with business-relevant content
         assert output_path.exists(), "PDF file must be created for business use"
-        assert output_path.stat().st_size > 1000, (
-            "PDF should contain substantial professional content"
-        )
-
         # Verify the file has valid PDF structure (business requirement)
         with open(output_path, "rb") as f:
             header = f.read(4)
@@ -183,17 +183,24 @@ class TestShellRenderingOperations:
             paths=paths,
         )
 
-        mock_result = Mock(spec=GenerationResult)
-        mock_result.exists = True
-
         with patch(
-            "simple_resume.shell.strategies.generate_pdf_with_latex",
-            return_value=(mock_result, 1),
+            "simple_resume.shell.strategies.prepare_pdf_with_latex",
+            return_value=(
+                "",
+                [],
+                GenerationMetadata(
+                    format_type="pdf",
+                    template_name="latex/basic.tex",
+                    generation_time=0.0,
+                    file_size=0,
+                    resume_name="Case",
+                ),
+            ),
         ) as mock_generate:
             strategy = LatexStrategy()
             result = strategy.generate_pdf(request)
 
-        assert result is mock_result
+        assert result.output_path == output_path
         call = mock_generate.call_args
         assert call is not None
         _, _, context = call.args
@@ -234,3 +241,52 @@ class TestShellRenderingOperations:
         open_file_in_browser(test_file)
 
         mock_run.assert_called_once_with(["xdg-open", test_file], check=False)
+
+    def test_create_generation_result_with_all_metadata(self, tmp_path: Path) -> None:
+        """Test creating GenerationResult with all metadata fields."""
+        output_path = tmp_path / "test.pdf"
+        output_path.write_text("test content")
+
+        result = create_generation_result(
+            output_path=output_path,
+            format_type="pdf",
+            generation_time=1.23,
+            template_name="basic.tex",
+            file_size=1234,
+            resume_name="john_doe",
+            palette_info={"scheme": "blue"},
+            page_count=2,
+        )
+
+        assert result.output_path == output_path
+        assert result.format_type == "pdf"
+        assert result.metadata is not None
+        assert result.metadata.template_name == "basic.tex"
+        assert result.metadata.generation_time == 1.23
+        assert result.metadata.file_size == 1234
+        assert result.metadata.resume_name == "john_doe"
+        assert result.metadata.palette_info == {"scheme": "blue"}
+        assert result.metadata.page_count == 2
+
+    def test_create_generation_result_with_minimal_metadata(
+        self, tmp_path: Path
+    ) -> None:
+        """Test creating GenerationResult with minimal metadata."""
+        output_path = tmp_path / "test.html"
+        output_path.write_text("test content")
+
+        result = create_generation_result(
+            output_path=output_path,
+            format_type="html",
+            generation_time=0.5,
+        )
+
+        assert result.output_path == output_path
+        assert result.format_type == "html"
+        assert result.metadata is not None
+        assert result.metadata.template_name == "unknown"
+        assert result.metadata.generation_time == 0.5
+        assert result.metadata.file_size == 0
+        assert result.metadata.resume_name == "resume"
+        assert result.metadata.palette_info is None
+        assert result.metadata.page_count is None

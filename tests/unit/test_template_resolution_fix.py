@@ -6,19 +6,23 @@ where templates were not found due to incorrect path resolution.
 
 from __future__ import annotations
 
+import sys
 import tempfile
 from pathlib import Path
+from types import ModuleType
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
 from jinja2.loaders import FileSystemLoader
 
-from simple_resume.config import TEMPLATE_LOC, resolve_paths
 from simple_resume.core.models import RenderMode, RenderPlan, ResumeConfig
+from simple_resume.core.palettes.registry import get_palette_registry
 from simple_resume.core.plan import prepare_render_data
+from simple_resume.core.render import get_template_environment
 from simple_resume.core.resume import Resume
-from simple_resume.exceptions import TemplateError
-from simple_resume.rendering import get_template_environment
+from simple_resume.shell.config import TEMPLATE_LOC, resolve_paths
+from simple_resume.shell.resume_extensions import to_html, to_pdf
 from tests.bdd import Scenario
 
 
@@ -170,8 +174,7 @@ class TestTemplateResolutionFix:
                 "instead of the base path"
             ),
         )
-        # Clear the cache to ensure we get a fresh environment
-        get_template_environment.cache_clear()
+        # Note: get_template_environment is not cached, no need to clear
 
         # Mock the rendering to avoid actual file generation
         with patch("weasyprint.HTML") as mock_html_class:
@@ -184,8 +187,12 @@ class TestTemplateResolutionFix:
 
                 # Create a render plan matching prepare_render_data
                 base_path = "/some/inconsistent/base/path"
+                registry = get_palette_registry()
                 plan = prepare_render_data(
-                    sample_resume_data, preview=False, base_path=base_path
+                    sample_resume_data,
+                    preview=False,
+                    base_path=base_path,
+                    registry=registry,
                 )
 
                 resume_config = (
@@ -209,37 +216,53 @@ class TestTemplateResolutionFix:
                 if plan.context is not None:
                     plan.context["resume_config"] = resume_config
 
-                # Create a Path-like object that can be used in place of Path
-                actual_dir = Path(tempfile.mkdtemp())
-                actual_output_path = actual_dir / "test.pdf"
-
-                class StringablePath:
-                    def __init__(self, path: Path):
-                        self.path = path
-
-                    def __str__(self) -> str:
-                        return str(self.path)
-
-                    @property
-                    def parent(self) -> Path:
-                        return self.path.parent
-
-                mock_output_path = (
-                    actual_output_path  # Use the actual Path object instead
-                )
-
+                mock_output_path = Path(tempfile.mkdtemp()) / "test.pdf"
                 resume = Resume.from_data(sample_resume_data)
 
-                # PDF generation should not fail due to template resolution
-                try:
-                    result = resume.to_pdf(output_path=mock_output_path)
-                    # If we get here, template resolution worked correctly
-                    assert result is not None
-                except TemplateError as exc:
-                    # If there's an error ensure it's not template resolution related
-                    assert "html/resume_no_bars.html" not in str(exc), (
-                        f"Template resolution failed: {exc}"
-                    )
+                class DummyDocument:
+                    def __init__(self) -> None:
+                        self.pages = [1]
+
+                    def write_pdf(self) -> bytes:
+                        return b"%PDF-1.4"
+
+                class DummyHTML:
+                    def __init__(self, *args: Any, **kwargs: Any) -> None:
+                        pass
+
+                    def render(self, *args: Any, **kwargs: Any) -> DummyDocument:
+                        return DummyDocument()
+
+                class DummyCSS:
+                    def __init__(self, *args: Any, **kwargs: Any) -> None:
+                        pass
+
+                fake_weasyprint = ModuleType("weasyprint")
+                fake_weasyprint.HTML = DummyHTML  # type: ignore[attr-defined]
+                fake_weasyprint.CSS = DummyCSS  # type: ignore[attr-defined]
+
+                def fake_get_template_environment(template_path: str) -> Any:
+                    assert Path(template_path) == TEMPLATE_LOC
+
+                    class DummyTemplate:
+                        def render(self, **context: Any) -> str:
+                            return "<!DOCTYPE html><html></html>"
+
+                    class DummyEnv:
+                        def get_template(self, name: str) -> DummyTemplate:
+                            assert name == "html/resume_no_bars.html"
+                            return DummyTemplate()
+
+                    return DummyEnv()
+
+                with patch.dict(sys.modules, {"weasyprint": fake_weasyprint}):
+                    with patch(
+                        "simple_resume.core.generate.pdf.get_template_environment",
+                        side_effect=fake_get_template_environment,
+                    ):
+                        result = to_pdf(resume, output_path=mock_output_path)
+
+                assert result is not None
 
     def test_template_resolution_with_actual_template(
         self, story: Scenario, sample_resume_data: dict[str, object]
@@ -324,16 +347,20 @@ class TestTemplateResolutionFix:
 
         try:
             # Mock the PDF writing to avoid actual PDF generation
-            with patch("simple_resume.core.pdf_generation.HTML") as mock_html_class:
-                with patch("simple_resume.core.pdf_generation.CSS") as mock_css_class:
+            with patch("weasyprint.HTML") as mock_html_class:
+                with patch("weasyprint.CSS") as mock_css_class:
                     mock_css_instance = Mock()
+                    mock_document = Mock()
+                    mock_document.pages = []
+                    mock_document.write_pdf.return_value = b"%PDF-1.2"
                     mock_html_instance = Mock()
+                    mock_html_instance.render.return_value = mock_document
                     mock_html_class.return_value = mock_html_instance
                     mock_css_class.return_value = mock_css_instance
 
                     # This should run without template resolution errors.
                     # Template must be loaded from TEMPLATE_LOC, not plan.base_path.
-                    result = resume.to_pdf(output_path=output_path)
+                    result = to_pdf(resume, output_path=output_path)
 
                     # Verify WeasyPrint was invoked with rendered HTML content
                     mock_html_class.assert_called_once()
@@ -439,7 +466,7 @@ class TestTemplateResolutionFix:
 
         try:
             # This should work without template resolution errors
-            result = resume.to_html(output_path=output_path)
+            result = to_html(resume, output_path=output_path)
 
             # Verify that the output file was created and contains
             # business-relevant content
@@ -532,8 +559,12 @@ class TestTemplateResolutionFix:
             "config": {"page_width": 210, "page_height": 297},
         }
 
+        registry = get_palette_registry()
         plan = prepare_render_data(
-            sample_data, preview=False, base_path="/some/content/path"
+            sample_data,
+            preview=False,
+            base_path="/some/content/path",
+            registry=registry,
         )
         assert plan.template_name == "html/resume_no_bars.html"
         assert plan.context is not None
@@ -572,32 +603,34 @@ class TestTemplateResolutionRegression:
         assert validation.is_valid, f"Resume validation failed: {validation.errors}"
 
         # Prepare render data (this would have been failing before)
-        render_plan = prepare_render_data(
+        render_registry = get_palette_registry()
+        plan = prepare_render_data(
             sample_data,
             preview=False,
             base_path=str(resume._paths.content)
             if resume._paths
             else "/default/content/path",
+            registry=render_registry,
         )
 
-        assert render_plan.template_name == "html/resume_no_bars.html"
-        assert render_plan.mode is RenderMode.HTML
-        assert render_plan.context is not None
+        assert plan.template_name == "html/resume_no_bars.html"
+        assert plan.mode is RenderMode.HTML
+        assert plan.context is not None
 
         # The fix always resolves templates from TEMPLATE_LOC, regardless of
-        # render_plan.base_path.
+        # plan.base_path.
         assert TEMPLATE_LOC.exists(), "Templates directory must exist for test"
 
         # Verify template can be loaded
         env = get_template_environment(str(TEMPLATE_LOC))
-        template_name = render_plan.template_name
+        template_name = plan.template_name
         assert template_name is not None
         template = env.get_template(template_name)
         assert template is not None
 
         # Add any missing config fields to prevent template errors
-        if "resume_config" in render_plan.context:
-            resume_config = render_plan.context["resume_config"]
+        if "resume_config" in plan.context:
+            resume_config = plan.context["resume_config"]
             # Provide defaults expected by template requirements.
             if resume_config.get("sidebar_width") is None:
                 resume_config["sidebar_width"] = 60
@@ -629,7 +662,7 @@ class TestTemplateResolutionRegression:
                 resume_config["cover_padding_h"] = 25
         else:
             # Create resume_config if it doesn't exist
-            render_plan.context["resume_config"] = {
+            plan.context["resume_config"] = {
                 "page_width": 210,
                 "page_height": 297,
                 "sidebar_width": 60,
@@ -640,16 +673,16 @@ class TestTemplateResolutionRegression:
             }
 
         # Also ensure other required fields exist
-        if "titles" not in render_plan.context:
-            render_plan.context["titles"] = {
+        if "titles" not in plan.context:
+            plan.context["titles"] = {
                 "contact": "Contact",
                 "certification": "Certifications",
                 "expertise": "Expertise",
                 "keyskills": "Key Skills",
             }
 
-        if "body" not in render_plan.context:
-            render_plan.context["body"] = {
+        if "body" not in plan.context:
+            plan.context["body"] = {
                 "experience": [
                     {
                         "start": "2020-01",
@@ -662,7 +695,7 @@ class TestTemplateResolutionRegression:
             }
 
         # Verify rendering works
-        rendered: str = template.render(**render_plan.context)
+        rendered: str = template.render(**plan.context)
         assert sample_data["full_name"] in rendered  # type: ignore[operator]
 
 
@@ -749,22 +782,24 @@ class TestFullTemplateResolution:
         )
         # Act: Prepare render plan (this calls prepare_render_data)
         # base_path should not influence template resolution after the fix.
-        render_plan = prepare_render_data(
+        render_registry = get_palette_registry()
+        plan = prepare_render_data(
             sample_resume_with_all_fields,
             preview=False,
             base_path="/some/path/that/should/not/matter",
+            registry=render_registry,
         )
 
         # Assert: Render plan is correctly configured
-        assert render_plan.template_name == "html/resume_no_bars.html"
-        assert render_plan.mode is RenderMode.HTML
-        assert render_plan.context is not None
-        assert "full_name" in render_plan.context
-        assert "resume_config" in render_plan.context
+        assert plan.template_name == "html/resume_no_bars.html"
+        assert plan.mode is RenderMode.HTML
+        assert plan.context is not None
+        assert "full_name" in plan.context
+        assert "resume_config" in plan.context
 
         # Act: Load template from correct location (the fix)
         env = get_template_environment(str(TEMPLATE_LOC))
-        template_name = render_plan.template_name
+        template_name = plan.template_name
         assert template_name is not None
         template = env.get_template(template_name)
 
@@ -772,7 +807,7 @@ class TestFullTemplateResolution:
         assert template is not None
 
         # Act: Render template with context
-        html_output = template.render(**render_plan.context)
+        html_output = template.render(**plan.context)
 
         # Assert: Output contains expected content
         assert "Comprehensive Test User" in html_output
@@ -807,7 +842,10 @@ class TestFullTemplateResolution:
                 # Should not raise template not found error (the main fix)
                 assert template is not None
 
-                plan = prepare_render_data(sample_resume_with_all_fields, preview=False)
+                registry = get_palette_registry()
+                plan = prepare_render_data(
+                    sample_resume_with_all_fields, preview=False, registry=registry
+                )
                 context = plan.context or {}
 
                 # Normalize certification structure for templates expecting
@@ -853,16 +891,18 @@ class TestFullTemplateResolution:
 
         # Prepare render data with a base_path that's NOT the templates directory
         # Alternate base_path should not affect template loading.
-        render_plan = prepare_render_data(
+        render_registry = get_palette_registry()
+        plan = prepare_render_data(
             resume_data,
             preview=False,
             base_path="/some/different/path",
+            registry=render_registry,
         )
 
         # Successful rendering proves templates load from TEMPLATE_LOC, not base_path.
 
-        assert render_plan.context is not None
-        context = render_plan.context
+        assert plan.context is not None
+        context = plan.context
 
         # Ensure render_plan.context has complete config for template
         if "resume_config" in context:
@@ -896,7 +936,7 @@ class TestFullTemplateResolution:
             context["body"] = {"experience": []}
 
         env = get_template_environment(str(TEMPLATE_LOC))
-        render_template_name: str | None = render_plan.template_name
+        render_template_name: str | None = plan.template_name
         assert render_template_name is not None
         template = env.get_template(render_template_name)
         output = template.render(**context)

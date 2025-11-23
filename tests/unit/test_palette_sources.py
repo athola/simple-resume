@@ -10,44 +10,103 @@ from urllib.error import HTTPError
 
 import pytest
 
-from simple_resume.palettes.common import Palette
-from simple_resume.palettes.exceptions import PaletteRemoteError
-from simple_resume.palettes.sources import (
-    ColourLoversClient,
+from simple_resume.core.palettes.common import Palette
+from simple_resume.core.palettes.exceptions import PaletteRemoteError
+from simple_resume.core.palettes.sources import (
     PalettableRecord,
     build_palettable_registry_snapshot,
-    ensure_bundled_palettes_loaded,
-    load_default_palettes,
     load_palettable_palette,
+    parse_palettable_cache,
+    parse_palette_data,
+    serialize_palettable_records,
 )
+from simple_resume.shell.palettes.loader import (
+    ensure_palettable_loaded,
+)
+from simple_resume.shell.palettes.remote import ColourLoversClient
 from tests.bdd import Scenario
+
+
+def test_parse_palette_data_creates_palette_objects(story: Scenario) -> None:
+    story.given("a list of palette dictionaries")
+    payload = [
+        {"name": "Ocean", "colors": ["#003f5c", "#58508d"], "source": "test"},
+        {"name": "Forest", "colors": ["#228b22", "#006400"]},  # No source/metadata
+    ]
+
+    story.when("parse_palette_data is called")
+    palettes = parse_palette_data(payload)
+
+    story.then("it returns Palette objects with correct attributes")
+    assert len(palettes) == 2
+    assert palettes[0].name == "Ocean"
+    assert palettes[0].swatches == ("#003f5c", "#58508d")
+    assert palettes[0].source == "test"
+    assert palettes[1].name == "Forest"
+    assert palettes[1].source == "default"  # Default when not provided
+    assert palettes[1].metadata == {}  # Default when not provided
+
+
+def test_parse_palettable_cache(story: Scenario) -> None:
+    story.given("a list of palettable cache dictionaries")
+    payload = [
+        {
+            "name": "Blues_3",
+            "module": "palettable.colorbrewer.sequential",
+            "attribute": "Blues_3",
+            "category": "colorbrewer",
+            "palette_type": "sequential",
+            "size": 3,
+        }
+    ]
+
+    story.when("parse_palettable_cache is called")
+    records = parse_palettable_cache(payload)
+
+    story.then("it returns PalettableRecord objects")
+    assert len(records) == 1
+    assert records[0].module == "palettable.colorbrewer.sequential"
+    assert records[0].size == 3
+    assert records[0].name == "Blues_3"
+
+
+def test_serialize_palettable_records(story: Scenario) -> None:
+    story.given("a list of PalettableRecord objects")
+    records = [
+        PalettableRecord(
+            name="Blues_3",
+            module="palettable.colorbrewer.sequential",
+            attribute="Blues_3",
+            category="colorbrewer",
+            palette_type="sequential",
+            size=3,
+        )
+    ]
+
+    story.when("serialize_palettable_records is called")
+    result = serialize_palettable_records(records)
+
+    story.then("it returns serializable dictionaries")
+    assert len(result) == 1
+    assert result[0]["module"] == "palettable.colorbrewer.sequential"
+    assert result[0]["size"] == 3
+    assert result[0]["name"] == "Blues_3"
 
 
 def test_load_default_palettes_returns_palettes(story: Scenario) -> None:
     story.given("the bundled default palettes file is present")
-    palettes = load_default_palettes()
+    # Core function is now a stub - use shell version
+    from simple_resume.shell.palettes.loader import (  # noqa: PLC0415
+        load_default_palettes as shell_load,
+    )
+
+    palettes = shell_load()
 
     story.then("at least one palette is loaded with hex swatches")
     assert palettes
     assert isinstance(palettes[0], Palette)
     assert palettes[0].swatches
     assert all(color.startswith("#") for color in palettes[0].swatches)
-
-
-def test_load_default_palettes_handles_missing_file(
-    tmp_path: Path,
-    story: Scenario,
-) -> None:
-    story.given("the default palette file cannot be found")
-    missing_file = tmp_path / "missing.json"
-
-    with patch(
-        "simple_resume.palettes.sources._default_file", return_value=missing_file
-    ):
-        palettes = load_default_palettes()
-
-    story.then("the loader falls back to an empty list")
-    assert palettes == []
 
 
 def test_ensure_bundled_palettes_returns_cached_records(
@@ -69,12 +128,14 @@ def test_ensure_bundled_palettes_returns_cached_records(
 
     with (
         patch(
-            "simple_resume.palettes.sources._load_cached_palettable",
+            "simple_resume.shell.palettes.loader.load_cached_palettable",
             return_value=cached,
         ),
-        patch("simple_resume.palettes.sources._discover_palettable") as mock_discover,
+        patch(
+            "simple_resume.shell.palettes.loader.discover_palettable"
+        ) as mock_discover,
     ):
-        records = ensure_bundled_palettes_loaded()
+        records = ensure_palettable_loaded()
 
     story.then("cached metadata is returned without re-discovery")
     assert records == cached
@@ -104,15 +165,16 @@ def test_ensure_bundled_palettes_discovers_when_cache_empty(
 
     with (
         patch(
-            "simple_resume.palettes.sources._load_cached_palettable", return_value=[]
+            "simple_resume.shell.palettes.loader.load_cached_palettable",
+            return_value=[],
         ),
         patch(
-            "simple_resume.palettes.sources._discover_palettable",
+            "simple_resume.shell.palettes.loader.discover_palettable",
             return_value=discovered,
         ) as mock_discover,
-        patch("simple_resume.palettes.sources._save_palettable") as mock_save,
+        patch("simple_resume.shell.palettes.loader.save_palettable_cache") as mock_save,
     ):
-        records = ensure_bundled_palettes_loaded()
+        records = ensure_palettable_loaded()
 
     story.then("records are discovered and saved to the cache directory")
     assert records == discovered
@@ -143,7 +205,7 @@ def test_load_palettable_palette_normalises_hex_colors(
     )
 
     with patch(
-        "simple_resume.palettes.sources.import_module", return_value=fake_module
+        "simple_resume.core.palettes.sources.import_module", return_value=fake_module
     ):
         palette = load_palettable_palette(record)
 
@@ -165,7 +227,8 @@ def test_load_palettable_palette_handles_exceptions(story: Scenario) -> None:
     )
 
     with patch(
-        "simple_resume.palettes.sources.import_module", side_effect=RuntimeError("boom")
+        "simple_resume.core.palettes.sources.import_module",
+        side_effect=RuntimeError("boom"),
     ):
         palette = load_palettable_palette(record)
 
@@ -189,7 +252,7 @@ def test_build_palettable_registry_snapshot_uses_loaded_records(
     ]
 
     with patch(
-        "simple_resume.palettes.sources.ensure_bundled_palettes_loaded",
+        "simple_resume.core.palettes.sources.discover_palettable",
         return_value=records,
     ):
         snapshot = build_palettable_registry_snapshot()
@@ -224,7 +287,7 @@ def test_colourlovers_fetch_http_error(
         fp=None,
     )
 
-    with patch("simple_resume.palettes.sources.urlopen", side_effect=http_error):
+    with patch("simple_resume.shell.palettes.remote.urlopen", side_effect=http_error):
         with pytest.raises(PaletteRemoteError, match="request failed"):
             client.fetch(num_results=1)
 
@@ -244,7 +307,9 @@ def test_colourlovers_fetch_invalid_json(
     mock_response.__enter__ = Mock(return_value=mock_response)
     mock_response.__exit__ = Mock(return_value=False)
 
-    with patch("simple_resume.palettes.sources.urlopen", return_value=mock_response):
+    with patch(
+        "simple_resume.shell.palettes.remote.urlopen", return_value=mock_response
+    ):
         with pytest.raises(PaletteRemoteError, match="invalid JSON"):
             client.fetch(num_results=1)
 

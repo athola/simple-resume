@@ -1,10 +1,10 @@
 # ADR-005: Configuration Management Architecture
 
 ## Status
-**Accepted** - Current implementation is production-ready with identified refactoring opportunities
+**Accepted** - The current implementation is production-ready, with identified refactoring opportunities.
 
 ## Context
-The configuration management system must handle complex resume configurations while providing:
+The configuration management system must handle complex resume configurations, providing:
 
 1. **Multi-layered configuration**: Global defaults → resume-specific → user overrides
 2. **Color theming**: Palette-based and direct color specification with WCAG compliance
@@ -14,7 +14,7 @@ The configuration management system must handle complex resume configurations wh
 6. **Session management**: Multi-resume session configuration and inheritance
 
 ## Decision
-Implemented a hierarchical configuration system with strategy pattern for palette processing:
+We implemented a hierarchical configuration system, using a strategy pattern for palette processing:
 
 ### Configuration Architecture
 ```
@@ -93,46 +93,42 @@ class ConfigurationProcessorChain:
 ## Alternatives Considered
 
 1. **Single configuration file per resume**
-   - *Pros*: Simple to understand and debug
-   - *Cons*: No configuration reuse, repetitive setups
-   - *Decision*: Hierarchical approach provides better user experience
+   - *Pros*: Offers simplicity in understanding and debugging.
+   - *Cons*: Lacks configuration reuse, leading to repetitive setups.
 
 2. **JSON configuration instead of YAML**
-   - *Pros*: Better validation, faster parsing
-   - *Cons*: Less user-friendly, no comments
-   - *Decision*: YAML's readability and comment support essential for users
+   - *Pros*: Provides better validation and faster parsing.
+   - *Cons*: Less user-friendly; lacks support for comments.
 
 3. **Configuration database or external service**
    - *Pros*: Centralized configuration, versioning
-   - *Cons*: Additional dependency, complexity
-   - *Decision*: File-based configuration maintains simplicity and portability
+   - *Cons*: Introduces an additional dependency and increased complexity.
 
 4. **Schema validation library (e.g., Pydantic)**
    - *Pros*: Automatic validation, better error messages
-   - *Cons*: Additional dependency, learning curve
-   - *Decision*: Manual validation provides more control and custom error messages
+   - *Cons*: Introduces an additional dependency and a learning curve.
 
 ## Consequences
 
 ### Positive Impacts
-- **Flexible configuration**: Multiple sources and override mechanisms
-- **Professional defaults**: Sensible defaults for professional resume layouts
-- **Color theming**: Advanced palette system with WCAG compliance
-- **Extensibility**: Plugin architecture for custom palettes and configuration options
-- **Validation**: Comprehensive error checking with helpful messages
-- **Session management**: Multi-resume workflows with shared configuration
+- **Flexible Configuration**: Supports multiple sources and override mechanisms.
+- **Professional Defaults**: Provides sensible defaults for professional resume layouts.
+- **Color Theming**: Utilizes an advanced palette system with WCAG compliance.
+- **Extensibility**: Features a plugin architecture for custom palettes and configuration options.
+- **Validation**: Provides comprehensive error checking with helpful messages.
+- **Session Management**: Supports multi-resume workflows with shared configuration.
 
 ### Negative Impacts
-- **Complexity**: Multiple configuration layers can be confusing
-- **Scattered validation**: Validation logic spread across multiple files
-- **Tight coupling**: Configuration processing tied to specific data structures
-- **Learning curve**: Users need to understand configuration hierarchy
+- **Increased Complexity**: Multiple configuration layers can be confusing.
+- **Scattered Validation**: Validation logic is spread across multiple files.
+- **Tight Coupling**: Configuration processing is tied to specific data structures.
+- **Learning Curve**: Users must understand the configuration hierarchy.
 
 ### Technical Details
-- **Configuration sources**: 4 layers (defaults → session → resume → runtime)
-- **Palette system**: 3 sources (registry, generator, remote API)
-- **Validation**: 15+ validation functions across 3 modules
-- **Default colors**: 11 predefined color fields with auto-contrast calculation
+- **Configuration Sources**: Consists of 4 layers (defaults → session → resume → runtime).
+- **Palette System**: Employs 3 sources (registry, generator, remote API).
+- **Validation**: Involves 15+ validation functions across 3 modules.
+- **Default Colors**: 11 predefined color fields with automatic contrast calculation.
 - **Layout parameters**: 20+ customization options for spacing and dimensions
 
 ## Configuration Hierarchy
@@ -231,10 +227,10 @@ palette:
 ## Validation Strategy
 
 ### Configuration Validation
-- **Type validation**: Ensure configuration values have correct types
-- **Range validation**: Validate dimensions and spacing parameters
-- **Color validation**: Hex color format and WCAG compliance
-- **Template validation**: Template existence and compatibility
+- **Type Validation**: Ensures configuration values have correct types.
+- **Range Validation**: Validates dimensions and spacing parameters.
+- **Color Validation**: Checks hex color format and WCAG compliance.
+- **Template Validation**: Verifies template existence and compatibility.
 
 ### Error Handling
 ```python
@@ -267,33 +263,33 @@ def _normalize_color_scheme(config: dict[str, Any]) -> None:
 ```
 
 ## Performance Considerations
-- **Deep copying**: Configuration processing uses deep copies for immutability
-- **Palette caching**: Registry palettes cached in memory for fast access
-- **Validation caching**: Validation results cached where appropriate
-- **Lazy loading**: Palettes loaded on-demand from external sources
+- **Deep Copying**: Configuration processing uses deep copies to ensure immutability.
+- **Palette Caching**: Registry palettes are cached in memory for fast access.
+- **Validation Caching**: Validation results are cached where appropriate.
+- **Lazy Loading**: Palettes are loaded on-demand from external sources.
 
 ## Future Improvements
 
 ### High Priority (6 months)
-1. **Configuration Schema Validation**: Implement JSON Schema for YAML validation
-2. **Consolidated Validation**: Centralize validation logic in single module
-3. **Configuration Builder**: Fluent API for programmatic configuration
+1. **Configuration Schema Validation**: Implement JSON Schema for YAML validation.
+2. **Consolidated Validation**: Centralize validation logic in a single module.
+3. **Configuration Builder**: Develop a fluent API for programmatic configuration.
 
 ### Medium Priority (1 year)
-4. **Plugin System**: Extensible configuration for third-party extensions
-5. **Configuration Versioning**: Handle configuration schema migrations
-6. **Enhanced Error Messages**: Contextual error messages with suggestions
+4. **Plugin System**: Create extensible configuration for third-party extensions.
+5. **Configuration Versioning**: Implement handling for configuration schema migrations.
+6. **Enhanced Error Messages**: Provide contextual error messages with suggestions.
 
 ### Low Priority (18+ months)
-7. **Configuration GUI**: Web interface for visual configuration editing
-8. **Configuration Templates**: Predefined configuration sets for different industries
-9. **Advanced Validation**: Business rule validation beyond type checking
+7. **Configuration GUI**: Develop a web interface for visual configuration editing.
+8. **Configuration Templates**: Create predefined configuration sets for various industries.
+9. **Advanced Validation**: Implement business rule validation beyond type checking.
 
 ## Testing Strategy
-- **Unit Tests**: Individual validation functions and processors
-- **Integration Tests**: Configuration loading and processing pipelines
-- **End-to-End Tests**: Resume generation with various configuration combinations
-- **Property-Based Tests**: Generate random configurations for edge case testing
+- **Unit Tests**: Focus on individual validation functions and processors.
+- **Integration Tests**: Verify configuration loading and processing pipelines.
+- **End-to-End Tests**: Validate resume generation with various configuration combinations.
+- **Property-Based Tests**: Generate random configurations to test edge cases.
 
 ## Related ADRs
 - **ADR-002**: Functional core/imperative shell (configuration processing separation)
@@ -303,8 +299,8 @@ def _normalize_color_scheme(config: dict[str, Any]) -> None:
 ## Author
 - **Primary**: Architecture Review
 - **Date**: 2025-11-12
-- **Review Status**: Accepted - current implementation validated as production-ready
+- **Review Status**: Accepted - The current implementation is validated as production-ready.
 
 ---
 
-*This ADR documents the comprehensive configuration management system that supports complex resume configurations while maintaining extensibility and validation.*
+*This ADR documents our comprehensive configuration management system. It supports complex resume configurations while maintaining extensibility and validation.*

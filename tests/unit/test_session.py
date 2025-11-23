@@ -7,10 +7,10 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from simple_resume.config import Paths
-from simple_resume.constants import OutputFormat
-from simple_resume.exceptions import ConfigurationError, SessionError
-from simple_resume.session import (
+from simple_resume.core.constants import OutputFormat
+from simple_resume.core.exceptions import ConfigurationError, SessionError
+from simple_resume.core.paths import Paths
+from simple_resume.shell.session import (
     ResumeSession,
     SessionConfig,
     create_session,
@@ -100,7 +100,7 @@ class TestResumeSessionInit:
         self,
         story: Scenario,
     ) -> None:
-        with patch("simple_resume.session.session.resolve_paths") as mock_resolve:
+        with patch("simple_resume.shell.session.manage.resolve_paths") as mock_resolve:
             mock_resolve.side_effect = Exception("Invalid path")
 
             story.when("ResumeSession attempts to resolve an invalid data_dir")
@@ -328,6 +328,20 @@ class TestResumeSessionResume:
 
         session.close()
 
+    def test_resume_reraises_session_error_directly(self, tmp_path: Path) -> None:
+        """resume() re-raises SessionError without wrapping."""
+        session = ResumeSession(data_dir=str(tmp_path))
+
+        original_error = SessionError("Original error", session_id="test-id")
+
+        with patch.object(
+            session._repository, "get_resume", side_effect=original_error
+        ):
+            with pytest.raises(SessionError, match="Original error"):
+                session.resume("test_resume")
+
+        session.close()
+
 
 class TestResumeSessionGenerateAll:
     """Test ResumeSession.generate_all() method."""
@@ -345,7 +359,10 @@ class TestResumeSessionGenerateAll:
         assert len(result.results) == 0
         session.close()
 
-    def test_generate_all_finds_yaml_files(self, tmp_path: Path) -> None:
+    @patch("simple_resume.shell.session.manage.to_pdf")
+    def test_generate_all_finds_yaml_files(
+        self, mock_to_pdf: Mock, tmp_path: Path
+    ) -> None:
         """generate_all() finds and processes YAML files."""
         # Create test YAML files
         input_dir = tmp_path / "input"
@@ -358,21 +375,19 @@ class TestResumeSessionGenerateAll:
 
         session = ResumeSession(data_dir=str(tmp_path))
 
-        with patch.object(session, "resume") as mock_resume:
-            mock_result = Mock()
-            mock_resume_obj = Mock()
-            mock_resume_obj.to_pdf.return_value = mock_result
-            mock_resume.return_value = mock_resume_obj
+        mock_result = Mock()
+        mock_to_pdf.return_value = mock_result
 
-            result = session.generate_all(format="pdf")
+        result = session.generate_all(format="pdf")
 
-            assert result.successful == 2
-            assert result.failed == 0
-            assert len(result.results) == 2
+        assert result.successful == 2
+        assert result.failed == 0
+        assert len(result.results) == 2
 
         session.close()
 
-    def test_generate_all_with_pattern(self, tmp_path: Path) -> None:
+    @patch("simple_resume.shell.session.manage.to_pdf")
+    def test_generate_all_with_pattern(self, mock_to_pdf: Mock, tmp_path: Path) -> None:
         """generate_all() filters files by pattern."""
         # Create test YAML files
         input_dir = tmp_path / "input"
@@ -385,20 +400,18 @@ class TestResumeSessionGenerateAll:
 
         session = ResumeSession(data_dir=str(tmp_path))
 
-        with patch.object(session, "resume") as mock_resume:
-            mock_result = Mock()
-            mock_resume_obj = Mock()
-            mock_resume_obj.to_pdf.return_value = mock_result
-            mock_resume.return_value = mock_resume_obj
+        mock_result = Mock()
+        mock_to_pdf.return_value = mock_result
 
-            result = session.generate_all(format="pdf", pattern="user*")
+        result = session.generate_all(format="pdf", pattern="user*")
 
-            # Should only find user_resume
-            assert result.successful >= 0  # Depends on glob behavior
+        # Should only find user_resume
+        assert result.successful >= 0  # Depends on glob behavior
 
         session.close()
 
-    def test_generate_all_pdf_format(self, tmp_path: Path) -> None:
+    @patch("simple_resume.shell.session.manage.to_pdf")
+    def test_generate_all_pdf_format(self, mock_to_pdf: Mock, tmp_path: Path) -> None:
         """generate_all() generates PDF format."""
         input_dir = tmp_path / "input"
         input_dir.mkdir()
@@ -409,19 +422,17 @@ class TestResumeSessionGenerateAll:
 
         session = ResumeSession(data_dir=str(tmp_path))
 
-        with patch.object(session, "resume") as mock_resume:
-            mock_result = Mock()
-            mock_resume_obj = Mock()
-            mock_resume_obj.to_pdf.return_value = mock_result
-            mock_resume.return_value = mock_resume_obj
+        mock_result = Mock()
+        mock_to_pdf.return_value = mock_result
 
-            session.generate_all(format="pdf")
+        session.generate_all(format="pdf")
 
-            mock_resume_obj.to_pdf.assert_called()
+        mock_to_pdf.assert_called()
 
         session.close()
 
-    def test_generate_all_html_format(self, tmp_path: Path) -> None:
+    @patch("simple_resume.shell.session.manage.to_html")
+    def test_generate_all_html_format(self, mock_to_html: Mock, tmp_path: Path) -> None:
         """generate_all() generates HTML format."""
         input_dir = tmp_path / "input"
         input_dir.mkdir()
@@ -432,15 +443,12 @@ class TestResumeSessionGenerateAll:
 
         session = ResumeSession(data_dir=str(tmp_path))
 
-        with patch.object(session, "resume") as mock_resume:
-            mock_result = Mock()
-            mock_resume_obj = Mock()
-            mock_resume_obj.to_html.return_value = mock_result
-            mock_resume.return_value = mock_resume_obj
+        mock_result = Mock()
+        mock_to_html.return_value = mock_result
 
-            session.generate_all(format="html")
+        session.generate_all(format="html")
 
-            mock_resume_obj.to_html.assert_called()
+        mock_to_html.assert_called()
 
         session.close()
 
@@ -463,7 +471,10 @@ class TestResumeSessionGenerateAll:
         with pytest.raises(SessionError, match="session is not active"):
             session.generate_all()
 
-    def test_generate_all_uses_session_auto_open(self, tmp_path: Path) -> None:
+    @patch("simple_resume.shell.session.manage.to_pdf")
+    def test_generate_all_uses_session_auto_open(
+        self, mock_to_pdf: Mock, tmp_path: Path
+    ) -> None:
         """generate_all() uses session auto_open setting."""
         input_dir = tmp_path / "input"
         input_dir.mkdir()
@@ -475,21 +486,21 @@ class TestResumeSessionGenerateAll:
         config = SessionConfig(auto_open=True)
         session = ResumeSession(data_dir=str(tmp_path), config=config)
 
-        with patch.object(session, "resume") as mock_resume:
-            mock_result = Mock()
-            mock_resume_obj = Mock()
-            mock_resume_obj.to_pdf.return_value = mock_result
-            mock_resume.return_value = mock_resume_obj
+        mock_result = Mock()
+        mock_to_pdf.return_value = mock_result
 
-            session.generate_all(format="pdf")
+        session.generate_all(format="pdf")
 
-            # Should pass open_after=True
-            call_kwargs = mock_resume_obj.to_pdf.call_args[1]
-            assert call_kwargs.get("open_after") is True
+        # Should pass open_after=True
+        call_kwargs = mock_to_pdf.call_args[1]
+        assert call_kwargs.get("open_after") is True
 
         session.close()
 
-    def test_generate_all_handles_generation_errors(self, tmp_path: Path) -> None:
+    @patch("simple_resume.shell.session.manage.to_pdf")
+    def test_generate_all_handles_generation_errors(
+        self, mock_to_pdf: Mock, tmp_path: Path
+    ) -> None:
         """generate_all() handles errors and continues."""
         input_dir = tmp_path / "input"
         input_dir.mkdir()
@@ -501,30 +512,29 @@ class TestResumeSessionGenerateAll:
 
         session = ResumeSession(data_dir=str(tmp_path))
 
-        with patch.object(session, "resume") as mock_resume:
-            # First resume fails, second succeeds
-            mock_result = Mock()
-            mock_resume_obj = Mock()
-            mock_resume_obj.to_pdf.return_value = mock_result
+        # First call fails, second succeeds
+        mock_result = Mock()
+        call_count = [0]
 
-            call_count = [0]
+        def side_effect(*args: object, **kwargs: object) -> object:
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise Exception("Generation failed")
+            return mock_result
 
-            def side_effect(*args: object, **kwargs: object) -> object:
-                call_count[0] += 1
-                if call_count[0] == 1:
-                    raise Exception("Generation failed")
-                return mock_resume_obj
+        mock_to_pdf.side_effect = side_effect
 
-            mock_resume.side_effect = side_effect
+        result = session.generate_all(format="pdf")
 
-            result = session.generate_all(format="pdf")
-
-            assert result.failed == 1
-            assert result.successful == 1
+        assert result.failed == 1
+        assert result.successful == 1
 
         session.close()
 
-    def test_generate_all_tracks_operation_count(self, tmp_path: Path) -> None:
+    @patch("simple_resume.shell.session.manage.to_pdf")
+    def test_generate_all_tracks_operation_count(
+        self, mock_to_pdf: Mock, tmp_path: Path
+    ) -> None:
         """generate_all() increments operation count."""
         input_dir = tmp_path / "input"
         input_dir.mkdir()
@@ -537,15 +547,12 @@ class TestResumeSessionGenerateAll:
         session = ResumeSession(data_dir=str(tmp_path))
         initial_count = session.operation_count
 
-        with patch.object(session, "resume") as mock_resume:
-            mock_result = Mock()
-            mock_resume_obj = Mock()
-            mock_resume_obj.to_pdf.return_value = mock_result
-            mock_resume.return_value = mock_resume_obj
+        mock_result = Mock()
+        mock_to_pdf.return_value = mock_result
 
-            session.generate_all(format="pdf")
+        session.generate_all(format="pdf")
 
-            assert session.operation_count > initial_count
+        assert session.operation_count > initial_count
 
         session.close()
 

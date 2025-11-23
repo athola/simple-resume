@@ -6,7 +6,7 @@
 
 ## Overview
 
-simple-resume is built using a **Functional Core, Imperative Shell** pattern. This architecture separates pure business logic from side effects (like file I/O or network requests) to improve testability and maintainability.
+simple-resume uses a **Functional Core, Imperative Shell** pattern. This architecture separates pure, testable business logic from I/O and other side effects. The separation means the core can be tested quickly and deterministically without mocks, while the shell handles interactions with the outside world (e.g., file system, network).
 
 The "core" contains deterministic functions that are tested in memory without mocks, which makes the core test suite very fast. The "shell" manages all I/O, configuration, and orchestration of calls to the core.
 
@@ -85,7 +85,7 @@ The architecture is enforced by strict import rules that prevent the core from d
 
 ### Forbidden I/O Libraries in Core
 
-Core modules **must not** import libraries that perform I/O. This is enforced by automated tests. Prohibited libraries include:
+Core modules **must not** import libraries that perform I/O. An automated test suite fails any commit that adds a prohibited import to the core, ensuring the boundary is maintained. Prohibited libraries include:
 - `weasyprint`
 - `yaml`
 - `requests` / `urllib`
@@ -116,7 +116,7 @@ def hydrate_resume_structure(filename: str) -> dict[str, Any]:
 
 ## Design Patterns
 
-The following patterns are used to maintain the separation between the core and the shell.
+We use the following patterns to keep the core and shell separate.
 
 ### 1. Pure Functions in the Core
 
@@ -304,7 +304,7 @@ def execute_effects(effects: list[Effect]) -> None:
 
 ## Testing Strategy
 
-The testing strategy is divided into two parts: core tests and shell tests.
+Our testing strategy mirrors the architecture, with different approaches for the core and the shell.
 
 ### Core Tests (Unit Tests)
 
@@ -366,7 +366,7 @@ Shell tests use protocol-based mocks and do not access the filesystem or the net
 
 ## Common Anti-Patterns
 
-The following are examples of code that violates the architecture.
+Avoid these common patterns, which violate the architecture.
 
 ### 1. I/O in the Core
 
@@ -433,7 +433,7 @@ def process_config(config_path: str):
 
 ## Refactoring Checklist
 
-When refactoring a module to follow this pattern, use the following checklists to ensure compliance.
+Use these checklists when refactoring a module to comply with this architecture.
 
 ### For Core Modules
 
@@ -463,7 +463,7 @@ See [Migration Guide](Migration-Guide-Modernization.md) for step-by-step instruc
 
 ## Enforcement
 
-The architecture is enforced through a combination of automated testing, pre-commit hooks, and CI/CD gates.
+We enforce the architecture automatically through tests, pre-commit hooks, and CI gates.
 
 ### Automated Tests
 
@@ -537,7 +537,7 @@ These modules are currently being refactored to comply with the architecture.
 
 ## Questions and Support
 
-Before asking questions about this architecture, please review the following documents:
+Before asking a question, please review these documents:
 - [ADR002](architecture/ADR002-functional-core-imperative-shell.md) for the rationale behind the architecture.
 - The [refactoring plan](../CORE_REFACTOR_PLAN.md) for the implementation timeline.
 

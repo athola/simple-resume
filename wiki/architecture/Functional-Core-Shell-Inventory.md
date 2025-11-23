@@ -2,20 +2,161 @@
 
 This document inventories modules refactored to follow the "functional core, imperative shell" pattern.
 
-| Module | Side Effects | Core Logic | Proposed Shell Adapter | Notes |
-| --- | --- | --- | --- | --- |
-| `src/simple_resume/utilities.py` (+ `src/simple_resume/utils/*.py`) | Still loads YAML, reads palette files, mutates caller-provided dicts, renders Markdown. | Config normalization, palette resolution, Markdown-to-HTML transforms. | Keep `utilities.py` as orchestration shell that calls pure helpers in `core.config_core`, `core.hydration_core`, and `core.colors`. All file/CLI access moves into `simple_resume.utils.io`. | New `simple_resume.utils` package now owns filesystem helpers and exposes deprecation shims. Remaining work is to finish migrating palette + Markdown I/O out of the core helpers. |
-| `src/simple_resume/hydration.py` | Opens YAML files, expands Markdown, locates template assets. | `core.hydration_core.build_skill_group_payload` and related helpers hydrate dicts deterministically. | Thin loader that resolves paths, then forwards raw yaml + config into `core.hydration_core`. | Core helpers exist but CLI/session callers still import `hydration.py` directly. Documenting the split helps reviewers ensure new logic lands in the core module first. |
-| `src/simple_resume/cli.py` | Parses CLI args, prints to stdout/stderr, triggers generation with side effects. | Command planning and batch orchestration logic. | CLI stays a shell, but should delegate to `core.plan`/`generation_plan` for decision making so tests stay pure. | Planner exists (`core.plan` + `generation_plan`), yet several subcommands fall back to inline logic. Tracking here keeps refactor momentum. |
-| `src/simple_resume/core/pdf_generation_strategy.py` | Pure strategies (WeasyPrint, LaTeX) now compute actions but still reference shell utilities for filesystem validation in a few spots. | Strategy selection + orchestration decisions now live here. | Shell adapter in `shell/generation.py` should own subprocess + filesystem work, invoking strategies only for planning. | File replaces the monolithic `core/pdf_generation.py` behavior. Remaining TODO: remove the last direct file writes from strategy implementations. |
-| `src/simple_resume/session/session.py` | Manages context managers, caches, stats, and dependency wiring. | Session policies (paths resolution, config defaults) and repository coordination. | Provide an imperative wrapper (`ResumeSession`) over a pure `ResumeRepository` facade plus injected loaders. | Session now builds on `simple_resume.dependencies.ResumeRepository`, but cache invalidation and telemetry live inside the class. Future state machines (batch ops, telemetry exporters) should move into dedicated shells. |
-| `src/simple_resume/shell/generation.py` | Spawns subprocesses, writes LaTeX files, opens PDFs. | Currently thin layer over `generation_plan`, but lacks awareness of repo/session abstractions. | Make this the single execution shell for CLI + `ResumeSession`, so strategies never need to know about subprocesses. | Aligning shells keeps future adapters (HTTP, background jobs) from duplicating subprocess management logic. |
+## Current Module Structure
+
+### Core Layer (`src/simple_resume/core/`)
+
+Pure functions and data structures with no I/O operations.
+
+| Module | Purpose | Purity Status |
+| --- | --- | --- |
+| `core/colors.py` | WCAG luminance/contrast calculations, ColorCalculationService | ✅ Pure |
+| `core/config.py` | Configuration normalization and validation | ✅ Pure |
+| `core/constants/` | Application constants (colors, files, layout) | ✅ Pure |
+| `core/effects.py` | Effect types (WriteFile, MakeDirectory, etc.) | ✅ Pure |
+| `core/exceptions.py` | Exception hierarchy | ✅ Pure |
+| `core/file_operations.py` | Pure file path operations (no I/O) | ✅ Pure |
+| `core/generate/html.py` | HTML generation planning | ✅ Pure |
+| `core/generate/pdf.py` | PDF generation planning | ⚠️ Known violation (weasyprint) |
+| `core/generate/plan.py` | Generation plan creation | ✅ Pure |
+| `core/hydration.py` | Data hydration transformations | ✅ Pure |
+| `core/latex/` | LaTeX rendering logic (context, conversion, escaping, etc.) | ✅ Pure |
+| `core/markdown.py` | Markdown to HTML transformation | ✅ Pure |
+| `core/models.py` | Data models (RenderPlan, ValidationResult, RenderMode) | ✅ Pure |
+| `core/palettes/` | Palette resolution, generators, registry | ✅ Pure |
+| `core/paths.py` | Path data structure | ✅ Pure |
+| `core/plan.py` | Render plan preparation and validation | ✅ Pure |
+| `core/render/` | Render request preparation | ✅ Pure |
+| `core/result.py` | GenerationResult and BatchGenerationResult (pure data) | ✅ Pure |
+| `core/resume.py` | Resume class with dependency injection | ✅ Pure (late-bound I/O) |
+| `core/skills.py` | Skills data transformations | ✅ Pure |
+| `core/validation.py` | Configuration validation logic | ✅ Pure |
+
+### Shell Layer (`src/simple_resume/shell/`)
+
+I/O operations, external dependencies, and orchestration.
+
+| Module | Purpose | I/O Type |
+| --- | --- | --- |
+| `shell/cli/` | Command-line interface | User I/O, file I/O |
+| `shell/config.py` | Configuration loading | File I/O |
+| `shell/effect_executor.py` | Executes Effect objects from core | File I/O, subprocess |
+| `shell/file_opener.py` | Platform-specific file opening | Subprocess, webbrowser |
+| `shell/generate/core.py` | Generation orchestration | File I/O |
+| `shell/generate/lazy.py` | Lazy loading utilities | Module loading |
+| `shell/io_utils.py` | File system utilities | File I/O |
+| `shell/palettes/fetch.py` | Remote palette fetching | Network I/O |
+| `shell/palettes/loader.py` | Palette file loading | File I/O |
+| `shell/palettes/remote.py` | ColourLovers API client | Network I/O |
+| `shell/pdf_executor.py` | PDF generation execution | Subprocess |
+| `shell/render/latex.py` | LaTeX compilation | Subprocess |
+| `shell/render/operations.py` | HTML/PDF rendering operations | File I/O, weasyprint |
+| `shell/runtime/content.py` | Content loading | File I/O |
+| `shell/runtime/generate.py` | Generation runtime | File I/O |
+| `shell/session/` | Session management | File I/O, state |
+| `shell/strategies.py` | PDF generation strategies | I/O delegation |
+
+## Key Architectural Patterns
+
+### 1. Effect System
+
+Core functions return Effect objects describing side effects:
+
+```python
+# core/effects.py
+@dataclass(frozen=True)
+class WriteFile(Effect):
+    path: Path
+    content: str | bytes
+
+# shell/effect_executor.py
+class EffectExecutor:
+    def execute(self, effect: Effect) -> Any:
+        if isinstance(effect, WriteFile):
+            effect.path.write_text(effect.content)
+```
+
+### 2. Late-Bound Dependencies
+
+Core modules use late binding to avoid import-time shell dependencies:
+
+```python
+# core/resume.py
+def _get_pdf_strategy(mode: str) -> PdfGenerationStrategy:
+    """Get the appropriate PDF generation strategy."""
+    from simple_resume.shell.strategies import LatexStrategy, WeasyPrintStrategy
+
+    if mode == "latex":
+        return LatexStrategy()
+    return WeasyPrintStrategy()
+```
+
+### 3. Protocol-Based Dependency Injection
+
+Core defines protocols, shell provides implementations:
+
+```python
+# core/resume.py
+class ContentLoader(Protocol):
+    def load(self, name: str, paths: Paths | None, transform_markdown: bool) -> tuple[dict, dict]:
+        ...
+
+# Usage with injection for testing
+Resume.read_yaml(name, content_loader=mock_loader)
+```
+
+### 4. Pure Result Objects
+
+`GenerationResult` is a pure data class; I/O operations are in shell:
+
+```python
+# core/result.py - Pure data
+@dataclass(frozen=True)
+class GenerationResult:
+    output_path: Path
+    format_type: str
+    metadata: GenerationMetadata | None = None
+
+# shell/file_opener.py - I/O operations
+def open_file(path: Path, format_type: str | None = None) -> bool:
+    ...
+```
+
+## Known Violations (Tracked)
+
+| File | Violation | Tracked In | Status |
+| --- | --- | --- | --- |
+| `core/generate/pdf.py` | imports weasyprint | test_layer_separation.py | Planned refactor |
+| `core/result.py` | Previously had subprocess | N/A | ✅ Fixed |
+| `core/resume.py` | Previously imported shell at module level | N/A | ✅ Fixed (late binding) |
+
+## Testing Strategy
+
+### Core Tests
+- Fast, deterministic, no mocks required
+- Test pure functions with input/output assertions
+- Located in `tests/unit/core/`
+
+### Shell Tests
+- Use dependency injection for isolation
+- Mock external services (filesystem, network)
+- Located in `tests/unit/shell/`
+
+### Architecture Tests
+- Enforce layer separation automatically
+- Run on every commit: `pytest tests/architecture/`
+- Detect forbidden imports, shell dependencies in core
 
 ## Next Steps
 
-The following steps should be taken for each module being refactored:
+1. **Refactor `core/generate/pdf.py`**: Remove weasyprint import, use protocol abstraction
+2. **Add architecture test for absolute imports**: Detect `from simple_resume.shell.*` in core
+3. **Increase test coverage**: Target 85%+ for core modules
+4. **Document API stability**: Mark public vs internal APIs
 
-1.  Define clear inputs and outputs (plain dictionaries or dataclasses) for pure core functions.
-2.  Identify callers that will become shells (e.g., CLI, session, services).
-3.  Add unit tests for pure functions before refactoring I/O code.
-4.  Track refactoring status in ADR to provide visibility into modules still mixing concerns.
+## Related Documentation
+
+- [Architecture Guide](../Architecture-Guide.md)
+- [ADR002: Functional Core, Imperative Shell](ADR002-functional-core-imperative-shell.md)
+- [ADR003: API Surface Design](ADR003-api-surface-design.md)
+- [Migration Guide](../Migration-Guide-Modernization.md)

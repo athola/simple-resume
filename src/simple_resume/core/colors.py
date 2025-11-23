@@ -1,15 +1,18 @@
 """Color calculation helpers that belong to the core domain layer.
 
 This module centralizes hex parsing, luminance math, and contrast helpers so
-domain services (and legacy utility shims) do not need to re-implement
+domain services (and utility shims) do not need to re-implement
 workarounds to avoid circular imports.
 """
 
 from __future__ import annotations
 
 import re
+from typing import Any
 
-from simple_resume.constants.colors import (
+from simple_resume.core.constants.colors import (
+    BOLD_DARKEN_FACTOR,
+    DEFAULT_COLOR_SCHEME,
     HEX_COLOR_FULL_LENGTH,
     HEX_COLOR_SHORT_LENGTH,
     ICON_CONTRAST_THRESHOLD,
@@ -26,6 +29,7 @@ __all__ = [
     "calculate_contrast_ratio",
     "calculate_icon_contrast_color",
     "calculate_luminance",
+    "ColorCalculationService",
     "darken_color",
     "get_contrasting_text_color",
     "hex_to_rgb",
@@ -61,6 +65,15 @@ def darken_color(hex_color: str, factor: float) -> str:
 
 
 def _calculate_luminance_from_rgb(rgb: tuple[int, int, int]) -> float:
+    """Calculate relative luminance from an RGB tuple using WCAG 2.1 formula.
+
+    Args:
+        rgb: An RGB color tuple (e.g., (255, 255, 255)).
+
+    Returns:
+        The relative luminance (0.0 to 1.0).
+
+    """
     r, g, b = rgb
 
     def _linearize(component: int) -> float:
@@ -130,3 +143,73 @@ def is_valid_color(color: str) -> bool:
     if not color:
         return False
     return bool(re.match(r"^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$", color))
+
+
+class ColorCalculationService:
+    """Service for calculating various color values based on configuration."""
+
+    @staticmethod
+    def calculate_sidebar_text_color(config: dict[str, Any]) -> str:
+        """Calculate sidebar text color based on sidebar background."""
+        sidebar_color = config.get("sidebar_color")
+        if sidebar_color and is_valid_color(sidebar_color):
+            return get_contrasting_text_color(sidebar_color)
+        return DEFAULT_COLOR_SCHEME.get("sidebar_text_color", "#000000")
+
+    @staticmethod
+    def calculate_sidebar_bold_color(config: dict[str, Any]) -> str:
+        """Calculate sidebar bold color based on sidebar background."""
+        sidebar_color = config.get("sidebar_color")
+        if sidebar_color and is_valid_color(sidebar_color):
+            # Make the bold color slightly darker than the background
+            return darken_color(sidebar_color, BOLD_DARKEN_FACTOR)
+        return "#000000"  # Default black
+
+    @staticmethod
+    def calculate_heading_icon_color(config: dict[str, Any]) -> str:
+        """Calculate heading icon color based on configuration."""
+        user_icon_color = config.get("heading_icon_color")
+        frame_color = config.get("frame_color", "#000000")
+
+        if isinstance(user_icon_color, str) and is_valid_color(user_icon_color):
+            return user_icon_color
+        theme_color = config.get("theme_color")
+        if isinstance(theme_color, str) and is_valid_color(theme_color):
+            return theme_color
+        return str(frame_color)
+
+    @staticmethod
+    def calculate_sidebar_icon_color(config: dict[str, Any]) -> str:
+        """Calculate sidebar icon color based on configuration."""
+        sidebar_color = config.get("sidebar_color")
+        if sidebar_color and is_valid_color(sidebar_color):
+            return get_contrasting_text_color(sidebar_color)
+        return "#FFFFFF"  # Default white icon
+
+    @staticmethod
+    def ensure_color_contrast(
+        background: str,
+        text_color: str,
+        *,
+        contrast_threshold: float = 3.0,
+    ) -> str:
+        """Ensure text color has sufficient contrast against background.
+
+        Args:
+            background: Background color in hex format
+            text_color: Text color in hex format
+            contrast_threshold: Minimum contrast ratio required
+
+        Returns:
+            Original text color if contrast is sufficient, otherwise a fallback color
+
+        """
+        if not is_valid_color(background) or not is_valid_color(text_color):
+            return "#333333"  # Default fallback color
+
+        contrast = calculate_contrast_ratio(text_color, background)
+        if contrast >= contrast_threshold:
+            return text_color
+
+        # Return fallback color with better contrast
+        return get_contrasting_text_color(background)

@@ -94,3 +94,5 @@ src/static/images/*
 *.swp
 commit_msg.txt
 bandit-report.json
+*.log
+output.json

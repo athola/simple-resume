@@ -6,12 +6,14 @@ import copy
 from pathlib import Path
 from typing import Any
 
-from simple_resume.constants import RenderMode
 from simple_resume.core.colors import is_valid_color
+from simple_resume.core.config import normalize_config
+from simple_resume.core.constants import RenderMode
+from simple_resume.core.exceptions import ValidationError
+from simple_resume.core.markdown import render_markdown_content
 from simple_resume.core.models import RenderPlan, ResumeConfig, ValidationResult
-from simple_resume.exceptions import ValidationError
-from simple_resume.palettes.exceptions import PaletteGenerationError
-from simple_resume.utilities import normalize_config, render_markdown_content
+from simple_resume.core.palettes.exceptions import PaletteGenerationError
+from simple_resume.core.palettes.registry import PaletteRegistry
 
 
 def _validate_color_fields(config: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
@@ -104,7 +106,7 @@ def _build_resume_config(normalized_config: dict[str, Any]) -> ResumeConfig:
 
 
 def validate_resume_config(
-    raw_config: dict[str, Any], filename: str = ""
+    raw_config: dict[str, Any], filename: str = "", *, registry: PaletteRegistry
 ) -> ValidationResult:
     """Validate and normalize resume configuration."""
     errors: list[str] = []
@@ -117,7 +119,7 @@ def validate_resume_config(
 
         # Normalize configuration
         normalized_config, palette_meta = normalize_config(
-            working_config, filename=filename
+            working_config, filename=filename, registry=registry
         )
 
         # Build configuration object
@@ -149,10 +151,10 @@ def validate_resume_config(
 
 
 def validate_resume_config_or_raise(
-    raw_config: dict[str, Any], filename: str = ""
+    raw_config: dict[str, Any], filename: str = "", *, registry: PaletteRegistry
 ) -> ResumeConfig:
     """Validate configuration and raise `ValidationError` on failure."""
-    result = validate_resume_config(raw_config, filename)
+    result = validate_resume_config(raw_config, filename, registry=registry)
     if not result.is_valid:
         raise ValidationError(
             f"Configuration validation failed: {result.errors}",
@@ -174,12 +176,15 @@ def normalize_with_palette_fallback(
     raw_config: dict[str, Any],
     *,
     palette_meta_source: dict[str, Any] | None = None,
+    registry: PaletteRegistry,
 ) -> tuple[dict[str, Any], Any, dict[str, Any]]:
     """Normalize a raw config while handling palette generation failures."""
     config_for_validation = raw_config
 
     try:
-        normalized_config_dict, palette_meta = normalize_config(raw_config)
+        normalized_config_dict, palette_meta = normalize_config(
+            raw_config, registry=registry
+        )
         return normalized_config_dict, palette_meta, config_for_validation
     except PaletteGenerationError:
         fallback_meta = None
@@ -188,7 +193,7 @@ def normalize_with_palette_fallback(
 
         cleaned_config = copy.deepcopy(raw_config)
         cleaned_config.pop("palette", None)
-        normalized_config_dict, _ = normalize_config(cleaned_config)
+        normalized_config_dict, _ = normalize_config(cleaned_config, registry=registry)
 
         return normalized_config_dict, fallback_meta, cleaned_config
 
@@ -246,6 +251,7 @@ def prepare_render_data(
     *,
     preview: bool = False,
     base_path: Path | str = "",
+    registry: PaletteRegistry,
 ) -> RenderPlan:
     """Transform raw resume data into a render plan."""
     raw_config = source_yaml_content.get("config")
@@ -256,10 +262,11 @@ def prepare_render_data(
         normalize_with_palette_fallback(
             raw_config,
             palette_meta_source=source_yaml_content.get("meta"),
+            registry=registry,
         )
     )
 
-    config = validate_resume_config_or_raise(config_for_validation)
+    config = validate_resume_config_or_raise(config_for_validation, registry=registry)
 
     mode: RenderMode = (
         RenderMode.LATEX if config.output_mode == "latex" else RenderMode.HTML

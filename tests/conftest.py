@@ -11,6 +11,9 @@ from unittest.mock import Mock
 import pytest
 import yaml
 
+# Import for service registration fixture
+from simple_resume.shell.services import register_default_services
+
 from .bdd import Scenario
 from .bdd import scenario as make_scenario
 
@@ -312,6 +315,12 @@ def mock_weasyprint() -> dict[str, Mock]:
 
 
 @pytest.fixture(autouse=True)
+def register_default_services_fixture() -> None:
+    """Register default services for all tests."""
+    register_default_services()
+
+
+@pytest.fixture(autouse=True)
 def mock_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     """Mock environment variables and paths for testing."""
     # Mock paths to avoid dependency on actual file structure
@@ -326,7 +335,7 @@ def mock_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     }
 
     for key, value in test_paths.items():
-        monkeypatch.setattr(f"simple_resume.config.{key}", value)
+        monkeypatch.setattr(f"simple_resume.shell.config.{key}", value)
 
 
 @pytest.fixture

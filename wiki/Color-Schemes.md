@@ -8,11 +8,11 @@ The following color properties can be set in the `config` section of the YAML fi
 
 -   `theme_color`: The primary color for headings and accents.
 -   `sidebar_color`: The background color of the sidebar.
--   `sidebar_text_color`: The text color of the sidebar. If not provided, it is automatically calculated from the `sidebar_color` for readability.
+-   `sidebar_text_color`: The text color for the sidebar. If not provided, the application automatically calculates a high-contrast color (either black or white) based on the `sidebar_color` to ensure readability.
 -   `bar_background_color`: The background color of skill bars.
 -   `date2_color`: The color for secondary date text.
 -   `frame_color`: The color of the preview frame in the web preview.
--   `bold_color`: The color for bolded text. If not provided, it is derived from the `frame_color`.
+-   `bold_color`: The color for bolded text. If not provided, it defaults to a color derived from the `frame_color`.
 
 ```yaml
 config:
@@ -99,7 +99,7 @@ palette:
 
 ## Verifying Colors
 
-To verify your colors, generate the resume in both HTML and PDF formats. The HTML preview is useful for quick iteration, while the PDF provides the most accurate representation of the printed colors.
+To verify your colors, generate the resume in both HTML and PDF formats. Use the HTML preview for quick iteration. For the most accurate representation of printed colors, check the PDF output.
 
 ```bash
 uv run simple-resume generate --format html --open

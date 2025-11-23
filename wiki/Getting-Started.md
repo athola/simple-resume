@@ -4,7 +4,7 @@ This guide provides a walkthrough for installing `simple-resume`, creating a res
 
 ## 1. Installation and Setup
 
-This guide assumes you have a development environment set up. For user installation instructions, see the [README.md](../README.md).
+This guide is for setting up a local development environment. For standard user installation, see the [README.md](../README.md).
 
 First, ensure you have Python 3.9+ and `uv` installed. Then, clone the repository and install the required dependencies:
 
@@ -61,6 +61,21 @@ To change the layout of your resume, specify a different `template` in your YAML
 template: resume_no_bars  # A minimalist design
 # template: resume_with_bars  # A design with skill level bars
 ```
+
+### Template Variables
+
+Templates have access to the following variables from your YAML file:
+
+| Variable | Description |
+|----------|-------------|
+| `name` | Full name |
+| `title` | Job title |
+| `contact` | Contact information |
+| `summary` | Professional summary |
+| `experience` | Work experience list |
+| `education` | Education list |
+| `skills` | Skills list |
+| `colors` | Color palette values |
 
 ### Apply a Color Scheme
 

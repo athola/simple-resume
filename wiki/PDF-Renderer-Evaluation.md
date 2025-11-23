@@ -4,13 +4,13 @@ This document evaluates alternatives to WeasyPrint for PDF generation. WeasyPrin
 
 ## Current State: WeasyPrint
 
--   **Version**: See `uv.lock`
+-   **Version**: Check `uv.lock` for the exact version.
 -   **Usage**: Renders Jinja2 HTML templates to PDF.
 -   **Integration**: Flask → HTML → WeasyPrint → PDF
 
 ### Known Issues
 
-1.  **Z-index and Positioned Elements**: Overlapping positioned elements can render unpredictably (e.g., sidebar background on top of content). Current workaround: CSS gradient on page background.
+1.  **Z-index and Positioned Elements**: Overlapping positioned elements can render unpredictably (e.g., sidebar background on top of content). Current workaround involves using a CSS gradient on the page background.
 2.  **CSS Support Gaps**: Incomplete Flexbox support; Grid layout unavailable.
 3.  **Performance**: Single-page generation is acceptable (~1–2 seconds), but batch processing is not optimized.
 
@@ -23,7 +23,7 @@ This document evaluates alternatives to WeasyPrint for PDF generation. WeasyPrin
 
 ## Evaluation Criteria
 
-Each alternative evaluated based on these criteria:
+We evaluated each alternative based on these criteria:
 
 -   **HTML/CSS Fidelity**: Accuracy in rendering existing templates.
 -   **Python Integration**: Integration with Flask application.
@@ -84,15 +84,15 @@ Each alternative evaluated based on these criteria:
 
 ### Short-term (0–12 months)
 
-**Stay with WeasyPrint.** Current implementation is stable, workarounds documented. This prioritizes new features over infrastructure changes.
+**Stay with WeasyPrint.** Current implementation is stable, workarounds documented. This strategy prioritizes new features over infrastructure changes.
 
 ### Long-term (12+ months)
 
-**Migrate to Playwright.** Create a proof-of-concept to benchmark performance and document migration steps. Execute migration when resources are available.
+**Migrate to Playwright.** Create a proof-of-concept to benchmark performance and document migration steps. Perform the migration when resources are available.
 
 ### Triggers for Early Migration
 
-Consider early migration if any of the following occur:
+Consider early migration if any of these conditions occur:
 
 -   WeasyPrint no longer actively maintained.
 -   Critical rendering bug blocks new feature.
@@ -106,7 +106,7 @@ Consider early migration if any of the following occur:
 -   [ ] Create proof-of-concept for PDF generation.
 -   [ ] Compare WeasyPrint and Playwright output quality.
 -   [ ] Benchmark both renderers' performance on large number of resumes.
--   [ ] Add Playwright to `requirements.txt`; document installation process.
+-   [ ] Add Playwright to `requirements.txt` and document its installation.
 
 ### 2. Implementation
 
@@ -121,7 +121,7 @@ Consider early migration if any of the following occur:
 -   [ ] Deploy changes to staging environment; verify output.
 -   [ ] Monitor performance metrics.
 -   [ ] Deploy to production with rollback plan.
--   [ ] Keep WeasyPrint as backup renderer for one release cycle before removal.
+-   [ ] Retain WeasyPrint as a backup renderer for one release cycle before removal.
 
 ### 4. Cleanup
 

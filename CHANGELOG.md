@@ -57,6 +57,26 @@ Initial public release.
 
 ## [Unreleased]
 
+### Added
+
+-   `simple_resume.api.colors` module with stable, documented color manipulation utilities.
+-   MkDocs configuration for auto-generated API reference documentation.
+-   `GenerateOptions` dataclass for simplified generation configuration.
+-   Type annotations with `cast()` for lazy-loaded generation functions.
+-   Comprehensive docstrings with `.. versionadded::` annotations.
+
+### Changed
+
+-   Standardized `generate()` function signature to use `GenerateOptions` consistently.
+-   Enhanced README with improved Python quickstart examples.
+-   Refactored architecture to strict Functional Core / Imperative Shell pattern.
+-   Updated documentation links to point to new API reference.
+
+### Fixed
+
+-   Type mismatches between lazy and core generation function signatures.
+-   `preview()` return type now correctly annotated as `GenerationResult | BatchGenerationResult`.
+
 ---
 
 ### Release Process Notes

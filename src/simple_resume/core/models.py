@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from simple_resume.config import Paths
-from simple_resume.constants import OutputFormat, RenderMode
+from simple_resume.core.constants import OutputFormat, RenderMode
+from simple_resume.core.paths import Paths
 
 
 @dataclass(frozen=True)

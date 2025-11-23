@@ -20,22 +20,13 @@ High-level categories include:
   (e.g., `:mod:simple_resume.api.colors`) mirror ``pandas.api`` by
   re-exporting stable helper families.
 
-Refer to ``docs/reference.md`` for a complete API map, stability labels, and
-deprecation policy.
+Refer to ``docs/reference.md`` for a complete API map and stability labels.
 """
 
 from __future__ import annotations
 
-# Public API namespaces
-from simple_resume import api
-
-# New unified generation API (lazy-loaded)
-# Core classes
-from simple_resume.core.models import GenerationConfig, RenderPlan, ResumeConfig
-from simple_resume.core.resume import Resume
-
 # Exception hierarchy
-from simple_resume.exceptions import (
+from simple_resume.core.exceptions import (
     ConfigurationError,
     FileSystemError,
     GenerationError,
@@ -46,7 +37,20 @@ from simple_resume.exceptions import (
     ValidationError,
 )
 
-from .generate import (
+# Core classes (data models only - no I/O methods)
+from simple_resume.core.models import GenerationConfig, RenderPlan, ResumeConfig
+
+# Shell layer I/O operations - these are the primary generation functions
+from simple_resume.shell.resume_extensions import (
+    generate as resume_generate,
+)
+from simple_resume.shell.resume_extensions import (
+    to_html,
+    to_pdf,
+)
+
+# Public API namespaces - higher-level generation functions
+from .shell.generate import (
     generate,
     generate_all,
     generate_html,
@@ -56,24 +60,24 @@ from .generate import (
 )
 
 # Rich result objects (lazy-loaded)
-from .utils.lazy_import import (
+from .shell.runtime.lazy_import import (
     lazy_BatchGenerationResult as BatchGenerationResult,
 )
 
 # Session management (lazy-loaded)
-from .utils.lazy_import import (
+from .shell.runtime.lazy_import import (
     lazy_create_session as create_session,
 )
-from .utils.lazy_import import (
+from .shell.runtime.lazy_import import (
     lazy_GenerationMetadata as GenerationMetadata,
 )
-from .utils.lazy_import import (
+from .shell.runtime.lazy_import import (
     lazy_GenerationResult as GenerationResult,
 )
-from .utils.lazy_import import (
+from .shell.runtime.lazy_import import (
     lazy_ResumeSession as ResumeSession,
 )
-from .utils.lazy_import import (
+from .shell.runtime.lazy_import import (
     lazy_SessionConfig as SessionConfig,
 )
 
@@ -83,8 +87,7 @@ __version__ = "0.1.0"
 # Public API exports - organized by functionality
 __all__ = [
     "__version__",
-    # Core models
-    "Resume",
+    # Core models (data only)
     "ResumeConfig",
     "RenderPlan",
     # Exceptions
@@ -109,6 +112,10 @@ __all__ = [
     "generate_html",
     "generate_all",
     "generate_resume",
+    # Shell layer I/O functions
+    "to_pdf",
+    "to_html",
+    "resume_generate",
     # Convenience helpers
     "generate",
     "preview",

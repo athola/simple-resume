@@ -1,14 +1,20 @@
-"""Curate public API namespaces inspired by ``pandas.api``.
+"""Public API namespaces for simple-resume.
 
-Only a subset of helpers are meant to be imported by downstream callers. The
-`:mod:simple_resume.api` package groups those helpers into purpose-driven
-namespaces (e.g., `:mod:simple_resume.api.colors`) while keeping the underlying
-implementations private. Import from these modules when you need a stable
-contract.
+This module provides stable, curated API namespaces following the pandas pattern:
+- `simple_resume.api.colors` - Color manipulation utilities
+
+Symbols exported from these modules are covered by the stability contract.
+Internal implementation details remain in `core.*` modules.
+
+Example:
+    >>> from simple_resume.api import colors
+    >>> colors.is_valid_color("#FF0000")
+    True
+    >>> colors.calculate_text_color("#000000")
+    '#FFFFFF'
+
 """
 
-from __future__ import annotations
-
-from . import colors
+from simple_resume.api import colors
 
 __all__ = ["colors"]

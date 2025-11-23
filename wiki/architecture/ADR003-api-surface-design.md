@@ -6,24 +6,24 @@ Accepted (2025-11-09)
 
 ## Context
 
-Original API surface had organizational issues:
+The original API surface presented organizational issues:
 
 1. Redundant wrapper functions adding no abstraction (`utilities.calculate_text_color()` wrapping `core.colors.get_contrasting_text_color()`)
 2. Utility functions incorrectly exposed as `Resume` class methods (e.g., `Resume.calculate_text_color()`)
 3. No clear public API namespace; users imported from internal `core.*` modules
 4. Inconsistent function naming (`is_valid_color()` and `validate_color()` coexisting)
 
-This violated established API design patterns from mature libraries (pandas, requests) and created maintenance burden.
+This violated established API design patterns from mature libraries (e.g., pandas, requests) and created a maintenance burden.
 
 ## Decision
 
 ### 1. Adopt Industry-Standard API Organization Patterns
 
-Following research into pandas and requests API design:
+After researching pandas and requests API design:
 
 **pandas pattern:**
 
-- Class methods: Operations ON object (`df.groupby()`, `df.plot()`)
+- Class methods: Operations on an object (`df.groupby()`, `df.plot()`)
 - Top-level functions: Create/combine objects (`pd.read_csv()`, `pd.concat()`)
 - `pandas.api.*` submodules: Specialized utilities (`pandas.api.types`, `pandas.api.extensions`)
 - Core is PRIVATE: Users never import from `pandas.core.*`
@@ -32,7 +32,7 @@ Following research into pandas and requests API design:
 
 - Session class methods: Stateful operations only
 - Utility modules: Separate modules for utilities (`requests.utils`, `requests.auth`)
-- Key insight: Utilities are NOT on the Session class
+- Key insight: Utilities do not reside on the Session class.
 
 **Our implementation:**
 
@@ -54,7 +54,7 @@ Following research into pandas and requests API design:
 
 **Rationale:**
 
-- No backward compatibility aliases - clean API surface
+- No backward compatibility aliases, leading to a clean API surface.
 - Each function exists in ONE authoritative location
 - No wrappers that add zero value
 
@@ -93,7 +93,7 @@ Public API re-exports or simplifies:
 
 ### Why Remove Utilities from Resume Class?
 
-Color utilities are pure functions, not operating on Resume data. Following the requests pattern (e.g., `dict_from_cookiejar()` in `requests.utils`, not on Session class), we moved color utilities to their own module.
+Color utilities are pure functions that do not operate on Resume data. Following the requests pattern (e.g., `dict_from_cookiejar()` in `requests.utils`, not on Session class), we moved color utilities to their own module.
 
 **Before (incorrect):**
 
@@ -114,7 +114,7 @@ text_color = colors.calculate_text_color("#FFFFFF")  # Obvious location
 
 ### Why No Wrapper Functions?
 
-Wrappers like `calculate_text_color = get_contrasting_text_color` violate DRY, creating:
+Wrappers (e.g., `calculate_text_color = get_contrasting_text_color`) violate DRY, creating:
 - Maintenance burden (two names for same function)
 - Import confusion (which to use?)
 - Documentation duplication
@@ -125,7 +125,7 @@ Direct imports eliminate these issues.
 ### Why `api.*` Namespace?
 
 Following pandas (`pandas.api.types`, `pandas.api.extensions`):
-- Provides stable public interface with semantic versioning
+- Provides a stable public interface with semantic versioning.
 - Allows internal refactoring without breaking users
 - Clear separation: `api.*` is public, `core.*` is private
 - Users never import from `core.*` modules
@@ -143,8 +143,8 @@ Following pandas (`pandas.api.types`, `pandas.api.extensions`):
 
 ### Negative
 
-- **Breaking change**: Users importing from `Resume` class must update
-- **Migration effort**: Tests moved to `test_api_colors.py`
+- **Breaking change**: Users importing from the `Resume` class must update their code.
+- **Migration effort**: Tests must be moved to `test_api_colors.py`.
 
 ### Migration Path
 
@@ -180,13 +180,13 @@ Use `from simple_resume.api import colors` in all new code.
 
 ## Follow-up Tasks
 
-1. Remove color utility wrappers from `utilities.py`, `color_utils.py`, and `Resume`
-2. Create `simple_resume.api.colors` public module
-3. Move color utility tests to `test_api_colors.py`
-4. Update `__all__` exports to reflect authoritative functions only
+1. Remove color utility wrappers from `utilities.py`, `color_utils.py`, and the `Resume` class.
+2. Create the `simple_resume.api.colors` public module.
+3. Move color utility tests to `test_api_colors.py`.
+4. Update `__all__` exports to include only authoritative functions.
 5. Review other utility functions for similar issues (e.g., skill_utils)
 6. Document public API in user guide
-7. Add API stability policy to CONTRIBUTING.md
+7. Add an API stability policy to CONTRIBUTING.md.
 
 ## References
 

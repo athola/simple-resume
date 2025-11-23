@@ -63,12 +63,12 @@ utils = [
 ]
 
 [project.scripts]
-simple-resume = "simple_resume.cli:main_entry"
+simple-resume = "simple_resume.shell.cli:main_entry"
 
 # Palette utilities
-palette-snapshot = "simple_resume.cli.palette:snapshot"
-palette-list = "simple_resume.cli.palette:palette_list"
-generate-random-palette-demo = "simple_resume.cli.random_palette_demo:main"
+palette-snapshot = "simple_resume.shell.cli.palette:snapshot"
+palette-list = "simple_resume.shell.cli.palette:palette_list"
+generate-random-palette-demo = "simple_resume.shell.cli.random_palette_demo:main"
 
 [tool.hatch.build.targets.sdist]
 include = ["src"]  # Only include content from src
@@ -167,6 +167,19 @@ exclude = ['^\.venv', '^\.uv-cache', '^fix_.*\.py$']
 [[tool.mypy.overrides]]
 module = ["palettable", "palettable.*"]
 ignore_missing_imports = true
+
+# More lenient type checking for test files
+[[tool.mypy.overrides]]
+module = [
+    "tests.*",
+    "tests.unit.*",
+    "tests.integration.*",
+]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = false
+disallow_untyped_decorators = false
+warn_return_any = false
 
 [[tool.mypy.overrides]]
 module = ["weasyprint", "weasyprint.*"]

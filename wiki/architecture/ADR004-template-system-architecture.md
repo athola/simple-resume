@@ -1,10 +1,10 @@
 # ADR-004: Template System Architecture
 
 ## Status
-**Accepted** - Current implementation is production-ready with identified improvement areas
+**Accepted** - The current implementation is production-ready, with identified areas for improvement.
 
 ## Context
-The template system must support multiple output formats (HTML, PDF, LaTeX) while maintaining consistency across formats and providing extensive customization options. Key requirements include:
+The template system must support multiple output formats (HTML, PDF, LaTeX). It must also maintain consistency across formats and provide extensive customization options. Key requirements include:
 
 1. **Multi-format support**: HTML for WeasyPrint rendering, LaTeX for academic publishing
 2. **Professional layout**: Column-based design with sidebar and main content areas
@@ -14,7 +14,7 @@ The template system must support multiple output formats (HTML, PDF, LaTeX) whil
 6. **Asset management**: Font files, icons, and static resources
 
 ## Decision
-Implemented a hybrid template architecture combining Jinja2 for HTML templates and custom LaTeX rendering for PDF generation:
+We implemented a hybrid template architecture combining Jinja2 for HTML templates and custom LaTeX rendering for PDF generation:
 
 ### Template Engine Strategy
 - **HTML Templates**: Jinja2 with template inheritance and macro system
@@ -44,17 +44,17 @@ def build_html_context(data: dict[str, Any], *, preview: bool) -> tuple[str, dic
 
 1. **Single template engine for all formats**
    - *Pros*: Consistent syntax, easier maintenance
-   - *Cons*: LaTeX requires specialized features, Jinja2 not ideal for LaTeX
-   - *Decision*: Hybrid approach provides best of both worlds
+   - *Cons*: LaTeX requires specialized features; Jinja2 is not ideal for LaTeX.
+   - *Decision*: The hybrid approach provides the best of both worlds.
 
 2. **External template system (e.g., Jinja2 extensions)**
-   - *Pros*: More powerful template features
-   - *Cons*: Additional dependency, increased complexity
+   - *Pros*: Offers more powerful template features.
+   - *Cons*: Introduces an additional dependency and increased complexity.
    - *Decision*: Standard Jinja2 sufficient for current needs
 
 3. **CSS-in-JS for HTML templates**
    - *Pros*: Dynamic styling capabilities
-   - *Cons*: WeasyPrint compatibility issues, complexity
+   - *Cons*: Presents WeasyPrint compatibility issues and adds complexity.
    - *Decision*: Inline CSS maintains WeasyPrint compatibility
 
 ## Consequences
@@ -68,15 +68,15 @@ def build_html_context(data: dict[str, Any], *, preview: bool) -> tuple[str, dic
 - **Caching performance**: Template environment caching improves rendering speed
 
 ### Negative Impacts
-- **Maintenance complexity**: Dual template engines require expertise
+- **Maintenance Complexity**: Dual template engines require specialized expertise.
 - **Inline CSS**: 860+ lines of inline styles in templates
 - **Limited template ecosystem**: No third-party template marketplace
-- **Testing challenges**: Visual regression testing complexity
+- **Testing Challenges**: Visual regression testing is complex.
 
 ### Technical Details
-- **Template caching**: `@cache` decorator for Jinja2 environment
-- **Asset paths**: Hard-coded to `static/` directory structure
-- **Font support**: Limited to Avenir and Font Awesome
+- **Template Caching**: Achieved with an `@cache` decorator for the Jinja2 environment.
+- **Asset Paths**: Hard-coded to the `static/` directory structure.
+- **Font Support**: Limited to Avenir and Font Awesome.
 - **Color processing**: WCAG contrast calculations in template macros
 
 ## Architecture Patterns
@@ -95,10 +95,10 @@ def build_html_context(data: dict[str, Any], *, preview: bool) -> tuple[str, dic
 ```
 
 ### Macro System
-- **Dynamic font sizing**: `dynamic_font_size()` macro for responsive text
-- **Icon generation**: `render_icon()` macro with color theming
-- **Contact handling**: `render_contact_info()` macro for contact sections
-- **Color contrast**: `get_contrasting_text_color()` for accessibility
+- **Dynamic Font Sizing**: The `dynamic_font_size()` macro provides responsive text.
+- **Icon Generation**: The `render_icon()` macro supports color theming.
+- **Contact Handling**: The `render_contact_info()` macro manages contact sections.
+- **Color Contrast**: `get_contrasting_text_color()` ensures accessibility.
 
 ### Configuration Integration
 ```yaml
@@ -112,33 +112,33 @@ config:
 ```
 
 ## Performance Considerations
-- **Template environment**: Single cached instance per directory
-- **File system loading**: Jinja2 `FileSystemLoader` with directory scanning
-- **Memory efficiency**: Shared macros and inheritance reduce duplication
-- **Asset loading**: Static assets served from `static/` directory
+- **Template Environment**: Utilizes a single cached instance per directory.
+- **File System Loading**: Uses Jinja2 `FileSystemLoader` with directory scanning.
+- **Memory Efficiency**: Shared macros and inheritance reduce duplication.
+- **Asset Loading**: Static assets are served from the `static/` directory.
 
 ## Future Improvements
 
 ### High Priority (6 months)
-1. **External CSS Migration**: Move inline styles to `static/css/` modules
-2. **Template Validation**: Add template syntax and structure validation
-3. **Asset Abstraction**: Flexible font and asset management system
+1. **External CSS Migration**: Migrate inline styles to `static/css/` modules.
+2. **Template Validation**: Implement template syntax and structure validation.
+3. **Asset Abstraction**: Develop a flexible font and asset management system.
 
 ### Medium Priority (1 year)
-4. **Template Metadata**: Add versioning and compatibility information
-5. **Visual Testing**: Automated visual regression testing pipeline
-6. **Performance Optimization**: Template pre-compilation and bundling
+4. **Template Metadata**: Include versioning and compatibility information.
+5. **Visual Testing**: Implement an automated visual regression testing pipeline.
+6. **Performance Optimization**: Explore template pre-compilation and bundling.
 
 ### Low Priority (18+ months)
-7. **Plugin System**: Extensible template architecture for third-party templates
-8. **Template Marketplace**: Distribution system for community templates
-9. **Advanced Features**: Conditional blocks, advanced layout systems
+7. **Plugin System**: Develop an extensible template architecture for third-party templates.
+8. **Template Marketplace**: Create a distribution system for community templates.
+9. **Advanced Features**: Investigate conditional blocks and advanced layout systems.
 
 ## Testing Strategy
-- **Template Resolution**: BDD-style testing for template discovery
-- **Rendering Tests**: End-to-end HTML/LaTeX generation validation
-- **Asset Loading**: Font and static resource loading tests
-- **Configuration Tests**: Template selection with different configurations
+- **Template Resolution**: Implement BDD-style testing for template discovery.
+- **Rendering Tests**: Validate end-to-end HTML/LaTeX generation.
+- **Asset Loading**: Test font and static resource loading.
+- **Configuration Tests**: Test template selection with various configurations.
 
 ## Related ADRs
 - **ADR-001**: WeasyPrint sidebar pagination (template integration)
@@ -148,7 +148,7 @@ config:
 ## Author
 - **Primary**: Architecture Review
 - **Date**: 2025-11-12
-- **Review Status**: Accepted - current implementation validated as production-ready
+- **Review Status**: Accepted - The current implementation is validated as production-ready.
 
 ---
 

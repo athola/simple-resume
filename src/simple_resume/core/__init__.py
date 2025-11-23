@@ -14,7 +14,7 @@ from .plan import (
     validate_resume_config,
     validate_resume_config_or_raise,
 )
-from .rendering_coordinator import (
+from .render import (
     prepare_html_generation_request,
     prepare_pdf_generation_request,
     validate_render_plan,

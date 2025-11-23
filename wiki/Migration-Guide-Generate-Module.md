@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide helps users migrate their code to use the new `simple_resume.generate` module structure introduced in v0.1.1. The reorganization improves performance through lazy loading and provides better code organization.
+This guide covers migrating to the new `simple_resume.generate` module structure (v0.1.1). The reorganization improves performance with lazy loading and enhances code organization.
 
 ## Breaking Changes
 
@@ -91,7 +91,7 @@ print("Migration successful!")
 The new structure provides both lazy and eager loading options:
 
 #### Lazy Loading (Default)
-- **Best for**: CLI tools, scripts, applications where generation might not be used
+- **Suited for**: CLI tools, scripts, applications where generation is optional
 - **Benefits**: Faster startup, lower memory footprint
 - **Usage**: Default main API imports
 
@@ -100,7 +100,7 @@ from simple_resume import generate_pdf  # Lazy loaded
 ```
 
 #### Eager Loading
-- **Best for**: Web applications, services where generation is always used
+- **Suited for**: Web applications, services where generation is always used
 - **Benefits**: Predictable performance when generation is called
 - **Usage**: Direct core module imports
 
@@ -254,7 +254,7 @@ def test_import_performance():
 
 ### Use Lazy Loading When:
 - Building CLI tools or scripts
-- Generation functionality might not be used
+- Generation functionality is optional
 - Memory efficiency is important
 - Startup time matters
 
@@ -264,7 +264,7 @@ def test_import_performance():
 - Predictable response times are critical
 - Initial import time is less important than runtime performance
 
-## Need Help?
+## Get Help
 
 - Check the [Usage Guide](Usage-Guide.md) for detailed usage examples
 - Review the [Architecture Decisions](../architecture/) for technical details

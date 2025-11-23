@@ -1,6 +1,6 @@
-# Path Handling Guide
+# Path Handling
 
-`simple-resume` follows a **path-first principle** for consistent path handling.
+`simple-resume` adopts a **path-first principle** for consistent path handling.
 
 1.  Accept `str | Path` at API boundaries for flexibility.
 2.  Normalize to `Path` objects immediately after receiving input.
@@ -9,11 +9,11 @@
 
 ### When to Convert to a String
 
-A `Path` object should only be converted to a string when an external library requires it.
+Convert a `Path` object to a string only when an external library requires it.
 
 - **External libraries**: Some external libraries, such as WeasyPrint, require string paths (e.g., `write_pdf(str(output_path))`).
-- **Exception messages**: When storing a path in an exception message, it is automatically converted to a string.
-- **Error messages**: When building an error message for display, a `Path` object can be used directly in an f-string.
+- **Exception messages**: A `Path` object automatically converts to a string when used in an exception message.
+- **Error messages**: Use a `Path` object directly in an f-string when building an error message for display.
 
 ### Examples
 

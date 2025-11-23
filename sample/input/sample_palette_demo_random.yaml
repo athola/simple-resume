@@ -1,14 +1,14 @@
 template: resume_with_bars
-full_name: Quinn Santos
-job_title: Engineering Manager
+full_name: Harper Davis
+job_title: Principal Engineer
 address:
 - 101 Color Way
 - Austin, TX
-phone: (512) 555-2170
-email: quinn.santos.279dly7u@example.com
-web: https://quinnsantos.dev
-linkedin: in/quinn-santos-3ipn
-github: quinnsantos
+phone: (512) 555-5448
+email: harper.davis.0gb70ejz@example.com
+web: https://harperdavis.dev
+linkedin: in/harper-davis-sgxz
+github: harperdavis
 titles:
   contact: Contact
   skills: Skills
@@ -17,12 +17,12 @@ titles:
   programming: Technical Tooling
   keyskills: Key Skills
   languages: Languages
-description: 'Experienced with containerization and modern development practices.
-  Experienced with automated testing and modern development practices.
+description: 'Experienced with automated testing and modern development practices.
+  Experienced with microservices architecture and modern development practices.
 
 
-  Experienced with caching strategies and modern development practices. Experienced
-  with performance optimization and modern development practices.'
+  Experienced with cloud infrastructure and modern development practices. Experienced
+  with automated testing and modern development practices.'
 skills:
   UI/UX Design: 55
   Frontend Development: 48
@@ -75,20 +75,22 @@ body:
     end: Present
     title: Principal Design Technologist
     title_link: https://spectrumlabs.design/systems
-    company: CloudWorks
+    company: NexGen Solutions
     company_link: https://spectrumlabs.design
-    description: '- Reduced operational costs by 42% through efficient resource allocation
+    description: '- Streamlined development workflow reducing build time by 61%
 
-      - Reduced operational costs by 55% through efficient resource allocation'
+      - Increased test coverage from 60% to 92%
+
+      - Led migration of 19 services to cloud infrastructure'
     tech_stack: TypeScript, React, Styled Components, Figma API, Python, PostgreSQL
   - start: 2018
     end: 2022
     title: Senior UX Engineer
-    company: Quantum Dynamics
+    company: NexGen Solutions
     company_link: https://auroraanalytics.io
-    description: '- Reduced operational costs by 38% through efficient resource allocation
+    description: '- Increased test coverage from 67% to 81%
 
-      - Architected scalable solution handling 587K requests/day'
+      - Led migration of 16 services to cloud infrastructure'
     tech_stack: React, TypeScript, Jest, Storybook, Webpack, Node.js
   Projects:
   - start: 2024
@@ -96,50 +98,44 @@ body:
     title: Adaptive Palette Generator
     title_link: https://github.com/caseypalette/adaptive-palettes
     company: Personal Project
-    description: '- Developed data pipeline integrating with Azure
+    description: '- Designed and implemented real-time analytics dashboard using Python
+      and FastAPI
 
-      - Developed search engine integrating with AWS
+      - Optimized frontend rendering achieving 50% cost reduction
 
-      - Created automated testing suite reducing manual effort by 34%
-
-      - Built distributed system to handle high-volume traffic'
+      - Designed and implemented payment processing system using React and TypeScript'
   - start: 2023
     end: 2023
     title: Voice of Customer Pipeline
     company: Open Source Collective
     company_link: https://github.com/caseypalette/voc-pipeline
-    description: '- Designed and implemented user authentication service using Python
-      and FastAPI
+    description: '- Created automated deployment pipeline reducing manual effort by
+      35%
 
-      - Optimized database queries achieving sub-100ms response times
+      - Developed real-time analytics dashboard integrating with Kubernetes
 
-      - Optimized API endpoints achieving 10x throughput increase
+      - Created automated code review process reducing manual effort by 63%
 
-      - Designed and implemented API gateway using Node.js and Express'
+      - Built service to handle real-time processing'
   Awards & Honors:
   - start: 2023
     end: 2023
     title: "UX Awards \u2014 Best Systems Initiative"
     company: DesignOps Summit
-    description: '- Experienced with microservices architecture and modern development
-      practices.
+    description: '- Experienced with database design and modern development practices.
 
-      - Experienced with cloud infrastructure and modern development practices.
-
-      - Experienced with system monitoring and modern development practices.
-
-      - Experienced with database design and modern development practices.'
+      - Experienced with system monitoring and modern development practices.'
   - start: 2022
     end: 2022
     title: "Webby Awards \u2014 People\u2019s Voice (Productivity)"
     company: The Webby Awards
-    description: '- Experienced with automated testing and modern development practices.
+    description: '- Experienced with cloud infrastructure and modern development practices.
 
-      - Experienced with automated testing and modern development practices.
+      - Experienced with containerization and modern development practices.
 
-      - Experienced with system monitoring and modern development practices.
+      - Experienced with database design and modern development practices.
 
-      - Experienced with CI/CD pipelines and modern development practices.'
+      - Experienced with automated testing and modern development practices.'
   Publications:
   - start: 2022
     end: 2022
@@ -148,65 +144,69 @@ body:
     company: Medium
     description: '- Experienced with caching strategies and modern development practices.
 
-      - Experienced with caching strategies and modern development practices.
-
       - Experienced with CI/CD pipelines and modern development practices.'
   - start: 2021
     end: 2021
     title: Measuring Design Impact with Product Analytics
     company: Design Leadership Forum
-    description: '- Experienced with microservices architecture and modern development
-      practices.
+    description: '- Experienced with load balancing and modern development practices.
 
-      - Experienced with system monitoring and modern development practices.'
+      - Experienced with CI/CD pipelines and modern development practices.
+
+      - Experienced with microservices architecture and modern development practices.'
   Speaking Engagements:
   - start: 2024
     end: 2024
     title: "Keynote \u2014 Measuring Design Impact"
     company: ColorConf
-    description: '- Experienced with API design and modern development practices.
+    description: '- Experienced with caching strategies and modern development practices.
 
-      - Experienced with performance optimization and modern development practices.'
+      - Experienced with load balancing and modern development practices.
+
+      - Experienced with load balancing and modern development practices.'
   - start: 2023
     end: 2023
     title: "Workshop \u2014 Accessible Theming in Practice"
     company: Config by Figma
-    description: '- Experienced with load balancing and modern development practices.
+    description: '- Experienced with performance optimization and modern development
+      practices.
 
-      - Experienced with performance optimization and modern development practices.
+      - Experienced with caching strategies and modern development practices.
 
-      - Experienced with system monitoring and modern development practices.'
+      - Experienced with orchestration and modern development practices.
+
+      - Experienced with caching strategies and modern development practices.'
   Volunteer Service:
   - start: 2021
     end: Present
     title: "Mentor \u2014 Inclusive Design"
     company: ADPList
-    description: '- Experienced with database design and modern development practices.
+    description: '- Experienced with containerization and modern development practices.
 
-      - Experienced with cloud infrastructure and modern development practices.'
+      - Experienced with microservices architecture and modern development practices.
+
+      - Experienced with automated testing and modern development practices.'
   - start: 2020
     end: Present
     title: "Organizer \u2014 Civic Tech Nights"
     company: Austin Design Week
-    description: '- Experienced with database design and modern development practices.
+    description: '- Experienced with load balancing and modern development practices.
 
-      - Experienced with API design and modern development practices.
-
-      - Experienced with containerization and modern development practices.'
+      - Experienced with orchestration and modern development practices.'
   Education:
   - start: 2014
     end: 2018
     title: B.S. Human-Centered Design
     company: University of Texas at Austin
-    description: '- Experienced with CI/CD pipelines and modern development practices.
+    description: '- Experienced with database design and modern development practices.
 
-      - Experienced with database design and modern development practices.
+      - Experienced with containerization and modern development practices.
 
-      - Experienced with API design and modern development practices.
+      - Experienced with containerization and modern development practices.
 
-      - Experienced with performance optimization and modern development practices.'
+      - Experienced with CI/CD pipelines and modern development practices.'
 config:
-  color_scheme: Lisbon_16
+  color_scheme: Prism_5
   palette:
     source: generator
     type: hcl
@@ -234,8 +234,8 @@ config:
   date_container_padding_left: 6
   description_container_padding_left: 2
   frame_padding: 10
-  frame_color: '#1E4368'
-  bold_color: '#16324E'
+  frame_color: '#644F4F'
+  bold_color: '#4B3B3B'
   section_icon_circle_size: 7.8mm
   section_icon_circle_x_offset: -0.5mm
   section_icon_design_size: 4mm
@@ -243,8 +243,8 @@ config:
   section_icon_design_y_offset: -0.4mm
   section_heading_text_margin: -6mm
   output_mode: markdown
-  theme_color: '#E6E5FF'
-  sidebar_color: '#B8C4E4'
-  sidebar_text_color: '#8BA3C9'
-  bar_background_color: '#6083AE'
-  date2_color: '#38628F'
+  theme_color: '#5F4690'
+  sidebar_color: '#1D6996'
+  sidebar_text_color: '#38A6A5'
+  bar_background_color: '#0F8554'
+  date2_color: '#73AF48'

@@ -2,14 +2,14 @@
 
 ## Overview
 
-Simple Resume v0.1.1 introduces lazy loading for the generation module, providing better startup performance and reduced memory footprint for applications that may not always use resume generation functionality.
+Simple Resume v0.1.1 introduces lazy loading for the generation module. This improves startup performance and reduces memory footprint for applications that do not always use resume generation.
 
 ## What is Lazy Loading?
 
 Lazy loading defers importing heavy modules until they're actually needed, rather than loading everything at import time. This provides several benefits:
 
 - **Faster Startup**: Applications start quicker since fewer modules are loaded initially
-- **Lower Memory Usage**: Only used functionality consumes memory
+- **Lower Memory Usage**: Memory is consumed only by the functionality actively used.
 - **Better Performance**: For applications that don't use generation, there's zero overhead
 
 ## Usage Patterns
@@ -25,9 +25,9 @@ from simple_resume import generate_pdf, generate_html, generate_all
 result = generate_pdf("resume.yaml", output_dir="output/")
 ```
 
-**Best for:**
+**Suited for:**
 - CLI tools and scripts
-- Applications where generation might not be used
+- Applications where generation is optional
 - Memory-constrained environments
 
 ### 2. Explicit Lazy Loading
@@ -41,8 +41,8 @@ from simple_resume.generate.lazy import generate_pdf, generate_html
 result = generate_html("resume.yaml", preview_mode=True)
 ```
 
-**Best for:**
-- When you want explicit control over loading
+**Suited for:**
+- Explicit control over loading
 - Mixed-use applications
 - Performance-critical startup scenarios
 
@@ -57,10 +57,10 @@ from simple_resume.generate.core import generate_pdf, generate_html
 result = generate_pdf("resume.yaml", output_dir="output/")
 ```
 
-**Best for:**
+**Suited for:**
 - Web applications and services
 - High-throughput generation scenarios
-- When predictable response times are critical
+- Scenarios where predictable response times are critical
 
 ## Performance Comparison
 

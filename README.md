@@ -123,29 +123,50 @@ uv run simple-resume generate --format html --open
 
 ### Use the Python API
 
-The library can also be used as a Python API, which supports method chaining for applying configurations.
+The library provides a clean Python API for programmatic resume generation.
+
+```python
+from simple_resume import generate, preview
+
+# Quick generation - just pass a YAML file path
+result = generate("my_resume.yaml")
+print(f"Generated: {result['pdf'].output_path}")
+
+# Preview in browser
+preview("my_resume.yaml")  # Opens HTML in default browser
+
+# Generate multiple formats
+from simple_resume.shell.generate import GenerateOptions
+
+options = GenerateOptions(
+    formats=["pdf", "html"],
+    template="resume_with_bars",
+    open_after=True,
+)
+results = generate("my_resume.yaml", options)
+```
+
+#### Session-based API
+
+For more control or batch operations, use a session:
 
 ```python
 from simple_resume import Resume
-from simple_resume.session import ResumeSession
+from simple_resume.shell.session import ResumeSession
 
-# Method 1: Direct, single-file conversion
-# This method is useful for simple, one-off conversions.
+# Direct, single-file conversion
 resume = Resume.read_yaml("resume_private/input/my_resume.yaml")
 result = resume.to_pdf(open_after=True)
-html_result = resume.to_html()
 
-# Method 2: Use a session for consistent settings
-# A session is useful for managing multiple resumes with consistent settings.
+# Session for consistent settings across multiple resumes
 with ResumeSession(data_dir="resume_private") as session:
-    # Load a resume from the session's data directory.
     resume = session.resume("my_resume")
 
-    # Use method chaining to apply different styles.
-    dark_resume = resume.with_palette("Professional Blue").with_template("resume_base")
-    result = dark_resume.to_pdf(open_after=True)
+    # Method chaining for configuration
+    styled = resume.with_palette("Professional Blue").with_template("resume_base")
+    result = styled.to_pdf(open_after=True)
 
-    # Generate all resumes in the session in batch.
+    # Batch generation
     batch_results = session.generate_all(format="pdf", open_after=False)
 ```
 
@@ -190,11 +211,11 @@ assert accent == "#000000"
 
 - **[Getting Started](wiki/Getting-Started.md)**: A detailed guide to installation and basic setup.
 - **[Usage Guide](wiki/Usage-Guide.md)**: A comprehensive guide to all features, including templates, palettes, and LaTeX output.
-- **[Development Guide](wiki-Development-Guide.md)**: Instructions for setting up a development environment and contributing to the project.
+- **[Development Guide](wiki/Development-Guide.md)**: Instructions for setting up a development environment and contributing to the project.
 - **[Migration Guide](wiki/Migration-Guide.md)**: Instructions for upgrading from previous versions.
 - **[Color Schemes](wiki/Color-Schemes.md)**: A guide to creating and using custom color palettes.
 - **[Workflows](wiki/Workflows.md)**: Examples of common use cases and patterns.
-- **[API Reference](docs/reference.md)**: A full reference for the Python API.
+- **[API Reference](docs/api/index.md)**: Full reference for the Python API (auto-generated from docstrings).
 
 ## Getting Help
 

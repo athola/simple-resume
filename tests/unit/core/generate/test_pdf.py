@@ -1,0 +1,550 @@
+"""Tests for pure PDF generation logic (core layer).
+
+Following TDD principles - these tests are written BEFORE refactoring.
+Tests verify PDF generation logic is pure and returns effects instead of performing I/O.
+"""
+
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+from simple_resume.core.constants import RenderMode
+from simple_resume.core.effects import MakeDirectory, WriteFile
+from simple_resume.core.exceptions import ConfigurationError
+from simple_resume.core.generate.exceptions import TemplateError
+from simple_resume.core.generate.pdf import (
+    LatexGenerationContext,
+    prepare_pdf_with_latex,
+    prepare_pdf_with_weasyprint,
+)
+from simple_resume.core.models import RenderPlan, ResumeConfig
+from simple_resume.core.paths import Paths
+
+
+class TestPreparePdfWithWeasyprint:
+    """Tests for prepare_pdf_with_weasyprint - pure logic without I/O."""
+
+    def test_returns_html_content_effects_and_metadata(self) -> None:
+        """prepare_pdf_with_weasyprint returns (html_content, effects, metadata)."""
+        with TemporaryDirectory() as temp_dir:
+            render_plan = RenderPlan(
+                name="test_resume",
+                mode=RenderMode.HTML,
+                template_name="demo.html",
+                context={"name": "Test User", "title": "Engineer"},
+                config=ResumeConfig(page_width=210, page_height=297),
+                base_path="",
+            )
+            output_path = Path(temp_dir) / "output" / "resume.pdf"
+
+            html_content, effects, metadata = prepare_pdf_with_weasyprint(
+                render_plan=render_plan,
+                output_path=output_path,
+                resume_name="test_resume",
+                filename="resume.yaml",
+            )
+
+            # Should return HTML content (string)
+            assert isinstance(html_content, str)
+            assert len(html_content) > 0
+
+            # Should return list of effects
+            assert isinstance(effects, list)
+            assert len(effects) > 0
+
+            # Should return metadata
+            assert metadata is not None
+            assert metadata.format_type == "pdf"
+            assert metadata.template_name == "demo.html"
+            assert metadata.resume_name == "test_resume"
+
+    def test_includes_make_directory_effect(self) -> None:
+        """prepare_pdf_with_weasyprint includes MakeDirectory effect for output dir."""
+        with TemporaryDirectory() as temp_dir:
+            render_plan = RenderPlan(
+                name="test",
+                mode=RenderMode.HTML,
+                template_name="demo.html",
+                context={"name": "Test"},
+                config=ResumeConfig(),
+                base_path="",
+            )
+            output_path = Path(temp_dir) / "nested" / "dirs" / "resume.pdf"
+
+            _, effects, _ = prepare_pdf_with_weasyprint(
+                render_plan=render_plan,
+                output_path=output_path,
+                resume_name="test",
+            )
+
+            # Should include MakeDirectory effect for parent directory
+            make_dir_effects = [e for e in effects if isinstance(e, MakeDirectory)]
+            assert len(make_dir_effects) == 1
+            assert make_dir_effects[0].path == output_path.parent
+            assert make_dir_effects[0].parents is True
+
+    def test_includes_write_file_effect_for_pdf(self) -> None:
+        """prepare_pdf_with_weasyprint includes WriteFile effect for PDF output."""
+        with TemporaryDirectory() as temp_dir:
+            render_plan = RenderPlan(
+                name="test",
+                mode=RenderMode.HTML,
+                template_name="demo.html",
+                context={"name": "Test"},
+                config=ResumeConfig(),
+                base_path="",
+            )
+            output_path = Path(temp_dir) / "resume.pdf"
+
+            _, effects, _ = prepare_pdf_with_weasyprint(
+                render_plan=render_plan,
+                output_path=output_path,
+                resume_name="test",
+            )
+
+            # Should include WriteFile effect for PDF
+            write_effects = [e for e in effects if isinstance(e, WriteFile)]
+            pdf_write_effects = [e for e in write_effects if e.path == output_path]
+            assert len(pdf_write_effects) == 1
+            assert isinstance(pdf_write_effects[0].content, bytes)  # PDF is bytes
+
+    def test_raises_template_error_for_latex_mode(self) -> None:
+        """prepare_pdf_with_weasyprint raises error when render plan uses LaTeX mode."""
+        with TemporaryDirectory() as temp_dir:
+            render_plan = RenderPlan(
+                name="test",
+                mode=RenderMode.LATEX,
+                template_name="resume.tex",
+                context={},
+                config=ResumeConfig(),
+                base_path="",
+            )
+            output_path = Path(temp_dir) / "resume.pdf"
+
+            with pytest.raises(TemplateError, match="LaTeX mode not supported"):
+                prepare_pdf_with_weasyprint(
+                    render_plan=render_plan,
+                    output_path=output_path,
+                    resume_name="test",
+                )
+
+    def test_raises_template_error_when_context_missing(self) -> None:
+        """prepare_pdf_with_weasyprint raises error when context is None."""
+        with TemporaryDirectory() as temp_dir:
+            render_plan = RenderPlan(
+                name="test",
+                mode=RenderMode.HTML,
+                template_name="demo.html",
+                context=None,  # Missing context
+                config=ResumeConfig(),
+                base_path="",
+            )
+            output_path = Path(temp_dir) / "resume.pdf"
+
+            with pytest.raises(TemplateError, match="missing context"):
+                prepare_pdf_with_weasyprint(
+                    render_plan=render_plan,
+                    output_path=output_path,
+                    resume_name="test",
+                )
+
+    def test_raises_template_error_when_template_name_missing(self) -> None:
+        """prepare_pdf_with_weasyprint raises error when template_name is None."""
+        with TemporaryDirectory() as temp_dir:
+            render_plan = RenderPlan(
+                name="test",
+                mode=RenderMode.HTML,
+                template_name=None,  # Missing template
+                context={"name": "Test"},
+                config=ResumeConfig(),
+                base_path="",
+            )
+            output_path = Path(temp_dir) / "resume.pdf"
+
+            with pytest.raises(TemplateError, match="missing.*template"):
+                prepare_pdf_with_weasyprint(
+                    render_plan=render_plan,
+                    output_path=output_path,
+                    resume_name="test",
+                )
+
+    def test_uses_default_page_dimensions_when_not_specified(self) -> None:
+        """prepare_pdf_with_weasyprint uses defaults when dimensions not in config."""
+        with TemporaryDirectory() as temp_dir:
+            render_plan = RenderPlan(
+                name="test",
+                mode=RenderMode.HTML,
+                template_name="demo.html",
+                context={"name": "Test"},
+                config=ResumeConfig(page_width=None, page_height=None),
+                base_path="",
+            )
+            output_path = Path(temp_dir) / "resume.pdf"
+
+            html_content, _, _ = prepare_pdf_with_weasyprint(
+                render_plan=render_plan,
+                output_path=output_path,
+                resume_name="test",
+            )
+
+            # HTML content should include CSS with default dimensions
+            # (We can't inspect WeasyPrint's internal CSS, but verify it doesn't crash)
+            assert isinstance(html_content, str)
+
+    def test_respects_custom_page_dimensions(self) -> None:
+        """prepare_pdf_with_weasyprint respects custom page dimensions from config."""
+        with TemporaryDirectory() as temp_dir:
+            render_plan = RenderPlan(
+                name="test",
+                mode=RenderMode.HTML,
+                template_name="demo.html",
+                context={"name": "Test"},
+                config=ResumeConfig(page_width=216, page_height=279),  # US Letter
+                base_path="",
+            )
+            output_path = Path(temp_dir) / "resume.pdf"
+
+            html_content, _, _ = prepare_pdf_with_weasyprint(
+                render_plan=render_plan,
+                output_path=output_path,
+                resume_name="test",
+            )
+
+            # Verify it doesn't crash with custom dimensions
+            assert isinstance(html_content, str)
+
+    def test_includes_palette_metadata_in_result(self) -> None:
+        """prepare_pdf_with_weasyprint includes palette metadata from render plan."""
+        palette_meta = {
+            "source": "colourlovers",
+            "palette_name": "Ocean Breeze",
+            "colors": ["#1a2b3c", "#4d5e6f"],
+        }
+        with TemporaryDirectory() as temp_dir:
+            render_plan = RenderPlan(
+                name="test",
+                mode=RenderMode.HTML,
+                template_name="demo.html",
+                context={"name": "Test"},
+                config=ResumeConfig(),
+                base_path="",
+                palette_metadata=palette_meta,
+            )
+            output_path = Path(temp_dir) / "resume.pdf"
+
+            _, _, metadata = prepare_pdf_with_weasyprint(
+                render_plan=render_plan,
+                output_path=output_path,
+                resume_name="test",
+            )
+
+            assert metadata.palette_info == palette_meta
+
+    def test_no_io_operations_performed(self) -> None:
+        """prepare_pdf_with_weasyprint performs NO I/O operations (critical test)."""
+        with TemporaryDirectory() as temp_dir:
+            render_plan = RenderPlan(
+                name="test",
+                mode=RenderMode.HTML,
+                template_name="demo.html",
+                context={"name": "Test"},
+                config=ResumeConfig(),
+                base_path="",
+            )
+            output_path = Path(temp_dir) / "nonexistent" / "path" / "resume.pdf"
+
+            # This should NOT create any directories or files
+            with patch("pathlib.Path.mkdir") as mock_mkdir:
+                with patch("pathlib.Path.write_text") as mock_write_text:
+                    with patch("pathlib.Path.write_bytes") as mock_write_bytes:
+                        html_content, effects, metadata = prepare_pdf_with_weasyprint(
+                            render_plan=render_plan,
+                            output_path=output_path,
+                            resume_name="test",
+                        )
+
+                        # Verify NO I/O was performed
+                        mock_mkdir.assert_not_called()
+                        mock_write_text.assert_not_called()
+                        mock_write_bytes.assert_not_called()
+
+                        # But effects should be returned
+                        assert len(effects) > 0
+
+
+class TestPreparePdfWithLatex:
+    """Tests for prepare_pdf_with_latex - pure logic without I/O."""
+
+    def test_returns_tex_content_effects_and_metadata(self) -> None:
+        """prepare_pdf_with_latex returns (tex_content, effects, metadata)."""
+
+        with TemporaryDirectory() as temp_dir:
+            render_plan = RenderPlan(
+                name="test",
+                mode=RenderMode.LATEX,
+                template_name="resume.tex",
+                context={},
+                config=ResumeConfig(),
+                base_path="",
+            )
+            output_path = Path(temp_dir) / "resume.pdf"
+            paths = Paths(
+                data=Path(temp_dir),
+                input=Path(temp_dir),
+                output=Path(temp_dir),
+                content=Path(temp_dir),
+                templates=Path(temp_dir) / "templates",
+                static=Path(temp_dir) / "static",
+            )
+            context = LatexGenerationContext(
+                raw_data={"name": "Test User", "title": "Engineer"},
+                processed_data={"name": "Test User", "title": "Engineer"},
+                paths=paths,
+                filename="resume.yaml",
+            )
+
+            # Patch the shell layer module (late-binding target)
+            with (
+                patch(
+                    "simple_resume.shell.render.latex.render_resume_latex_from_data"
+                ) as mock_render,
+                patch(
+                    "simple_resume.shell.render.latex._jinja_environment"
+                ) as mock_jinja,
+            ):
+                # Mock the Jinja2 environment
+                mock_env = MagicMock()
+                mock_template = MagicMock()
+                mock_template.render.return_value = (
+                    "\\documentclass{article}\\begin{document}Test\\end{document}"
+                )
+                mock_env.get_template.return_value = mock_template
+                mock_jinja.return_value = mock_env
+
+                mock_render.return_value = MagicMock(
+                    tex="\\documentclass{article}\\begin{document}Test\\end{document}"
+                )
+
+                tex_content, effects, metadata = prepare_pdf_with_latex(
+                    render_plan=render_plan,
+                    output_path=output_path,
+                    context=context,
+                )
+
+                # Should return TeX content
+                assert isinstance(tex_content, str)
+                assert "documentclass" in tex_content
+
+                # Should return effects
+                assert isinstance(effects, list)
+                assert len(effects) > 0
+
+                # Should return metadata
+                assert metadata is not None
+                assert metadata.format_type == "pdf"
+
+    def test_includes_make_directory_effect(self) -> None:
+        """prepare_pdf_with_latex includes MakeDirectory effect."""
+
+        with TemporaryDirectory() as temp_dir:
+            render_plan = RenderPlan(
+                name="test",
+                mode=RenderMode.LATEX,
+                template_name="resume.tex",
+                context={},
+                config=ResumeConfig(),
+                base_path="",
+            )
+            output_path = Path(temp_dir) / "nested" / "resume.pdf"
+            paths = Paths(
+                data=Path(temp_dir),
+                input=Path(temp_dir),
+                output=Path(temp_dir),
+                content=Path(temp_dir),
+                templates=Path(temp_dir),
+                static=Path(temp_dir),
+            )
+            context = LatexGenerationContext(
+                raw_data={},
+                processed_data={},
+                paths=paths,
+            )
+
+            # Patch the shell layer module (late-binding target)
+            with (
+                patch(
+                    "simple_resume.shell.render.latex.render_resume_latex_from_data"
+                ) as mock_render,
+                patch(
+                    "simple_resume.shell.render.latex._jinja_environment"
+                ) as mock_jinja,
+            ):
+                # Mock the Jinja2 environment
+                mock_env = MagicMock()
+                mock_template = MagicMock()
+                mock_template.render.return_value = (
+                    "\\documentclass{article}\\begin{document}Test\\end{document}"
+                )
+                mock_env.get_template.return_value = mock_template
+                mock_jinja.return_value = mock_env
+
+                mock_render.return_value = MagicMock(tex="\\documentclass{article}")
+
+                _, effects, _ = prepare_pdf_with_latex(
+                    render_plan=render_plan,
+                    output_path=output_path,
+                    context=context,
+                )
+
+                make_dir_effects = [e for e in effects if isinstance(e, MakeDirectory)]
+                assert len(make_dir_effects) >= 1
+                assert output_path.parent in [e.path for e in make_dir_effects]
+
+    def test_includes_write_tex_file_effect(self) -> None:
+        """prepare_pdf_with_latex includes WriteFile effect for .tex file."""
+
+        with TemporaryDirectory() as temp_dir:
+            render_plan = RenderPlan(
+                name="test",
+                mode=RenderMode.LATEX,
+                template_name="resume.tex",
+                context={},
+                config=ResumeConfig(),
+                base_path="",
+            )
+            output_path = Path(temp_dir) / "resume.pdf"
+            paths = Paths(
+                data=Path(temp_dir),
+                input=Path(temp_dir),
+                output=Path(temp_dir),
+                content=Path(temp_dir),
+                templates=Path(temp_dir),
+                static=Path(temp_dir),
+            )
+            context = LatexGenerationContext(
+                raw_data={},
+                processed_data={},
+                paths=paths,
+            )
+
+            # Patch the shell layer module (late-binding target)
+            with (
+                patch(
+                    "simple_resume.shell.render.latex.render_resume_latex_from_data"
+                ) as mock_render,
+                patch(
+                    "simple_resume.shell.render.latex._jinja_environment"
+                ) as mock_jinja,
+            ):
+                # Mock the Jinja2 environment
+                mock_env = MagicMock()
+                mock_template = MagicMock()
+                mock_template.render.return_value = (
+                    "\\documentclass{article}\\begin{document}Test\\end{document}"
+                )
+                mock_env.get_template.return_value = mock_template
+                mock_jinja.return_value = mock_env
+
+                mock_render.return_value = MagicMock(tex="\\documentclass{article}")
+
+                _, effects, _ = prepare_pdf_with_latex(
+                    render_plan=render_plan,
+                    output_path=output_path,
+                    context=context,
+                )
+
+                write_effects = [e for e in effects if isinstance(e, WriteFile)]
+                tex_write = [e for e in write_effects if e.path.suffix == ".tex"]
+                assert len(tex_write) >= 1
+
+    def test_raises_configuration_error_when_paths_none(self) -> None:
+        """prepare_pdf_with_latex raises error when paths is None."""
+
+        with TemporaryDirectory() as temp_dir:
+            render_plan = RenderPlan(
+                name="test",
+                mode=RenderMode.LATEX,
+                template_name="resume.tex",
+                context={},
+                config=ResumeConfig(),
+                base_path="",
+            )
+            output_path = Path(temp_dir) / "resume.pdf"
+            context = LatexGenerationContext(
+                raw_data={},
+                processed_data={},
+                paths=None,  # Missing paths
+            )
+
+            with pytest.raises(
+                ConfigurationError, match="LaTeX generation requires.*paths"
+            ):
+                prepare_pdf_with_latex(
+                    render_plan=render_plan,
+                    output_path=output_path,
+                    context=context,
+                )
+
+    def test_no_io_operations_performed(self) -> None:
+        """prepare_pdf_with_latex performs NO I/O operations (critical test)."""
+
+        with TemporaryDirectory() as temp_dir:
+            render_plan = RenderPlan(
+                name="test",
+                mode=RenderMode.LATEX,
+                template_name="resume.tex",
+                context={},
+                config=ResumeConfig(),
+                base_path="",
+            )
+            output_path = Path(temp_dir) / "nonexistent" / "resume.pdf"
+            paths = Paths(
+                data=Path(temp_dir),
+                input=Path(temp_dir),
+                output=Path(temp_dir),
+                content=Path(temp_dir),
+                templates=Path(temp_dir),
+                static=Path(temp_dir),
+            )
+            context = LatexGenerationContext(
+                raw_data={},
+                processed_data={},
+                paths=paths,
+            )
+
+            # Patch the shell layer module (late-binding target)
+            with (
+                patch(
+                    "simple_resume.shell.render.latex.render_resume_latex_from_data"
+                ) as mock_render,
+                patch(
+                    "simple_resume.shell.render.latex._jinja_environment"
+                ) as mock_jinja,
+            ):
+                # Mock the Jinja2 environment
+                mock_env = MagicMock()
+                mock_template = MagicMock()
+                mock_template.render.return_value = (
+                    "\\documentclass{article}\\begin{document}Test\\end{document}"
+                )
+                mock_env.get_template.return_value = mock_template
+                mock_jinja.return_value = mock_env
+
+                mock_render.return_value = MagicMock(tex="\\documentclass{article}")
+
+                with patch("pathlib.Path.mkdir") as mock_mkdir:
+                    with patch("pathlib.Path.write_text") as mock_write_text:
+                        _, effects, _ = prepare_pdf_with_latex(
+                            render_plan=render_plan,
+                            output_path=output_path,
+                            context=context,
+                        )
+
+                        # Verify NO I/O was performed
+                        mock_mkdir.assert_not_called()
+                        mock_write_text.assert_not_called()
+
+                        # But effects should be returned
+                        assert len(effects) > 0
