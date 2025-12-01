@@ -69,20 +69,21 @@ class WeasyPrintStrategy(PdfGenerationStrategy):
         # Open file if requested
         if request.open_after and result.exists:
             try:
+                path_to_open = os.fspath(result.output_path)
                 if sys.platform.startswith("darwin"):
                     opener = shutil.which("open") or "open"
                     subprocess.Popen(  # noqa: S603  # nosec B603
-                        [opener, str(result.output_path)],
+                        [opener, path_to_open],
                         stdout=subprocess.DEVNULL,
                         stderr=subprocess.DEVNULL,
                     )
                 elif os.name == "nt":
-                    os.startfile(str(result.output_path))  # type: ignore[attr-defined]  # noqa: S606  # nosec B606
+                    os.startfile(path_to_open)  # type: ignore[attr-defined]  # noqa: S606  # nosec B606
                 else:
                     opener = shutil.which("xdg-open")
                     if opener:
                         subprocess.Popen(  # noqa: S603  # nosec B603
-                            [opener, str(result.output_path)],
+                            [opener, path_to_open],
                             stdout=subprocess.DEVNULL,
                             stderr=subprocess.DEVNULL,
                         )
