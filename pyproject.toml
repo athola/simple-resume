@@ -78,6 +78,14 @@ sources = ["src"]  # Map src/ to the root of the package
 # wheel builder applies gitignore without the src/ prefix
 ignore-vcs = true
 
+[tool.hatch.build.targets.wheel.force-include]
+"src/simple_resume/shell/assets/templates" = "simple_resume/shell/assets/templates"
+"src/simple_resume/shell/assets/static" = "simple_resume/shell/assets/static"
+
+[tool.hatch.build.targets.sdist.force-include]
+"src/simple_resume/shell/assets/templates" = "simple_resume/shell/assets/templates"
+"src/simple_resume/shell/assets/static" = "simple_resume/shell/assets/static"
+
 [dependency-groups]
 dev = [
     "bandit>=1.7.9,<2.0",

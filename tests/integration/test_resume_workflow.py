@@ -7,7 +7,6 @@ import threading
 import time
 from pathlib import Path
 from typing import Any, TypedDict
-from unittest.mock import MagicMock, patch
 
 import pytest
 import yaml
@@ -16,7 +15,6 @@ from bs4 import BeautifulSoup
 from simple_resume.core.effects import Effect
 from simple_resume.core.generate.html import create_html_generator_factory
 from simple_resume.core.paths import Paths
-from simple_resume.core.protocols import TemplateLocator
 from simple_resume.core.result import GenerationMetadata
 from simple_resume.core.resume import Resume
 from simple_resume.shell.runtime.content import get_content
@@ -62,27 +60,9 @@ def render_resume_html(
     with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False) as tmp:
         tmp_path = Path(tmp.name)
 
-    # Create a mock template locator for testing
-    mock_locator = MagicMock(spec=TemplateLocator)
-    mock_locator.get_template_location.return_value = Path(
-        tempfile.gettempdir()
-    )  # Using temp location
-
-    with patch("simple_resume.core.generate.html.get_template_environment") as mock_env:
-        # Setup mock template environment and template
-        mock_template_env = MagicMock()
-        mock_template = MagicMock()
-        mock_template.render.return_value = (
-            "<html><body>Test rendered content</body></html>"
-        )
-        mock_template_env.get_template.return_value = mock_template
-        mock_env.return_value = mock_template_env
-
-        factory = create_html_generator_factory(default_template_locator=mock_locator)
-        prepare_html_func = factory.create_prepare_html_function()
-        return prepare_html_func(
-            render_plan, tmp_path, resume_name="test", template_locator=mock_locator
-        )
+    factory = create_html_generator_factory()
+    prepare_html_func = factory.create_prepare_html_function()
+    return prepare_html_func(render_plan, tmp_path, resume_name=name)
 
 
 class TestResumeWorkflowIntegration:
