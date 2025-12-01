@@ -11,10 +11,11 @@ Following the functional core / imperative shell pattern:
 
 from __future__ import annotations
 
+import os
 import time
 from collections.abc import Iterator
 from dataclasses import dataclass, field
-from pathlib import Path, PurePath, PurePosixPath
+from pathlib import Path, PosixPath, PurePath, PurePosixPath
 from typing import Any
 
 
@@ -63,7 +64,10 @@ class GenerationResult:
                 # WindowsPath on POSIX or where Path is monkeypatched without
                 # internal flavour attributes. Fall back to a pure, OS-agnostic
                 # representation to keep the object usable.
-                normalized_path = PurePosixPath(str(original_path))
+                try:
+                    normalized_path = PosixPath(original_path)
+                except Exception:
+                    normalized_path = PurePosixPath(os.fspath(original_path))
 
         object.__setattr__(self, "output_path", normalized_path)
 
