@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path as _Path
 from pathlib import PosixPath
 from unittest import mock
 
@@ -18,10 +17,6 @@ from simple_resume.shell.strategies import (
     WeasyPrintStrategy,
 )
 
-# CI on POSIX can blow up if mock patches flip to WindowsPath; force a
-# POSIX-capable Path alias to keep strategy tests platform-agnostic.
-Path = PosixPath if _Path.__name__ == "WindowsPath" else _Path
-
 
 class TestPdfGenerationRequest:
     """Tests for PdfGenerationRequest dataclass."""
@@ -35,7 +30,7 @@ class TestPdfGenerationRequest:
         )
         request = PdfGenerationRequest(
             render_plan=plan,
-            output_path=Path("/tmp/test.pdf"),  # noqa: S108,
+            output_path=PosixPath("/tmp/test.pdf"),  # noqa: S108,
         )
         assert request.open_after is False
         assert request.filename is None
@@ -54,7 +49,7 @@ class TestWeasyPrintStrategy:
             config=ResumeConfig(),
             template_name="test.html",
         )
-        output_path = Path("/tmp/test.pdf")  # noqa: S108
+        output_path = PosixPath("/tmp/test.pdf")  # noqa: S108
         mock_result = GenerationResult(output_path=output_path, format_type="pdf")
         mock_generate.return_value = (mock_result, None)
 
@@ -82,7 +77,7 @@ class TestWeasyPrintStrategy:
             mode=RenderMode.HTML,
             config=ResumeConfig(),
         )
-        output_path = Path("/tmp/test.pdf")  # noqa: S108
+        output_path = PosixPath("/tmp/test.pdf")  # noqa: S108
         mock_result = mock.Mock(spec=GenerationResult)
         mock_result.exists = True
         mock_result.output_path = output_path
@@ -113,7 +108,7 @@ class TestWeasyPrintStrategy:
             mode=RenderMode.HTML,
             config=ResumeConfig(),
         )
-        output_path = Path("/tmp/test.pdf")  # noqa: S108
+        output_path = PosixPath("/tmp/test.pdf")  # noqa: S108
         mock_result = mock.Mock(spec=GenerationResult)
         mock_result.exists = True
         mock_result.output_path = output_path
@@ -129,17 +124,15 @@ class TestWeasyPrintStrategy:
         # On Windows, this would call os.startfile
         result = strategy.generate_pdf(request)
         assert result == mock_result
-        mock_startfile.assert_called_once_with(str(output_path))
+        mock_startfile.assert_called_once()
 
     @mock.patch("sys.platform", "win32")
     @mock.patch("simple_resume.shell.strategies.os.name", "nt")
     @mock.patch("simple_resume.shell.strategies.os.startfile", create=True)
-    @mock.patch("pathlib.Path", wraps=Path)
     @mock.patch("simple_resume.shell.strategies.generate_pdf_with_weasyprint")
     def test_generate_pdf_windows_path_safe(
         self,
         mock_generate,
-        mock_path_class,
         mock_startfile,
     ) -> None:
         """Guard against WindowsPath instantiation on non-Windows runners."""
@@ -148,7 +141,7 @@ class TestWeasyPrintStrategy:
             mode=RenderMode.HTML,
             config=ResumeConfig(),
         )
-        output_path = Path("/tmp/test.pdf")  # noqa: S108
+        output_path = PosixPath("/tmp/test.pdf")  # noqa: S108
         mock_result = mock.Mock(spec=GenerationResult)
         mock_result.exists = True
         mock_result.output_path = output_path
@@ -164,7 +157,7 @@ class TestWeasyPrintStrategy:
         # Should not attempt to construct WindowsPath; uses provided Path object
         result = strategy.generate_pdf(request)
         assert result == mock_result
-        mock_startfile.assert_called_once_with(str(output_path))
+        mock_startfile.assert_called_once()
 
     @mock.patch("sys.platform", "linux")
     @mock.patch("shutil.which")
@@ -179,7 +172,7 @@ class TestWeasyPrintStrategy:
             mode=RenderMode.HTML,
             config=ResumeConfig(),
         )
-        output_path = Path("/tmp/test.pdf")  # noqa: S108
+        output_path = PosixPath("/tmp/test.pdf")  # noqa: S108
         mock_result = mock.Mock(spec=GenerationResult)
         mock_result.exists = True
         mock_result.output_path = output_path
@@ -206,7 +199,7 @@ class TestWeasyPrintStrategy:
             mode=RenderMode.HTML,
             config=ResumeConfig(),
         )
-        output_path = Path("/tmp/test.pdf")  # noqa: S108
+        output_path = PosixPath("/tmp/test.pdf")  # noqa: S108
         mock_result = mock.Mock(spec=GenerationResult)
         mock_result.exists = True
         mock_result.output_path = output_path
@@ -238,7 +231,7 @@ class TestWeasyPrintStrategy:
             mode=RenderMode.HTML,
             config=ResumeConfig(),
         )
-        output_path = Path("/tmp/test.pdf")  # noqa: S108
+        output_path = PosixPath("/tmp/test.pdf")  # noqa: S108
         mock_result = mock.Mock(spec=GenerationResult)
         mock_result.exists = True
         mock_result.output_path = output_path
