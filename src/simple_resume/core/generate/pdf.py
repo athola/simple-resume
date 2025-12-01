@@ -16,7 +16,6 @@ from simple_resume.core.exceptions import ConfigurationError
 from simple_resume.core.generate.exceptions import TemplateError
 from simple_resume.core.latex.types import LatexGenerationContext
 from simple_resume.core.models import RenderPlan
-from simple_resume.core.paths import Paths
 from simple_resume.core.protocols import EffectExecutor, LaTeXRenderer, TemplateLocator
 from simple_resume.core.render import get_template_environment
 from simple_resume.core.result import GenerationMetadata, GenerationResult
@@ -511,16 +510,12 @@ def _prepare_pdf_with_latex_impl(
         )
     resolved_paths = context.paths
     if resolved_paths is None:
-        # Fallback to packaged templates/static when paths are not provided
-        locator = factory._get_template_locator(params.template_locator)
-        template_root = locator.get_template_location()
-        resolved_paths = Paths(
-            data=Path("."),
-            input=Path("."),
-            output=params.output_path.parent,
-            content=template_root,
-            templates=template_root,
-            static=template_root.parent / "static",
+        # Strictly require resolved paths to avoid implicit template resolution.
+        # Tests expect a configuration error when paths are missing so we fail
+        # fast instead of attempting to fall back to packaged assets.
+        raise ConfigurationError(
+            "LaTeX generation requires resolved paths (templates/static). "
+            "Provide Paths or configure the shell layer before rendering."
         )
 
     # Generate LaTeX content
