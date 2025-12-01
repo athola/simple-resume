@@ -26,6 +26,17 @@ jobs:
     - name: Install dependencies
       run: uv sync --extra utils --group dev
 
+    - name: Verify sdist contains sources and templates
+      run: |
+        set -euo pipefail
+        rm -f dist/simple_resume-*.tar.gz
+        UV_CACHE_DIR=.uv-cache uv build --sdist >/dev/null
+        TARBALL=$(ls -t dist/simple_resume-*.tar.gz | head -n1)
+        tar -tf "$TARBALL" > /tmp/sdist_files.txt
+        grep -q "simple_resume-.*/simple_resume/shell/cli/main.py" /tmp/sdist_files.txt
+        grep -q "simple_resume-.*/simple_resume/shell/assets/templates/html/resume_no_bars.html" /tmp/sdist_files.txt
+        echo "sdist contains required source files and templates"
+
     - name: Run tests
       run: uv run pytest
 
