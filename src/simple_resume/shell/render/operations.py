@@ -11,14 +11,18 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any
 
-from weasyprint import CSS, HTML
-
 # Import internal modules that will receive injected dependencies
 from simple_resume.core.generate import html as _html_generation
 from simple_resume.core.generate import pdf as _pdf_generation
+from simple_resume.core.generate.html import create_html_generator_factory
+from simple_resume.core.generate.pdf import PdfGenerationConfig
 from simple_resume.core.models import RenderPlan
+from simple_resume.core.protocols import EffectExecutor as EffectExecutorProtocol
+from simple_resume.core.protocols import TemplateLocator
 from simple_resume.core.render import get_template_environment
 from simple_resume.core.result import GenerationMetadata, GenerationResult
+from simple_resume.shell.config import TEMPLATE_LOC
+from simple_resume.shell.effect_executor import EffectExecutor
 
 
 def create_backend_injector(module: ModuleType, **overrides: Any) -> Any:
@@ -56,21 +60,33 @@ def generate_pdf_with_weasyprint(
     output_path: Path,
     resume_name: str,
     filename: str | None = None,
+    effect_executor: EffectExecutorProtocol | None = None,
 ) -> tuple[GenerationResult, int | None]:
     """Delegate to the HTML-to-PDF backend with patchable dependencies."""
+
+    class _TemplateLocator(TemplateLocator):
+        def get_template_location(self) -> Path:
+            return TEMPLATE_LOC
+
+    locator = _TemplateLocator()
+    executor = effect_executor or EffectExecutor()
+
     backend_injector = create_backend_injector(
         _pdf_generation,
         get_template_environment=get_template_environment,
-        WEASYPRINT_HTML=HTML,
-        WEASYPRINT_CSS=CSS,
     )
 
     with backend_injector:
+        config = PdfGenerationConfig(
+            resume_name=resume_name,
+            filename=filename,
+            template_locator=locator,
+            effect_executor=executor,
+        )
         return _pdf_generation.generate_pdf_with_weasyprint(
             render_plan,
             output_path,
-            resume_name=resume_name,
-            filename=filename,
+            config,
         )
 
 
@@ -78,10 +94,19 @@ def generate_html_with_jinja(
     render_plan: RenderPlan,
     output_path: Path,
     filename: str | None = None,
+    effect_executor: EffectExecutorProtocol | None = None,
 ) -> GenerationResult:
     """Render HTML via Jinja with injectable template environment."""
-    # Import here to avoid circular dependency
-    from simple_resume.shell.effect_executor import EffectExecutor  # noqa: PLC0415
+
+    class _TemplateLocator(TemplateLocator):
+        def get_template_location(self) -> Path:
+            return TEMPLATE_LOC
+
+    locator = _TemplateLocator()
+
+    # Create HTML generator factory with explicit locator
+    html_factory = create_html_generator_factory(default_template_locator=locator)
+    prepare_html_func = html_factory.create_prepare_html_function()
 
     backend_injector = create_backend_injector(
         _html_generation,
@@ -89,19 +114,16 @@ def generate_html_with_jinja(
     )
 
     with backend_injector:
-        config = _html_generation.HtmlGenerationConfig(
-            template_loc=None,
-            template_locator=None,
+        html_content, effects, metadata = prepare_html_func(
+            render_plan=render_plan,
+            output_path=output_path,
+            resume_name=filename or "resume",
             filename=filename,
-        )
-        html_content, effects, metadata = _html_generation.prepare_html_with_jinja(
-            render_plan,
-            output_path,
-            config=config,
+            template_locator=locator,
         )
 
         # Execute the effects to actually create the files
-        executor = EffectExecutor()
+        executor = effect_executor or EffectExecutor()
         executor.execute_many(effects)
 
         # Create and return GenerationResult

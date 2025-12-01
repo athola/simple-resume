@@ -1,12 +1,17 @@
 """Core resume data transformations - pure functions without side effects."""
 
-from .file_operations import (
+from simple_resume.core.file_operations import (
     find_yaml_files,
     get_resume_name_from_path,
     iterate_yaml_files,
 )
-from .models import RenderMode, RenderPlan, ResumeConfig, ValidationResult
-from .plan import (
+from simple_resume.core.models import (
+    RenderMode,
+    RenderPlan,
+    ResumeConfig,
+    ValidationResult,
+)
+from simple_resume.core.plan import (
     build_render_plan,
     normalize_with_palette_fallback,
     prepare_render_data,
@@ -14,12 +19,12 @@ from .plan import (
     validate_resume_config,
     validate_resume_config_or_raise,
 )
-from .render import (
+from simple_resume.core.render import (
     prepare_html_generation_request,
     prepare_pdf_generation_request,
     validate_render_plan,
 )
-from .resume import Resume
+from simple_resume.core.resume import Resume
 
 __all__ = [
     "Resume",

@@ -24,8 +24,8 @@ class TemplateLocator(Protocol):
 class EffectExecutor(Protocol):
     """Protocol for executing effects."""
 
-    def execute(self, effect: Any) -> None:
-        """Execute a single effect."""
+    def execute(self, effect: Any) -> Any:
+        """Execute a single effect and return its result (type varies)."""
         ...
 
     def execute_many(self, effects: list[Any]) -> None:

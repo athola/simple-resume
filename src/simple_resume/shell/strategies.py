@@ -16,10 +16,8 @@ from pathlib import Path
 from typing import Any
 
 from simple_resume.core.exceptions import GenerationError
-from simple_resume.core.generate.pdf import (
-    LatexGenerationContext,
-    prepare_pdf_with_latex,
-)
+from simple_resume.core.generate.pdf import prepare_pdf_with_latex
+from simple_resume.core.latex.types import LatexGenerationContext
 from simple_resume.core.models import RenderPlan
 from simple_resume.core.paths import Paths
 from simple_resume.core.result import GenerationResult
@@ -105,10 +103,11 @@ class LatexStrategy(PdfGenerationStrategy):
         """Generate PDF using LaTeX backend."""
         # Create generation context
         context = LatexGenerationContext(
-            raw_data=request.raw_data,
+            resume_data=request.raw_data,
             processed_data=request.processed_data or {},
-            paths=request.paths,
+            output_path=request.output_path,
             filename=request.filename,
+            paths=request.paths,
         )
 
         # Prepare LaTeX generation (pure function returns effects)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import sys
 from email.message import Message
 from pathlib import Path
@@ -7,6 +8,7 @@ from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import Mock, patch
 from urllib.error import HTTPError
+from urllib.parse import urlencode
 
 import pytest
 
@@ -14,14 +16,15 @@ from simple_resume.core.palettes.common import Palette
 from simple_resume.core.palettes.exceptions import PaletteRemoteError
 from simple_resume.core.palettes.sources import (
     PalettableRecord,
-    build_palettable_registry_snapshot,
-    load_palettable_palette,
     parse_palettable_cache,
     parse_palette_data,
     serialize_palettable_records,
 )
 from simple_resume.shell.palettes.loader import (
+    build_palettable_registry_snapshot,
     ensure_palettable_loaded,
+    load_default_palettes,
+    load_palettable_palette,
 )
 from simple_resume.shell.palettes.remote import ColourLoversClient
 from tests.bdd import Scenario
@@ -95,12 +98,7 @@ def test_serialize_palettable_records(story: Scenario) -> None:
 
 def test_load_default_palettes_returns_palettes(story: Scenario) -> None:
     story.given("the bundled default palettes file is present")
-    # Core function is now a stub - use shell version
-    from simple_resume.shell.palettes.loader import (  # noqa: PLC0415
-        load_default_palettes as shell_load,
-    )
-
-    palettes = shell_load()
+    palettes = load_default_palettes()
 
     story.then("at least one palette is loaded with hex swatches")
     assert palettes
@@ -252,7 +250,7 @@ def test_build_palettable_registry_snapshot_uses_loaded_records(
     ]
 
     with patch(
-        "simple_resume.core.palettes.sources.discover_palettable",
+        "simple_resume.shell.palettes.loader.discover_palettable",
         return_value=records,
     ):
         snapshot = build_palettable_registry_snapshot()
@@ -314,3 +312,26 @@ def test_colourlovers_fetch_invalid_json(
             client.fetch(num_results=1)
 
     story.then("a PaletteRemoteError is raised when JSON decoding fails")
+
+
+def test_colourlovers_cache_key_uses_blake2b(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, story: Scenario
+) -> None:
+    story.given("ColourLovers cache keys are derived from request parameters")
+    monkeypatch.setenv("SIMPLE_RESUME_PALETTE_CACHE_DIR", str(tmp_path))
+    client = ColourLoversClient()
+
+    params = {
+        "format": "json",
+        "numResults": 5,
+        "orderCol": "new",
+        "keywords": "ocean",
+    }
+
+    cache_path = client._cache_key(params)
+    encoded = urlencode(sorted((key, str(value)) for key, value in params.items()))
+    expected_digest = hashlib.blake2b(encoded.encode("utf-8")).hexdigest()
+
+    story.then("the cache filename uses a BLAKE2b digest and resides in the cache dir")
+    assert cache_path.name == f"{expected_digest}.json"
+    assert cache_path.parent == tmp_path / "colourlovers"

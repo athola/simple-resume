@@ -133,9 +133,9 @@ uv run simple-resume generate --format pdf --data-dir your_dir
 
 ```python
 from simple_resume import generate_pdf as generate_resume_pdf
-from simple_resume.utilities import load_yaml_data
+from simple_resume.shell.runtime.content import get_content
 
-data = load_yaml_data("resume.yaml")
+data = get_content("resume.yaml")
 pdf_path = generate_resume_pdf(data, "output.pdf")
 ```
 

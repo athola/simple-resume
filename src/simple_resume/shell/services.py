@@ -13,8 +13,8 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     pass
 
-from simple_resume.core.generate.html import set_default_template_locator
-from simple_resume.core.generate.pdf import set_default_pdf_dependencies
+from simple_resume.core.generate.html import create_html_generator_factory
+from simple_resume.core.generate.pdf import create_pdf_generator_factory
 from simple_resume.core.markdown import render_markdown_content
 from simple_resume.core.protocols import (
     ContentLoader,
@@ -32,6 +32,7 @@ from simple_resume.shell.config import TEMPLATE_LOC
 from simple_resume.shell.effect_executor import EffectExecutor as ShellEffectExecutor
 from simple_resume.shell.file_opener import open_file as shell_open_file
 from simple_resume.shell.io_utils import candidate_yaml_path, resolve_paths_for_read
+from simple_resume.shell.palettes.loader import get_palette_registry
 from simple_resume.shell.render.latex import (
     LatexCompilationError,
     compile_tex_to_pdf,
@@ -144,17 +145,12 @@ class DefaultPdfGenerationStrategy(PdfGenerationStrategy):
         filename: str | None = None,
     ) -> tuple[Any, int | None]:
         """Generate a PDF file."""
-        # Check if render_plan is actually a complete PdfGenerationRequest
-        if isinstance(render_plan, PdfGenerationRequest):
-            request = render_plan
-        else:
-            # Create a minimal request for backward compatibility
-            request = PdfGenerationRequest(
-                render_plan=render_plan,
-                output_path=output_path,
-                resume_name=resume_name,
-                filename=filename,
+        if not isinstance(render_plan, PdfGenerationRequest):
+            raise TypeError(
+                "render_plan must be a PdfGenerationRequest; "
+                "legacy inputs are not supported"
             )
+        request = render_plan
         result = self._strategy.generate_pdf(request)
         return result, None if hasattr(result, "page_count") else None
 
@@ -214,11 +210,19 @@ def register_default_services() -> None:
     effect_executor = DefaultEffectExecutor()
     latex_renderer = DefaultLaTeXRenderer()
 
+    # Set default dependencies for core HTML generation
+    html_factory = create_html_generator_factory(template_locator)
+
+    # Set default dependencies for core PDF generation
+    pdf_factory = create_pdf_generator_factory(
+        effect_executor=effect_executor,
+        template_locator=template_locator,
+        latex_renderer=latex_renderer,
+    )
+
     # Register with service locator (for legacy compatibility)
-    register_service("template_locator", template_locator)
-    register_service("effect_executor", effect_executor)
-    register_service("content_loader", content_loader)
-    register_service("path_resolver", path_resolver)
+    register_service("html_generator_factory", html_factory)
+    register_service("pdf_generator_factory", pdf_factory)
     register_service("file_opener", DefaultFileOpenerService())
     register_service("palette_loader", palette_loader)
     register_service("latex_renderer", latex_renderer)
@@ -230,17 +234,12 @@ def register_default_services() -> None:
         content_loader=content_loader,
         palette_loader=palette_loader,
         path_resolver=path_resolver,
+        palette_registry_provider=get_palette_registry,
     )
 
-    # Set default dependencies for core HTML generation
-    set_default_template_locator(template_locator)
-
-    # Set default dependencies for core PDF generation
-    set_default_pdf_dependencies(
-        effect_executor=effect_executor,
-        template_locator=template_locator,
-        latex_renderer=latex_renderer,
-    )
+    # Warm the palette registry once at startup to avoid expensive discovery
+    # during latency-sensitive operations (e.g., concurrent renders in tests).
+    get_palette_registry()
 
 
 __all__ = [

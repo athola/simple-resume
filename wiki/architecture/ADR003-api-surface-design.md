@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted (2025-11-09)
+Superseded by ADR-009 (FCIS Architecture) - Color utilities now in `simple_resume.core.colors`
+
+Original: Accepted (2025-11-09)
 
 ## Context
 
@@ -104,10 +106,10 @@ text_color = Resume.calculate_text_color("#FFFFFF")  # Why is this on Resume?
 
 ```text
 
-**After (correct):**
+**After (FCIS pattern):**
 ```python
-from simple_resume.api import colors
-text_color = colors.calculate_text_color("#FFFFFF")  # Obvious location
+from simple_resume.core import colors
+text_color = colors.get_contrasting_text_color("#FFFFFF")  # Core utility
 
 
 ```text
@@ -122,13 +124,13 @@ Wrappers (e.g., `calculate_text_color = get_contrasting_text_color`) violate DRY
 
 Direct imports eliminate these issues.
 
-### Why `api.*` Namespace?
+### Why `core.*` Namespace? (Updated for FCIS)
 
-Following pandas (`pandas.api.types`, `pandas.api.extensions`):
-- Provides a stable public interface with semantic versioning.
-- Allows internal refactoring without breaking users
-- Clear separation: `api.*` is public, `core.*` is private
-- Users never import from `core.*` modules
+With FCIS architecture (Functional Core, Imperative Shell):
+- `core.*` contains pure functions with no I/O or side effects
+- Color utilities are pure calculations - they belong in core
+- No need for separate API layer when functions are already pure
+- Direct imports from `core.*` are appropriate for library code
 
 ## Consequences
 
@@ -159,18 +161,18 @@ lum = Resume.calculate_luminance("#808080")
 
 ```text
 
-**After:**
+**After (FCIS):**
 ```python
-from simple_resume.api import colors
+from simple_resume.core import colors
 
-text_color = colors.calculate_text_color("#FFFFFF")
+text_color = colors.get_contrasting_text_color("#FFFFFF")
 is_valid = colors.is_valid_color("#FF0000")
 lum = colors.calculate_luminance("#808080")
 
 
 ```text
 
-Use `from simple_resume.api import colors` in all new code.
+Use `from simple_resume.core import colors` in all new code.
 
 ### Monitoring
 

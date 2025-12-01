@@ -16,6 +16,7 @@ shell layer through functions like `to_pdf()` and `to_html()` in the shell modul
 from __future__ import annotations
 
 import copy
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +27,6 @@ from simple_resume.core.exceptions import (
     ValidationError,
 )
 from simple_resume.core.models import RenderPlan, ValidationResult
-from simple_resume.core.palettes.registry import get_palette_registry
 from simple_resume.core.paths import Paths
 from simple_resume.core.plan import (
     prepare_render_data,
@@ -45,16 +45,21 @@ class _ResumeDependencyContainer:
 
     content_loader: ContentLoader | None = None
     palette_loader: PaletteLoader | None = None
+    palette_registry_provider: Any | None = None
     path_resolver: PathResolver | None = None
 
 
-_deps = _ResumeDependencyContainer()
+@lru_cache(maxsize=1)
+def _get_dependency_container() -> _ResumeDependencyContainer:
+    """Return the lazily created dependency container singleton."""
+    return _ResumeDependencyContainer()
 
 
 def set_default_loaders(
     content_loader: ContentLoader | None = None,
     palette_loader: PaletteLoader | None = None,
     path_resolver: PathResolver | None = None,
+    palette_registry_provider: Any | None = None,
 ) -> None:
     """Set default loaders for Resume operations.
 
@@ -65,22 +70,29 @@ def set_default_loaders(
         content_loader: Default content loader implementation.
         palette_loader: Default palette loader implementation.
         path_resolver: Default path resolver implementation.
+        palette_registry_provider: Callable returning the palette registry.
 
     """
+    deps = _get_dependency_container()
+
     if content_loader is not None:
-        _deps.content_loader = content_loader
+        deps.content_loader = content_loader
     if palette_loader is not None:
-        _deps.palette_loader = palette_loader
+        deps.palette_loader = palette_loader
     if path_resolver is not None:
-        _deps.path_resolver = path_resolver
+        deps.path_resolver = path_resolver
+    if palette_registry_provider is not None:
+        deps.palette_registry_provider = palette_registry_provider
 
 
 def _get_content_loader(injected: ContentLoader | None) -> ContentLoader:
     """Get content loader, preferring injected over default."""
+    deps = _get_dependency_container()
+
     if injected is not None:
         return injected
-    if _deps.content_loader is not None:
-        return _deps.content_loader
+    if deps.content_loader is not None:
+        return deps.content_loader
     raise ConfigurationError(
         "No content loader available. "
         "Either inject one or ensure shell layer is initialized."
@@ -89,10 +101,12 @@ def _get_content_loader(injected: ContentLoader | None) -> ContentLoader:
 
 def _get_path_resolver(injected: PathResolver | None) -> PathResolver:
     """Get path resolver, preferring injected over default."""
+    deps = _get_dependency_container()
+
     if injected is not None:
         return injected
-    if _deps.path_resolver is not None:
-        return _deps.path_resolver
+    if deps.path_resolver is not None:
+        return deps.path_resolver
     raise ConfigurationError(
         "No path resolver available. "
         "Either inject one or ensure shell layer is initialized."
@@ -101,11 +115,24 @@ def _get_path_resolver(injected: PathResolver | None) -> PathResolver:
 
 def _load_palette_from_file(path: str | Path) -> dict[str, Any]:
     """Load palette from file using the default palette loader."""
-    if _deps.palette_loader is None:
+    deps = _get_dependency_container()
+
+    if deps.palette_loader is None:
         raise ConfigurationError(
             "No palette loader available. Ensure shell layer is initialized."
         )
-    return _deps.palette_loader.load_palette_from_file(path)
+    return deps.palette_loader.load_palette_from_file(path)
+
+
+def _get_palette_registry() -> Any:
+    """Resolve palette registry via injected provider to avoid shell import."""
+    deps = _get_dependency_container()
+
+    if deps.palette_registry_provider is None:
+        raise ConfigurationError(
+            "No palette registry provider available. Ensure shell layer is initialized."
+        )
+    return deps.palette_registry_provider()
 
 
 class Resume:
@@ -394,7 +421,7 @@ class Resume:
 
             # Apply the palette block to individual color fields
             # Normalize both data structures to apply palette colors
-            registry = get_palette_registry()
+            registry = _get_palette_registry()
             new_data["config"], _ = normalize_config(
                 new_data["config"], filename=self._filename or "", registry=registry
             )
@@ -464,7 +491,7 @@ class Resume:
         if self._validation_result is None:
             raw_config = self._data.get("config", {})
             filename = self._filename or ""
-            registry = get_palette_registry()
+            registry = _get_palette_registry()
             self._validation_result = validate_resume_config(
                 raw_config, filename, registry=registry
             )
@@ -529,7 +556,7 @@ class Resume:
                 if hasattr(self, "_raw_data") and self._raw_data is not None
                 else self._data
             )
-            registry = get_palette_registry()
+            registry = _get_palette_registry()
             self._render_plan = prepare_render_data(
                 source_data,
                 preview=actual_preview,

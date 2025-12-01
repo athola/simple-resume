@@ -116,3 +116,21 @@ class RunCommand(Effect):
         """Return human-readable description."""
         command_str = " ".join(self.command)
         return f"Run command: {command_str}"
+
+
+@dataclass(frozen=True)
+class RenderPdf(Effect):
+    """Effect: Render HTML+CSS to PDF at the target path.
+
+    The shell layer is responsible for providing the rendering engine
+    (e.g., WeasyPrint).
+    """
+
+    html: str
+    css: str
+    output_path: Path
+    base_url: str | None = None
+
+    def describe(self) -> str:
+        """Return human-readable description."""
+        return f"Render PDF to: {self.output_path}"

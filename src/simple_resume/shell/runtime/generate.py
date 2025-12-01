@@ -7,6 +7,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Callable, TypeVar, cast
 
+import simple_resume.shell.session as session_mod
 from simple_resume.core.constants import OutputFormat
 from simple_resume.core.exceptions import (
     ConfigurationError,
@@ -29,8 +30,7 @@ from simple_resume.core.result import (
     GenerationResult,
 )
 from simple_resume.core.validation import validate_directory_path
-from simple_resume.shell.resume_extensions import to_html, to_pdf
-from simple_resume.shell.session import ResumeSession, SessionConfig
+from simple_resume.shell.generate import core as generate_core
 
 T = TypeVar("T")
 
@@ -53,13 +53,17 @@ def generate_pdf(
 ) -> GenerationResult | BatchGenerationResult:
     """Generate PDF output for one or more resumes."""
 
-    def _runner(session: ResumeSession) -> GenerationResult | BatchGenerationResult:
+    def _runner(
+        session: session_mod.ResumeSession,
+    ) -> GenerationResult | BatchGenerationResult:
         if config.name:
             resume = session.resume(config.name)
             if overrides:
                 resume = resume.with_config(**overrides)
             output_path = config.output_path if config.output_path is not None else None
-            return to_pdf(resume, output_path=output_path, open_after=config.open_after)
+            return generate_core.to_pdf(
+                resume, output_path=output_path, open_after=config.open_after
+            )
         return session.generate_all(
             format=OutputFormat.PDF,
             pattern=config.pattern,
@@ -81,13 +85,15 @@ def generate_html(
 ) -> GenerationResult | BatchGenerationResult:
     """Generate HTML output for one or more resumes."""
 
-    def _runner(session: ResumeSession) -> GenerationResult | BatchGenerationResult:
+    def _runner(
+        session: session_mod.ResumeSession,
+    ) -> GenerationResult | BatchGenerationResult:
         if config.name:
             resume = session.resume(config.name)
             if overrides:
                 resume = resume.with_config(**overrides)
             output_path = config.output_path if config.output_path is not None else None
-            return to_html(
+            return generate_core.to_html(
                 resume,
                 output_path=output_path,
                 open_after=config.open_after,
@@ -120,7 +126,7 @@ def generate_all(
         raise ValueError("Unsupported format configuration - no formats provided")
 
     def _runner(
-        session: ResumeSession,
+        session: session_mod.ResumeSession,
     ) -> dict[str, BatchGenerationResult | GenerationResult]:
         results: dict[str, BatchGenerationResult | GenerationResult] = {}
 
@@ -130,13 +136,13 @@ def generate_all(
                 resume = resume.with_config(**overrides)
             for fmt in normalized_formats:
                 if fmt is OutputFormat.PDF:
-                    results[fmt.value] = to_pdf(
+                    results[fmt.value] = generate_core.to_pdf(
                         resume,
                         output_path=config.output_path,
                         open_after=config.open_after,
                     )
                 elif fmt is OutputFormat.HTML:
-                    results[fmt.value] = to_html(
+                    results[fmt.value] = generate_core.to_html(
                         resume,
                         output_path=config.output_path,
                         open_after=config.open_after,
@@ -297,14 +303,14 @@ def _run_with_session(
     *,
     overrides: dict[str, Any],
     default_format: OutputFormat,
-    runner: Callable[[ResumeSession], T],
+    runner: Callable[[session_mod.ResumeSession], T],
 ) -> T:
     """Execute a shell operation inside a managed ResumeSession."""
     session_config = _build_session_config(config, overrides, default_format)
     data_dir = _resolve_data_dir(config)
 
     try:
-        with ResumeSession(
+        with session_mod.ResumeSession(
             data_dir=data_dir,
             paths=config.paths,
             config=session_config,
@@ -324,10 +330,10 @@ def _build_session_config(
     config: GenerationConfig,
     overrides: dict[str, Any],
     default_format: OutputFormat,
-) -> SessionConfig:
+) -> session_mod.SessionConfig:
     """Return a SessionConfig derived from the generation config."""
     session_metadata = dict(overrides)
-    return SessionConfig(
+    return session_mod.SessionConfig(
         paths=config.paths if isinstance(config.paths, Paths) else None,
         default_template=config.template,
         default_format=default_format,

@@ -29,9 +29,9 @@ class TestGeneratePdf:
     """Test the generate_pdf function."""
 
     @patch("simple_resume.shell.generate.core.to_pdf")
-    @patch("simple_resume.generate.core.validate_directory_path")
-    @patch("simple_resume.generate.core.ResumeSession")
-    @patch("simple_resume.generate.core.SessionConfig")
+    @patch("simple_resume.core.validation.validate_directory_path")
+    @patch("simple_resume.shell.session.ResumeSession")
+    @patch("simple_resume.shell.session.SessionConfig")
     def test_generate_pdf_single_resume(
         self,
         mock_session_config: Mock,
@@ -59,9 +59,9 @@ class TestGeneratePdf:
         mock_session.resume.assert_called_once_with("test_resume")
         mock_to_pdf.assert_called_once()
 
-    @patch("simple_resume.generate.core.validate_directory_path")
-    @patch("simple_resume.generate.core.ResumeSession")
-    @patch("simple_resume.generate.core.SessionConfig")
+    @patch("simple_resume.core.validation.validate_directory_path")
+    @patch("simple_resume.shell.session.ResumeSession")
+    @patch("simple_resume.shell.session.SessionConfig")
     def test_generate_pdf_multiple_resumes(
         self,
         mock_session_config: Mock,
@@ -87,10 +87,10 @@ class TestGeneratePdf:
         assert result == mock_result
         mock_session.generate_all.assert_called_once()
 
-    @patch("simple_resume.generate.core.validate_directory_path")
+    @patch("simple_resume.core.validation.validate_directory_path")
     @patch("simple_resume.shell.generate.core.to_pdf")
-    @patch("simple_resume.generate.core.ResumeSession")
-    @patch("simple_resume.generate.core.SessionConfig")
+    @patch("simple_resume.shell.session.ResumeSession")
+    @patch("simple_resume.shell.session.SessionConfig")
     def test_generate_pdf_with_config_overrides(
         self,
         mock_session_config: Mock,
@@ -127,8 +127,8 @@ class TestGeneratePdf:
         assert call_args["session_metadata"]["theme_color"] == "#FF0000"
 
     @patch("simple_resume.shell.generate.core.to_pdf")
-    @patch("simple_resume.generate.core.ResumeSession")
-    @patch("simple_resume.generate.core.SessionConfig")
+    @patch("simple_resume.shell.session.ResumeSession")
+    @patch("simple_resume.shell.session.SessionConfig")
     def test_generate_pdf_with_paths(
         self,
         mock_session_config: Mock,
@@ -157,8 +157,8 @@ class TestGeneratePdf:
             data_dir=None, paths=mock_paths, config=mock_session_config.return_value
         )
 
-    @patch("simple_resume.generate.core.validate_directory_path")
-    @patch("simple_resume.generate.core.ResumeSession")
+    @patch("simple_resume.core.validation.validate_directory_path")
+    @patch("simple_resume.shell.session.ResumeSession")
     def test_generate_pdf_handles_generation_error(
         self, mock_resume_session: Mock, mock_validate_path: Mock, story: Scenario
     ) -> None:
@@ -172,8 +172,8 @@ class TestGeneratePdf:
         with pytest.raises(GenerationError, match="Test error"):
             generate_pdf(config)
 
-    @patch("simple_resume.generate.core.validate_directory_path")
-    @patch("simple_resume.generate.core.ResumeSession")
+    @patch("simple_resume.core.validation.validate_directory_path")
+    @patch("simple_resume.shell.session.ResumeSession")
     def test_generate_pdf_wraps_generic_error(
         self, mock_resume_session: Mock, mock_validate_path: Mock, story: Scenario
     ) -> None:
@@ -192,8 +192,8 @@ class TestGenerateHtml:
     """Test the generate_html function."""
 
     @patch("simple_resume.shell.generate.core.to_html")
-    @patch("simple_resume.generate.core.ResumeSession")
-    @patch("simple_resume.generate.core.SessionConfig")
+    @patch("simple_resume.shell.session.ResumeSession")
+    @patch("simple_resume.shell.session.SessionConfig")
     def test_generate_html_single_resume(
         self,
         mock_session_config: Mock,
@@ -217,8 +217,8 @@ class TestGenerateHtml:
         mock_session.resume.assert_called_once_with("test_resume")
         mock_to_html.assert_called_once()
 
-    @patch("simple_resume.generate.core.ResumeSession")
-    @patch("simple_resume.generate.core.SessionConfig")
+    @patch("simple_resume.shell.session.ResumeSession")
+    @patch("simple_resume.shell.session.SessionConfig")
     def test_generate_html_multiple_resumes(
         self, mock_session_config: Mock, mock_resume_session: Mock, story: Scenario
     ) -> None:
@@ -238,8 +238,8 @@ class TestGenerateHtml:
         mock_session.generate_all.assert_called_once()
 
     @patch("simple_resume.shell.generate.core.to_html")
-    @patch("simple_resume.generate.core.ResumeSession")
-    @patch("simple_resume.generate.core.SessionConfig")
+    @patch("simple_resume.shell.session.ResumeSession")
+    @patch("simple_resume.shell.session.SessionConfig")
     def test_generate_html_with_browser(
         self,
         mock_session_config: Mock,
@@ -269,8 +269,8 @@ class TestGenerateHtml:
         assert call_kwargs.get("browser") == "firefox"
 
     @patch("simple_resume.shell.generate.core.to_html")
-    @patch("simple_resume.generate.core.ResumeSession")
-    @patch("simple_resume.generate.core.SessionConfig")
+    @patch("simple_resume.shell.session.ResumeSession")
+    @patch("simple_resume.shell.session.SessionConfig")
     def test_generate_html_preview_mode_default(
         self,
         mock_session_config: Mock,
@@ -304,10 +304,9 @@ class TestGenerateAll:
         with pytest.raises(ValueError, match="Unsupported format"):
             generate_all(config)
 
-    @patch("simple_resume.generate.core.validate_directory_path")
-    @patch("simple_resume.generate.core.validate_directory_path")
-    @patch("simple_resume.generate.core.ResumeSession")
-    @patch("simple_resume.generate.core.SessionConfig")
+    @patch("simple_resume.core.validation.validate_directory_path")
+    @patch("simple_resume.shell.session.ResumeSession")
+    @patch("simple_resume.shell.session.SessionConfig")
     def test_generate_all_multiple_formats(
         self,
         mock_session_config: Mock,
@@ -338,10 +337,10 @@ class TestGenerateAll:
 
     @patch("simple_resume.shell.generate.core.to_html")
     @patch("simple_resume.shell.generate.core.to_pdf")
-    @patch("simple_resume.generate.core.validate_directory_path")
-    @patch("simple_resume.generate.core.validate_directory_path")
-    @patch("simple_resume.generate.core.ResumeSession")
-    @patch("simple_resume.generate.core.SessionConfig")
+    @patch("simple_resume.core.validation.validate_directory_path")
+    @patch("simple_resume.core.validation.validate_directory_path")
+    @patch("simple_resume.shell.session.ResumeSession")
+    @patch("simple_resume.shell.session.SessionConfig")
     def test_generate_all_single_resume_multiple_formats(
         self,
         mock_session_config: Mock,
@@ -374,10 +373,9 @@ class TestGenerateAll:
         assert result["pdf"] == mock_pdf_result
         assert result["html"] == mock_html_result
 
-    @patch("simple_resume.generate.core.validate_directory_path")
-    @patch("simple_resume.generate.core.validate_directory_path")
-    @patch("simple_resume.generate.core.ResumeSession")
-    @patch("simple_resume.generate.core.SessionConfig")
+    @patch("simple_resume.core.validation.validate_directory_path")
+    @patch("simple_resume.shell.session.ResumeSession")
+    @patch("simple_resume.shell.session.SessionConfig")
     def test_generate_all_with_config_overrides(
         self,
         mock_session_config: Mock,
@@ -412,7 +410,7 @@ class TestGenerateAll:
 class TestGenerateResume:
     """Test the generate_resume function."""
 
-    @patch("simple_resume.generate.core.execute_generation_commands")
+    @patch("simple_resume.shell.generate.core.execute_generation_commands")
     def test_generate_resume_pdf(self, mock_execute: Mock) -> None:
         """Test generate_resume with PDF format."""
         mock_result = Mock(spec=GenerationResult)
@@ -433,7 +431,7 @@ class TestGenerateResume:
         assert captured[0].format is OutputFormat.PDF
         mock_execute.assert_called_once()
 
-    @patch("simple_resume.generate.core.execute_generation_commands")
+    @patch("simple_resume.shell.generate.core.execute_generation_commands")
     def test_generate_resume_html(self, mock_execute: Mock, story: Scenario) -> None:
         mock_result = Mock(spec=GenerationResult)
         captured: list[GenerationCommand] = []
@@ -455,7 +453,7 @@ class TestGenerateResume:
         assert captured[0].format is OutputFormat.HTML
         mock_execute.assert_called_once()
 
-    @patch("simple_resume.generate.core.execute_generation_commands")
+    @patch("simple_resume.shell.generate.core.execute_generation_commands")
     def test_generate_resume_with_output_path(
         self, mock_execute: Mock, story: Scenario
     ) -> None:
@@ -490,7 +488,7 @@ class TestGenerateResume:
         with pytest.raises(ValueError, match="Unsupported format:.*docx"):
             generate_resume(config)
 
-    @patch("simple_resume.generate.core.execute_generation_commands")
+    @patch("simple_resume.shell.generate.core.execute_generation_commands")
     def test_generate_resume_format_case_insensitive(
         self,
         mock_execute: Mock,
@@ -520,7 +518,7 @@ class TestGenerateResume:
         assert captured[0].format is OutputFormat.PDF
         mock_execute.assert_called_once()
 
-    @patch("simple_resume.generate.core.execute_generation_commands")
+    @patch("simple_resume.shell.generate.core.execute_generation_commands")
     def test_generate_resume_with_all_params(
         self, mock_execute: Mock, story: Scenario
     ) -> None:
@@ -561,8 +559,8 @@ class TestGenerateResume:
 class TestGenerationErrorHandling:
     """Test error handling in generation functions."""
 
-    @patch("simple_resume.generate.core.validate_directory_path")
-    @patch("simple_resume.generate.core.ResumeSession")
+    @patch("simple_resume.core.validation.validate_directory_path")
+    @patch("simple_resume.shell.session.ResumeSession")
     def test_error_preservation(
         self,
         mock_resume_session: Mock,
@@ -577,8 +575,8 @@ class TestGenerationErrorHandling:
         with pytest.raises(ValidationError, match="Validation error"):
             generate_pdf(config)
 
-    @patch("simple_resume.generate.core.validate_directory_path")
-    @patch("simple_resume.generate.core.ResumeSession")
+    @patch("simple_resume.core.validation.validate_directory_path")
+    @patch("simple_resume.shell.session.ResumeSession")
     def test_error_preservation_config_error(
         self, mock_resume_session: Mock, mock_validate_path: Mock, story: Scenario
     ) -> None:
@@ -590,8 +588,8 @@ class TestGenerationErrorHandling:
         with pytest.raises(ConfigurationError, match="Config error"):
             generate_html(config)
 
-    @patch("simple_resume.generate.core.validate_directory_path")
-    @patch("simple_resume.generate.core.ResumeSession")
+    @patch("simple_resume.core.validation.validate_directory_path")
+    @patch("simple_resume.shell.session.ResumeSession")
     def test_error_preservation_filesystem_error(
         self, mock_resume_session: Mock, mock_validate_path: Mock, story: Scenario
     ) -> None:
@@ -611,9 +609,9 @@ class TestGenerationIntegration:
 
     @patch("simple_resume.shell.generate.core.to_html")
     @patch("simple_resume.shell.generate.core.to_pdf")
-    @patch("simple_resume.generate.core.validate_directory_path")
-    @patch("simple_resume.generate.core.ResumeSession")
-    @patch("simple_resume.generate.core.SessionConfig")
+    @patch("simple_resume.core.validation.validate_directory_path")
+    @patch("simple_resume.shell.session.ResumeSession")
+    @patch("simple_resume.shell.session.SessionConfig")
     def test_session_configuration_consistency(
         self,
         mock_session_config: Mock,

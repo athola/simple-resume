@@ -6,10 +6,8 @@ from typing import Any
 from simple_resume.core.config import normalize_config
 from simple_resume.core.palettes.common import Palette
 from simple_resume.core.palettes.fetch_types import PaletteFetchRequest
-from simple_resume.core.palettes.registry import (
-    PaletteRegistry,
-    get_palette_registry,
-)
+from simple_resume.core.palettes.registry import PaletteRegistry
+from simple_resume.shell.palettes.loader import get_palette_registry
 from tests.bdd import scenario
 
 

@@ -37,8 +37,8 @@ from simple_resume.core.validation import (
     validate_format,
     validate_template_name,
 )
+from simple_resume.shell import session as session_mod
 from simple_resume.shell.resume_extensions import to_html, to_pdf
-from simple_resume.shell.session import ResumeSession, SessionConfig
 
 _YAML_SUFFIXES = {".yaml", ".yml"}
 CommandResult = (
@@ -117,10 +117,10 @@ def _generate_with_format(
         if template:
             template = validate_template_name(template)
 
-        if config.data_dir and format_type is OutputFormat.PDF:
-            validate_directory_path(config.data_dir, must_exist=True)
+        if config.data_dir and config.paths is None:
+            validate_directory_path(config.data_dir, must_exist=False)
 
-        if config.output_dir and format_type is OutputFormat.PDF:
+        if config.output_dir and config.paths is None:
             validate_directory_path(
                 config.output_dir,
                 must_exist=False,
@@ -128,7 +128,7 @@ def _generate_with_format(
             )
 
         # Create session with consistent configuration.
-        session_config = SessionConfig(
+        session_config = session_mod.SessionConfig(
             default_template=template,
             default_format=format_type,
             auto_open=config.open_after,
@@ -137,7 +137,7 @@ def _generate_with_format(
             session_metadata=normalized_overrides,
         )
 
-        with ResumeSession(
+        with session_mod.ResumeSession(
             data_dir=config.data_dir,
             paths=config.paths,
             config=session_config,
@@ -191,7 +191,7 @@ def _generate_with_format(
 
 
 def _generate_single_format(
-    session: ResumeSession,
+    session: session_mod.ResumeSession,
     config: GenerationConfig,
     format_type: OutputFormat,
     overrides: dict[str, Any],
@@ -220,9 +220,9 @@ def _execute_batch_all(
     normalized_formats = _normalize_format_sequence(formats)
 
     template = validate_template_name(config.template) if config.template else None
-    if config.data_dir:
-        validate_directory_path(config.data_dir, must_exist=True)
-    if config.output_dir:
+    if config.data_dir and config.paths is None:
+        validate_directory_path(config.data_dir, must_exist=False)
+    if config.output_dir and config.paths is None:
         validate_directory_path(
             config.output_dir, must_exist=False, create_if_missing=False
         )
@@ -231,7 +231,7 @@ def _execute_batch_all(
     default_fmt = normalized_formats[0] if normalized_formats else OutputFormat.PDF
 
     try:
-        session_config = SessionConfig(
+        session_config = session_mod.SessionConfig(
             default_template=template,
             default_format=default_fmt,
             auto_open=config.open_after,
@@ -240,7 +240,7 @@ def _execute_batch_all(
             session_metadata=overrides,
         )
 
-        with ResumeSession(
+        with session_mod.ResumeSession(
             data_dir=config.data_dir,
             paths=config.paths,
             config=session_config,
@@ -643,4 +643,6 @@ __all__ = [
     "generate_resume",
     "generate",
     "preview",
+    "to_pdf",
+    "to_html",
 ]

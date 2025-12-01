@@ -4,18 +4,17 @@ import re
 from pathlib import Path
 from typing import Any
 
+from simple_resume.core.constants import (
+    MAX_FILE_SIZE_MB,
+    SUPPORTED_FORMATS,
+    OutputFormat,
+)
+from simple_resume.core.constants.files import SUPPORTED_YAML_EXTENSIONS
 from simple_resume.core.exceptions import (
     ConfigurationError,
     FileSystemError,
     ValidationError,
 )
-
-from .constants import (
-    MAX_FILE_SIZE_MB,
-    SUPPORTED_FORMATS,
-    OutputFormat,
-)
-from .constants.files import SUPPORTED_YAML_EXTENSIONS
 
 EMAIL_REGEX = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 DATE_REGEX = re.compile(r"^\d{4}(-\d{2})?$")

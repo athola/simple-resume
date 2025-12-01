@@ -4,14 +4,13 @@ import json
 
 import pytest
 
-from simple_resume.core.palettes.registry import (
-    Palette,
-    PaletteRegistry,
+from simple_resume.core.palettes.registry import Palette, PaletteRegistry
+from simple_resume.core.palettes.sources import PalettableRecord
+from simple_resume.shell.palettes.loader import (
     get_palette_registry,
+    load_default_palettes,
     reset_palette_registry,
 )
-from simple_resume.core.palettes.sources import PalettableRecord
-from simple_resume.shell.palettes.loader import load_default_palettes
 from tests.bdd import Scenario
 
 
@@ -59,11 +58,11 @@ def test_global_registry_uses_palettable(
         )
 
     monkeypatch.setattr(
-        "simple_resume.core.palettes.registry.discover_palettable",
+        "simple_resume.shell.palettes.loader.discover_palettable",
         fake_ensure,
     )
     monkeypatch.setattr(
-        "simple_resume.core.palettes.registry.load_palettable_palette", fake_load
+        "simple_resume.shell.palettes.loader.load_palettable_palette", fake_load
     )
     reset_palette_registry()
 

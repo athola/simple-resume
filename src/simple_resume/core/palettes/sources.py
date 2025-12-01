@@ -3,20 +3,14 @@
 
 from __future__ import annotations
 
-import json
 import logging
-import pkgutil
-import time
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
 from typing import Any
 
-import palettable
-from palettable.palette import Palette as PalettablePalette
-
-from .common import Palette, get_cache_dir
+from simple_resume.core.palettes.common import Palette
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +66,7 @@ def _data_dir() -> Path:
 
 
 def _default_file() -> Path:
-    """Return the default palette file path."""
+    """Return the default palette file path (no I/O)."""
     return _data_dir() / "default_palettes.json"
 
 
@@ -99,71 +93,12 @@ def parse_palette_data(payload: list[dict[str, Any]]) -> list[Palette]:
     return palettes
 
 
-def _cache_path(filename: str) -> Path:
-    """Return the cache file path.
-
-    NOTE: Assumes cache directory already exists. Directory creation
-    should be handled by the shell layer before calling core functions.
-    """
-    cache_dir = get_cache_dir()
-    # Directory creation moved to shell layer
-    return cache_dir / filename
-
-
-def _iter_palette_modules() -> Iterator[str]:
-    """Iterate over `palettable` modules."""
-    for module_info in pkgutil.walk_packages(
-        palettable.__path__, palettable.__name__ + "."
-    ):
-        if not module_info.ispkg:
-            yield module_info.name
-
-
-def discover_palettable() -> list[PalettableRecord]:
-    """Discover and return all `palettable` records (pure function)."""
-    records: list[PalettableRecord] = []
-    for module_name in _iter_palette_modules():
-        try:
-            module = import_module(module_name)
-        except Exception as exc:  # noqa: BLE001
-            logger.debug("Skipping module %s: %s", module_name, exc)
-            continue
-
-        if module_name.count(".") >= MIN_MODULE_NAME_PARTS:
-            category = module_name.split(".")[PALETTE_MODULE_CATEGORY_INDEX]
-        else:
-            category = "misc"
-        for attribute in dir(module):
-            value = getattr(module, attribute)
-            if isinstance(value, PalettablePalette):
-                records.append(
-                    PalettableRecord(
-                        name=value.name,
-                        module=module_name,
-                        attribute=attribute,
-                        category=category,
-                        palette_type=value.type,
-                        size=len(value.colors),
-                    )
-                )
-    logger.info("Discovered %d palettable palettes", len(records))
-    return records
-
-
-def parse_palettable_cache(payload: list[dict[str, Any]]) -> list[PalettableRecord]:
-    """Parse palettable cache JSON into records (pure function)."""
-    return [PalettableRecord.from_dict(item) for item in payload]
-
-
-def serialize_palettable_records(
-    records: Iterable[PalettableRecord],
-) -> list[dict[str, Any]]:
-    """Serialize palettable records to JSON-serializable dicts (pure function)."""
-    return [record.to_dict() for record in records]
-
-
 def load_palettable_palette(record: PalettableRecord) -> Palette | None:
-    """Resolve a `Palettable` palette into our `Palette` type."""
+    """Resolve a `palettable` palette into our `Palette` type.
+
+    This remains in the core layer because it transforms library objects
+    into pure data structures; dynamic import is the only side effect.
+    """
     try:
         module = import_module(record.module)
         palette_obj = getattr(module, record.attribute)
@@ -197,25 +132,31 @@ def load_palettable_palette(record: PalettableRecord) -> Palette | None:
         return None
 
 
-def build_palettable_registry_snapshot() -> dict[str, object]:
-    """Generate a metadata snapshot and report JSON footprint."""
-    records = discover_palettable()
-    snapshot = {
-        "generated_at": time.time(),
-        "count": len(records),
-        "palettes": [record.to_dict() for record in records],
-    }
-    payload = json.dumps(snapshot).encode("utf-8")
-    logger.info("Palettable snapshot size: %.2f KB", len(payload) / 1024)
-    return snapshot
+def _cache_path(filename: str) -> Path:
+    """Return the cache file path.
+
+    NOTE: Assumes cache directory already exists. Directory creation
+    should be handled by the shell layer before calling core functions.
+    """
+    return Path.home() / ".cache" / "simple_resume" / filename
+
+
+def parse_palettable_cache(payload: list[dict[str, Any]]) -> list[PalettableRecord]:
+    """Parse palettable cache JSON into records (pure function)."""
+    return [PalettableRecord.from_dict(item) for item in payload]
+
+
+def serialize_palettable_records(
+    records: Iterable[PalettableRecord],
+) -> list[dict[str, Any]]:
+    """Serialize palettable records to JSON-serializable dicts (pure function)."""
+    return [record.to_dict() for record in records]
 
 
 __all__ = [
     "PalettableRecord",
-    "build_palettable_registry_snapshot",
-    "discover_palettable",
-    "load_palettable_palette",
     "parse_palette_data",
     "parse_palettable_cache",
     "serialize_palettable_records",
+    "load_palettable_palette",
 ]

@@ -29,8 +29,7 @@ from simple_resume.core.result import BatchGenerationResult, GenerationResult
 from simple_resume.core.resume import Resume
 from simple_resume.shell.config import resolve_paths
 from simple_resume.shell.resume_extensions import to_html, to_pdf
-
-from .config import SessionConfig
+from simple_resume.shell.session.config import SessionConfig
 
 
 class ResumeSession:

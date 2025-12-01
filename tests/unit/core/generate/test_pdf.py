@@ -11,23 +11,27 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from simple_resume.core.constants import RenderMode
-from simple_resume.core.effects import MakeDirectory, WriteFile
+from simple_resume.core.effects import MakeDirectory, RenderPdf, WriteFile
 from simple_resume.core.exceptions import ConfigurationError
 from simple_resume.core.generate.exceptions import TemplateError
 from simple_resume.core.generate.pdf import (
     LatexGenerationContext,
+    PdfGenerationConfig,
     prepare_pdf_with_latex,
     prepare_pdf_with_weasyprint,
 )
 from simple_resume.core.models import RenderPlan, ResumeConfig
 from simple_resume.core.paths import Paths
+from tests.bdd import Scenario
 
 
 class TestPreparePdfWithWeasyprint:
     """Tests for prepare_pdf_with_weasyprint - pure logic without I/O."""
 
-    def test_returns_html_content_effects_and_metadata(self) -> None:
+    def test_returns_html_content_effects_and_metadata(self, story: Scenario) -> None:
         """prepare_pdf_with_weasyprint returns (html_content, effects, metadata)."""
+        story.given("a standard render plan for HTML-based PDF generation")
+        story.when("prepare_pdf_with_weasyprint is executed")
         with TemporaryDirectory() as temp_dir:
             render_plan = RenderPlan(
                 name="test_resume",
@@ -60,8 +64,10 @@ class TestPreparePdfWithWeasyprint:
             assert metadata.template_name == "demo.html"
             assert metadata.resume_name == "test_resume"
 
-    def test_includes_make_directory_effect(self) -> None:
+    def test_includes_make_directory_effect(self, story: Scenario) -> None:
         """prepare_pdf_with_weasyprint includes MakeDirectory effect for output dir."""
+        story.given("the output path resides in nested directories")
+        story.when("building PDF generation effects")
         with TemporaryDirectory() as temp_dir:
             render_plan = RenderPlan(
                 name="test",
@@ -85,8 +91,10 @@ class TestPreparePdfWithWeasyprint:
             assert make_dir_effects[0].path == output_path.parent
             assert make_dir_effects[0].parents is True
 
-    def test_includes_write_file_effect_for_pdf(self) -> None:
-        """prepare_pdf_with_weasyprint includes WriteFile effect for PDF output."""
+    def test_includes_render_pdf_effect(self, story: Scenario) -> None:
+        """prepare_pdf_with_weasyprint includes RenderPdf effect for PDF output."""
+        story.given("a render plan configured for PDF output")
+        story.when("preparing PDF with weasyprint")
         with TemporaryDirectory() as temp_dir:
             render_plan = RenderPlan(
                 name="test",
@@ -104,14 +112,15 @@ class TestPreparePdfWithWeasyprint:
                 resume_name="test",
             )
 
-            # Should include WriteFile effect for PDF
-            write_effects = [e for e in effects if isinstance(e, WriteFile)]
-            pdf_write_effects = [e for e in write_effects if e.path == output_path]
-            assert len(pdf_write_effects) == 1
-            assert isinstance(pdf_write_effects[0].content, bytes)  # PDF is bytes
+            # Should include RenderPdf effect
+            render_effects = [e for e in effects if isinstance(e, RenderPdf)]
+            assert len(render_effects) == 1
+            assert render_effects[0].output_path == output_path
 
-    def test_raises_template_error_for_latex_mode(self) -> None:
+    def test_raises_template_error_for_latex_mode(self, story: Scenario) -> None:
         """prepare_pdf_with_weasyprint raises error when render plan uses LaTeX mode."""
+        story.given("a render plan set to LaTeX mode")
+        story.when("preparing PDF via weasyprint")
         with TemporaryDirectory() as temp_dir:
             render_plan = RenderPlan(
                 name="test",
@@ -130,8 +139,10 @@ class TestPreparePdfWithWeasyprint:
                     resume_name="test",
                 )
 
-    def test_raises_template_error_when_context_missing(self) -> None:
+    def test_raises_template_error_when_context_missing(self, story: Scenario) -> None:
         """prepare_pdf_with_weasyprint raises error when context is None."""
+        story.given("context is missing from the render plan")
+        story.when("preparing PDF output")
         with TemporaryDirectory() as temp_dir:
             render_plan = RenderPlan(
                 name="test",
@@ -150,8 +161,12 @@ class TestPreparePdfWithWeasyprint:
                     resume_name="test",
                 )
 
-    def test_raises_template_error_when_template_name_missing(self) -> None:
+    def test_raises_template_error_when_template_name_missing(
+        self, story: Scenario
+    ) -> None:
         """prepare_pdf_with_weasyprint raises error when template_name is None."""
+        story.given("no template name is supplied")
+        story.when("preparing PDF output")
         with TemporaryDirectory() as temp_dir:
             render_plan = RenderPlan(
                 name="test",
@@ -170,8 +185,12 @@ class TestPreparePdfWithWeasyprint:
                     resume_name="test",
                 )
 
-    def test_uses_default_page_dimensions_when_not_specified(self) -> None:
+    def test_uses_default_page_dimensions_when_not_specified(
+        self, story: Scenario
+    ) -> None:
         """prepare_pdf_with_weasyprint uses defaults when dimensions not in config."""
+        story.given("page width and height are unset in the resume config")
+        story.when("preparing PDF output")
         with TemporaryDirectory() as temp_dir:
             render_plan = RenderPlan(
                 name="test",
@@ -193,8 +212,10 @@ class TestPreparePdfWithWeasyprint:
             # (We can't inspect WeasyPrint's internal CSS, but verify it doesn't crash)
             assert isinstance(html_content, str)
 
-    def test_respects_custom_page_dimensions(self) -> None:
+    def test_respects_custom_page_dimensions(self, story: Scenario) -> None:
         """prepare_pdf_with_weasyprint respects custom page dimensions from config."""
+        story.given("custom page dimensions are provided")
+        story.when("preparing PDF output")
         with TemporaryDirectory() as temp_dir:
             render_plan = RenderPlan(
                 name="test",
@@ -215,8 +236,10 @@ class TestPreparePdfWithWeasyprint:
             # Verify it doesn't crash with custom dimensions
             assert isinstance(html_content, str)
 
-    def test_includes_palette_metadata_in_result(self) -> None:
+    def test_includes_palette_metadata_in_result(self, story: Scenario) -> None:
         """prepare_pdf_with_weasyprint includes palette metadata from render plan."""
+        story.given("palette metadata attached to the render plan")
+        story.when("preparing PDF with weasyprint")
         palette_meta = {
             "source": "colourlovers",
             "palette_name": "Ocean Breeze",
@@ -242,8 +265,10 @@ class TestPreparePdfWithWeasyprint:
 
             assert metadata.palette_info == palette_meta
 
-    def test_no_io_operations_performed(self) -> None:
+    def test_no_io_operations_performed(self, story: Scenario) -> None:
         """prepare_pdf_with_weasyprint performs NO I/O operations (critical test)."""
+        story.given("pdf preparation should emit effects instead of writing files")
+        story.when("preparing PDF with mocked filesystem operations")
         with TemporaryDirectory() as temp_dir:
             render_plan = RenderPlan(
                 name="test",
@@ -277,8 +302,10 @@ class TestPreparePdfWithWeasyprint:
 class TestPreparePdfWithLatex:
     """Tests for prepare_pdf_with_latex - pure logic without I/O."""
 
-    def test_returns_tex_content_effects_and_metadata(self) -> None:
+    def test_returns_tex_content_effects_and_metadata(self, story: Scenario) -> None:
         """prepare_pdf_with_latex returns (tex_content, effects, metadata)."""
+        story.given("a LaTeX render plan and generation config")
+        story.when("preparing PDF with the LaTeX helper")
 
         with TemporaryDirectory() as temp_dir:
             render_plan = RenderPlan(
@@ -298,9 +325,10 @@ class TestPreparePdfWithLatex:
                 templates=Path(temp_dir) / "templates",
                 static=Path(temp_dir) / "static",
             )
-            context = LatexGenerationContext(
-                raw_data={"name": "Test User", "title": "Engineer"},
+            LatexGenerationContext(
+                resume_data={"name": "Test User", "title": "Engineer"},
                 processed_data={"name": "Test User", "title": "Engineer"},
+                output_path=output_path,
                 paths=paths,
                 filename="resume.yaml",
             )
@@ -327,10 +355,15 @@ class TestPreparePdfWithLatex:
                     tex="\\documentclass{article}\\begin{document}Test\\end{document}"
                 )
 
+                config = PdfGenerationConfig(
+                    resume_name="test_resume",
+                    filename="resume.yaml",
+                )
+
                 tex_content, effects, metadata = prepare_pdf_with_latex(
                     render_plan=render_plan,
                     output_path=output_path,
-                    context=context,
+                    config=config,
                 )
 
                 # Should return TeX content
@@ -345,8 +378,10 @@ class TestPreparePdfWithLatex:
                 assert metadata is not None
                 assert metadata.format_type == "pdf"
 
-    def test_includes_make_directory_effect(self) -> None:
+    def test_includes_make_directory_effect(self, story: Scenario) -> None:
         """prepare_pdf_with_latex includes MakeDirectory effect."""
+        story.given("a nested output path for LaTeX PDF generation")
+        story.when("preparing PDF with LaTeX helper")
 
         with TemporaryDirectory() as temp_dir:
             render_plan = RenderPlan(
@@ -366,9 +401,10 @@ class TestPreparePdfWithLatex:
                 templates=Path(temp_dir),
                 static=Path(temp_dir),
             )
-            context = LatexGenerationContext(
-                raw_data={},
+            LatexGenerationContext(
+                resume_data={},
                 processed_data={},
+                output_path=output_path,
                 paths=paths,
             )
 
@@ -392,18 +428,24 @@ class TestPreparePdfWithLatex:
 
                 mock_render.return_value = MagicMock(tex="\\documentclass{article}")
 
+                config = PdfGenerationConfig(
+                    resume_name="test_resume",
+                )
+
                 _, effects, _ = prepare_pdf_with_latex(
                     render_plan=render_plan,
                     output_path=output_path,
-                    context=context,
+                    config=config,
                 )
 
                 make_dir_effects = [e for e in effects if isinstance(e, MakeDirectory)]
                 assert len(make_dir_effects) >= 1
                 assert output_path.parent in [e.path for e in make_dir_effects]
 
-    def test_includes_write_tex_file_effect(self) -> None:
+    def test_includes_write_tex_file_effect(self, story: Scenario) -> None:
         """prepare_pdf_with_latex includes WriteFile effect for .tex file."""
+        story.given("LaTeX generation produces a .tex artifact")
+        story.when("preparing PDF effects")
 
         with TemporaryDirectory() as temp_dir:
             render_plan = RenderPlan(
@@ -423,9 +465,10 @@ class TestPreparePdfWithLatex:
                 templates=Path(temp_dir),
                 static=Path(temp_dir),
             )
-            context = LatexGenerationContext(
-                raw_data={},
+            LatexGenerationContext(
+                resume_data={},
                 processed_data={},
+                output_path=output_path,
                 paths=paths,
             )
 
@@ -449,18 +492,24 @@ class TestPreparePdfWithLatex:
 
                 mock_render.return_value = MagicMock(tex="\\documentclass{article}")
 
+                config = PdfGenerationConfig(
+                    resume_name="test_resume",
+                )
+
                 _, effects, _ = prepare_pdf_with_latex(
                     render_plan=render_plan,
                     output_path=output_path,
-                    context=context,
+                    config=config,
                 )
 
                 write_effects = [e for e in effects if isinstance(e, WriteFile)]
                 tex_write = [e for e in write_effects if e.path.suffix == ".tex"]
                 assert len(tex_write) >= 1
 
-    def test_raises_configuration_error_when_paths_none(self) -> None:
+    def test_raises_configuration_error_when_paths_none(self, story: Scenario) -> None:
         """prepare_pdf_with_latex raises error when paths is None."""
+        story.given("paths are missing from the LaTeX generation context")
+        story.when("preparing PDF with LaTeX helper")
 
         with TemporaryDirectory() as temp_dir:
             render_plan = RenderPlan(
@@ -472,23 +521,30 @@ class TestPreparePdfWithLatex:
                 base_path="",
             )
             output_path = Path(temp_dir) / "resume.pdf"
-            context = LatexGenerationContext(
-                raw_data={},
+            LatexGenerationContext(
+                resume_data={},
                 processed_data={},
+                output_path=output_path,
                 paths=None,  # Missing paths
             )
 
             with pytest.raises(
                 ConfigurationError, match="LaTeX generation requires.*paths"
             ):
+                config = PdfGenerationConfig(
+                    resume_name="test_resume",
+                )
+
                 prepare_pdf_with_latex(
                     render_plan=render_plan,
                     output_path=output_path,
-                    context=context,
+                    config=config,
                 )
 
-    def test_no_io_operations_performed(self) -> None:
+    def test_no_io_operations_performed(self, story: Scenario) -> None:
         """prepare_pdf_with_latex performs NO I/O operations (critical test)."""
+        story.given("LaTeX preparation should be pure and emit effects only")
+        story.when("running prepare_pdf_with_latex with mocked filesystem calls")
 
         with TemporaryDirectory() as temp_dir:
             render_plan = RenderPlan(
@@ -508,9 +564,10 @@ class TestPreparePdfWithLatex:
                 templates=Path(temp_dir),
                 static=Path(temp_dir),
             )
-            context = LatexGenerationContext(
-                raw_data={},
+            LatexGenerationContext(
+                resume_data={},
                 processed_data={},
+                output_path=output_path,
                 paths=paths,
             )
 
@@ -536,10 +593,14 @@ class TestPreparePdfWithLatex:
 
                 with patch("pathlib.Path.mkdir") as mock_mkdir:
                     with patch("pathlib.Path.write_text") as mock_write_text:
+                        config = PdfGenerationConfig(
+                            resume_name="test_resume",
+                        )
+
                         _, effects, _ = prepare_pdf_with_latex(
                             render_plan=render_plan,
                             output_path=output_path,
-                            context=context,
+                            config=config,
                         )
 
                         # Verify NO I/O was performed

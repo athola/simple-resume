@@ -2,6 +2,6 @@
 
 from __future__ import annotations
 
-from . import lazy
+from simple_resume.shell.runtime import lazy
 
 __all__ = ["lazy"]

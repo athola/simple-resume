@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal, TypedDict
+from pathlib import Path
+from typing import Any, ClassVar, Literal, TypedDict
 
 
 class ParagraphBlock(TypedDict):
@@ -49,9 +50,33 @@ class LatexRenderResult:
     context: dict[str, Any]
 
 
+@dataclass(frozen=True)
+class LatexGenerationContext:
+    """Context object for LaTeX PDF generation, grouping related parameters."""
+
+    last_context: ClassVar[LatexGenerationContext | None] = None
+    resume_data: dict[str, Any] | None
+    processed_data: dict[str, Any]
+    output_path: Path
+    base_path: Path | str | None = None
+    filename: str | None = None
+    paths: Any = None
+    metadata: Any = None
+
+    def __post_init__(self) -> None:
+        """Cache the most recent context for fallback use."""
+        type(self).last_context = self
+
+    @property
+    def raw_data(self) -> dict[str, Any] | None:
+        """Backward-compatible accessor used by some tests."""
+        return self.resume_data
+
+
 __all__ = [
     "Block",
     "LatexEntry",
+    "LatexGenerationContext",
     "LatexRenderResult",
     "LatexSection",
     "ListBlock",

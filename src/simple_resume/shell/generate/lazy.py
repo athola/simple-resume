@@ -9,6 +9,7 @@ with lazy loading to reduce startup memory footprint.
 from __future__ import annotations
 
 import importlib
+from functools import lru_cache
 from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, cast
@@ -67,8 +68,10 @@ class _LazyCoreLoader:
         return self._load_core().preview
 
 
-# Global lazy loader instance
-_lazy_core = _LazyCoreLoader()
+@lru_cache(maxsize=1)
+def _get_lazy_core_loader() -> _LazyCoreLoader:
+    """Provide a lazily created singleton loader without module globals."""
+    return _LazyCoreLoader()
 
 
 def generate_pdf(
@@ -94,8 +97,9 @@ def generate_pdf(
     .. versionadded:: 0.1.0
 
     """
+    lazy_core = _get_lazy_core_loader()
     result: BatchGenerationResult = cast(
-        "BatchGenerationResult", _lazy_core.generate_pdf(config, **config_overrides)
+        "BatchGenerationResult", lazy_core.generate_pdf(config, **config_overrides)
     )
     return result
 
@@ -122,8 +126,9 @@ def generate_html(
     .. versionadded:: 0.1.0
 
     """
+    lazy_core = _get_lazy_core_loader()
     result: BatchGenerationResult = cast(
-        "BatchGenerationResult", _lazy_core.generate_html(config, **config_overrides)
+        "BatchGenerationResult", lazy_core.generate_html(config, **config_overrides)
     )
     return result
 
@@ -150,8 +155,9 @@ def generate_all(
     .. versionadded:: 0.1.0
 
     """
+    lazy_core = _get_lazy_core_loader()
     result: BatchGenerationResult = cast(
-        "BatchGenerationResult", _lazy_core.generate_all(config, **config_overrides)
+        "BatchGenerationResult", lazy_core.generate_all(config, **config_overrides)
     )
     return result
 
@@ -178,8 +184,9 @@ def generate_resume(
     .. versionadded:: 0.1.0
 
     """
+    lazy_core = _get_lazy_core_loader()
     result: GenerationResult = cast(
-        "GenerationResult", _lazy_core.generate_resume(config, **config_overrides)
+        "GenerationResult", lazy_core.generate_resume(config, **config_overrides)
     )
     return result
 
@@ -211,9 +218,10 @@ def generate(
     .. versionadded:: 0.1.0
 
     """
+    lazy_core = _get_lazy_core_loader()
     result: dict[str, GenerationResult | BatchGenerationResult] = cast(
         "dict[str, GenerationResult | BatchGenerationResult]",
-        _lazy_core.generate(source, options, **overrides),
+        lazy_core.generate(source, options, **overrides),
     )
     return result
 
@@ -251,9 +259,10 @@ def preview(
     .. versionadded:: 0.1.0
 
     """
+    lazy_core = _get_lazy_core_loader()
     result: GenerationResult | BatchGenerationResult = cast(
         "GenerationResult | BatchGenerationResult",
-        _lazy_core.preview(
+        lazy_core.preview(
             source,
             data_dir=data_dir,
             template=template,

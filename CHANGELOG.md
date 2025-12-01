@@ -55,11 +55,11 @@ Initial public release.
 -   Corrected color contrast calculations to improve accessibility.
 -   Resolved dependency injection issues in core components.
 
-## [Unreleased]
+## [0.1.1] - 2025-11-29
 
 ### Added
 
--   `simple_resume.api.colors` module with stable, documented color manipulation utilities.
+-   `simple_resume.core.colors` module with stable, documented color manipulation utilities.
 -   MkDocs configuration for auto-generated API reference documentation.
 -   `GenerateOptions` dataclass for simplified generation configuration.
 -   Type annotations with `cast()` for lazy-loaded generation functions.
@@ -76,6 +76,8 @@ Initial public release.
 
 -   Type mismatches between lazy and core generation function signatures.
 -   `preview()` return type now correctly annotated as `GenerationResult | BatchGenerationResult`.
+
+## [Unreleased]
 
 ---
 

@@ -73,7 +73,7 @@ class ColourLoversClient:
     def _cache_key(self, params: Mapping[str, object]) -> Path:
         """Generate a cache key (file path) for given request parameters."""
         encoded = urlencode(sorted((key, str(value)) for key, value in params.items()))
-        digest = hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+        digest = hashlib.blake2b(encoded.encode("utf-8")).hexdigest()
         return self.cache_dir / f"{digest}.json"
 
     def _read_cache(self, path: Path) -> list[dict[str, object]] | None:

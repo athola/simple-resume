@@ -9,7 +9,7 @@ from simple_resume.core import plan
 from simple_resume.core.exceptions import ValidationError
 from simple_resume.core.models import RenderMode, ResumeConfig
 from simple_resume.core.palettes.exceptions import PaletteGenerationError
-from simple_resume.core.palettes.registry import get_palette_registry
+from simple_resume.shell.palettes.loader import get_palette_registry
 from tests.bdd import Scenario
 
 

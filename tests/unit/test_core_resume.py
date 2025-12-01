@@ -24,11 +24,11 @@ from simple_resume.core.models import (
     ResumeConfig,
     ValidationResult,
 )
-from simple_resume.core.palettes.registry import get_palette_registry
 from simple_resume.core.paths import Paths
 from simple_resume.core.plan import prepare_render_data
 from simple_resume.core.result import GenerationMetadata, GenerationResult
 from simple_resume.core.resume import Resume
+from simple_resume.shell.palettes.loader import get_palette_registry
 from simple_resume.shell.render.latex import LatexCompilationError
 from simple_resume.shell.resume_extensions import generate as shell_generate
 from simple_resume.shell.resume_extensions import to_html, to_pdf
@@ -221,8 +221,8 @@ class TestResumeDataPreparation:
         assert plan.palette_metadata["name"] == "ocean"
 
 
-# NOTE: Color utilities have been moved to simple_resume.api.colors
-# Tests for color utilities are in test_api_colors.py
+# NOTE: Color utilities are in simple_resume.core.colors
+# Tests for color utilities are in test_api.py
 
 
 class TestResumeConfigDataClass:

@@ -93,10 +93,12 @@ def get_content(
 ) -> dict[str, Any]:
     """Load, hydrate, and optionally transform a resume payload."""
     raw_data, filename, _ = load_resume_yaml(name, paths=paths)
-    return hydrate_resume_data(
+    return hydrate_resume_structure(
         raw_data,
         filename=filename,
         transform_markdown=transform_markdown,
+        normalize_config_fn=_normalize_with_palette,
+        render_markdown_fn=render_markdown_content,
     )
 
 

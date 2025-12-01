@@ -7,13 +7,26 @@ Session and Resume classes.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import Any, Protocol
 
 from simple_resume.core.paths import Paths
 from simple_resume.core.resume import Resume
 
-if TYPE_CHECKING:
-    from simple_resume.shell.session.config import SessionConfig
+
+class SessionConfigProtocol(Protocol):
+    """Minimal session config contract needed by the core."""
+
+    default_template: str | None
+    default_palette: str | None
+    preview_mode: bool
+
+
+class NullSessionConfig:
+    """Fallback config used when no SessionConfig is supplied."""
+
+    default_template: str | None = None
+    default_palette: str | None = None
+    preview_mode: bool = False
 
 
 class ResumeLoader(Protocol):
@@ -65,7 +78,7 @@ class ResumeCache(Protocol):
 class ResumeConfigurator(Protocol):
     """Protocol for configuring resume instances."""
 
-    def configure_resume(self, resume: Resume, config: SessionConfig) -> Resume:
+    def configure_resume(self, resume: Resume, config: SessionConfigProtocol) -> Resume:
         """Apply session configuration to a resume."""
         ...
 
@@ -130,7 +143,7 @@ class MemoryResumeCache:
 class DefaultResumeConfigurator:
     """Default implementation of ResumeConfigurator."""
 
-    def configure_resume(self, resume: Resume, config: SessionConfig) -> Resume:
+    def configure_resume(self, resume: Resume, config: SessionConfigProtocol) -> Resume:
         """Apply session configuration to a resume."""
         result = resume
 
@@ -168,7 +181,7 @@ class ResumeRepository:
         name: str,
         paths: Paths | None = None,
         use_cache: bool = True,
-        config: SessionConfig | None = None,
+        config: SessionConfigProtocol | None = None,
     ) -> Resume:
         """Get a resume, loading from cache or file as needed."""
         cache_key = name
@@ -176,7 +189,7 @@ class ResumeRepository:
         # Try cache first
         if use_cache and (cached_resume := self._cache.get_resume(cache_key)):
             # Apply configuration to cached resume
-            merged_config = config or SessionConfig()
+            merged_config = config or NullSessionConfig()
             return self._configurator.configure_resume(cached_resume, merged_config)
 
         # Load from file

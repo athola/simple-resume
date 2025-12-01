@@ -10,7 +10,7 @@ from typing import Any
 
 from jinja2 import Environment, FileSystemLoader
 
-from ..models import RenderPlan, ValidationResult
+from simple_resume.core.models import RenderPlan, ValidationResult
 
 
 def get_template_environment(template_path: str) -> Environment:

@@ -6,20 +6,22 @@ between different rendering backends without any I/O side effects.
 
 from __future__ import annotations
 
-from .manage import (
-    get_template_environment,
-    prepare_html_generation_request,
-    prepare_pdf_generation_request,
-    validate_render_plan,
-)
-from .plan import (
-    RenderPlanConfig,
+from simple_resume.core.plan import (
     build_render_plan,
     normalize_with_palette_fallback,
     prepare_render_data,
     transform_for_mode,
     validate_resume_config,
     validate_resume_config_or_raise,
+)
+from simple_resume.core.render.manage import (
+    get_template_environment,
+    prepare_html_generation_request,
+    prepare_pdf_generation_request,
+    validate_render_plan,
+)
+from simple_resume.core.render.plan import (
+    RenderPlanConfig,
 )
 
 __all__ = [

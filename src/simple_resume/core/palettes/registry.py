@@ -4,14 +4,9 @@
 from __future__ import annotations
 
 import json
-from functools import lru_cache
 from typing import Callable
 
-from .common import Palette, get_cache_dir
-from .sources import (
-    discover_palettable,
-    load_palettable_palette,
-)
+from simple_resume.core.palettes.common import Palette
 
 
 class PaletteRegistry:
@@ -46,29 +41,6 @@ class PaletteRegistry:
 _CACHE_ENV = "SIMPLE_RESUME_PALETTE_CACHE"
 
 
-def _load_palettable(registry: PaletteRegistry) -> None:
-    """Populate the registry with palettable palettes."""
-    for record in discover_palettable():
-        palette = load_palettable_palette(record)
-        if palette is not None:
-            registry.register(palette)
-
-
-@lru_cache(maxsize=1)
-def get_palette_registry() -> PaletteRegistry:
-    """Return a singleton registry populated with known sources."""
-    # Import from shell to get actual I/O implementation
-    from simple_resume.shell.palettes.loader import (  # noqa: PLC0415
-        load_default_palettes as shell_load,
-    )
-
-    registry = PaletteRegistry()
-    for palette in shell_load():
-        registry.register(palette)
-    _load_palettable(registry)
-    return registry
-
-
 def build_palette_registry(
     *,
     default_loader: Callable[[], list[Palette]] | None = None,
@@ -97,16 +69,8 @@ def build_palette_registry(
     return registry
 
 
-def reset_palette_registry() -> None:
-    """Clear the cached global registry (primarily for tests)."""
-    get_palette_registry.cache_clear()
-
-
 __all__ = [
     "Palette",
     "PaletteRegistry",
-    "get_palette_registry",
     "build_palette_registry",
-    "reset_palette_registry",
-    "get_cache_dir",
 ]

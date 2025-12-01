@@ -7,6 +7,7 @@ with lazy loading to reduce startup memory footprint.
 from __future__ import annotations
 
 import importlib
+from functools import lru_cache
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -21,12 +22,13 @@ class _LazyRuntimeLoader:
         self._core: ModuleType | None = None
         self._loaded = False
 
-    def _load_core(self) -> Any:
+    def _load_core(self) -> ModuleType:
         """Load runtime module if not already loaded."""
         if not self._loaded:
             self._core = importlib.import_module(".generate", package=__package__)
             self._loaded = True
-        return self._core
+        # _core is set when _loaded is True
+        return self._core  # type: ignore[return-value]
 
     @property
     def generate_pdf(self) -> Any:
@@ -59,8 +61,14 @@ class _LazyRuntimeLoader:
         return self._load_core().preview
 
 
-# Global lazy loader instance
-_lazy_core = _LazyRuntimeLoader()
+@lru_cache(maxsize=1)
+def _get_lazy_core() -> _LazyRuntimeLoader:
+    """Return a shared lazy loader instance without module-level globals."""
+    return _LazyRuntimeLoader()
+
+
+# Expose a shared singleton for easier patching in tests
+_lazy_core = _get_lazy_core()
 
 
 def generate_pdf(

@@ -50,12 +50,4 @@ jobs:
       run: uv sync --extra utils --group dev
 
     - name: Run architectural tests
-      run: uv run pytest tests/architecture/test_layer_separation.py -v --tb=short
-      continue-on-error: true  # Expected to fail during refactoring
-
-    - name: Report architecture status
-      if: failure()
-      run: |
-        echo "[WARNING] Architectural tests are currently failing (expected during refactoring)"
-        echo "See CORE_REFACTOR_PLAN.md for remediation timeline"
-        echo "Violations will be fixed in Phases 2-5 of the modernization plan"
+      run: uv run pytest tests/architecture -v --tb=short

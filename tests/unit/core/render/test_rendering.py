@@ -53,13 +53,14 @@ def render_resume_html(
     return html, base_url, context
 
 
+@pytest.mark.parametrize("template_name", ["resume_no_bars", "resume_with_bars"])
 @patch("simple_resume.shell.runtime.content.get_content")
 def test_load_resume_returns_template_and_context(
-    mock_get_content: Mock, story: Scenario
+    mock_get_content: Mock, story: Scenario, template_name: str
 ) -> None:
     story.given("a resume file containing template and config data")
     mock_get_content.return_value = {
-        "template": "resume_no_bars",
+        "template": template_name,
         "full_name": "Test User",
         "config": {"page_width": 190, "page_height": 270},
     }
@@ -68,7 +69,7 @@ def test_load_resume_returns_template_and_context(
     template, context = load_resume("test", preview=False)
 
     story.then("the HTML template name and context metadata are returned")
-    assert template == "html/resume_no_bars.html"
+    assert template == f"html/{template_name}.html"
     assert context["full_name"] == "Test User"
     assert context["preview"] is False
     assert context["resume_config"] == {"page_width": 190, "page_height": 270}
@@ -104,13 +105,14 @@ def test_load_resume_requires_config(mock_get_content: Mock, story: Scenario) ->
         load_resume("broken")
 
 
+@pytest.mark.parametrize("template_name", ["resume_no_bars", "resume_with_bars"])
 @patch("simple_resume.shell.runtime.content.get_content")
 def test_render_resume_html_renders_template(
-    mock_get_content: Mock, story: Scenario
+    mock_get_content: Mock, story: Scenario, template_name: str
 ) -> None:
     story.given("complete resume data for preview rendering")
     resume_data = create_complete_resume_data(
-        template="resume_no_bars", full_name="Render User"
+        template=template_name, full_name="Render User"
     )
     mock_get_content.return_value = resume_data
 

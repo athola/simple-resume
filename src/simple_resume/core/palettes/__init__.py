@@ -3,17 +3,24 @@
 
 from __future__ import annotations
 
-from .exceptions import (
+from simple_resume.core.palettes.exceptions import (
     PaletteError,
     PaletteGenerationError,
     PaletteLookupError,
     PaletteRemoteDisabled,
     PaletteRemoteError,
 )
-from .fetch_types import PaletteFetchRequest, PaletteResolution
-from .generators import generate_hcl_palette
-from .registry import Palette, PaletteRegistry, build_palette_registry
-from .resolution import resolve_palette_config
+from simple_resume.core.palettes.fetch_types import (
+    PaletteFetchRequest,
+    PaletteResolution,
+)
+from simple_resume.core.palettes.generators import generate_hcl_palette
+from simple_resume.core.palettes.registry import (
+    Palette,
+    PaletteRegistry,
+    build_palette_registry,
+)
+from simple_resume.core.palettes.resolution import resolve_palette_config
 
 __all__ = [
     "Palette",

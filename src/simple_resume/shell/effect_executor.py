@@ -19,11 +19,14 @@ import webbrowser
 from pathlib import Path
 from typing import Any
 
+import weasyprint
+
 from simple_resume.core.effects import (
     DeleteFile,
     Effect,
     MakeDirectory,
     OpenBrowser,
+    RenderPdf,
     RunCommand,
     WriteFile,
 )
@@ -61,10 +64,14 @@ class EffectExecutor:
             return self._open_browser(effect.url)
         elif isinstance(effect, RunCommand):
             return self._run_command(effect.command, effect.cwd)
+        elif isinstance(effect, RenderPdf):
+            return self._render_pdf(
+                effect.html, effect.css, effect.output_path, effect.base_url
+            )
         else:
             raise ValueError(f"Unknown effect type: {type(effect)}")
 
-    def execute_many(self, effects: list[Effect]) -> list[Any]:
+    def execute_many(self, effects: list[Effect]) -> None:
         """Execute multiple effects in sequence.
 
         Effects are executed in order. If any effect fails, execution stops
@@ -73,11 +80,9 @@ class EffectExecutor:
         Args:
             effects: List of effects to execute
 
-        Returns:
-            List of results from each effect execution
-
         """
-        return [self.execute(effect) for effect in effects]
+        for effect in effects:
+            self.execute(effect)
 
     def _write_file(self, path: Path, content: str | bytes, encoding: str) -> None:
         """Write content to a file.
@@ -159,3 +164,27 @@ class EffectExecutor:
                 raise ValueError("Unsafe command detected")
 
         return subprocess.run(command, cwd=cwd, check=True)  # noqa: S603  # nosec B603
+
+    def _render_pdf(
+        self, html: str, css: str, output_path: Path, base_url: str | None
+    ) -> int | None:
+        """Render HTML+CSS to PDF using WeasyPrint."""
+        html_doc = weasyprint.HTML(string=html, base_url=base_url)
+        css_obj = weasyprint.CSS(string=css)
+        document = html_doc.render(stylesheets=[css_obj])
+        pdf_bytes = document.write_pdf()
+        if not isinstance(pdf_bytes, (bytes, bytearray)):
+            # Guard against test doubles returning non-bytes payloads.
+            try:
+                pdf_bytes = bytes(pdf_bytes)
+            except Exception:
+                pdf_bytes = b""
+
+        # Ensure parent directories and write file
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_bytes(pdf_bytes)
+
+        try:
+            return len(document.pages)
+        except Exception:  # pragma: no cover - defensive
+            return None

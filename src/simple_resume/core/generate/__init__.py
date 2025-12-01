@@ -6,13 +6,16 @@ from resume data without any I/O side effects.
 
 from __future__ import annotations
 
-from .html import prepare_html_with_jinja
-from .pdf import prepare_pdf_with_latex, prepare_pdf_with_weasyprint
-from .plan import build_generation_plan
+from simple_resume.core.generate.html import create_html_generator_factory
+from simple_resume.core.generate.pdf import (
+    prepare_pdf_with_latex,
+    prepare_pdf_with_weasyprint,
+)
+from simple_resume.core.generate.plan import build_generation_plan
 
 __all__ = [
     "build_generation_plan",
-    "prepare_html_with_jinja",
+    "create_html_generator_factory",
     "prepare_pdf_with_latex",
     "prepare_pdf_with_weasyprint",
 ]

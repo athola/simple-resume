@@ -10,27 +10,27 @@ Pure functions and data structures with no I/O operations.
 
 | Module | Purpose | Purity Status |
 | --- | --- | --- |
-| `core/colors.py` | WCAG luminance/contrast calculations, ColorCalculationService | ✅ Pure |
-| `core/config.py` | Configuration normalization and validation | ✅ Pure |
-| `core/constants/` | Application constants (colors, files, layout) | ✅ Pure |
-| `core/effects.py` | Effect types (WriteFile, MakeDirectory, etc.) | ✅ Pure |
-| `core/exceptions.py` | Exception hierarchy | ✅ Pure |
-| `core/file_operations.py` | Pure file path operations (no I/O) | ✅ Pure |
-| `core/generate/html.py` | HTML generation planning | ✅ Pure |
-| `core/generate/pdf.py` | PDF generation planning | ⚠️ Known violation (weasyprint) |
-| `core/generate/plan.py` | Generation plan creation | ✅ Pure |
-| `core/hydration.py` | Data hydration transformations | ✅ Pure |
-| `core/latex/` | LaTeX rendering logic (context, conversion, escaping, etc.) | ✅ Pure |
-| `core/markdown.py` | Markdown to HTML transformation | ✅ Pure |
-| `core/models.py` | Data models (RenderPlan, ValidationResult, RenderMode) | ✅ Pure |
-| `core/palettes/` | Palette resolution, generators, registry | ✅ Pure |
-| `core/paths.py` | Path data structure | ✅ Pure |
-| `core/plan.py` | Render plan preparation and validation | ✅ Pure |
-| `core/render/` | Render request preparation | ✅ Pure |
-| `core/result.py` | GenerationResult and BatchGenerationResult (pure data) | ✅ Pure |
-| `core/resume.py` | Resume class with dependency injection | ✅ Pure (late-bound I/O) |
-| `core/skills.py` | Skills data transformations | ✅ Pure |
-| `core/validation.py` | Configuration validation logic | ✅ Pure |
+| `core/colors.py` | WCAG luminance/contrast calculations, ColorCalculationService | Pure |
+| `core/config.py` | Configuration normalization and validation | Pure |
+| `core/constants/` | Application constants (colors, files, layout) | Pure |
+| `core/effects.py` | Effect types (WriteFile, MakeDirectory, etc.) | Pure |
+| `core/exceptions.py` | Exception hierarchy | Pure |
+| `core/file_operations.py` | Pure file path operations (no I/O) | Pure |
+| `core/generate/html.py` | HTML generation planning | Pure |
+| `core/generate/pdf.py` | PDF generation planning | Known violation (weasyprint) |
+| `core/generate/plan.py` | Generation plan creation | Pure |
+| `core/hydration.py` | Data hydration transformations | Pure |
+| `core/latex/` | LaTeX rendering logic (context, conversion, escaping, etc.) | Pure |
+| `core/markdown.py` | Markdown to HTML transformation | Pure |
+| `core/models.py` | Data models (RenderPlan, ValidationResult, RenderMode) | Pure |
+| `core/palettes/` | Palette resolution, generators, registry | Pure |
+| `core/paths.py` | Path data structure | Pure |
+| `core/plan.py` | Render plan preparation and validation | Pure |
+| `core/render/` | Render request preparation | Pure |
+| `core/result.py` | GenerationResult and BatchGenerationResult (pure data) | Pure |
+| `core/resume.py` | Resume class with dependency injection | Pure (late-bound I/O) |
+| `core/skills.py` | Skills data transformations | Pure |
+| `core/validation.py` | Configuration validation logic | Pure |
 
 ### Shell Layer (`src/simple_resume/shell/`)
 
@@ -127,8 +127,8 @@ def open_file(path: Path, format_type: str | None = None) -> bool:
 | File | Violation | Tracked In | Status |
 | --- | --- | --- | --- |
 | `core/generate/pdf.py` | imports weasyprint | test_layer_separation.py | Planned refactor |
-| `core/result.py` | Previously had subprocess | N/A | ✅ Fixed |
-| `core/resume.py` | Previously imported shell at module level | N/A | ✅ Fixed (late binding) |
+| `core/result.py` | Previously had subprocess | N/A | Fixed |
+| `core/resume.py` | Previously imported shell at module level | N/A | Fixed (late binding) |
 
 ## Testing Strategy
 

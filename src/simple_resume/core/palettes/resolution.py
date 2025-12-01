@@ -13,10 +13,12 @@ from simple_resume.core.palettes.exceptions import (
     PaletteGenerationError,
     PaletteLookupError,
 )
+from simple_resume.core.palettes.fetch_types import (
+    PaletteFetchRequest,
+    PaletteResolution,
+)
 from simple_resume.core.palettes.generators import generate_hcl_palette
 from simple_resume.core.palettes.registry import PaletteRegistry
-
-from .fetch_types import PaletteFetchRequest, PaletteResolution
 
 
 def resolve_palette_config(

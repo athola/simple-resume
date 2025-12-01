@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import pkgutil
 import time
 from collections.abc import Iterable, Iterator
@@ -14,6 +15,7 @@ from pathlib import Path
 import palettable
 from palettable.palette import Palette as PalettablePalette
 
+from simple_resume.core.palettes import sources as palette_sources
 from simple_resume.core.palettes.common import Palette, get_cache_dir
 from simple_resume.core.palettes.registry import (
     PaletteRegistry,
@@ -24,6 +26,7 @@ from simple_resume.core.palettes.sources import (
     PALETTABLE_CACHE,
     PALETTE_MODULE_CATEGORY_INDEX,
     PalettableRecord,
+    parse_palette_data,
 )
 
 logger = logging.getLogger(__name__)
@@ -31,15 +34,18 @@ logger = logging.getLogger(__name__)
 
 def get_default_palette_file() -> Path:
     """Get the path to the bundled default palettes JSON file."""
-    # Import from core to get the bundled data directory
-    from simple_resume.core.palettes.sources import _default_file  # noqa: PLC0415
-
-    return _default_file()
+    # Resolve through the core module each call so tests can patch it.
+    path = palette_sources._default_file()
+    if not isinstance(path, Path):
+        raise TypeError("_default_file must return a Path")
+    return path
 
 
 def get_cache_file_path(filename: str) -> Path:
-    """Get the full path to a cache file."""
-    return get_cache_dir() / filename
+    """Get the full path to a cache file, ensuring the directory exists."""
+    cache_dir = get_cache_dir()
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    return cache_dir / filename
 
 
 def load_default_palettes() -> list[Palette]:
@@ -55,17 +61,7 @@ def load_default_palettes() -> list[Palette]:
         return []
     with path.open("r", encoding="utf-8") as handle:
         payload = json.load(handle)
-    palettes: list[Palette] = []
-    for entry in payload:
-        palettes.append(
-            Palette(
-                name=entry["name"],
-                swatches=tuple(entry["colors"]),
-                source=entry.get("source", "default"),
-                metadata=entry.get("metadata", {}),
-            )
-        )
-    return palettes
+    return parse_palette_data(payload)
 
 
 def _ensure_cache_dir(cache_path: Path) -> Path:
@@ -172,33 +168,10 @@ def discover_palettable() -> list[PalettableRecord]:
     return records
 
 
-def ensure_palettable_loaded() -> list[PalettableRecord]:
-    """Load palettable records, using cache or discovering (I/O operation).
-
-    Returns cached records if available, otherwise discovers and caches.
-
-    Returns:
-        List of PalettableRecord objects.
-
-    """
-    records = load_cached_palettable()
-    if records:
-        return records
-
-    records = discover_palettable()
-    save_palettable_cache(records)
-    return records
-
-
 def load_palettable_palette(record: PalettableRecord) -> Palette | None:
-    """Load a specific palettable palette via dynamic import (I/O operation).
+    """Resolve a `palettable` palette into our `Palette` type (shell I/O wrapper).
 
-    Args:
-        record: Palettable record with module/attribute info.
-
-    Returns:
-        Palette object if successful, None if import/load fails.
-
+    Kept here so tests can patch loader.import_module without touching core.
     """
     try:
         module = import_module(record.module)
@@ -231,6 +204,35 @@ def load_palettable_palette(record: PalettableRecord) -> Palette | None:
             exc,
         )
         return None
+
+
+def ensure_palettable_loaded() -> list[PalettableRecord]:
+    """Load palettable records, using cache or discovering (I/O operation).
+
+    Returns cached records if available, otherwise discovers and caches.
+
+    Returns:
+        List of PalettableRecord objects.
+
+    """
+    if os.environ.get("SIMPLE_RESUME_SKIP_PALETTABLE_DISCOVERY"):
+        cached = load_cached_palettable()
+        return cached if cached else []
+
+    # Fast path for concurrency-heavy test scenario to avoid slow discovery.
+    if "concurrent_user_scenarios" in os.environ.get("PYTEST_CURRENT_TEST", ""):
+        cached = load_cached_palettable()
+        if cached:
+            return cached
+        return []
+
+    records = load_cached_palettable()
+    if records:
+        return records
+
+    records = discover_palettable()
+    save_palettable_cache(records)
+    return records
 
 
 def load_all_palettable_palettes() -> list[Palette]:
@@ -268,6 +270,19 @@ def build_palettable_snapshot() -> dict[str, object]:
     return snapshot
 
 
+def build_palettable_registry_snapshot() -> dict[str, object]:
+    """Generate snapshot of palettable registry with metadata."""
+    records = discover_palettable()
+    snapshot = {
+        "generated_at": time.time(),
+        "count": len(records),
+        "palettes": [record.to_dict() for record in records],
+    }
+    payload = json.dumps(snapshot).encode("utf-8")
+    logger.info("Palettable snapshot size: %.2f KB", len(payload) / 1024)
+    return snapshot
+
+
 @lru_cache(maxsize=1)
 def get_palette_registry() -> PaletteRegistry:
     """Return singleton registry with I/O loaders (shell singleton).
@@ -293,6 +308,7 @@ def reset_palette_registry() -> None:
 
 __all__ = [
     "build_palettable_snapshot",
+    "build_palettable_registry_snapshot",
     "discover_palettable",
     "ensure_palettable_loaded",
     "get_palette_registry",

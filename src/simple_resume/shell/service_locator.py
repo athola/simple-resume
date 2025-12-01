@@ -6,6 +6,7 @@ into core functions without using late-bound imports.
 
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import Any, Callable, TypeVar
 
 T = TypeVar("T")
@@ -49,28 +50,25 @@ class ServiceLocator:
         return name in self._services or name in self._factories
 
 
-# Global service locator instance
-_service_locator = ServiceLocator()
-
-
+@lru_cache(maxsize=1)
 def get_service_locator() -> ServiceLocator:
-    """Get the global service locator instance."""
-    return _service_locator
+    """Get the global service locator instance without module globals."""
+    return ServiceLocator()
 
 
 def register_service(name: str, service: Any) -> None:
     """Register a service with the global locator."""
-    _service_locator.register(name, service)
+    get_service_locator().register(name, service)
 
 
 def register_service_factory(name: str, factory: Callable[[], Any]) -> None:
     """Register a service factory with the global locator."""
-    _service_locator.register_factory(name, factory)
+    get_service_locator().register_factory(name, factory)
 
 
 def get_service(name: str, service_type: type[T]) -> T:
     """Get a service from the global locator."""
-    return _service_locator.get(name, service_type)
+    return get_service_locator().get(name, service_type)
 
 
 __all__ = [

@@ -19,6 +19,7 @@ from simple_resume.shell.render.operations import (
     open_file_in_browser,
 )
 from simple_resume.shell.strategies import LatexStrategy, PdfGenerationRequest
+from tests.bdd import Scenario
 
 
 class TestShellRenderingOperations:
@@ -26,9 +27,12 @@ class TestShellRenderingOperations:
 
     def test_generate_html_with_jinja_injects_base_href(
         self,
+        story: Scenario,
         tmp_path: Path,
     ) -> None:
         """Test that HTML generation includes base href for asset resolution."""
+        story.given("a render plan with base path configured")
+        story.when("generating HTML via the shell helper")
         render_plan = RenderPlan(
             name="Case",
             mode=RenderMode.HTML,
@@ -57,6 +61,7 @@ class TestShellRenderingOperations:
 
     def test_generate_pdf_with_weasyprint_renders_template(
         self,
+        story: Scenario,
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
@@ -64,6 +69,8 @@ class TestShellRenderingOperations:
 
         With proper content and professional formatting.
         """
+        story.given("a complete HTML render plan with realistic resume content")
+        story.when("generating a PDF via weasyprint strategy")
         # Create realistic business render plan for a professional
         render_plan = RenderPlan(
             name="Jennifer Thompson",
@@ -149,9 +156,12 @@ class TestShellRenderingOperations:
 
     def test_latex_strategy_passes_paths_and_raw_data(
         self,
+        story: Scenario,
         tmp_path: Path,
     ) -> None:
         """Ensure the LaTeX strategy forwards paths and resume data to the core."""
+        story.given("a PDF generation request using LaTeX strategy")
+        story.when("generate_pdf is invoked on the strategy")
         render_plan = RenderPlan(
             name="Case",
             mode=RenderMode.LATEX,
@@ -206,12 +216,17 @@ class TestShellRenderingOperations:
         _, _, context = call.args
         assert isinstance(context, LatexGenerationContext)
         assert context.paths == paths
-        assert context.raw_data == raw_data
+        assert context.resume_data == raw_data
 
     def test_open_file_in_browser_with_specified_browser(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        self,
+        story: Scenario,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test opening file with specified browser."""
+        story.given("a local HTML file and an explicit browser choice")
+        story.when("opening the file in the requested browser")
         test_file = tmp_path / "test.html"
         test_file.write_text("<html></html>")
 
@@ -227,9 +242,11 @@ class TestShellRenderingOperations:
         )
 
     def test_open_file_in_browser_with_default_system_opener(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        self, story: Scenario, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test opening file with default system opener."""
+        story.given("no explicit browser is provided")
+        story.when("opening a file using the platform default")
         test_file = tmp_path / "test.html"
         test_file.write_text("<html></html>")
 
@@ -242,8 +259,12 @@ class TestShellRenderingOperations:
 
         mock_run.assert_called_once_with(["xdg-open", test_file], check=False)
 
-    def test_create_generation_result_with_all_metadata(self, tmp_path: Path) -> None:
+    def test_create_generation_result_with_all_metadata(
+        self, story: Scenario, tmp_path: Path
+    ) -> None:
         """Test creating GenerationResult with all metadata fields."""
+        story.given("complete metadata is provided from generation pipeline")
+        story.when("constructing the GenerationResult helper")
         output_path = tmp_path / "test.pdf"
         output_path.write_text("test content")
 
@@ -269,9 +290,11 @@ class TestShellRenderingOperations:
         assert result.metadata.page_count == 2
 
     def test_create_generation_result_with_minimal_metadata(
-        self, tmp_path: Path
+        self, story: Scenario, tmp_path: Path
     ) -> None:
         """Test creating GenerationResult with minimal metadata."""
+        story.given("only required fields are provided")
+        story.when("creating GenerationResult with defaults")
         output_path = tmp_path / "test.html"
         output_path.write_text("test content")
 

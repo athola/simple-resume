@@ -13,9 +13,8 @@ import yaml
 
 # Import for service registration fixture
 from simple_resume.shell.services import register_default_services
-
-from .bdd import Scenario
-from .bdd import scenario as make_scenario
+from tests.bdd import Scenario
+from tests.bdd import scenario as make_scenario
 
 
 @pytest.fixture

@@ -196,14 +196,14 @@ pdflatex resume_output.tex
 
 For detailed LaTeX configuration and examples, see the [LaTeX Output section in the Usage Guide](wiki/Usage-Guide.md#latex-output).
 
-### Use API Utilities
+### Use Color Utilities
 
-The API includes utilities for tasks like calculating accessible text colors.
+The core library includes utilities for tasks like calculating accessible text colors.
 
 ```python
-from simple_resume.api import colors
+from simple_resume.core import colors
 
-accent = colors.calculate_text_color("#F6F6F6")
+accent = colors.get_contrasting_text_color("#F6F6F6")
 assert accent == "#000000"
 ```
 
