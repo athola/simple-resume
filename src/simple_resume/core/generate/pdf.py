@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+from contextlib import ExitStack
 from dataclasses import dataclass
 from importlib import import_module, resources
 from pathlib import Path
@@ -23,12 +25,23 @@ class _PackageTemplateLocator(TemplateLocator):
     """Default locator that points to bundled template assets."""
 
     def __init__(self) -> None:
-        self._template_path = Path(
-            str(resources.files("simple_resume.shell") / "assets" / "templates")
+        self._stack = ExitStack()
+        self._template_path = self._stack.enter_context(
+            resources.as_file(
+                resources.files("simple_resume.shell") / "assets" / "templates"
+            )
         )
 
     def get_template_location(self) -> Path:
         return self._template_path
+
+    def __del__(self) -> None:
+        try:
+            self._stack.close()
+        except Exception as exc:  # pragma: no cover - best-effort cleanup
+            logging.getLogger(__name__).debug(
+                "Failed to close template locator resources: %s", exc
+            )
 
 
 _DEFAULT_TEMPLATE_LOCATOR = _PackageTemplateLocator()

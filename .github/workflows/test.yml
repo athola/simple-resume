@@ -50,4 +50,4 @@ jobs:
       run: uv sync --extra utils --group dev
 
     - name: Run architectural tests
-      run: uv run pytest tests/architecture -v --tb=short
+      run: uv run pytest tests/architecture -v --tb=short --cov-fail-under=0

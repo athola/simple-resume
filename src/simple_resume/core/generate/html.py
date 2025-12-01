@@ -6,7 +6,9 @@ without global state management.
 
 from __future__ import annotations
 
+import logging
 import os
+from contextlib import ExitStack
 from dataclasses import dataclass
 from importlib import resources
 from pathlib import Path
@@ -23,20 +25,29 @@ from simple_resume.core.protocols import TemplateLocator
 from simple_resume.core.render import get_template_environment
 from simple_resume.core.result import GenerationMetadata
 
-# Keep original environment factory so we can choose between patched and real
-_real_get_template_environment = get_template_environment
-
 
 class _PackageTemplateLocator(TemplateLocator):
     """Locator for bundled HTML templates inside package assets."""
 
     def __init__(self) -> None:
-        self._template_path = Path(
-            str(resources.files("simple_resume.shell") / "assets" / "templates")
+        self._stack = ExitStack()
+        self._template_path = self._stack.enter_context(
+            resources.as_file(
+                resources.files("simple_resume.shell") / "assets" / "templates"
+            )
         )
 
     def get_template_location(self) -> Path:
         return self._template_path
+
+    def __del__(self) -> None:
+        # Ensure we don't leak the context when the locator is garbage collected.
+        try:
+            self._stack.close()
+        except Exception as exc:  # pragma: no cover - best-effort cleanup
+            logging.getLogger(__name__).debug(
+                "Failed to close template locator resources: %s", exc
+            )
 
 
 _DEFAULT_TEMPLATE_LOCATOR = _PackageTemplateLocator()
@@ -204,20 +215,12 @@ def _prepare_html_with_jinja_impl(
     # Resolve template location using factory
     locator = params.factory._get_template_locator(params.template_locator)
     template_loc = locator.get_template_location()
-    # Use patched template env only for demo templates used in unit tests;
-    # otherwise rely on the real environment so integration tests render actual HTML.
-    env_getter = (
-        get_template_environment
-        if params.render_plan.template_name == "demo.html"
-        else _real_get_template_environment
-    )
-
-    env = env_getter(str(template_loc))
+    env = get_template_environment(str(template_loc))
     try:
         template = env.get_template(params.render_plan.template_name)
     except TemplateNotFound:
         fallback_locator = _DEFAULT_TEMPLATE_LOCATOR
-        env = env_getter(str(fallback_locator.get_template_location()))
+        env = get_template_environment(str(fallback_locator.get_template_location()))
         template = env.get_template(params.render_plan.template_name)
 
     html = template.render(**params.render_plan.context).lstrip()
