@@ -15,7 +15,7 @@ import os
 import time
 from collections.abc import Iterator
 from dataclasses import dataclass, field
-from pathlib import Path, PosixPath
+from pathlib import PosixPath, PurePath
 from typing import Any
 
 
@@ -47,7 +47,8 @@ class GenerationResult:
 
     """
 
-    output_path: Path
+    output_path: Any
+    _normalized_path: PosixPath = field(init=False, repr=False, compare=False)
     format_type: str
     metadata: GenerationMetadata | None = None
 
@@ -55,13 +56,17 @@ class GenerationResult:
         """Initialize the GenerationResult after dataclass creation."""
         original_path = self.output_path
         try:
-            # Force a POSIX concrete path regardless of platform mocks to avoid
-            # WindowsPath instantiation on POSIX and tolerate patched Path.
-            normalized_path = PosixPath(os.fspath(original_path))
+            if isinstance(original_path, PurePath):
+                normalized_path = PosixPath(os.fspath(original_path))
+            else:
+                # Force POSIX concrete path to avoid WindowsPath instantiation
+                # when platform is mocked during CI strategy tests.
+                normalized_path = PosixPath(os.fspath(original_path))
         except Exception:
+            # Final safety net: force a POSIX path from string.
             normalized_path = PosixPath(str(original_path))
 
-        object.__setattr__(self, "output_path", normalized_path)
+        object.__setattr__(self, "_normalized_path", normalized_path)
 
         # Normalize format_type to lowercase
         normalized_format = self.format_type.lower()
@@ -94,17 +99,17 @@ class GenerationResult:
     @property
     def name(self) -> str:
         """Return the filename of the output file."""
-        return self.output_path.name
+        return self._normalized_path.name
 
     @property
     def stem(self) -> str:
         """Return the stem (filename without extension) of the output file."""
-        return self.output_path.stem
+        return self._normalized_path.stem
 
     @property
     def suffix(self) -> str:
         """Return the suffix (extension) of the output file."""
-        return self.output_path.suffix
+        return self._normalized_path.suffix
 
     @property
     def exists(self) -> bool:
@@ -113,7 +118,7 @@ class GenerationResult:
         Note: This is a read-only property that checks file existence.
         It's acceptable in core because it's a pure query with no side effects.
         """
-        return self.output_path.exists() and self.output_path.is_file()
+        return self._normalized_path.exists() and self._normalized_path.is_file()
 
     @property
     def size(self) -> int:
@@ -122,9 +127,10 @@ class GenerationResult:
         Note: This is a read-only property that queries file metadata.
         It's acceptable in core because it's a pure query with no side effects.
         """
-        if self.exists:
-            return self.output_path.stat().st_size
-        return 0
+        try:
+            return self._normalized_path.stat().st_size if self.exists else 0
+        except OSError:
+            return 0
 
     @property
     def size_human(self) -> str:
