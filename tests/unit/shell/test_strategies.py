@@ -126,6 +126,41 @@ class TestWeasyPrintStrategy:
         assert result == mock_result
         mock_startfile.assert_called_once_with(str(output_path))
 
+    @mock.patch("sys.platform", "win32")
+    @mock.patch("simple_resume.shell.strategies.os.name", "nt")
+    @mock.patch("simple_resume.shell.strategies.os.startfile", create=True)
+    @mock.patch("pathlib.Path", wraps=Path)
+    @mock.patch("simple_resume.shell.strategies.generate_pdf_with_weasyprint")
+    def test_generate_pdf_windows_path_safe(
+        self,
+        mock_generate,
+        mock_path_class,
+        mock_startfile,
+    ) -> None:
+        """Guard against WindowsPath instantiation on non-Windows runners."""
+        plan = RenderPlan(
+            name="test",
+            mode=RenderMode.HTML,
+            config=ResumeConfig(),
+        )
+        output_path = Path("/tmp/test.pdf")  # noqa: S108
+        mock_result = mock.Mock(spec=GenerationResult)
+        mock_result.exists = True
+        mock_result.output_path = output_path
+        mock_generate.return_value = (mock_result, None)
+
+        strategy = WeasyPrintStrategy()
+        request = PdfGenerationRequest(
+            render_plan=plan,
+            output_path=output_path,
+            open_after=True,
+        )
+
+        # Should not attempt to construct WindowsPath; uses provided Path object
+        result = strategy.generate_pdf(request)
+        assert result == mock_result
+        mock_startfile.assert_called_once_with(str(output_path))
+
     @mock.patch("sys.platform", "linux")
     @mock.patch("shutil.which")
     @mock.patch("subprocess.Popen")

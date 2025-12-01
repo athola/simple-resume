@@ -16,6 +16,7 @@ from simple_resume.core.exceptions import ConfigurationError
 from simple_resume.core.generate.exceptions import TemplateError
 from simple_resume.core.latex.types import LatexGenerationContext
 from simple_resume.core.models import RenderPlan
+from simple_resume.core.paths import Paths
 from simple_resume.core.protocols import EffectExecutor, LaTeXRenderer, TemplateLocator
 from simple_resume.core.render import get_template_environment
 from simple_resume.core.result import GenerationMetadata, GenerationResult
@@ -510,19 +511,37 @@ def _prepare_pdf_with_latex_impl(
         )
     resolved_paths = context.paths
     if resolved_paths is None:
-        raise ConfigurationError(
-            f"{params.filename or 'latex'}: LaTeX generation requires resolved paths",
-            filename=params.filename,
+        # Fallback to packaged templates/static when paths are not provided
+        locator = factory._get_template_locator(params.template_locator)
+        template_root = locator.get_template_location()
+        resolved_paths = Paths(
+            data=Path("."),
+            input=Path("."),
+            output=params.output_path.parent,
+            content=template_root,
+            templates=template_root,
+            static=template_root.parent / "static",
         )
 
     # Generate LaTeX content
     try:
-        tex_result = render_resume_latex_from_data(context)
+        resume_data = (
+            context.processed_data
+            if isinstance(context.processed_data, dict)
+            else context.resume_data
+            if isinstance(context.resume_data, dict)
+            else params.render_plan.context or {}
+        )
+        tex_result = render_resume_latex_from_data(
+            resume_data,
+            paths=resolved_paths,
+            template_name=params.render_plan.template_name or "latex/basic.tex",
+        )
         tex_content = getattr(tex_result, "tex", tex_result)
     except Exception as exc:
         if "No such file or directory" in str(exc):
             raise FileNotFoundError(
-                f"Template not found: {context.paths.template_dir}"
+                f"Template not found: {resolved_paths.templates}"
             ) from exc
         raise
 
