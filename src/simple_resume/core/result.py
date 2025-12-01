@@ -14,7 +14,7 @@ from __future__ import annotations
 import time
 from collections.abc import Iterator
 from dataclasses import dataclass, field
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePath, PurePosixPath
 from typing import Any
 
 
@@ -52,15 +52,20 @@ class GenerationResult:
 
     def __post_init__(self) -> None:
         """Initialize the GenerationResult after dataclass creation."""
-        try:
-            object.__setattr__(self, "output_path", Path(self.output_path))
-        except NotImplementedError:
-            # Guard against WindowsPath instantiation on non-Windows systems
-            # when tests monkeypatch platform indicators. Fall back to a pure
-            # POSIX path representation to keep behavior deterministic.
-            object.__setattr__(
-                self, "output_path", PurePosixPath(str(self.output_path))
-            )
+        original_path = self.output_path
+        if isinstance(original_path, PurePath):
+            normalized_path = original_path
+        else:
+            try:
+                normalized_path = Path(original_path)
+            except Exception:
+                # Guard against platform-mocking scenarios where pathlib selects
+                # WindowsPath on POSIX or where Path is monkeypatched without
+                # internal flavour attributes. Fall back to a pure, OS-agnostic
+                # representation to keep the object usable.
+                normalized_path = PurePosixPath(str(original_path))
+
+        object.__setattr__(self, "output_path", normalized_path)
 
         # Normalize format_type to lowercase
         normalized_format = self.format_type.lower()
