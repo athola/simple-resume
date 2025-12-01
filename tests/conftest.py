@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 import tempfile
 from collections.abc import Iterator
 from pathlib import Path
@@ -11,10 +12,18 @@ from unittest.mock import Mock
 import pytest
 import yaml
 
+# Ensure project sources are importable even when not installed in the env
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+SRC_PATH = PROJECT_ROOT / "src"
+
+resolved_sys_paths = {str(Path(p).resolve()) for p in sys.path}
+if str(SRC_PATH) not in resolved_sys_paths:
+    sys.path.insert(0, str(SRC_PATH))
+
 # Import for service registration fixture
-from simple_resume.shell.services import register_default_services
-from tests.bdd import Scenario
-from tests.bdd import scenario as make_scenario
+from simple_resume.shell.services import register_default_services  # noqa: E402
+from tests.bdd import Scenario  # noqa: E402
+from tests.bdd import scenario as make_scenario  # noqa: E402
 
 
 @pytest.fixture

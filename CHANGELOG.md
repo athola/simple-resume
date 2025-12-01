@@ -55,7 +55,7 @@ Initial public release.
 -   Corrected color contrast calculations to improve accessibility.
 -   Resolved dependency injection issues in core components.
 
-## [0.1.1] - 2025-11-29
+## [0.1.1] - 2025-12-01
 
 ### Added
 
@@ -76,6 +76,7 @@ Initial public release.
 
 -   Type mismatches between lazy and core generation function signatures.
 -   `preview()` return type now correctly annotated as `GenerationResult | BatchGenerationResult`.
+-   Packaging now bundles HTML templates and static assets to prevent `TemplateNotFound` errors in wheels and editable installs.
 
 ## [Unreleased]
 
