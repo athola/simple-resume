@@ -71,18 +71,23 @@ palette-list = "simple_resume.shell.cli.palette:palette_list"
 generate-random-palette-demo = "simple_resume.shell.cli.random_palette_demo:main"
 
 [tool.hatch.build.targets.sdist]
-include = ["src"]  # Only include content from src
+# Include source tree and bundled assets in source distributions
+include = [
+  "src",
+  "src/simple_resume/shell/assets/templates/**",
+  "src/simple_resume/shell/assets/static/**",
+]
 sources = ["src"]  # Map src/ to the root of the package
-[tool.hatch.build.targets.sdist.force-include]
-"src/simple_resume/shell/assets/templates" = "simple_resume/shell/assets/templates"
-"src/simple_resume/shell/assets/static" = "simple_resume/shell/assets/static"
 
 [tool.hatch.build.targets.wheel]
 # wheel builder applies gitignore without the src/ prefix
 ignore-vcs = true
-[tool.hatch.build.targets.wheel.force-include]
-"src/simple_resume/shell/assets/templates" = "simple_resume/shell/assets/templates"
-"src/simple_resume/shell/assets/static" = "simple_resume/shell/assets/static"
+# Explicitly include assets for editable and wheel builds
+packages = ["src/simple_resume"]
+include = [
+  "src/simple_resume/shell/assets/templates/**",
+  "src/simple_resume/shell/assets/static/**",
+]
 
 [dependency-groups]
 dev = [
