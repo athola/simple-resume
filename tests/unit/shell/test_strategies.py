@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from pathlib import Path as _Path
+from pathlib import PosixPath
 from unittest import mock
 
 import pytest
@@ -16,6 +17,10 @@ from simple_resume.shell.strategies import (
     PdfGenerationRequest,
     WeasyPrintStrategy,
 )
+
+# CI on POSIX can blow up if mock patches flip to WindowsPath; force a
+# POSIX-capable Path alias to keep strategy tests platform-agnostic.
+Path = PosixPath if _Path.__name__ == "WindowsPath" else _Path
 
 
 class TestPdfGenerationRequest:
