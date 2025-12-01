@@ -69,7 +69,13 @@ class WeasyPrintStrategy(PdfGenerationStrategy):
         # Open file if requested
         if request.open_after and result.exists:
             try:
-                path_to_open = os.fspath(result.output_path)
+                # Robustly obtain a filesystem-safe string without instantiating
+                # platform-specific Path subclasses (e.g., WindowsPath) on
+                # non-Windows CI runners that patch os.name/sys.platform.
+                try:
+                    path_to_open = os.fspath(result.output_path)
+                except (TypeError, AttributeError, NotImplementedError):
+                    path_to_open = str(result.output_path)
                 if sys.platform.startswith("darwin"):
                     opener = shutil.which("open") or "open"
                     subprocess.Popen(  # noqa: S603  # nosec B603
