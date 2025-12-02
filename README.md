@@ -101,6 +101,18 @@ with ResumeSession(data_dir="resume_private") as session:
 - **LaTeX**: set `config.output_mode: latex` and compile with your TeX toolchain (see [Usage Guide](wiki/Usage-Guide.md#latex-output)).
 - **Color utilities**: `simple_resume.core.colors.get_contrasting_text_color` for accessibility checks.
 
+## Release workflow
+
+Releases are automated via GitHub Actions. To create a new release:
+
+```bash
+# Tag the version (must start with 'v')
+git tag v0.1.2
+git push origin v0.1.2
+```
+
+The workflow builds the package, generates a changelog from commit history, and publishes a GitHub release with distribution artifacts.
+
 ## Workflows & docs
 
 - **Guides**: [Getting Started](wiki/Getting-Started.md), [Usage](wiki/Usage-Guide.md), [Workflows](wiki/Workflows.md), [Path Handling](wiki/Path-Handling-Guide.md).
