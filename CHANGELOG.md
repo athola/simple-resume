@@ -2,6 +2,44 @@
 
 This file documents all notable project changes. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2025-12-02
+
+### Added
+
+-   Automated GitHub release workflow triggered by version tags.
+-   Documentation for release workflow in README and wiki.
+
+### Changed
+
+-   Updated release automation to include changelog generation and artifact distribution.
+
+## [0.1.1] - 2025-12-02
+
+### Added
+
+-   `simple_resume.core.colors` module with stable, documented color manipulation utilities.
+-   MkDocs configuration for auto-generated API reference documentation.
+-   `GenerateOptions` dataclass for simplified generation configuration.
+-   Type annotations with `cast()` for lazy-loaded generation functions.
+-   Comprehensive docstrings with `.. versionadded::` annotations.
+
+### Changed
+
+-   Standardized `generate()` function signature to use `GenerateOptions` consistently.
+-   Enhanced README with improved Python quickstart examples.
+-   Refactored architecture to strict Functional Core / Imperative Shell pattern.
+-   Updated documentation links to point to new API reference.
+-   Updated architecture documentation to reflect completion of core/generate/pdf.py refactor (Effect system eliminates weasyprint import violation).
+-   Core layer now at 100% purity with zero known architectural violations.
+
+### Fixed
+
+-   Type mismatches between lazy and core generation function signatures.
+-   `preview()` return type now correctly annotated as `GenerationResult | BatchGenerationResult`.
+-   Packaging now bundles HTML templates and static assets to prevent `TemplateNotFound` errors in wheels and editable installs.
+-   Eliminated weasyprint import from core layer via Effect system pattern.
+-   Fixed WindowsPath instantiation errors on Linux CI runners.
+
 ## [0.1.0] - 2025-11-05
 
 Initial public release.
@@ -54,33 +92,6 @@ Initial public release.
 -   Fixed several edge cases in template resolution and improved error reporting.
 -   Corrected color contrast calculations to improve accessibility.
 -   Resolved dependency injection issues in core components.
-
-## [0.1.1] - 2025-12-02
-
-### Added
-
--   `simple_resume.core.colors` module with stable, documented color manipulation utilities.
--   MkDocs configuration for auto-generated API reference documentation.
--   `GenerateOptions` dataclass for simplified generation configuration.
--   Type annotations with `cast()` for lazy-loaded generation functions.
--   Comprehensive docstrings with `.. versionadded::` annotations.
-
-### Changed
-
--   Standardized `generate()` function signature to use `GenerateOptions` consistently.
--   Enhanced README with improved Python quickstart examples.
--   Refactored architecture to strict Functional Core / Imperative Shell pattern.
--   Updated documentation links to point to new API reference.
--   Updated architecture documentation to reflect completion of core/generate/pdf.py refactor (Effect system eliminates weasyprint import violation).
--   Core layer now at 100% purity with zero known architectural violations.
-
-### Fixed
-
--   Type mismatches between lazy and core generation function signatures.
--   `preview()` return type now correctly annotated as `GenerationResult | BatchGenerationResult`.
--   Packaging now bundles HTML templates and static assets to prevent `TemplateNotFound` errors in wheels and editable installs.
--   Eliminated weasyprint import from core layer via Effect system pattern.
--   Fixed WindowsPath instantiation errors on Linux CI runners.
 
 ## [Unreleased]
 

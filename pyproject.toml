@@ -30,7 +30,7 @@ markers = [
 
 [project]
 name = "simple-resume"
-version = "0.1.1"
+version = "0.1.2"
 description = "Generate PDF resumes from YAML data using HTML templates"
 authors = [
     {name = "Alex Thola", email = "alexthola@gmail.com"}
@@ -98,6 +98,7 @@ dev = [
     "safety>=3.7.0,<4.0",
     "pdf2image>=1.17.0,<2.0",
     "types-pyyaml>=6.0.12.20250915",
+    "twine>=6.2.0",
 ]
 
 [tool.ruff]

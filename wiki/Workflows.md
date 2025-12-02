@@ -9,6 +9,8 @@ This project uses GitHub Actions to automate code quality checks on every push a
 -   **`typecheck.yml`**: Validates type hints with `mypy`, `ty`, `pyright`, and `pytype`.
 -   **`code-quality.yml`**: Scans for security vulnerabilities and code complexity with `Bandit`, `Safety`, `Radon`, and `Xenon`.
 -   **`pre-commit.yml`**: Validates the `.pre-commit-config.yaml` file.
+-   **`publish-packages.yml`**: Publishes the package to PyPI when version changes are detected on the `main` branch.
+-   **`release.yml`**: Creates GitHub releases automatically when version tags are pushed.
 
 ## Local Development
 
@@ -40,6 +42,36 @@ uv run ty check src/simple_resume/
 # Testing
 uv run pytest
 ```
+
+## Release Workflow
+
+The `release.yml` workflow automates GitHub release creation when tags are pushed.
+
+### Creating a Release
+
+```bash
+# Tag the version (must start with 'v')
+git tag v0.1.2
+git push origin v0.1.2
+```
+
+The workflow performs the following actions:
+
+1. Builds the package using `uv build`
+2. Extracts version information from the tag
+3. Generates a changelog from commits since the previous tag
+4. Creates a GitHub release with:
+   - Generated changelog
+   - Installation instructions
+   - Built distribution artifacts (`.tar.gz` and `.whl` files)
+   - Prerelease flag for tags containing `alpha`, `beta`, or `rc`
+
+### Package Publishing
+
+The `publish-packages.yml` workflow monitors the `main` branch for version changes in `pyproject.toml`. When a version change is detected:
+
+1. Builds and verifies the package distributions
+2. Publishes to PyPI (requires `PYPI_API_TOKEN` secret)
 
 ## Configuration
 
