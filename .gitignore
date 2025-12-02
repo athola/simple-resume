@@ -66,6 +66,8 @@ resume_private/output/
 *.tex
 !src/simple_resume/templates/html/*.html
 !src/simple_resume/templates/latex/*.tex
+!src/simple_resume/shell/assets/templates/html/*.html
+!src/simple_resume/shell/assets/templates/demo.html
 
 # Preview images (but keep main preview.jpg/png for README)
 *preview_new*
@@ -94,3 +96,5 @@ src/static/images/*
 *.swp
 commit_msg.txt
 bandit-report.json
+*.log
+output.json

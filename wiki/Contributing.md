@@ -17,7 +17,7 @@ To contribute code, please follow these steps:
 2.  Create a new branch for your changes.
 3.  Set up your development environment by following the [Development Guide](Development-Guide.md).
 4.  Make your changes, and add tests and documentation as needed.
-5.  Run all code quality checks to ensure that your changes meet our standards.
+5.  Run all code quality checks to ensure the changes adhere to the project's style and pass all tests.
 
     ```bash
     make check-all

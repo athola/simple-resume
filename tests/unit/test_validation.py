@@ -5,14 +5,14 @@ from pathlib import Path
 
 import pytest
 
-from simple_resume import validation
-from simple_resume.constants import OutputFormat
-from simple_resume.exceptions import (
+from simple_resume.core import validation
+from simple_resume.core.constants import OutputFormat
+from simple_resume.core.exceptions import (
     ConfigurationError,
     FileSystemError,
     ValidationError,
 )
-from simple_resume.validation import (
+from simple_resume.core.validation import (
     validate_directory_path,
     validate_file_path,
     validate_format,
@@ -117,20 +117,6 @@ def test_validate_file_path_rejects_large_files(
         validate_file_path(file_path)
 
 
-def test_validate_directory_path_creates_when_allowed(
-    story: Scenario,
-    tmp_path: Path,
-) -> None:
-    story.given("a directory path that does not yet exist")
-    target_dir = tmp_path / "new-dir"
-
-    validated = validate_directory_path(target_dir, create_if_missing=True)
-
-    story.then("the directory is created and returned")
-    assert validated == target_dir.resolve()
-    assert target_dir.exists() and target_dir.is_dir()
-
-
 def test_validate_directory_path_rejects_file(story: Scenario, tmp_path: Path) -> None:
     story.given("a path that points to an existing file")
     file_path = tmp_path / "file.txt"
@@ -148,23 +134,6 @@ def test_validate_directory_path_requires_existing_when_flagged(
 
     with pytest.raises(FileSystemError, match="does not exist"):
         validate_directory_path(missing_dir, must_exist=True)
-
-
-def test_validate_directory_path_reports_creation_failure(
-    story: Scenario,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    story.given("mkdir raises an OSError during directory creation")
-    target_dir = tmp_path / "blocked"
-
-    def fake_mkdir(self: Path, parents: bool = True, exist_ok: bool = True) -> None:
-        raise PermissionError("denied")
-
-    monkeypatch.setattr(Path, "mkdir", fake_mkdir, raising=False)
-
-    with pytest.raises(FileSystemError, match="Failed to create directory"):
-        validate_directory_path(target_dir, create_if_missing=True)
 
 
 def test_validate_template_name_accepts_simple_patterns(story: Scenario) -> None:
@@ -310,3 +279,71 @@ def test_validate_output_path_rejects_mismatch(story: Scenario, tmp_path: Path) 
 
     with pytest.raises(FileSystemError, match="doesn't match format"):
         validate_output_path(output_path, "pdf")
+
+
+def test_validate_file_path_rejects_directory(story: Scenario, tmp_path: Path) -> None:
+    """Test validate_file_path rejects directory when must_be_file=True."""
+    story.given("a directory path when must_be_file=True")
+    dir_path = tmp_path / "testdir"
+    dir_path.mkdir()
+
+    with pytest.raises(FileSystemError, match="not a file"):
+        validate_file_path(dir_path, must_exist=True, must_be_file=True)
+
+
+def test_validate_directory_path_rejects_empty_string(story: Scenario) -> None:
+    """Test validate_directory_path rejects empty string."""
+    story.given("an empty directory path")
+
+    with pytest.raises(FileSystemError, match="cannot be empty"):
+        validate_directory_path("")
+
+
+def test_validate_directory_path_resolves_relative_path(
+    story: Scenario, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test validate_directory_path resolves relative paths."""
+    story.given("a relative directory path")
+    dir_path = tmp_path / "testdir"
+    dir_path.mkdir()
+
+    # Change to parent directory to test relative path
+    monkeypatch.chdir(tmp_path)
+    relative_path = Path("testdir")
+
+    result = validate_directory_path(relative_path, must_exist=True)
+
+    story.then("path is resolved to absolute path")
+    assert result.is_absolute()
+    assert result.exists()
+
+
+def test_validate_directory_path_with_create_if_missing_raises(
+    story: Scenario, tmp_path: Path
+) -> None:
+    """Test validate_directory_path raises error for create_if_missing."""
+    story.given("a non-existent directory with create_if_missing=True")
+    dir_path = tmp_path / "nonexistent"
+
+    with pytest.raises(FileSystemError, match="create_if_missing is not supported"):
+        validate_directory_path(dir_path, create_if_missing=True)
+
+
+def test_validate_date_field_accepts_none(story: Scenario) -> None:
+    """Test date validation accepts None value."""
+    story.given("experience data with None date values")
+    data = {
+        "full_name": "User",
+        "email": "user@example.com",
+        "body": {
+            "experience": [
+                {"start_date": None, "end_date": "2021-05"},
+                {"date": ""},  # Empty string should also be accepted
+            ]
+        },
+    }
+
+    # Should not raise
+    validate_resume_data(data)
+
+    story.then("validation completes without error")

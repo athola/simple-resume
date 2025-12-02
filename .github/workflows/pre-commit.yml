@@ -2,9 +2,9 @@ name: Pre-commit Checks
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, development ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, development ]
 
 jobs:
   pre-commit:
@@ -120,5 +120,6 @@ jobs:
         echo "All development tools are available"
 
         # Test imports work correctly
-        uv run python -c "import simple_resume.utilities; print('simple_resume.utilities imports correctly')"
-        uv run python -c "from simple_resume.utilities import get_content; print('get_content imports correctly')"
+        uv run python -c "import simple_resume; print('simple_resume imports correctly')"
+        uv run python -c "from simple_resume import generate; print('generate function imports correctly')"
+        uv run python -c "from simple_resume.shell.runtime.content import get_content; print('get_content imports correctly')"

@@ -26,7 +26,7 @@ The `ruff` tool is used for linting and code formatting. To run all checks, incl
 
 ```bash
 make check-all
-make validate  # Validates the README preview and release assets.
+make validate  # Runs secondary validation, like checking the README preview and release assets.
 ```
 
 Individual checks can also be run:
@@ -73,7 +73,7 @@ make test-coverage
 
 ## Documentation
 
-The project documentation is organized into the following key areas:
+Our documentation is organized into these key areas:
 
 -   **[Architecture Decisions (ADRs)](../architecture/)**: Records the history and reasoning behind significant technical decisions.
 -   **[Usage Guide](Usage-Guide.md)**: Explains how to use the library's features with practical examples.
@@ -83,13 +83,13 @@ The project documentation is organized into the following key areas:
 
 When contributing to the documentation, please adhere to the following best practices:
 
--   Use clear and concise language.
--   Include code examples for all major features.
+-   Write clearly and concisely.
+-   Add code examples for all major features.
 -   Document both lazy and eager loading approaches.
 -   Explain performance trade-offs.
 -   Provide migration paths for breaking changes.
 -   Update ADRs for significant architectural changes.
--   Keep docstrings up to date.
+-   Keep docstrings current.
 
 ## Contributing
 

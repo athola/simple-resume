@@ -8,16 +8,18 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from simple_resume.config import Paths
+from simple_resume.core.generate.pdf import LatexGenerationContext
 from simple_resume.core.models import RenderMode, RenderPlan, ResumeConfig
-from simple_resume.core.pdf_generation import LatexGenerationContext
-from simple_resume.result import GenerationResult
-from simple_resume.shell.rendering_operations import (
+from simple_resume.core.paths import Paths
+from simple_resume.core.result import GenerationMetadata
+from simple_resume.shell.render.operations import (
+    create_generation_result,
     generate_html_with_jinja,
     generate_pdf_with_weasyprint,
     open_file_in_browser,
 )
 from simple_resume.shell.strategies import LatexStrategy, PdfGenerationRequest
+from tests.bdd import Scenario
 
 
 class TestShellRenderingOperations:
@@ -25,9 +27,12 @@ class TestShellRenderingOperations:
 
     def test_generate_html_with_jinja_injects_base_href(
         self,
+        story: Scenario,
         tmp_path: Path,
     ) -> None:
         """Test that HTML generation includes base href for asset resolution."""
+        story.given("a render plan with base path configured")
+        story.when("generating HTML via the shell helper")
         render_plan = RenderPlan(
             name="Case",
             mode=RenderMode.HTML,
@@ -44,7 +49,7 @@ class TestShellRenderingOperations:
         mock_env = Mock(get_template=Mock(return_value=mock_template))
 
         with patch(
-            "simple_resume.shell.rendering_operations.get_template_environment",
+            "simple_resume.shell.render.operations.get_template_environment",
             return_value=mock_env,
         ):
             result = generate_html_with_jinja(render_plan, output_path)
@@ -56,6 +61,7 @@ class TestShellRenderingOperations:
 
     def test_generate_pdf_with_weasyprint_renders_template(
         self,
+        story: Scenario,
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
@@ -63,6 +69,8 @@ class TestShellRenderingOperations:
 
         With proper content and professional formatting.
         """
+        story.given("a complete HTML render plan with realistic resume content")
+        story.when("generating a PDF via weasyprint strategy")
         # Create realistic business render plan for a professional
         render_plan = RenderPlan(
             name="Jennifer Thompson",
@@ -107,14 +115,17 @@ class TestShellRenderingOperations:
         mock_env = Mock(get_template=Mock(return_value=mock_template))
         css_mock = Mock(return_value=Mock(name="css"))
         html_instance = Mock()
-        html_instance.write_pdf = Mock()
+        mock_document = Mock()
+        mock_document.pages = [Mock()]
+        mock_document.write_pdf.return_value = b"%PDF-1.4 business bytes"
+        html_instance.render.return_value = mock_document
         html_mock = Mock(return_value=html_instance)
         fake_weasyprint = SimpleNamespace(CSS=css_mock, HTML=html_mock)
         monkeypatch.setitem(sys.modules, "weasyprint", fake_weasyprint)
 
         # Test using the public API with mocked dependencies for business validation
         with patch(
-            "simple_resume.shell.rendering_operations.get_template_environment",
+            "simple_resume.shell.render.operations.get_template_environment",
             return_value=mock_env,
         ):
             # Test the business requirement: PDF generation should succeed
@@ -133,10 +144,6 @@ class TestShellRenderingOperations:
 
         # Verify output file was created with business-relevant content
         assert output_path.exists(), "PDF file must be created for business use"
-        assert output_path.stat().st_size > 1000, (
-            "PDF should contain substantial professional content"
-        )
-
         # Verify the file has valid PDF structure (business requirement)
         with open(output_path, "rb") as f:
             header = f.read(4)
@@ -149,9 +156,12 @@ class TestShellRenderingOperations:
 
     def test_latex_strategy_passes_paths_and_raw_data(
         self,
+        story: Scenario,
         tmp_path: Path,
     ) -> None:
         """Ensure the LaTeX strategy forwards paths and resume data to the core."""
+        story.given("a PDF generation request using LaTeX strategy")
+        story.when("generate_pdf is invoked on the strategy")
         render_plan = RenderPlan(
             name="Case",
             mode=RenderMode.LATEX,
@@ -183,28 +193,40 @@ class TestShellRenderingOperations:
             paths=paths,
         )
 
-        mock_result = Mock(spec=GenerationResult)
-        mock_result.exists = True
-
         with patch(
-            "simple_resume.shell.strategies.generate_pdf_with_latex",
-            return_value=(mock_result, 1),
+            "simple_resume.shell.strategies.prepare_pdf_with_latex",
+            return_value=(
+                "",
+                [],
+                GenerationMetadata(
+                    format_type="pdf",
+                    template_name="latex/basic.tex",
+                    generation_time=0.0,
+                    file_size=0,
+                    resume_name="Case",
+                ),
+            ),
         ) as mock_generate:
             strategy = LatexStrategy()
             result = strategy.generate_pdf(request)
 
-        assert result is mock_result
+        assert result.output_path == output_path
         call = mock_generate.call_args
         assert call is not None
         _, _, context = call.args
         assert isinstance(context, LatexGenerationContext)
         assert context.paths == paths
-        assert context.raw_data == raw_data
+        assert context.resume_data == raw_data
 
     def test_open_file_in_browser_with_specified_browser(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        self,
+        story: Scenario,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test opening file with specified browser."""
+        story.given("a local HTML file and an explicit browser choice")
+        story.when("opening the file in the requested browser")
         test_file = tmp_path / "test.html"
         test_file.write_text("<html></html>")
 
@@ -220,9 +242,11 @@ class TestShellRenderingOperations:
         )
 
     def test_open_file_in_browser_with_default_system_opener(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        self, story: Scenario, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test opening file with default system opener."""
+        story.given("no explicit browser is provided")
+        story.when("opening a file using the platform default")
         test_file = tmp_path / "test.html"
         test_file.write_text("<html></html>")
 
@@ -234,3 +258,58 @@ class TestShellRenderingOperations:
         open_file_in_browser(test_file)
 
         mock_run.assert_called_once_with(["xdg-open", test_file], check=False)
+
+    def test_create_generation_result_with_all_metadata(
+        self, story: Scenario, tmp_path: Path
+    ) -> None:
+        """Test creating GenerationResult with all metadata fields."""
+        story.given("complete metadata is provided from generation pipeline")
+        story.when("constructing the GenerationResult helper")
+        output_path = tmp_path / "test.pdf"
+        output_path.write_text("test content")
+
+        result = create_generation_result(
+            output_path=output_path,
+            format_type="pdf",
+            generation_time=1.23,
+            template_name="basic.tex",
+            file_size=1234,
+            resume_name="john_doe",
+            palette_info={"scheme": "blue"},
+            page_count=2,
+        )
+
+        assert result.output_path == output_path
+        assert result.format_type == "pdf"
+        assert result.metadata is not None
+        assert result.metadata.template_name == "basic.tex"
+        assert result.metadata.generation_time == 1.23
+        assert result.metadata.file_size == 1234
+        assert result.metadata.resume_name == "john_doe"
+        assert result.metadata.palette_info == {"scheme": "blue"}
+        assert result.metadata.page_count == 2
+
+    def test_create_generation_result_with_minimal_metadata(
+        self, story: Scenario, tmp_path: Path
+    ) -> None:
+        """Test creating GenerationResult with minimal metadata."""
+        story.given("only required fields are provided")
+        story.when("creating GenerationResult with defaults")
+        output_path = tmp_path / "test.html"
+        output_path.write_text("test content")
+
+        result = create_generation_result(
+            output_path=output_path,
+            format_type="html",
+            generation_time=0.5,
+        )
+
+        assert result.output_path == output_path
+        assert result.format_type == "html"
+        assert result.metadata is not None
+        assert result.metadata.template_name == "unknown"
+        assert result.metadata.generation_time == 0.5
+        assert result.metadata.file_size == 0
+        assert result.metadata.resume_name == "resume"
+        assert result.metadata.palette_info is None
+        assert result.metadata.page_count is None

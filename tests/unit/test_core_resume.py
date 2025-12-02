@@ -12,22 +12,26 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from simple_resume.config import Paths
+from simple_resume.core.exceptions import (
+    ConfigurationError,
+    FileSystemError,
+    GenerationError,
+    ValidationError,
+)
 from simple_resume.core.models import (
     RenderMode,
     RenderPlan,
     ResumeConfig,
     ValidationResult,
 )
+from simple_resume.core.paths import Paths
 from simple_resume.core.plan import prepare_render_data
+from simple_resume.core.result import GenerationMetadata, GenerationResult
 from simple_resume.core.resume import Resume
-from simple_resume.exceptions import (
-    ConfigurationError,
-    FileSystemError,
-    GenerationError,
-)
-from simple_resume.latex_renderer import LatexCompilationError
-from simple_resume.result import GenerationResult
+from simple_resume.shell.palettes.loader import get_palette_registry
+from simple_resume.shell.render.latex import LatexCompilationError
+from simple_resume.shell.resume_extensions import generate as shell_generate
+from simple_resume.shell.resume_extensions import to_html, to_pdf
 from tests.bdd import Scenario
 
 
@@ -73,20 +77,24 @@ class TestResumeDataPreparation:
         }
 
         story.when("prepare_render_data runs with preview enabled")
-        render_plan = prepare_render_data(raw_data, preview=True, base_path="/test")
+        get_palette_registry()
+        registry = get_palette_registry()
+        plan = prepare_render_data(
+            raw_data, preview=True, base_path="/test", registry=registry
+        )
 
         story.then("the plan targets HTML with rendered markdown and preview context")
-        assert isinstance(render_plan, RenderPlan)
-        assert render_plan.mode is RenderMode.HTML
-        assert render_plan.name == "John Doe"
-        assert render_plan.base_path == "/test"
-        assert render_plan.template_name == "html/resume_no_bars.html"
-        assert render_plan.context is not None
-        assert render_plan.context["preview"] is True
-        assert "<h1>Professional Summary</h1>" in render_plan.context["description"]
-        assert "<p>Experienced developer.</p>" in render_plan.context["description"]
-        assert render_plan.config.page_width == 210
-        assert render_plan.config.page_height == 297
+        assert isinstance(plan, RenderPlan)
+        assert plan.mode is RenderMode.HTML
+        assert plan.name == "John Doe"
+        assert plan.base_path == "/test"
+        assert plan.template_name == "html/resume_no_bars.html"
+        assert plan.context is not None
+        assert plan.context["preview"] is True
+        assert "<h1>Professional Summary</h1>" in plan.context["description"]
+        assert "<p>Experienced developer.</p>" in plan.context["description"]
+        assert plan.config.page_width == 210
+        assert plan.config.page_height == 297
 
     def test_prepare_render_data_latex_mode(self, story: Scenario) -> None:
         story.given("resume data configured for latex output")
@@ -100,15 +108,19 @@ class TestResumeDataPreparation:
         }
 
         story.when("prepare_render_data runs without preview")
-        render_plan = prepare_render_data(raw_data, preview=False, base_path="/test")
+        get_palette_registry()
+        registry = get_palette_registry()
+        plan = prepare_render_data(
+            raw_data, preview=False, base_path="/test", registry=registry
+        )
 
         story.then("a latex render plan without template/context is produced")
-        assert isinstance(render_plan, RenderPlan)
-        assert render_plan.mode is RenderMode.LATEX
-        assert render_plan.name == "Jane Smith"
-        assert render_plan.base_path == "/test"
-        assert render_plan.tex is None
-        assert render_plan.config.output_mode == "latex"
+        assert isinstance(plan, RenderPlan)
+        assert plan.mode is RenderMode.LATEX
+        assert plan.name == "Jane Smith"
+        assert plan.base_path == "/test"
+        assert plan.tex is None
+        assert plan.config.output_mode == "latex"
 
     def test_prepare_render_data_invalid_config(self, story: Scenario) -> None:
         story.given("resume config contains invalid numeric values")
@@ -119,8 +131,11 @@ class TestResumeDataPreparation:
         }
 
         story.then("validation fails and a ValueError is raised")
+        registry = get_palette_registry()
         with pytest.raises(ValueError, match="Invalid resume config"):
-            prepare_render_data(raw_data, preview=False, base_path="/test")
+            prepare_render_data(
+                raw_data, preview=False, base_path="/test", registry=registry
+            )
 
     def test_prepare_render_data_missing_config(self, story: Scenario) -> None:
         story.given("resume data without a config section")
@@ -129,8 +144,11 @@ class TestResumeDataPreparation:
         }
 
         story.then("prepare_render_data raises a ValueError")
+        registry = get_palette_registry()
         with pytest.raises(ValueError, match="Invalid resume config"):
-            prepare_render_data(raw_data, preview=False, base_path="/test")
+            prepare_render_data(
+                raw_data, preview=False, base_path="/test", registry=registry
+            )
 
     def test_prepare_render_data_markdown_transformation(self, story: Scenario) -> None:
         story.given("resume data with markdown fields and HTML target")
@@ -152,16 +170,20 @@ class TestResumeDataPreparation:
         }
 
         story.when("prepare_render_data produces an HTML plan")
-        render_plan = prepare_render_data(raw_data, preview=False, base_path="/test")
+        get_palette_registry()
+        registry = get_palette_registry()
+        plan = prepare_render_data(
+            raw_data, preview=False, base_path="/test", registry=registry
+        )
 
         story.then("markdown content is rendered for description and nested sections")
-        assert render_plan.context is not None
-        description = render_plan.context["description"]
+        assert plan.context is not None
+        description = plan.context["description"]
         assert "Bold text</strong>" in description
         assert "markdown-strong" in description
         assert "#1D1F2A" in description
-        assert "<em>italic text</em>" in render_plan.context["description"]
-        projects = render_plan.context["body"]["projects"]
+        assert "<em>italic text</em>" in plan.context["description"]
+        projects = plan.context["body"]["projects"]
         assert len(projects) > 0
         assert "<h2>Features</h2>" in projects[0]["description"]
         assert "<li>Feature 1</li>" in projects[0]["description"]
@@ -187,16 +209,20 @@ class TestResumeDataPreparation:
         }
 
         story.when("prepare_render_data builds the plan")
-        render_plan = prepare_render_data(raw_data, preview=False, base_path="/test")
+        get_palette_registry()
+        registry = get_palette_registry()
+        plan = prepare_render_data(
+            raw_data, preview=False, base_path="/test", registry=registry
+        )
 
         story.then("palette metadata is preserved on the render plan")
-        assert render_plan.palette_metadata is not None
-        assert render_plan.palette_metadata["source"] == "registry"
-        assert render_plan.palette_metadata["name"] == "ocean"
+        assert plan.palette_metadata is not None
+        assert plan.palette_metadata["source"] == "registry"
+        assert plan.palette_metadata["name"] == "ocean"
 
 
-# NOTE: Color utilities have been moved to simple_resume.api.colors
-# Tests for color utilities are in test_api_colors.py
+# NOTE: Color utilities are in simple_resume.core.colors
+# Tests for color utilities are in test_api.py
 
 
 class TestResumeConfigDataClass:
@@ -234,12 +260,12 @@ class TestResumeConfigDataClass:
 class TestRenderPlanDataClass:
     """Test RenderPlan dataclass functionality."""
 
-    def test_render_plan_html_mode(self) -> None:
+    def test_plan_html_mode(self) -> None:
         """Test RenderPlan creation for HTML mode."""
         config = ResumeConfig(page_width=210, page_height=297)
         context = {"title": "Test Resume", "content": "Test content"}
 
-        render_plan = RenderPlan(
+        plan = RenderPlan(
             name="test_resume",
             mode=RenderMode.HTML,
             config=config,
@@ -248,21 +274,21 @@ class TestRenderPlanDataClass:
             base_path="/test",
         )
 
-        assert render_plan.name == "test_resume"
-        assert render_plan.mode is RenderMode.HTML
-        assert render_plan.config == config
-        assert render_plan.template_name == "html/resume_no_bars.html"
-        assert render_plan.context == context
-        assert render_plan.base_path == "/test"
-        assert render_plan.tex is None
-        assert render_plan.palette_metadata is None
+        assert plan.name == "test_resume"
+        assert plan.mode is RenderMode.HTML
+        assert plan.config == config
+        assert plan.template_name == "html/resume_no_bars.html"
+        assert plan.context == context
+        assert plan.base_path == "/test"
+        assert plan.tex is None
+        assert plan.palette_metadata is None
 
-    def test_render_plan_latex_mode(self) -> None:
+    def test_plan_latex_mode(self) -> None:
         """Test RenderPlan creation for LaTeX mode."""
         config = ResumeConfig(output_mode="latex")
         tex_content = "\\documentclass{article}"
 
-        render_plan = RenderPlan(
+        plan = RenderPlan(
             name="test_resume",
             mode=RenderMode.LATEX,
             config=config,
@@ -270,20 +296,20 @@ class TestRenderPlanDataClass:
             base_path="/test",
         )
 
-        assert render_plan.mode is RenderMode.LATEX
-        assert render_plan.tex == tex_content
-        assert render_plan.template_name is None
-        assert render_plan.context is None
+        assert plan.mode is RenderMode.LATEX
+        assert plan.tex == tex_content
+        assert plan.template_name is None
+        assert plan.context is None
 
-    def test_render_plan_immutability(self) -> None:
+    def test_plan_immutability(self) -> None:
         """Test that RenderPlan is immutable (frozen)."""
         config = ResumeConfig()
-        render_plan = RenderPlan(
+        plan = RenderPlan(
             name="test", mode=RenderMode.HTML, config=config, base_path="/test"
         )
 
         with pytest.raises(FrozenInstanceError):
-            render_plan.name = "new_name"  # type: ignore[misc]
+            plan.name = "new_name"  # type: ignore[misc]
 
 
 class TestValidationResult:
@@ -327,7 +353,7 @@ class TestRenderMode:
         assert RenderMode.HTML in valid_modes
         assert RenderMode.LATEX in valid_modes
 
-    def test_render_plan_mode_type_safety(self) -> None:
+    def test_plan_mode_type_safety(self) -> None:
         """Test that RenderPlan mode accepts only valid RenderMode values."""
         config = ResumeConfig()
 
@@ -352,6 +378,12 @@ class TestPropertyBased:
 
 class TestResumeInstanceMethods:
     """Test Resume instance methods and configuration management."""
+
+    def test_name_property(self) -> None:
+        """Test Resume.name property returns the resume name."""
+        resume = Resume.from_data({"full_name": "John Doe"})
+        assert resume.name is not None
+        assert isinstance(resume.name, str)
 
     def test_with_template_method(self) -> None:
         """Test the with_template method creates new Resume with updated template."""
@@ -402,6 +434,42 @@ class TestResumeInstanceMethods:
         new_resume = resume.with_palette(palette_dict)
 
         assert new_resume._data["config"]["palette"] == palette_dict
+
+    def test_with_palette_dict_no_config(self) -> None:
+        """Test with_palette creates config when not present."""
+        raw_data = {
+            "full_name": "Test User",
+            # No config key
+        }
+
+        palette_dict = {
+            "primary": "#1a5490",
+            "secondary": "#8ecae6",
+        }
+
+        resume = Resume.from_data(raw_data)
+        new_resume = resume.with_palette(palette_dict)
+
+        # Config should be created
+        assert "config" in new_resume._data
+        assert new_resume._data["config"]["palette"] == palette_dict
+
+    def test_with_config_palette_dict_override(self) -> None:
+        """Test with_config when passing palette as dict override."""
+        raw_data = {
+            "full_name": "Test User",
+            "config": {},
+        }
+
+        palette = {"primary": "#FF0000", "secondary": "#00FF00"}
+
+        resume = Resume.from_data(raw_data)
+        new_resume = resume.with_config(palette=palette)
+
+        # Palette should be deep copied
+        assert new_resume._data["config"]["palette"] == palette
+        # Ensure it's a copy, not the same reference
+        assert new_resume._data["config"]["palette"] is not palette
 
     def test_with_config_overrides(self) -> None:
         """Test the with_config method applies configuration overrides."""
@@ -475,61 +543,21 @@ class TestResumeInstanceMethods:
         assert result.is_valid is False
         assert len(result.errors) > 0
 
-    def test_cleanup_latex_artifacts(self, tmp_path: Path, story: Scenario) -> None:
-        """Test LaTeX artifacts cleanup."""
-        story.given("a LaTeX run produced auxiliary files alongside the tex file")
+    def test_validate_or_raise_raises_on_invalid(self) -> None:
+        """Test validate_or_raise raises ValidationError on invalid data."""
         raw_data = {
             "full_name": "Test User",
-            "config": {"template": "resume_no_bars", "theme_color": "#0395DE"},
+            "config": {
+                "template": "resume_with_bars",
+                "page_width": -10,  # Invalid negative width
+            },
         }
+
         resume = Resume.from_data(raw_data)
-        tex_path = tmp_path / "example.tex"
-        tex_path.write_text("content", encoding="utf-8")
-        aux_file = tex_path.with_suffix(".aux")
-        log_file = tex_path.with_suffix(".log")
-        out_file = tex_path.with_suffix(".out")
-        aux_file.write_text("", encoding="utf-8")
-        log_file.write_text("", encoding="utf-8")
-        out_file.write_text("", encoding="utf-8")
+        with pytest.raises(ValidationError, match="Resume validation failed"):
+            resume.validate_or_raise()
 
-        story.when("cleanup runs without preserving the log")
-        resume._cleanup_latex_artifacts(tex_path, preserve_log=False)
-
-        story.then("all auxiliary artifacts are removed")
-        assert not aux_file.exists()
-        assert not log_file.exists()
-        assert not out_file.exists()
-
-    def test_cleanup_latex_artifacts_preserve_log(
-        self,
-        tmp_path: Path,
-        story: Scenario,
-    ) -> None:
-        """Test LaTeX artifacts cleanup with log preservation."""
-        story.given("latex artifacts include a log file that should be preserved")
-        raw_data = {
-            "full_name": "Test User",
-            "config": {"template": "resume_no_bars", "theme_color": "#0395DE"},
-        }
-        resume = Resume.from_data(raw_data)
-        tex_path = tmp_path / "example.tex"
-        tex_path.write_text("content", encoding="utf-8")
-        aux_file = tex_path.with_suffix(".aux")
-        log_file = tex_path.with_suffix(".log")
-        out_file = tex_path.with_suffix(".out")
-        aux_file.write_text("", encoding="utf-8")
-        log_file.write_text("", encoding="utf-8")
-        out_file.write_text("", encoding="utf-8")
-
-        story.when("cleanup runs with preserve_log=True")
-        resume._cleanup_latex_artifacts(tex_path, preserve_log=True)
-
-        story.then("non-log artifacts are removed but the log remains")
-        assert not aux_file.exists()
-        assert log_file.exists()
-        assert not out_file.exists()
-
-    def test_prepare_render_plan_html_mode(self) -> None:
+    def test_prepare_plan_html_mode(self) -> None:
         """Test render plan preparation for HTML mode."""
         raw_data = {
             "full_name": "Test User",
@@ -541,14 +569,14 @@ class TestResumeInstanceMethods:
         }
 
         resume = Resume.from_data(raw_data)
-        render_plan = resume._prepare_render_plan(preview=False)
+        plan = resume.prepare_render_plan(preview=False)
 
-        assert render_plan.mode is RenderMode.HTML
-        assert render_plan.name == "Test User"
-        assert render_plan.config.output_mode == "html"
-        assert render_plan.base_path is not None
+        assert plan.mode is RenderMode.HTML
+        assert plan.name == "Test User"
+        assert plan.config.output_mode == "html"
+        assert plan.base_path is not None
 
-    def test_prepare_render_plan_latex_mode(self) -> None:
+    def test_prepare_plan_latex_mode(self) -> None:
         """Test render plan preparation for LaTeX mode."""
         raw_data = {
             "full_name": "Test User",
@@ -559,15 +587,15 @@ class TestResumeInstanceMethods:
         }
 
         resume = Resume.from_data(raw_data)
-        render_plan = resume._prepare_render_plan(preview=False)
+        plan = resume.prepare_render_plan(preview=False)
 
-        assert render_plan.mode is RenderMode.LATEX
-        assert render_plan.name == "Test User"
-        assert render_plan.config.output_mode == "latex"
-        assert render_plan.tex is None  # Will be filled by shell layer
-        assert render_plan.base_path is not None
+        assert plan.mode is RenderMode.LATEX
+        assert plan.name == "Test User"
+        assert plan.config.output_mode == "latex"
+        assert plan.tex is None  # Will be filled by shell layer
+        assert plan.base_path is not None
 
-    def test_prepare_render_plan_palette_fallback(self, story: Scenario) -> None:
+    def test_prepare_plan_palette_fallback(self, story: Scenario) -> None:
         """Test render plan preparation with palette generation fallback."""
         story.given("the config includes an invalid palette generator block")
         raw_data = {
@@ -587,12 +615,12 @@ class TestResumeInstanceMethods:
         }
 
         resume = Resume.from_data(raw_data)
-        story.when("prepare_render_plan executes for HTML mode")
-        render_plan = resume._prepare_render_plan(preview=False)
+        story.when("prepare_plan executes for HTML mode")
+        plan = resume.prepare_render_plan(preview=False)
 
         # Should use fallback palette from meta
         story.then("palette metadata falls back to user-supplied meta")
-        assert render_plan.palette_metadata == {"source": "user", "name": "custom"}
+        assert plan.palette_metadata == {"source": "user", "name": "custom"}
 
 
 class TestResumeIOBehaviour:
@@ -615,8 +643,10 @@ class TestResumeIOBehaviour:
     def test_read_yaml_wraps_io_errors(self, story: Scenario, tmp_path: Path) -> None:
         story.given("get_content raises an unexpected OSError while reading YAML")
         fake_paths = _make_paths(tmp_path)
+        # Patch the shell layer content loader (late-binding target)
         with patch(
-            "simple_resume.core.resume.get_content", side_effect=OSError("disk error")
+            "simple_resume.shell.runtime.content.get_content",
+            side_effect=OSError("disk error"),
         ):
             with pytest.raises(FileSystemError, match="Failed to read resume YAML"):
                 Resume.read_yaml("broken", paths=fake_paths, transform_markdown=False)
@@ -635,7 +665,7 @@ class TestResumeIOBehaviour:
         )
 
         with pytest.raises(ConfigurationError, match="No paths available"):
-            resume.to_pdf()
+            to_pdf(resume)
 
     def test_generate_pdf_with_weasyprint_renders_template(
         self,
@@ -697,15 +727,24 @@ class TestResumeIOBehaviour:
         output_path = tmp_path / "case.pdf"
 
         # Mock the PDF generation to avoid WeasyPrint dependency
-        mock_result = Mock(spec=GenerationResult)
-        mock_result.output_path = output_path
-        mock_result.size = 1024
+        metadata = GenerationMetadata(
+            format_type="pdf",
+            template_name="resume_no_bars",
+            generation_time=0.0,
+            file_size=1024,
+            resume_name="Sarah Williams",
+        )
+        mock_result = GenerationResult(
+            output_path=output_path,
+            format_type="pdf",
+            metadata=metadata,
+        )
 
         with patch(
-            "simple_resume.core.pdf_generation.generate_pdf_with_weasyprint",
+            "simple_resume.shell.strategies.generate_pdf_with_weasyprint",
             return_value=(mock_result, 1),
         ) as mock_pdf_generation:
-            result = resume.to_pdf(output_path=output_path)
+            result = to_pdf(resume, output_path=output_path)
 
         story.then(
             "PDF generation creates employer-ready document with proper "
@@ -714,34 +753,24 @@ class TestResumeIOBehaviour:
         assert result.output_path == output_path, (
             "PDF result must reference the correct output file"
         )
-        assert result.size == 1024, "PDF should contain substantial business content"
+        assert result.metadata is not None
+        assert result.metadata.file_size == 1024, (
+            "PDF should contain substantial business content"
+        )
 
         # Verify PDF generation was called with business-relevant HTML content
         mock_pdf_generation.assert_called_once()
         call_args = mock_pdf_generation.call_args
         assert call_args is not None, "PDF generation must receive proper parameters"
 
-        # Additional business validation: ensure proper rendering parameters
-        # The function is now called with keyword arguments
-        if call_args and call_args.kwargs:
-            kwargs = call_args.kwargs
-            # Verify output path is passed in kwargs
-            if "output_path" in kwargs:
-                assert kwargs["output_path"] == output_path, (
-                    "Output file path must be correctly passed"
-                )
+        called_plan = call_args.args[0] if call_args.args else None
+        assert isinstance(called_plan, RenderPlan)
+        assert called_plan.context is not None
+        experience = called_plan.context.get("body", {}).get("experience", [])
+        assert any(
+            entry.get("company") == "Global Tech Solutions" for entry in experience
+        )
 
-            # Verify render plan contains business context
-            if "render_plan" in kwargs and hasattr(
-                kwargs["render_plan"], "template_name"
-            ):
-                assert "resume_no_bars" in kwargs["render_plan"].template_name, (
-                    "Should use specified business template"
-                )
-
-    @pytest.mark.xfail(
-        reason="LaTeX strategy refactoring incomplete - paths not passed to context"
-    )
     def test_generate_pdf_with_latex_preserves_log_on_failure(
         self,
         tmp_path: Path,
@@ -772,6 +801,7 @@ class TestResumeIOBehaviour:
                 "Professor of Computer Science specializing in machine learning"
             ),
             "config": {
+                "output_mode": "latex",
                 "page_width": 210,
                 "page_height": 297,
                 "sidebar_width": 60,
@@ -816,32 +846,19 @@ class TestResumeIOBehaviour:
         )
 
         # Test the business requirement: preserve diagnostic information on failure
-        with (
-            patch(
-                "simple_resume.core.pdf_generation.generate_pdf_with_latex",
-                side_effect=latex_error,
-            ),
-            patch(
-                "simple_resume.core.pdf_generation.cleanup_latex_artifacts"
-            ) as mock_cleanup,
+        with patch(
+            "simple_resume.shell.strategies.prepare_pdf_with_latex",
+            side_effect=latex_error,
         ):
             with pytest.raises(GenerationError) as exc_info:
                 # Attempt to generate PDF using LaTeX (should fail gracefully)
-                resume.to_pdf(output_path=output_path)
+                to_pdf(resume, output_path=output_path)
 
         # Verify business requirements for error handling are met
         story.then("diagnostic information should be preserved for troubleshooting")
         assert "LaTeX" in str(exc_info.value), (
             "Error should mention LaTeX compilation issue"
         )
-
-        # Verify cleanup preserves log files for debugging (business requirement)
-        mock_cleanup.assert_called_once()
-        cleanup_call = mock_cleanup.call_args
-        if cleanup_call and cleanup_call.kwargs:
-            assert cleanup_call.kwargs.get("preserve_log") is True, (
-                "Should preserve diagnostic logs on failure"
-            )
 
         # Verify no partial output is created when compilation fails (business rule)
         assert not output_path.exists(), (
@@ -874,13 +891,21 @@ class TestResumeIOBehaviour:
         mock_result = Mock(spec=GenerationResult)
         mock_result.exists = False
 
-        with patch(
-            "simple_resume.shell.strategies.generate_pdf_with_latex",
-            return_value=(mock_result, 1),
-        ) as mock_generate:
-            resume.to_pdf(output_path=output_path)
+        metadata = GenerationMetadata(
+            format_type="pdf",
+            template_name="latex",
+            generation_time=0.0,
+            file_size=0,
+            resume_name="Case Candidate",
+        )
 
-        call = mock_generate.call_args
+        with patch(
+            "simple_resume.shell.strategies.prepare_pdf_with_latex",
+            return_value=("", [], metadata),
+        ) as mock_prepare:
+            to_pdf(resume, output_path=output_path)
+
+        call = mock_prepare.call_args
         assert call is not None
         _, _, context = call.args
         assert context.paths == paths
@@ -943,15 +968,25 @@ class TestResumeIOBehaviour:
         output_path = tmp_path / "case.html"
 
         # Mock the HTML generation to avoid template rendering
-        mock_result = Mock(spec=GenerationResult)
-        mock_result.output_path = output_path
-        mock_result.size = 1024
+        metadata = GenerationMetadata(
+            format_type="html",
+            template_name="resume_no_bars",
+            generation_time=0.0,
+            file_size=2048,
+            resume_name="Michael Johnson",
+        )
+        mock_result = GenerationResult(
+            output_path=output_path,
+            format_type="html",
+            metadata=metadata,
+        )
 
+        # Patch the shell HTML generation function
         with patch(
-            "simple_resume.core.html_generation.generate_html_with_jinja",
+            "simple_resume.shell.resume_extensions.generate_html_with_jinja",
             return_value=mock_result,
         ) as mock_html_generation:
-            result = resume.to_html(output_path=output_path)
+            result = to_html(resume, output_path=output_path)
 
         story.then(
             "HTML generation produces business-valid output with proper "
@@ -960,7 +995,10 @@ class TestResumeIOBehaviour:
         assert result.output_path == output_path, (
             "Generation result must reference output file"
         )
-        assert result.size == 1024, "Generated content should have reasonable size"
+        assert result.metadata is not None
+        assert result.metadata.file_size == 2048, (
+            "Generated content should have reasonable size"
+        )
 
         # Additional business validation: verify the HTML generation was called
         # with proper context
@@ -971,29 +1009,24 @@ class TestResumeIOBehaviour:
         )
 
         # Verify the generation plan contains business-critical data
-        # Check both positional args and kwargs for render_plan
-        render_plan = None
+        # Check both positional args and kwargs for plan
+        plan = None
         if call_args.args and len(call_args.args) > 0:
-            render_plan = call_args.args[0]
-        elif call_args.kwargs and "render_plan" in call_args.kwargs:
-            render_plan = call_args.kwargs["render_plan"]
+            plan = call_args.args[0]
+        elif call_args.kwargs and "plan" in call_args.kwargs:
+            plan = call_args.kwargs["plan"]
 
-        if render_plan:
-            assert hasattr(render_plan, "context"), (
+        if plan:
+            assert hasattr(plan, "context"), (
                 "Render plan must include context for template"
             )
-            if hasattr(render_plan, "context") and render_plan.context:
-                context = render_plan.context
+            if hasattr(plan, "context") and plan.context:
+                context = plan.context
                 # Verify business context is preserved through the generation pipeline
                 assert "full_name" in context or "Michael Johnson" in str(context), (
                     "Applicant name must be in generation context"
                 )
 
-    @pytest.mark.xfail(
-        reason=(
-            "Test scenario incomplete - no LaTeX mode actually configured in test data"
-        )
-    )
     def test_generate_html_with_jinja_rejects_latex_mode(
         self,
         tmp_path: Path,
@@ -1019,6 +1052,7 @@ class TestResumeIOBehaviour:
                 },
                 "description": "Software Engineer specializing in backend systems",
                 "config": {
+                    "output_mode": "latex",
                     "page_width": 210,
                     "page_height": 297,
                     "sidebar_width": 60,
@@ -1047,7 +1081,7 @@ class TestResumeIOBehaviour:
 
         # Test the business rule: HTML generation should reject LaTeX mode
         with pytest.raises(GenerationError) as exc_info:
-            resume.to_html(output_path=output_path)
+            to_html(resume, output_path=output_path)
 
         # Verify the business requirement is properly communicated
         assert "LaTeX mode not supported" in str(exc_info.value), (
@@ -1059,3 +1093,58 @@ class TestResumeIOBehaviour:
         assert not output_path.exists(), (
             "No output file should be created when configuration is invalid"
         )
+
+    def test_generate_with_string_format_pdf(
+        self, story: Scenario, tmp_path: Path
+    ) -> None:
+        """Test shell generate function with string format 'pdf' routes to to_pdf."""
+        story.given("a resume requesting PDF format via string")
+        resume = Resume.from_data({"full_name": "Test User"})
+        mock_result = GenerationResult(
+            output_path=tmp_path / "test.pdf",
+            format_type="pdf",
+        )
+
+        story.when("shell generate is called with format='pdf'")
+        with patch(
+            "simple_resume.shell.resume_extensions.to_pdf",
+            return_value=mock_result,
+        ) as mock_to_pdf:
+            result = shell_generate(resume, "pdf", output_path=tmp_path / "test.pdf")
+
+        story.then("it routes to to_pdf")
+        mock_to_pdf.assert_called_once()
+        assert result.output_path == tmp_path / "test.pdf"
+
+    def test_generate_with_string_format_html(
+        self, story: Scenario, tmp_path: Path
+    ) -> None:
+        """Test shell generate function with string format 'html' routes to to_html."""
+        story.given("a resume requesting HTML format via string")
+        resume = Resume.from_data({"full_name": "Test User"})
+        mock_result = GenerationResult(
+            output_path=tmp_path / "test.html",
+            format_type="html",
+        )
+
+        story.when("shell generate is called with format='html'")
+        with patch(
+            "simple_resume.shell.resume_extensions.to_html",
+            return_value=mock_result,
+        ) as mock_to_html:
+            result = shell_generate(resume, "html", output_path=tmp_path / "test.html")
+
+        story.then("it routes to to_html")
+        mock_to_html.assert_called_once()
+        assert result.output_path == tmp_path / "test.html"
+
+    def test_generate_with_invalid_format_raises_error(
+        self, story: Scenario, tmp_path: Path
+    ) -> None:
+        """Test shell generate function with invalid format raises ValueError."""
+        story.given("a resume with invalid format string")
+        resume = Resume.from_data({"full_name": "Test User"})
+
+        story.when("shell generate is called with invalid format")
+        with pytest.raises(ValueError, match="Unsupported format"):
+            shell_generate(resume, "docx", output_path=tmp_path / "test.docx")

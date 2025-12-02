@@ -4,11 +4,11 @@ This guide provides instructions for using the command-line interface (CLI) and 
 
 ## Command-Line Interface
 
-The `simple-resume` CLI is the primary tool for generating resumes.
+The `simple-resume` CLI is our primary tool for generating resumes.
 
 ### Generating Resumes
 
-The `generate` command creates a resume in the specified format.
+The `generate` command creates a resume in a specified format.
 
 ```bash
 # Generate a PDF file
@@ -32,7 +32,7 @@ uv run simple-resume generate --format html --browser firefox
 
 ### Specifying a Data Directory
 
-The `--data-dir` argument processes all YAML files in a directory.
+The `--data-dir` argument processes all YAML files within a specified directory.
 
 ```bash
 uv run simple-resume generate --data-dir my_resumes --format html
@@ -40,11 +40,21 @@ uv run simple-resume generate --data-dir my_resumes --format html
 
 ## Python API
 
-The `generate` and `preview` functions can be imported for programmatic use.
+Import the `generate` and `preview` functions for programmatic use.
+
+### API Stability Guarantees
+
+All symbols exported from `simple_resume` and `simple_resume.api.*` modules are covered by semantic versioning guarantees:
+
+- **Stable**: No breaking changes within a major version
+- **Documented**: All public APIs include comprehensive docstrings
+- **Typed**: Full type annotations for IDE support
+
+Internal modules (`simple_resume.core.*`, `simple_resume.shell.*`) are implementation details and may change without notice.
 
 ### Generating Resumes Programmatically
 
-The `generate` function takes a resume file path and a `GenerationConfig` object.
+The `generate` function accepts a resume file path and a `GenerationConfig` object.
 
 ```python
 from simple_resume import generate
@@ -59,7 +69,7 @@ results = generate(
 
 ### Previewing Resumes
 
-The `preview` function opens a resume in a web browser without saving it to a file.
+The `preview` function opens a resume in your web browser without saving it to a file.
 
 ```python
 from simple_resume import preview
@@ -71,7 +81,7 @@ preview("resume_private/input/my_resume.yaml", open_after=True)
 
 ### LaTeX Output
 
-To generate a `.tex` file for use with a LaTeX engine, set `output_mode: latex` in the `config` section of your YAML file. This provides full control over typesetting, custom fonts, and mathematical equations, and is ideal for academic and research applications.
+To generate a `.tex` file for use with a LaTeX engine, set `output_mode: latex` in the `config` section of your YAML file. This provides full control over typesetting, custom fonts, and mathematical equations, making it ideal for academic and research applications.
 
 ```yaml
 config:
@@ -82,14 +92,14 @@ When this setting is enabled, the `generate` command will produce a `.tex` file 
 
 #### LaTeX Requirements
 
-A LaTeX distribution must be installed on your system. The following are recommended:
+A LaTeX distribution must be installed on your system. We recommend the following:
 - **TeX Live** (cross-platform)
 - **MiKTeX** (Windows)
 - **MacTeX** (macOS)
 
 #### Compilation
 
-Once the `.tex` file has been generated, it can be compiled with a LaTeX engine.
+Once generated, compile the `.tex` file with a LaTeX engine.
 
 ```bash
 # 1. Generate the LaTeX source file.
@@ -99,7 +109,7 @@ uv run simple-resume generate
 pdflatex resume_output.tex
 ```
 
-For better font support, `xelatex` or `lualatex` can be used.
+For better font support, use `xelatex` or `lualatex`.
 
 ```bash
 xelatex resume_output.tex

@@ -57,4 +57,4 @@ Projects:
 
 ## Implementation Details
 
-This project uses the `markdown` Python library to render Markdown. The `fenced_code`, `tables`, and `codehilite` extensions are enabled.
+This project uses the 'markdown' Python library to render Markdown. We enable the 'fenced_code', 'tables', and 'codehilite' extensions.

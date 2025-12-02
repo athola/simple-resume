@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import tempfile
+from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
 from bs4 import BeautifulSoup
 
-from simple_resume.rendering import render_resume_html
+from simple_resume.core.generate.html import create_html_generator_factory
+from simple_resume.core.models import RenderMode, RenderPlan, ResumeConfig
+from simple_resume.shell.runtime import content as runtime_content
 from tests.bdd import scenario
 from tests.conftest import (
     create_complete_resume_data,
@@ -16,14 +20,41 @@ from tests.conftest import (
 
 
 def _render(name: str) -> BeautifulSoup:
-    html, _, _ = render_resume_html(name, preview=True)
+    # Resume data is provided via the tests for control
+    resume_data = runtime_content.get_content(name)
+
+    # Build context from resume data (mimicking core/plan.py logic)
+    context = dict(resume_data)
+    # Move 'config' to 'resume_config' for template compatibility
+    if "config" in context:
+        context["resume_config"] = context.pop("config")
+    else:
+        context["resume_config"] = {}
+
+    # Get template name from data or use default
+    template = resume_data.get("template", "resume_no_bars")
+    template_name = f"html/{template}.html"
+
+    config = ResumeConfig()  # Create with default values
+    render_plan = RenderPlan(
+        name=name,
+        mode=RenderMode.HTML,
+        config=config,
+        template_name=template_name,
+        context=context,
+    )
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False) as tmp:
+        tmp_path = Path(tmp.name)
+    factory = create_html_generator_factory()
+    prepare_html_func = factory.create_prepare_html_function()
+    html, _, _ = prepare_html_func(render_plan, tmp_path, resume_name="test")
     return BeautifulSoup(html, "html.parser")
 
 
 class TestTemplateStructureChanges:
     """Sidebar placement and optional fields."""
 
-    @patch("simple_resume.rendering.get_content")
+    @patch("simple_resume.shell.runtime.content.get_content")
     def test_image_fields_remove_profile_markup(self, mock_get_content: Any) -> None:
         story = scenario("exclude legacy profile markup")
         resume_data = create_complete_resume_data(
@@ -39,7 +70,7 @@ class TestTemplateStructureChanges:
         assert dom.find(class_="profile") is None
         assert dom.find("img", src="images/profile.jpg") is None
 
-    @patch("simple_resume.rendering.get_content")
+    @patch("simple_resume.shell.runtime.content.get_content")
     def test_given_resume_when_rendering_then_sidebar_contains_full_name(
         self, mock_get_content: Any
     ) -> None:
@@ -56,7 +87,7 @@ class TestTemplateStructureChanges:
         assert sidebar is not None
         assert "Alice Johnson" in sidebar.text
 
-    @patch("simple_resume.rendering.get_content")
+    @patch("simple_resume.shell.runtime.content.get_content")
     def test_given_markdown_description_when_rendering_then_sidebar_contains_html(
         self, mock_get_content: Any
     ) -> None:
@@ -71,7 +102,7 @@ class TestTemplateStructureChanges:
         sidebar_text = dom.get_text(" ")
         assert "Senior Software Engineer" in sidebar_text
 
-    @patch("simple_resume.rendering.get_content")
+    @patch("simple_resume.shell.runtime.content.get_content")
     def test_given_all_templates_when_rendering_then_profile_markup_remains_absent(
         self, mock_get_content: Any
     ) -> None:
@@ -85,7 +116,7 @@ class TestTemplateStructureChanges:
             dom = _render(f"test_{template}")
             assert dom.find(class_="profile") is None
 
-    @patch("simple_resume.rendering.get_content")
+    @patch("simple_resume.shell.runtime.content.get_content")
     def test_given_missing_image_fields_when_rendering_then_template_succeeds(
         self, mock_get_content: Any
     ) -> None:
@@ -103,7 +134,7 @@ class TestTemplateStructureChanges:
 class TestProjectsSectionSupport:
     """Project section markup behaviour."""
 
-    @patch("simple_resume.rendering.get_content")
+    @patch("simple_resume.shell.runtime.content.get_content")
     def test_given_projects_section_when_rendering_then_details_are_present(
         self, mock_get_content: Any
     ) -> None:
@@ -117,7 +148,7 @@ class TestProjectsSectionSupport:
         assert "Side Project" in text_content
         assert dom.find("a", href="https://example.com/ml") is not None
 
-    @patch("simple_resume.rendering.get_content")
+    @patch("simple_resume.shell.runtime.content.get_content")
     def test_given_project_title_link_when_rendering_then_anchor_is_emitted(
         self, mock_get_content: Any
     ) -> None:
@@ -141,7 +172,7 @@ class TestProjectsSectionSupport:
         assert link is not None
         assert link.text.strip() == "ML Recommendation Engine"
 
-    @patch("simple_resume.rendering.get_content")
+    @patch("simple_resume.shell.runtime.content.get_content")
     def test_given_project_description_when_rendering_then_rich_text_is_preserved(
         self, mock_get_content: Any
     ) -> None:

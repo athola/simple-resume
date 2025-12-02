@@ -7,9 +7,10 @@ from tests.bdd import Scenario
 
 EXPECTED_PUBLIC_SYMBOLS = {
     "__version__",
-    "Resume",
+    # Core models (data only)
     "ResumeConfig",
     "RenderPlan",
+    # Exceptions
     "SimpleResumeError",
     "ValidationError",
     "ConfigurationError",
@@ -18,17 +19,24 @@ EXPECTED_PUBLIC_SYMBOLS = {
     "PaletteError",
     "FileSystemError",
     "SessionError",
+    # Results & sessions
     "GenerationResult",
     "GenerationMetadata",
     "BatchGenerationResult",
     "ResumeSession",
     "SessionConfig",
     "create_session",
+    # Generation primitives
     "GenerationConfig",
     "generate_pdf",
     "generate_html",
     "generate_all",
     "generate_resume",
+    # Shell layer I/O functions
+    "to_pdf",
+    "to_html",
+    "resume_generate",
+    # Convenience helpers
     "generate",
     "preview",
 }

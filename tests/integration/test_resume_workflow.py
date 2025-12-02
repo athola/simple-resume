@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -11,9 +12,12 @@ import pytest
 import yaml
 from bs4 import BeautifulSoup
 
-from simple_resume import config
-from simple_resume.rendering import render_resume_html
-from simple_resume.utilities import get_content
+from simple_resume.core.effects import Effect
+from simple_resume.core.generate.html import create_html_generator_factory
+from simple_resume.core.paths import Paths
+from simple_resume.core.result import GenerationMetadata
+from simple_resume.core.resume import Resume
+from simple_resume.shell.runtime.content import get_content
 from tests.bdd import scenario
 from tests.conftest import create_complete_resume_data
 
@@ -24,6 +28,41 @@ class ValidationScenario(TypedDict):
     name: str
     data: dict[str, Any]
     should_be_valid: bool
+
+
+def _build_paths(base: Path) -> Paths:
+    """Construct paths structure for tests using temporary directories."""
+    input_dir = base / "input"
+    output_dir = base / "output"
+    content_dir = base / "content"
+    templates_dir = base / "templates"
+    static_dir = base / "static"
+    for directory in (input_dir, output_dir, content_dir, templates_dir, static_dir):
+        directory.mkdir(parents=True, exist_ok=True)
+    return Paths(
+        data=base,
+        input=input_dir,
+        output=output_dir,
+        content=content_dir,
+        templates=templates_dir,
+        static=static_dir,
+    )
+
+
+def render_resume_html(
+    name: str, paths: Paths, *, preview: bool = False
+) -> tuple[str, list[Effect], GenerationMetadata]:
+    """Render HTML by building a plan from hydrated resume data."""
+    resume_data = get_content(name, paths=paths)
+    resume = Resume.from_data(resume_data, name=name, paths=paths)
+    render_plan = resume.prepare_render_plan(preview=preview)
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False) as tmp:
+        tmp_path = Path(tmp.name)
+
+    factory = create_html_generator_factory()
+    prepare_html_func = factory.create_prepare_html_function()
+    return prepare_html_func(render_plan, tmp_path, resume_name=name)
 
 
 class TestResumeWorkflowIntegration:
@@ -39,16 +78,9 @@ class TestResumeWorkflowIntegration:
         resume_file = temp_dir / "john_doe.yaml"
         resume_file.write_text(yaml.dump(sample_resume_data), encoding="utf-8")
 
-        test_input_dir = temp_dir / "input"
-        test_input_dir.mkdir()
-        (test_input_dir / "john_doe.yaml").write_text(
+        paths = _build_paths(temp_dir)
+        (paths.input / "john_doe.yaml").write_text(
             resume_file.read_text(encoding="utf-8"), encoding="utf-8"
-        )
-
-        paths = config.Paths(
-            data=temp_dir,
-            input=test_input_dir,
-            output=temp_dir / "output",
         )
 
         story.when("the resume content is hydrated and rendered to HTML")
@@ -88,19 +120,11 @@ class TestResumeWorkflowIntegration:
             ),
         }
 
-        test_input_dir = temp_dir / "input"
-        test_input_dir.mkdir()
-
+        paths = _build_paths(temp_dir)
         for resume_name, resume_data in resume_variants.items():
-            (test_input_dir / f"{resume_name}.yaml").write_text(
+            (paths.input / f"{resume_name}.yaml").write_text(
                 yaml.dump(resume_data), encoding="utf-8"
             )
-
-        paths = config.Paths(
-            data=temp_dir,
-            input=test_input_dir,
-            output=temp_dir / "output",
-        )
 
         story.when("each resume is hydrated and rendered")
         for resume_name, expected_data in resume_variants.items():
@@ -141,19 +165,11 @@ class TestResumeWorkflowIntegration:
             },
         ]
 
-        test_input_dir = temp_dir / "input"
-        test_input_dir.mkdir()
-
+        paths = _build_paths(temp_dir)
         for case in scenarios:
-            (test_input_dir / f"{case['name']}.yaml").write_text(
+            (paths.input / f"{case['name']}.yaml").write_text(
                 yaml.dump(case["data"]), encoding="utf-8"
             )
-
-        paths = config.Paths(
-            data=temp_dir,
-            input=test_input_dir,
-            output=temp_dir / "output",
-        )
 
         story.when("each scenario is hydrated and rendered")
         for scenario_case in scenarios:
@@ -184,16 +200,9 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
             description=markdown_description,
         )
 
-        test_input_dir = temp_dir / "input"
-        test_input_dir.mkdir()
-        (test_input_dir / "markdown_test.yaml").write_text(
+        paths = _build_paths(temp_dir)
+        (paths.input / "markdown_test.yaml").write_text(
             yaml.dump(resume_data), encoding="utf-8"
-        )
-
-        paths = config.Paths(
-            data=temp_dir,
-            input=test_input_dir,
-            output=temp_dir / "output",
         )
 
         story = scenario("markdown fields render to HTML")
@@ -224,24 +233,17 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
         story = scenario("error handling when processing multiple resumes")
         story.given("a directory with one valid resume and one malformed YAML file")
 
-        test_input_dir = temp_dir / "input"
-        test_input_dir.mkdir()
+        paths = _build_paths(temp_dir)
 
         valid_resume = create_complete_resume_data(
             template="resume_no_bars", full_name="Valid User"
         )
         malformed_yaml = "invalid: [unterminated"
 
-        (test_input_dir / "valid.yaml").write_text(
+        (paths.input / "valid.yaml").write_text(
             yaml.dump(valid_resume), encoding="utf-8"
         )
-        (test_input_dir / "broken.yaml").write_text(malformed_yaml, encoding="utf-8")
-
-        paths = config.Paths(
-            data=temp_dir,
-            input=test_input_dir,
-            output=temp_dir / "output",
-        )
+        (paths.input / "broken.yaml").write_text(malformed_yaml, encoding="utf-8")
 
         story.when("content is requested for the valid resume and broken resume")
         valid_content = get_content("valid", paths=paths)
@@ -258,16 +260,9 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
         story.given("resume references a non-existent template")
 
         resume_data = create_complete_resume_data(template="missing_template")
-        test_input_dir = temp_dir / "input"
-        test_input_dir.mkdir()
-        (test_input_dir / "missing.yaml").write_text(
+        paths = _build_paths(temp_dir)
+        (paths.input / "missing.yaml").write_text(
             yaml.dump(resume_data), encoding="utf-8"
-        )
-
-        paths = config.Paths(
-            data=temp_dir,
-            input=test_input_dir,
-            output=temp_dir / "output",
         )
 
         story.when("render_resume_html is invoked")
@@ -281,8 +276,7 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
         """Basic performance sanity check for bulk rendering."""
         story = scenario("bulk rendering performance")
         num_resumes = 20
-        test_input_dir = temp_dir / "input"
-        test_input_dir.mkdir()
+        paths = _build_paths(temp_dir)
 
         for i in range(num_resumes):
             resume_data = create_complete_resume_data(
@@ -290,15 +284,9 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
                 full_name=f"User {i}",
                 description=f"Description for user {i} " * 5,
             )
-            (test_input_dir / f"user_{i}.yaml").write_text(
+            (paths.input / f"user_{i}.yaml").write_text(
                 yaml.dump(resume_data), encoding="utf-8"
             )
-
-        paths = config.Paths(
-            data=temp_dir,
-            input=test_input_dir,
-            output=temp_dir / "output",
-        )
 
         story.when("loading and rendering a batch of resumes")
         start_time = time.time()
@@ -321,8 +309,7 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
         """Simulate concurrent rendering requests."""
         story = scenario("concurrent resume rendering")
         users = ["alice", "bob", "charlie", "diana", "eve"]
-        test_input_dir = temp_dir / "input"
-        test_input_dir.mkdir()
+        paths = _build_paths(temp_dir)
 
         for user in users:
             resume_data = create_complete_resume_data(
@@ -330,18 +317,14 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
                 full_name=user.title(),
                 description=f"Professional description for {user}.",
             )
-            (test_input_dir / f"{user}.yaml").write_text(
+            (paths.input / f"{user}.yaml").write_text(
                 yaml.dump(resume_data), encoding="utf-8"
             )
 
         results: dict[str, dict[str, float | bool]] = {}
         errors: dict[str, str] = {}
 
-        paths = config.Paths(
-            data=temp_dir,
-            input=test_input_dir,
-            output=temp_dir / "output",
-        )
+        # Reuse paths created earlier
 
         def access_resume(user_name: str, request_id: int) -> None:
             try:

@@ -13,8 +13,8 @@ from typing import Any, TypedDict
 
 import yaml
 
-from simple_resume.config import Paths
-from simple_resume.utilities import get_content
+from simple_resume.core.paths import Paths
+from simple_resume.shell.runtime.content import get_content
 
 
 class ContactScenario(TypedDict):
@@ -656,6 +656,9 @@ in software development.
             data=temp_dir,
             input=test_input_dir,
             output=test_output_dir,
+            content=temp_dir / "content",
+            templates=temp_dir / "templates",
+            static=temp_dir / "static",
         )
 
         # Process through business logic

@@ -1,18 +1,33 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
-from simple_resume.palettes.common import Palette
-from simple_resume.utilities import normalize_config
+from simple_resume.core.config import normalize_config
+from simple_resume.core.palettes.common import Palette
+from simple_resume.core.palettes.fetch_types import PaletteFetchRequest
+from simple_resume.core.palettes.registry import PaletteRegistry
+from simple_resume.shell.palettes.loader import get_palette_registry
 from tests.bdd import scenario
 
 
 def _run_normalize(
     palette_block: dict[str, Any],
+    *,
+    registry: PaletteRegistry | None = None,
+    palette_fetcher: Callable[[PaletteFetchRequest], tuple[list[str], dict[str, Any]]]
+    | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any] | None]:
     """Run the config normalization pipeline with a palette block."""
     raw_config: dict[str, Any] = {"palette": palette_block}
-    return normalize_config(raw_config, filename="palette-integration.yaml")
+    if registry is None:
+        registry = get_palette_registry()
+    return normalize_config(
+        raw_config,
+        filename="palette-integration.yaml",
+        registry=registry,
+        palette_fetcher=palette_fetcher,
+    )
 
 
 def test_palette_processing_direct_colors() -> None:
@@ -62,20 +77,13 @@ def test_palette_processing_registry_source(monkeypatch: Any) -> None:
         metadata={"curator": "integration-test"},
     )
 
-    class DummyRegistry:
-        def get(self, name: str) -> Palette:
-            assert name == "Sunset Fiesta"
-            return palette
+    registry = PaletteRegistry()
+    registry.register(palette)
 
     story.given("a registry palette named 'Sunset Fiesta' exists")
-    monkeypatch.setattr(
-        "simple_resume.core.config_core.get_palette_registry",
-        lambda: DummyRegistry(),
-    )
-
-    story.when("normalize_config requests palette colors from the registry")
     normalized, palette_meta = _run_normalize(
-        {"source": "registry", "name": "Sunset Fiesta"}
+        {"source": "registry", "name": "Sunset Fiesta"},
+        registry=registry,
     )
 
     story.then("registry metadata and swatches hydrate the configuration")
@@ -100,7 +108,7 @@ def test_palette_processing_generator_source(monkeypatch: Any) -> None:
     ]
     story.given("the HCL palette generator returns a deterministic sequence")
     monkeypatch.setattr(
-        "simple_resume.core.config_core.generate_hcl_palette",
+        "simple_resume.core.palettes.resolution.generate_hcl_palette",
         lambda *args, **kwargs: list(stub_swatches),
     )
 
@@ -127,30 +135,29 @@ def test_palette_processing_generator_source(monkeypatch: Any) -> None:
     assert normalized["theme_color"] == stub_swatches[0]
 
 
-def test_palette_processing_remote_source(monkeypatch: Any) -> None:
+def test_palette_processing_remote_source() -> None:
     story = scenario("hydrate palettes from the remote ColourLovers client")
 
-    class DummyClient:
-        def __init__(self) -> None:
-            self.params: dict[str, Any] | None = None
+    captured: dict[str, Any] | None = None
 
-        def fetch(self, **kwargs: Any) -> list[Palette]:
-            self.params = kwargs
-            return [
-                Palette(
-                    name="Remote Breeze",
-                    swatches=("#0A0A0A", "#1B1B1B", "#2C2C2C"),
-                    source="colourlovers",
-                    metadata={"id": 42, "author": "api"},
-                )
-            ]
-
-    dummy_client = DummyClient()
-    story.given("the remote client returns a stable palette payload")
-    monkeypatch.setattr(
-        "simple_resume.core.config_core.ColourLoversClient",
-        lambda: dummy_client,
-    )
+    def dummy_fetcher(
+        request: PaletteFetchRequest,
+    ) -> tuple[list[str], dict[str, Any]]:
+        nonlocal captured
+        captured = {
+            "keywords": request.keywords,
+            "num_results": request.num_results,
+            "order_by": request.order_by,
+        }
+        return (
+            ["#0A0A0A", "#1B1B1B", "#2C2C2C"],
+            {
+                "source": "remote",
+                "name": "Remote Breeze",
+                "size": 3,
+                "attribution": {"author": "api"},
+            },
+        )
 
     remote_block = {
         "source": "remote",
@@ -160,12 +167,16 @@ def test_palette_processing_remote_source(monkeypatch: Any) -> None:
     }
 
     story.when("normalize_config pulls swatches from the remote source")
-    normalized, palette_meta = _run_normalize(remote_block)
+    normalized, palette_meta = _run_normalize(
+        remote_block,
+        palette_fetcher=dummy_fetcher,
+    )
 
     story.then(
         "remote metadata, swatches, and API parameters flow through the pipeline"
     )
-    assert dummy_client.params == {
+    assert captured is not None
+    assert captured == {
         "keywords": "calm",
         "num_results": 3,
         "order_by": "dateCreated",

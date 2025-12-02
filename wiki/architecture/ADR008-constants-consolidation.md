@@ -6,7 +6,7 @@
 
 ## Context
 
-The simple-resume project had grown to include constants scattered across multiple files with inconsistent organization:
+The simple-resume project accumulated constants scattered across multiple files with inconsistent organization:
 
 - `src/simple_resume/constants.py` - Mixed constants (layout, files, defaults, validation)
 - `src/simple_resume/core/color_utils.py` - Color-specific constants
@@ -14,14 +14,14 @@ The simple-resume project had grown to include constants scattered across multip
 - Constants spread across different modules without clear organization
 
 This led to:
-- Difficulty in discovering and using constants
+- Difficulty discovering and using constants
 - Inconsistent naming conventions
-- Code duplication and maintenance overhead
-- Unclear relationship between related constants
+- Code duplication and increased maintenance overhead
+- Unclear relationships between related constants
 
 ## Decision
 
-We consolidated and reorganized all constants into a dedicated `constants/` module with clear separation of concerns:
+We consolidated and reorganized all constants into a dedicated `constants/` module, ensuring clear separation of concerns:
 
 ### New Structure
 ```
@@ -56,7 +56,7 @@ DEFAULT_PAGE_WIDTH_MM: Final[int] = 190
 DEFAULT_PAGE_HEIGHT_MM: Final[int] = 270
 DEFAULT_SIDEBAR_WIDTH_MM: Final[int] = 50
 
-# Clear purpose: resume-specific dimensions, not full A4
+# Establishes resume-specific dimensions (excluding full A4 standard)
 ```
 
 #### 2. Color Constants
@@ -73,7 +73,7 @@ DEFAULT_SIDEBAR_COLOR = "#F6F6F6"
 # In constants/colors.py
 DEFAULT_THEME_COLOR: Final[str] = "#0395DE"
 DEFAULT_SIDEBAR_COLOR: Final[str] = "#F6F6F6"
-# Organized with other color constants
+# Grouped with other color constants
 ```
 
 #### 3. File Constants
@@ -95,7 +95,7 @@ TEX_EXTENSION: Final[str] = ".tex"
 
 #### 4. Removal of Unused Constants
 Removed `A4_PAGE_WIDTH_MM` and `A4_PAGE_HEIGHT_MM` because:
-- They were never used in the codebase
+- The codebase never used them.
 - `DEFAULT_PAGE_*_MM` provides the actual resume dimensions (with margins)
 - A4 standard dimensions are well-known and don't need to be duplicated
 
@@ -103,55 +103,55 @@ Removed `A4_PAGE_WIDTH_MM` and `A4_PAGE_HEIGHT_MM` because:
 
 ### Benefits
 
-1. **Improved Discoverability**: Constants are now organized by domain (colors, layout, files, etc.)
+1. **Improved Discoverability**: Constants are organized by domain (e.g., colors, layout, files).
 
-2. **Better Maintainability**: Related constants are grouped together, making updates easier
+2. **Better Maintainability**: Grouped related constants simplify updates.
 
-3. **Reduced Code Size**: Eliminated ~900 lines of unused/deprecated code
+3. **Reduced Code Size**: Elimination of ~900 lines of unused or deprecated code.
 
-4. **Clearer Semantics**: Constants now have clear purposes and relationships
+4. **Clearer Semantics**: Constants now possess clear purposes and relationships.
 
-5. **Type Safety**: Added proper type annotations with `Final` where appropriate
+5. **Type Safety**: Proper type annotations with `Final` are added where appropriate.
 
-6. **Legacy Compatibility**: Main `__init__.py` maintains backward compatibility
+6. **Legacy Compatibility**: The main `__init__.py` maintains backward compatibility.
 
 ### Design Principles
 
-1. **Domain Organization**: Group constants by logical domain (colors, layout, files)
+1. **Domain Organization**: Group constants by logical domain (e.g., colors, layout, files).
 
-2. **Semantic Clarity**: Constant names clearly indicate their purpose
+2. **Semantic Clarity**: Constant names clearly convey their purpose.
 
-3. **Type Safety**: Use `Final` for true constants that should not change
+3. **Type Safety**: Use `Final` for true constants that remain unchanged.
 
-4. **Backward Compatibility**: Maintain existing imports through re-exports
+4. **Backward Compatibility**: Maintain existing imports via re-exports.
 
-5. **Minimal Surface Area**: Only expose constants that are actually used
+5. **Minimal Surface Area**: Expose only constants that are actively used.
 
 ## Consequences
 
 ### Positive
 
-- **Reduced Memory Footprint**: Eliminated unused constants saves ~44KB memory
-- **Faster Imports**: Fewer modules to load and process
-- **Better IDE Support**: Improved autocomplete and navigation
-- **Clearer Dependencies**: Easier to understand what constants each module needs
-- **Easier Testing**: Constants can be easily mocked or overridden in tests
+- **Reduced Memory Footprint**: Eliminating unused constants saves ~44KB of memory.
+- **Faster Imports**: Fewer modules to load and process.
+- **Better IDE Support**: Enhanced autocomplete and navigation.
+- **Clearer Dependencies**: Simplifies understanding of constant requirements per module.
+- **Easier Testing**: Constants are easily mocked or overridden in tests.
 
 ### Negative
 
-- **Import Changes**: Some code may need to update import paths
-- **Learning Curve**: Developers need to learn the new organization
-- **Migration Effort**: Existing code may require minimal updates
+- **Import Changes**: Some code may require import path updates.
+- **Learning Curve**: Developers must learn the new organization.
+- **Migration Effort**: Existing code may require minimal updates.
 
 ### Neutral
 
 - **Runtime Performance**: No significant change in execution performance
-- **API Compatibility**: Main API remains unchanged through re-exports
+- **API Compatibility**: The main API remains unchanged via re-exports.
 
 ## Migration Guide
 
 ### For Library Users
-No changes needed - main API imports remain the same:
+No changes are needed; main API imports remain the same:
 
 ```python
 # This still works
@@ -159,7 +159,7 @@ from simple_resume.constants import DEFAULT_PAGE_WIDTH_MM
 ```
 
 ### For Internal Development
-Use specific constant modules for clarity:
+For clarity, use specific constant modules:
 
 ```python
 # Recommended for new code
@@ -168,7 +168,7 @@ from simple_resume.constants.colors import DEFAULT_THEME_COLOR
 ```
 
 ### For Constant Discovery
-Browse the organized modules:
+To discover constants, browse the organized modules:
 
 ```python
 # See all layout constants
@@ -183,7 +183,7 @@ print(dir(colors))
 ## Implementation Details
 
 ### Exports Strategy
-The main `constants/__init__.py` re-exports commonly used constants for backward compatibility:
+The main `constants/__init__.py` re-exports commonly used constants to ensure backward compatibility:
 
 ```python
 # Re-export common constants
@@ -193,13 +193,13 @@ from .files import PDF_EXTENSION, HTML_EXTENSION
 ```
 
 ### Naming Conventions
-- Use `UPPER_SNAKE_CASE` for all constants
-- Include domain prefixes when needed for clarity
-- Use `Final` type annotation for true constants
-- Group related constants together
+- Use `UPPER_SNAKE_CASE` for all constants.
+- Include domain prefixes when clarity is needed.
+- Use `Final` type annotation for true constants.
+- Group related constants.
 
 ### Documentation
-Each module includes clear docstrings explaining:
+Each module features clear docstrings explaining:
 - Purpose of the constants
 - Relationships between constants
 - Usage patterns where relevant
@@ -207,35 +207,35 @@ Each module includes clear docstrings explaining:
 ## Future Considerations
 
 ### Possible Extensions
-1. **Dynamic Constants**: Consider adding support for environment-based constants
-2. **Validation**: Add runtime validation for constant values
-3. **Generation**: Consider auto-generating some constants from config files
+1. **Dynamic Constants**: Explore adding support for environment-based constants.
+2. **Validation**: Implement runtime validation for constant values.
+3. **Generation**: Explore auto-generating constants from config files.
 
 ### Monitoring
-1. **Usage Analysis**: Monitor which constants are actually used
-2. **Performance**: Track import times with the new structure
-3. **Feedback**: Collect developer feedback on the organization
+1. **Usage Analysis**: Monitor the actual usage of constants.
+2. **Performance**: Track import times using the new structure.
+3. **Feedback**: Gather developer feedback on the organization.
 
 ### Deprecation Timeline
 - **v0.1.1**: New structure introduced (current)
-- **v0.2.0**: Add deprecation warnings for direct module imports
-- **v0.3.0**: Remove legacy re-exports, require specific module imports
+- **v0.2.0**: Introduce deprecation warnings for direct module imports.
+- **v0.3.0**: Remove legacy re-exports; require specific module imports.
 
 ## Alternatives Considered
 
 ### Alternative 1: Keep Single File
-- **Pros**: No import changes needed
-- **Cons**: Continued maintenance overhead, poor organization
+- *Pros*: No import changes needed
+- *Cons*: Continued maintenance overhead and poor organization.
 
 ### Alternative 2: Use Data Classes
-- **Pros**: Type safety, grouped related constants
-- **Cons**: More complex, overkill for simple values
+- *Pros*: Offers type safety and grouped related constants.
+- *Cons*: More complex and overkill for simple values.
 
 ### Alternative 3: Configuration Files
-- **Pros**: External configuration, easy modification
-- **Cons**: Runtime overhead, more complex build process
+- *Pros*: Enables external configuration and easy modification.
+- *Cons*: Introduces runtime overhead and a more complex build process.
 
-Chosen approach provides the best balance of organization, performance, and maintainability.
+The chosen approach provides the best balance of organization, performance, and maintainability.
 
 ## References
 

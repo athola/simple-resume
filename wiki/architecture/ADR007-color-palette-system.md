@@ -1,10 +1,10 @@
 # ADR-007: Color Palette System Architecture
 
 ## Status
-**Accepted** - Current implementation is production-ready with accessibility enhancements planned
+**Accepted** - The current implementation is production-ready, with accessibility enhancements planned.
 
 ## Context
-The application requires a color system that can source colors from multiple places, ensures text is readable, and handles errors gracefully. Key requirements include:
+The application requires a color system capable of sourcing colors from multiple places, ensuring text readability, and handling errors gracefully. Key requirements include:
 
 *   **Multiple Sources**: Support for pre-defined palettes, generating palettes from HCL, and fetching them from remote APIs.
 *   **Accessibility**: Automatic calculation of color contrast to meet WCAG 2.1 guidelines.
@@ -14,7 +14,7 @@ The application requires a color system that can source colors from multiple pla
 *   **Security**: Validate remote API URLs and sanitize color inputs to prevent vulnerabilities.
 
 ## Decision
-Implemented a multi-source palette system with WCAG-compliant color calculations and intelligent contrast management:
+We implemented a multi-source palette system featuring WCAG-compliant color calculations and intelligent contrast management:
 
 ### Palette Architecture
 ```python
@@ -60,40 +60,40 @@ def _resolve_palette_block(block: dict[str, Any]) -> tuple[list[str], dict[str, 
 ## Alternatives Considered
 
 1. **Single source palette system**
-   - *Pros*: Simpler implementation, easier to maintain
-   - *Cons*: Limited flexibility, no user customization
+   - *Pros*: Offers simpler implementation and easier maintenance.
+   - *Cons*: Provides limited flexibility and no user customization.
    - *Decision*: Multi-source approach provides better user experience
 
 2. **Manual color management only**
    - *Pros*: Full control, predictable results
-   - *Cons*: Requires color expertise, no accessibility guarantees
+   - *Cons*: Requires color expertise and offers no accessibility guarantees.
    - *Decision*: Automatic management with accessibility features
 
 3. **Third-party color library integration**
-   - *Pros*: Rich feature set, professional color tools
-   - *Cons*: Additional dependency, complexity overhead
+   - *Pros*: Offers a rich feature set and professional color tools.
+   - *Cons*: Introduces an additional dependency and complexity overhead.
    - *Decision*: Custom implementation provides better integration and control
 
 ## Consequences
 
 ### Positive
-*   **Improved Readability**: Text colors are now automatically calculated to meet WCAG 2.1 contrast ratios against their background, making the output more accessible.
-*   **Flexible Color Theming**: Users can choose from three palette sources (pre-defined, generated, or remote), offering more customization.
-*   **Consistent Generation**: The HCL-based generator uses a deterministic algorithm, ensuring that generated color palettes are reproducible.
+*   **Improved Readability**: Text colors are automatically calculated to meet WCAG 2.1 contrast ratios against their backgrounds, making the output more accessible.
+*   **Flexible Color Theming**: Users choose from three palette sources (pre-defined, generated, or remote), offering more customization.
+*   **Consistent Generation**: The HCL-based generator uses a deterministic algorithm, ensuring reproducible color palettes.
 *   **Secure API Access**: Remote API calls are validated, cached, and executed with timeouts to prevent network issues from blocking generation.
 
 ### Negative
-*   **Increased Complexity**: The logic for handling multiple palette sources is more complex than a single-source system.
-*   **Network Dependency**: Fetching remote palettes introduces a dependency on network connectivity and the third-party API's availability.
-*   **Incomplete Enforcement**: The system calculates contrast ratios but does not yet prevent the user from choosing non-compliant color combinations. This is noted as future work.
-*   **Cascading Failures**: A failure to resolve a palette may cause rendering issues downstream if not handled correctly by the caller.
+*   **Increased Complexity**: Logic for handling multiple palette sources is more complex than a single-source system.
+*   **Network Dependency**: Fetching remote palettes introduces a dependency on network connectivity and third-party API availability.
+*   **Incomplete Enforcement**: The system calculates contrast ratios but does not prevent users from choosing non-compliant color combinations (noted as future work).
+*   **Cascading Failures**: Failure to resolve a palette may cause rendering issues downstream if not handled correctly by the caller.
 
 ### Technical Details
-- **Palette sources**: 3 types with strategy pattern for extensibility
-- **WCAG calculations**: Full sRGB linearization with BT.709 coefficients
-- **Luminance thresholds**: Empirically tuned for optimal text contrast
-- **Caching**: 12-hour TTL for remote palette data
-- **Deterministic generation**: Seed-based HCL palette generation
+- **Palette Sources**: 3 types, with a strategy pattern for extensibility.
+- **WCAG Calculations**: Full sRGB linearization with BT.709 coefficients.
+- **Luminance Thresholds**: Empirically tuned for optimal text contrast.
+- **Caching**: A 12-hour TTL for remote palette data.
+- **Deterministic Generation**: Seed-based HCL palette generation.
 
 ## WCAG Compliance Implementation
 
@@ -178,22 +178,22 @@ class ColorCalculationService:
 DEFAULT_COLOR_SCHEME = {
     "theme_color": "#0395DE",      # Primary accent
     "sidebar_color": "#F6F6F6",   # Light sidebar background
-    "sidebar_text_color": "#000000", # Black text for contrast
+    "sidebar_text_color": "#000000", # Black text for contrast (WCAG compliant)
     "bar_background_color": "#DFDFDF", # Neutral gray bars
     "date2_color": "#616161",      # Dark gray dates
     "frame_color": "#757575",      # Medium gray frame
     "heading_icon_color": "#0395DE", # Matches theme
-    "bold_color": "#585858",       # Darkened frame
+    "bold_color": "#585858",       # Darkened frame (for emphasis)
 }
 ```
 
 ### Color Field Application Order
 ```python
 COLOR_FIELD_ORDER = [
-    "accent_color",      # Primary theme color
+    "accent_color",      # Primary theme color (e.g., brand color)
     "sidebar_color",     # Sidebar background
     "text_color",        # Main text (calculated)
-    "emphasis_color",    # Secondary accents
+    "emphasis_color",    # Secondary accent colors
     "link_color",        # Hyperlink colors
 ]
 ```
@@ -234,7 +234,7 @@ def generate_hcl_palette(
     chroma: float = 0.12,
     luminance_range: tuple[float, float] = (0.35, 0.85),
 ) -> list[str]:
-    """Generate deterministic palette using HCL-inspired algorithm."""
+    """Generates a deterministic palette using an HCL-inspired algorithm."""
     rng = DeterministicRNG(seed or DEFAULT_SEED)
 
     # Generate evenly distributed hues with controlled variation
@@ -253,7 +253,7 @@ def generate_hcl_palette(
 ### Secure API Access
 ```python
 class ColourLoversClient:
-    """Provide secure wrapper around ColourLovers palette API."""
+    """Provides a secure wrapper around the ColourLovers palette API."""
 
     API_BASE = "https://www.colourlovers.com/api/palettes"
 
@@ -280,8 +280,8 @@ palette:
   source: "generator"
   size: 6
   seed: 42
-  hue_range: [200, 220]    # Blue hues
-  luminance_range: [0.3, 0.8]  # Good contrast range
+  hue_range: [200, 220]    # Focuses on blue hues
+  luminance_range: [0.3, 0.8]  # Ensures good contrast range
   chroma: 0.2              # Moderate saturation
 
 # Remote palette
@@ -293,33 +293,33 @@ palette:
 ```
 
 ## Performance Considerations
-- **Registry Caching**: Singleton registry with LRU cache for palette lookups
-- **Remote Caching**: 12-hour TTL for remote palette data to reduce API calls
-- **Deterministic Generation**: Seed-based generation ensures reproducible results
+- **Registry Caching**: Uses a singleton registry with LRU cache for palette lookups.
+- **Remote Caching**: Implements a 12-hour TTL for remote palette data to reduce API calls.
+- **Deterministic Generation**: Seed-based generation ensures reproducible results.
 - **Lazy Loading**: Palettes loaded on-demand rather than at startup
 
 ## Security Considerations
-- **URL Validation**: Only HTTPS/HTTP schemes allowed for remote APIs
-- **Path Validation**: Prevents directory traversal in palette file loading
-- **Input Sanitization**: All color inputs validated before processing
-- **Network Isolation**: Remote API calls isolated with timeouts and error handling
+- **URL Validation**: Only HTTPS/HTTP schemes are allowed for remote APIs.
+- **Path Validation**: Prevents directory traversal during palette file loading.
+- **Input Sanitization**: All color inputs are validated before processing.
+- **Network Isolation**: Remote API calls are isolated with timeouts and error handling.
 
 ## Future Improvements
 
 ### High Priority (6 months)
-1. **WCAG Validation Layer**: Add automatic contrast ratio validation with suggestions
-2. **Contrast Optimization**: Automatic color adjustment to meet WCAG AA/AAA standards
-3. **Enhanced Error Recovery**: More robust error handling if a palette fails to load
+1. **WCAG Validation Layer**: Implement automatic contrast ratio validation with suggestions.
+2. **Contrast Optimization**: Implement automatic color adjustment to meet WCAG AA/AAA standards.
+3. **Enhanced Error Recovery**: Develop more robust error handling for palette loading failures.
 
 ### Medium Priority (1 year)
-4. **Accessibility Scoring**: Built-in palette accessibility evaluation and metadata
-5. **Color Blindness Support**: Alternative color schemes for different vision types
-6. **Advanced Generation**: Machine learning-based palette generation with accessibility constraints
+4. **Accessibility Scoring**: Develop built-in palette accessibility evaluation and metadata.
+5. **Color Blindness Support**: Provide alternative color schemes for different vision types.
+6. **Advanced Generation**: Explore machine learning-based palette generation with accessibility constraints.
 
 ### Low Priority (18+ months)
-7. **Real-time Preview**: Interactive palette selection with live contrast feedback
-8. **Advanced Remote Sources**: Integration with additional design APIs
-9. **Palette Evolution**: Dynamic palette adjustment based on content and context
+7. **Real-time Preview**: Develop interactive palette selection with live contrast feedback.
+8. **Advanced Remote Sources**: Integrate with additional design APIs.
+9. **Palette Evolution**: Implement dynamic palette adjustment based on content and context.
 
 ## Related ADRs
 - **ADR-004**: Template system architecture (palette integration)
@@ -330,4 +330,8 @@ palette:
 ## Author
 - **Primary**: Architecture Review
 - **Date**: 2025-11-12
-- **Review Status**: Accepted - current implementation provides solid foundation for color management
+- **Review Status**: Accepted - The current implementation provides a solid foundation for color management.
+
+---
+
+*This ADR documents our comprehensive color palette system. It supports complex color sourcing, ensures readability, and handles errors gracefully.*

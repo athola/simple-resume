@@ -2,57 +2,150 @@
 
 All functions here are pure data transformations that take inputs and return outputs
 without external dependencies or side effects.
+
+The core Resume class is a pure data container with:
+- Data access and transformation methods
+- Validation (pure)
+- Method chaining for configuration
+- Render plan preparation (pure data transformation)
+
+I/O operations (PDF generation, HTML generation, file opening) are handled by the
+shell layer through functions like `to_pdf()` and `to_html()` in the shell module.
 """
 
 from __future__ import annotations
 
 import copy
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from simple_resume.config import Paths
-from simple_resume.constants import OutputFormat
+from simple_resume.core.config import normalize_config
+from simple_resume.core.exceptions import (
+    ConfigurationError,
+    FileSystemError,
+    ValidationError,
+)
 from simple_resume.core.models import RenderPlan, ValidationResult
+from simple_resume.core.paths import Paths
 from simple_resume.core.plan import (
     prepare_render_data,
     validate_resume_config,
 )
+from simple_resume.core.protocols import (
+    ContentLoader,
+    PaletteLoader,
+    PathResolver,
+)
 
-# Import new API components
-from simple_resume.exceptions import (
-    ConfigurationError,
-    FileSystemError,
-    GenerationError,
-    ValidationError,
-)
-from simple_resume.result import GenerationResult
-from simple_resume.shell.rendering_operations import (
-    generate_html_with_jinja,
-    open_file_in_browser,
-)
-from simple_resume.shell.strategies import (
-    LatexStrategy,
-    PdfGenerationRequest,
-    PdfGenerationStrategy,
-    WeasyPrintStrategy,
-)
-from simple_resume.utilities import (
-    get_content,
-    load_palette_from_file,
-    normalize_config,
-    render_markdown_content,
-)
-from simple_resume.utils.io import candidate_yaml_path, resolve_paths_for_read
+
+# Module-level dependency injection container
+class _ResumeDependencyContainer:
+    """Container for Resume module dependencies (avoids global statement)."""
+
+    content_loader: ContentLoader | None = None
+    palette_loader: PaletteLoader | None = None
+    palette_registry_provider: Any | None = None
+    path_resolver: PathResolver | None = None
+
+
+@lru_cache(maxsize=1)
+def _get_dependency_container() -> _ResumeDependencyContainer:
+    """Return the lazily created dependency container singleton."""
+    return _ResumeDependencyContainer()
+
+
+def set_default_loaders(
+    content_loader: ContentLoader | None = None,
+    palette_loader: PaletteLoader | None = None,
+    path_resolver: PathResolver | None = None,
+    palette_registry_provider: Any | None = None,
+) -> None:
+    """Set default loaders for Resume operations.
+
+    This function is called by the shell layer during initialization
+    to inject the default implementations. Core code should not call this.
+
+    Args:
+        content_loader: Default content loader implementation.
+        palette_loader: Default palette loader implementation.
+        path_resolver: Default path resolver implementation.
+        palette_registry_provider: Callable returning the palette registry.
+
+    """
+    deps = _get_dependency_container()
+
+    if content_loader is not None:
+        deps.content_loader = content_loader
+    if palette_loader is not None:
+        deps.palette_loader = palette_loader
+    if path_resolver is not None:
+        deps.path_resolver = path_resolver
+    if palette_registry_provider is not None:
+        deps.palette_registry_provider = palette_registry_provider
+
+
+def _get_content_loader(injected: ContentLoader | None) -> ContentLoader:
+    """Get content loader, preferring injected over default."""
+    deps = _get_dependency_container()
+
+    if injected is not None:
+        return injected
+    if deps.content_loader is not None:
+        return deps.content_loader
+    raise ConfigurationError(
+        "No content loader available. "
+        "Either inject one or ensure shell layer is initialized."
+    )
+
+
+def _get_path_resolver(injected: PathResolver | None) -> PathResolver:
+    """Get path resolver, preferring injected over default."""
+    deps = _get_dependency_container()
+
+    if injected is not None:
+        return injected
+    if deps.path_resolver is not None:
+        return deps.path_resolver
+    raise ConfigurationError(
+        "No path resolver available. "
+        "Either inject one or ensure shell layer is initialized."
+    )
+
+
+def _load_palette_from_file(path: str | Path) -> dict[str, Any]:
+    """Load palette from file using the default palette loader."""
+    deps = _get_dependency_container()
+
+    if deps.palette_loader is None:
+        raise ConfigurationError(
+            "No palette loader available. Ensure shell layer is initialized."
+        )
+    return deps.palette_loader.load_palette_from_file(path)
+
+
+def _get_palette_registry() -> Any:
+    """Resolve palette registry via injected provider to avoid shell import."""
+    deps = _get_dependency_container()
+
+    if deps.palette_registry_provider is None:
+        raise ConfigurationError(
+            "No palette registry provider available. Ensure shell layer is initialized."
+        )
+    return deps.palette_registry_provider()
 
 
 class Resume:
-    """Manage resume operations with symmetric I/O and method chaining support.
+    """Core resume data container with pure transformation methods.
 
-    This class provides an API for resume operations, featuring:
-    - Symmetric read/write methods (`read_yaml`/`to_pdf`/`to_html`).
-    - Method chaining for fluent interfaces.
-    - Rich result objects.
-    - Comprehensive error handling.
+    This class provides a pure functional API for resume data:
+    - Factory methods for loading (`read_yaml`, `from_data`)
+    - Method chaining for configuration (`with_template`, `with_palette`, `with_config`)
+    - Validation methods (`validate`, `validate_or_raise`)
+    - Render plan preparation (`prepare_render_plan`)
+
+    I/O operations (PDF/HTML generation) are handled by the shell layer.
+    Use `simple_resume.to_pdf()` and `simple_resume.to_html()` for generation.
     """
 
     def __init__(
@@ -88,6 +181,31 @@ class Resume:
         self._render_plan: RenderPlan | None = None
         self._is_preview = False
 
+    @property
+    def name(self) -> str:
+        """Get the resume name."""
+        return self._name
+
+    @property
+    def data(self) -> dict[str, Any]:
+        """Get the processed resume data (read-only copy)."""
+        return copy.deepcopy(self._data)
+
+    @property
+    def raw_data(self) -> dict[str, Any]:
+        """Get the raw resume data before processing (read-only copy)."""
+        return copy.deepcopy(self._raw_data)
+
+    @property
+    def paths(self) -> Paths | None:
+        """Get the resolved paths for this resume."""
+        return self._paths
+
+    @property
+    def filename(self) -> str | None:
+        """Get the source filename for error reporting."""
+        return self._filename
+
     # Class methods for symmetric I/O patterns (pandas-style).
 
     @classmethod
@@ -97,6 +215,8 @@ class Resume:
         *,
         paths: Paths | None = None,
         transform_markdown: bool = True,
+        content_loader: ContentLoader | None = None,
+        path_resolver: PathResolver | None = None,
         **path_overrides: str | Path,
     ) -> Resume:
         """Load a resume from a YAML file.
@@ -105,6 +225,8 @@ class Resume:
             name: Resume identifier without extension.
             paths: Optional pre-resolved paths.
             transform_markdown: Whether to transform markdown to HTML.
+            content_loader: Optional custom content loader (for dependency injection).
+            path_resolver: Optional custom path resolver (for dependency injection).
             **path_overrides: Path configuration overrides.
 
         Returns:
@@ -121,16 +243,19 @@ class Resume:
                     "Provide either paths or path_overrides, not both", filename=name
                 )
 
-            overrides = dict(path_overrides)
-            candidate_path = candidate_yaml_path(name)
-            resolved_paths = resolve_paths_for_read(paths, overrides, candidate_path)
-            raw_data = get_content(name, paths=resolved_paths, transform_markdown=False)
+            # Use injected dependencies or get defaults
+            loader = _get_content_loader(content_loader)
+            resolver = _get_path_resolver(path_resolver)
 
-            data = (
-                render_markdown_content(raw_data)
-                if transform_markdown
-                else copy.deepcopy(raw_data)
+            # Resolve paths for determining filename
+            overrides = dict(path_overrides)
+            candidate_path = resolver.candidate_yaml_path(name)
+            resolved_paths = resolver.resolve_paths_for_read(
+                paths, overrides, candidate_path
             )
+
+            # Load content
+            data, raw_data = loader.load(name, resolved_paths, transform_markdown)
 
             resume_identifier = (
                 candidate_path.stem if candidate_path is not None else str(name)
@@ -183,132 +308,6 @@ class Resume:
             paths=paths,
             source_yaml_data=raw_data,
         )
-
-    # Instance methods for output operations (symmetric to read_yaml)
-
-    def to_pdf(
-        self,
-        output_path: Path | str | None = None,
-        *,
-        open_after: bool = False,
-        **kwargs: Any,
-    ) -> GenerationResult:
-        """Export to PDF (symmetric to `read_yaml`).
-
-        Args:
-            output_path: Optional output path (defaults to output directory).
-            open_after: Whether to open the PDF after generation.
-            **kwargs: Additional generation options.
-
-        Returns:
-            `GenerationResult` with metadata and operations.
-
-        Raises:
-            `GenerationError`: If PDF generation fails.
-            `ValidationError`: If resume data is invalid.
-
-        """
-        # Prepare render plan.
-        render_plan = self._prepare_render_plan(preview=False)
-
-        # Determine output path.
-        if output_path is None:
-            if self._paths is None:
-                raise ConfigurationError(
-                    "No paths available - provide output_path or create with paths",
-                    filename=self._filename,
-                )
-            output_path = self._paths.output / f"{self._name}.pdf"
-        else:
-            output_path = Path(output_path)
-
-        # Create generation request.
-        request = PdfGenerationRequest(
-            render_plan=render_plan,
-            output_path=output_path,
-            open_after=open_after,
-            filename=self._filename,
-            resume_name=self._name,
-            raw_data=copy.deepcopy(self._raw_data),
-            processed_data=copy.deepcopy(self._data),
-            paths=self._paths,
-        )
-
-        # Select appropriate strategy.
-        strategy: PdfGenerationStrategy
-        if render_plan.mode.value == "latex":
-            strategy = LatexStrategy()
-        else:
-            strategy = WeasyPrintStrategy()
-
-        # Generate PDF using strategy.
-        return strategy.generate_pdf(request)
-
-    def to_html(
-        self,
-        output_path: Path | str | None = None,
-        *,
-        open_after: bool = False,
-        browser: str | None = None,
-        **kwargs: Any,
-    ) -> GenerationResult:
-        """Export to HTML (symmetric to `read_yaml`).
-
-        Args:
-            output_path: Optional output path (defaults to output directory).
-            open_after: Whether to open HTML after generation.
-            browser: Optional browser command for opening.
-            **kwargs: Additional generation options.
-
-        Returns:
-            `GenerationResult` with metadata and operations.
-
-        Raises:
-            `GenerationError`: If HTML generation fails.
-            `ValidationError`: If resume data is invalid.
-
-        """
-        try:
-            # Validate data first.
-            self.validate_or_raise()
-
-            # Prepare render plan.
-            render_plan = self._prepare_render_plan(preview=True)
-
-            # Determine output path.
-            if output_path is None:
-                if self._paths is None:
-                    raise ConfigurationError(
-                        "No paths available - provide output_path or create with paths",
-                        filename=self._filename,
-                    )
-                output_path = self._paths.output / f"{self._name}.html"
-            else:
-                output_path = Path(output_path)
-
-            # Generate HTML.
-            result = generate_html_with_jinja(
-                render_plan, output_path, filename=self._filename
-            )
-
-            # Update result with open handling
-            if open_after:
-                if browser:
-                    open_file_in_browser(result.output_path, browser)
-                else:
-                    result.open()
-
-            return result
-
-        except Exception as exc:
-            if isinstance(exc, (ValidationError, GenerationError, ConfigurationError)):
-                raise
-            raise GenerationError(
-                f"Failed to generate HTML: {exc}",
-                format_type="html",
-                output_path=output_path,
-                filename=self._filename,
-            ) from exc
 
     # Method chaining support (fluent interface)
 
@@ -409,7 +408,7 @@ class Resume:
 
         if palette_file is not None:
             try:
-                palette_payload = load_palette_from_file(palette_file)
+                palette_payload = _load_palette_from_file(palette_file)
             except (FileNotFoundError, ValueError) as exc:
                 raise ConfigurationError(
                     f"Failed to load palette file: {palette_file}",
@@ -422,11 +421,12 @@ class Resume:
 
             # Apply the palette block to individual color fields
             # Normalize both data structures to apply palette colors
+            registry = _get_palette_registry()
             new_data["config"], _ = normalize_config(
-                new_data["config"], filename=self._filename or ""
+                new_data["config"], filename=self._filename or "", registry=registry
             )
             new_raw["config"], _ = normalize_config(
-                new_raw["config"], filename=self._filename or ""
+                new_raw["config"], filename=self._filename or "", registry=registry
             )
 
         palette_override = overrides.get("palette")
@@ -461,68 +461,6 @@ class Resume:
         new_resume._is_preview = True
         return new_resume
 
-    # ------------------------------------------------------------------
-    # Backend helpers (legacy-compatible for unit tests)
-    # ------------------------------------------------------------------
-
-    def _cleanup_latex_artifacts(
-        self, tex_path: Path, *, preserve_log: bool = False
-    ) -> None:
-        """Remove auxiliary files emitted during LaTeX compilation."""
-        for suffix in (".aux", ".log", ".out"):
-            if preserve_log and suffix == ".log":
-                continue
-            candidate = tex_path.with_suffix(suffix)
-            try:
-                if candidate.exists():
-                    candidate.unlink()
-            except OSError:
-                continue
-
-    def generate(
-        self,
-        format: OutputFormat | str = OutputFormat.PDF,
-        output_path: Path | str | None = None,
-        *,
-        open_after: bool = False,
-        **kwargs: Any,
-    ) -> GenerationResult:
-        """Generate a resume in the specified format.
-
-        Args:
-            format: Output format enum (pdf or html).
-            output_path: Optional output path.
-            open_after: Whether to open after generation.
-            **kwargs: Additional generation options.
-
-        Returns:
-            `GenerationResult` with metadata and operations.
-
-        Raises:
-            `ValueError`: If format is not supported.
-
-        """
-        try:
-            format_enum = (
-                format
-                if isinstance(format, OutputFormat)
-                else OutputFormat.normalize(format)
-            )
-        except (ValueError, TypeError):
-            raise ValueError(
-                f"Unsupported format: {format}. Use 'pdf' or 'html'."
-            ) from None
-
-        if format_enum is OutputFormat.PDF:
-            return self.to_pdf(output_path, open_after=open_after, **kwargs)
-
-        if format_enum is OutputFormat.HTML:
-            return self.to_html(output_path, open_after=open_after, **kwargs)
-
-        raise ValueError(
-            f"Unsupported format: {format_enum.value}. Use 'pdf' or 'html'."
-        )
-
     # Instance methods for validation and rendering
 
     def validate(self) -> ValidationResult:
@@ -553,20 +491,22 @@ class Resume:
         if self._validation_result is None:
             raw_config = self._data.get("config", {})
             filename = self._filename or ""
-            self._validation_result = validate_resume_config(raw_config, filename)
+            registry = _get_palette_registry()
+            self._validation_result = validate_resume_config(
+                raw_config, filename, registry=registry
+            )
         return self._validation_result
 
     def validate_or_raise(self) -> ValidationResult:
         """Validate resume data and raise `ValidationError` on failure.
 
         This method validates the resume and raises a `ValidationError` if validation
-        fails. It's used internally by `to_pdf()`, `to_html()`, and other operations
-        requiring valid data.
+        fails. Use before operations requiring valid data.
 
         Use this for:
         - Fail-fast behavior (stop execution on invalid data).
         - Automatic exception propagation.
-        - Validation before an operation requiring valid data.
+        - Validation before generation operations.
 
         For inspection without raising, use `validate()` instead.
 
@@ -577,8 +517,8 @@ class Resume:
             `ValidationError`: If validation fails with detailed error information.
 
         Example:
-            >>> result = resume.validate_or_raise()  # Raises if invalid, returns result
-            >>> resume.to_pdf("output.pdf")  # Only runs if validation passed
+            >>> result = resume.validate_or_raise()  # Raises if invalid
+            >>> to_pdf(resume, "output.pdf")  # Only runs if validation passed
 
         """
         validation_result = self.validate()
@@ -591,8 +531,11 @@ class Resume:
             )
         return validation_result
 
-    def _prepare_render_plan(self, preview: bool | None = None) -> RenderPlan:
+    def prepare_render_plan(self, preview: bool | None = None) -> RenderPlan:
         """Prepare a render plan for this resume.
+
+        This method prepares the data needed for rendering the resume in
+        various formats. It's called by shell layer generation functions.
 
         Args:
             preview: Whether to prepare for preview rendering (defaults to setting).
@@ -613,10 +556,12 @@ class Resume:
                 if hasattr(self, "_raw_data") and self._raw_data is not None
                 else self._data
             )
+            registry = _get_palette_registry()
             self._render_plan = prepare_render_data(
                 source_data,
                 preview=actual_preview,
                 base_path=base_path,
+                registry=registry,
             )
             self._is_preview = actual_preview
 
@@ -625,4 +570,4 @@ class Resume:
         return self._render_plan
 
 
-__all__ = ["Resume"]
+__all__ = ["Resume", "set_default_loaders"]

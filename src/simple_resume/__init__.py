@@ -16,26 +16,17 @@ High-level categories include:
 * **Generation helpers** – ``generate_pdf/html/all/resume`` plus new
   convenience wrappers `:func:generate` and `:func:preview` for one-liner
   workflows, similar to ``requests`` verb helpers.
-* **Curated API namespaces** – Modules under `:mod:simple_resume.api`
-  (e.g., `:mod:simple_resume.api.colors`) mirror ``pandas.api`` by
-  re-exporting stable helper families.
+* **FCIS Architecture** – Functional core in `:mod:simple_resume.core`
+  (e.g., `:mod:simple_resume.core.colors`) provides pure functions,
+  while shell layer handles I/O and side effects.
 
-Refer to ``docs/reference.md`` for a complete API map, stability labels, and
-deprecation policy.
+Refer to ``docs/reference.md`` for a complete API map and stability labels.
 """
 
 from __future__ import annotations
 
-# Public API namespaces
-from simple_resume import api
-
-# New unified generation API (lazy-loaded)
-# Core classes
-from simple_resume.core.models import GenerationConfig, RenderPlan, ResumeConfig
-from simple_resume.core.resume import Resume
-
 # Exception hierarchy
-from simple_resume.exceptions import (
+from simple_resume.core.exceptions import (
     ConfigurationError,
     FileSystemError,
     GenerationError,
@@ -46,7 +37,11 @@ from simple_resume.exceptions import (
     ValidationError,
 )
 
-from .generate import (
+# Core classes (data models only - no I/O methods)
+from simple_resume.core.models import GenerationConfig, RenderPlan, ResumeConfig
+
+# Public API namespaces - higher-level generation functions
+from simple_resume.shell.generate import (
     generate,
     generate_all,
     generate_html,
@@ -55,36 +50,44 @@ from .generate import (
     preview,
 )
 
+# Shell layer I/O operations - these are the primary generation functions
+from simple_resume.shell.resume_extensions import (
+    generate as resume_generate,
+)
+from simple_resume.shell.resume_extensions import (
+    to_html,
+    to_pdf,
+)
+
 # Rich result objects (lazy-loaded)
-from .utils.lazy_import import (
+from simple_resume.shell.runtime.lazy_import import (
     lazy_BatchGenerationResult as BatchGenerationResult,
 )
 
 # Session management (lazy-loaded)
-from .utils.lazy_import import (
+from simple_resume.shell.runtime.lazy_import import (
     lazy_create_session as create_session,
 )
-from .utils.lazy_import import (
+from simple_resume.shell.runtime.lazy_import import (
     lazy_GenerationMetadata as GenerationMetadata,
 )
-from .utils.lazy_import import (
+from simple_resume.shell.runtime.lazy_import import (
     lazy_GenerationResult as GenerationResult,
 )
-from .utils.lazy_import import (
+from simple_resume.shell.runtime.lazy_import import (
     lazy_ResumeSession as ResumeSession,
 )
-from .utils.lazy_import import (
+from simple_resume.shell.runtime.lazy_import import (
     lazy_SessionConfig as SessionConfig,
 )
 
 # Version
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 # Public API exports - organized by functionality
 __all__ = [
     "__version__",
-    # Core models
-    "Resume",
+    # Core models (data only)
     "ResumeConfig",
     "RenderPlan",
     # Exceptions
@@ -109,6 +112,10 @@ __all__ = [
     "generate_html",
     "generate_all",
     "generate_resume",
+    # Shell layer I/O functions
+    "to_pdf",
+    "to_html",
+    "resume_generate",
     # Convenience helpers
     "generate",
     "preview",

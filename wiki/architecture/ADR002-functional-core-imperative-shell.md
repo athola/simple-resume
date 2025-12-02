@@ -1,12 +1,12 @@
 # ADR-002: Functional Core, Imperative Shell
 
 ## Status
-**Accepted** (2025-11-09) - Implementation ongoing with strategy pattern refactoring (2025-11-12)
+**Accepted** (2025-11-09) - Implementation is ongoing, focusing on strategy pattern refactoring (2025-11-12).
 
 ## Context
-The original `simple-resume` design mixed file I/O, CLI orchestration, and domain logic across modules like `utilities`, `hydration`, and `generation`. This coupling caused brittle tests, slow code reviews, and cascading changes.
+The original `simple-resume` design mixed file I/O, CLI orchestration, and domain logic across modules like `utilities`, `hydration`, and `generation`. This coupling led to brittle tests, slow code reviews, and cascading changes.
 
-Specific areas of concern included:
+Concerns included:
 
 1. **PDF Generation**: The `Resume.to_pdf()` method (lines 217-305) was 88 lines of code handling multiple concerns including validation, path resolution, PDF generation, and error handling.
 
@@ -14,35 +14,35 @@ Specific areas of concern included:
 
 3. **Mixed Responsibilities**: CLI logic, file I/O, and business logic were tightly coupled across multiple modules, making unit testing difficult and changes risky.
 
-To fix this, we are adopting the "functional core, imperative shell" pattern to separate pure, deterministic logic from I/O and other side effects.
+To address these issues, we are adopting the "functional core, imperative shell" pattern. This separates pure, deterministic logic from I/O and other side effects.
 
 ## Decision
 
-1. **Define Shell Boundaries**: Place all code interacting with the outside world (e.g., filesystem access, YAML parsing, CLI I/O, LaTeX subprocesses) in "shell" modules. The shell's responsibility is to sequence operations, handle retries, log events, and translate external data into simple data structures for the core.
+1. **Define Shell Boundaries**: Place all code interacting with the outside world (e.g., filesystem access, YAML parsing, CLI I/O, LaTeX subprocesses) in "shell" modules. The shell sequences operations, handles retries, logs events, and translates external data into simple data structures for the core.
 
-2. **Implement a Pure Core**: Core modules will contain only pure functions that operate on simple data structures (e.g., `GeneratePlanOptions -> list[GenerationCommand]`, `hydrate_resume(raw) -> dict`). These functions must not access the filesystem, environment variables, or other global state.
+2. **Implement a Pure Core**: Core modules will contain only pure functions that operate on simple data structures (e.g., `GeneratePlanOptions -> list[GenerationCommand]`, `hydrate_resume(raw) -> dict`). These functions must not access the filesystem, environment variables, or global state.
 
-3. **Adopt Incrementally**: Refactor incrementally, starting with frequently changing code. Each step must preserve existing behavior, add fast unit tests for the new core logic, and keep the shell a thin adapter over the core.
+3. **Adopt Incrementally**: Refactor incrementally, starting with frequently changing code. Each step must preserve existing behavior, include fast unit tests for the new core logic, and maintain the shell as a thin adapter over the core.
 
 4. **Use a Shared Command Model**: Communication between adapters (e.g., CLI) and core uses explicit command objects. This makes orchestration logic transparent and simplifies adding new adapters.
 
-5. **Implement Strategy Pattern for Complex Operations**: For areas like PDF generation and configuration processing, use the Strategy pattern to further separate concerns:
+5. **Implement Strategy Pattern for Complex Operations**: For areas like PDF generation and configuration processing, we implement the Strategy pattern to further separate concerns:
 
 #### PDF Generation Strategy
 - **Extract**: `PdfGenerationStrategy` abstract base class with `WeasyPrintStrategy` and `LatexStrategy` implementations
 - **Orchestrate**: `PdfGenerationOrchestrator` to manage strategy selection and execution flow
-- **Simplify**: Reduce `Resume.to_pdf()` method from 88 lines to 25 lines by delegating to orchestrator
+- **Simplify**: Reduces `Resume.to_pdf()` from 88 lines to 25 lines by delegating to an orchestrator.
 
 #### Configuration Processing Strategy
 - **Extract**: Pure helpers in `core.config_core` encapsulate palette resolution, layout defaults, and validation without touching the filesystem
-- **Chain**: Color + palette processing flows through `_process_palette_colors() -> apply_palette_block() -> finalize_config()`, giving us an explicit pipeline
-- **Separate**: Color math and WCAG thresholds now live in `core.colors` / `ColorCalculationService`, with I/O helpers moved into `simple_resume.utils.io`
+- **Chain**: Chains color and palette processing through `_process_palette_colors() -> apply_palette_block() -> finalize_config()`, creating an explicit pipeline.
+- **Separate**: Separates color math and WCAG thresholds into `core.colors` / `ColorCalculationService`, moving I/O helpers to `simple_resume.utils.io`.
 
 ## Rationale
 
-- **Moving planning logic into a pure core** makes it easier and safer to unit-test than the previous CLI-dependent code
-- **Explicit command objects** eliminate duplicated logic (e.g., for format iteration and overrides) and provide a single, clear interface
-- **Strategy pattern** provides the best balance of separation, testability, and discoverability while maintaining backward compatibility
+- **Moving planning logic into a pure core** simplifies and secures unit testing compared to the previous CLI-dependent code.
+- **Explicit command objects** eliminate duplicated logic (e.g., format iteration, overrides) and provide a single, clear interface.
+- **The Strategy pattern** balances separation, testability, and discoverability while maintaining backward compatibility.
 - **Incremental approach** avoids large-scale rewrite risks while delivering immediate benefits
 - **Clear boundaries** between functional core and imperative shell improve maintainability and testability
 
@@ -50,59 +50,59 @@ To fix this, we are adopting the "functional core, imperative shell" pattern to 
 
 1. **Keep existing monolithic implementation**
    - *Pros*: No refactoring effort required
-   - *Cons*: Continued maintenance burden, poor testability, high cognitive load
+   - *Cons*: Continued maintenance burden, poor testability, and high cognitive load.
 
 2. **Extract to smaller methods within same class**
    - *Pros*: Simpler refactoring
-   - *Cons*: Still mixes concerns, doesn't improve testability significantly
+   - *Cons*: Still mixes concerns; does not significantly improve testability.
 
 3. **Create separate service classes**
    - *Pros*: Clean separation
-   - *Cons*: More complex dependency management, harder to discover
+   - *Cons*: More complex dependency management and reduced discoverability.
 
 4. **Large-scale rewrite**
-   - *Pros*: Complete architectural reset
-   - *Cons*: High risk, long timeline, potential for lost functionality
+   - *Pros*: Offers a complete architectural reset.
+   - *Cons*: High risk, long timeline, and potential for lost functionality.
 
-**Chosen approach**: Combined functional core/imperative shell with strategy pattern provides the best balance of separation, testability, and discoverability while maintaining backward compatibility and allowing incremental adoption.
+**Chosen approach**: Combining functional core/imperative shell with the Strategy pattern provides the best balance of separation, testability, and discoverability while maintaining backward compatibility and allowing incremental adoption.
 
 ## Consequences
 
 ### Positive Impacts
 - **Improved Testability**: Core business logic can now be tested independently of I/O operations
-- **Reduced Complexity**: `Resume.to_pdf()` method reduced from 88 to 25 lines (72% reduction)
+- **Reduced Complexity**: `Resume.to_pdf()` method reduced from 88 to 25 lines (a 72% reduction).
 - **Better Separation**: Configuration processing logic separated from validation and I/O
 - **Enhanced Maintainability**: Strategy pattern makes it easier to add new PDF backends or configuration processors
 - **Cleaner Architecture**: Clear boundaries between functional core and imperative shell
-- **CLI change planning logic** in `build_generation_plan` allows testing single and batch operations without filesystem access
-- **New unit tests** for core logic (e.g., `tests/unit/core/test_generation_plan.py`) are fast, providing high coverage of decision-making logic
+- **CLI change planning logic** within `build_generation_plan` enables testing single and batch operations without filesystem access.
+- **New, fast unit tests** for core logic (e.g., `tests/unit/core/test_generation_plan.py`) provide high coverage of decision-making logic.
 - **Explicit command objects** eliminate duplicated logic and provide a single, clear interface
 
 ### Negative Impacts
-- **Increased File Count**: Added new files for strategy implementations and core modules
-- **Import Complexity**: Required careful management of circular imports
-- **Learning Curve**: Team needs to understand Strategy pattern and functional core concepts
-- **Shell module complexity**: Shell modules still contain considerable printing and error-handling logic, which may lead to duplication
-- **Mixed patterns**: Until refactoring is complete, developers must work with both legacy code and new patterns
+- **Increased File Count**: New files added for strategy implementations and core modules.
+- **Increased Import Complexity**: Requires careful management of circular imports.
+- **Increased Learning Curve**: Team members need to understand Strategy pattern and functional core concepts.
+- **Shell Module Complexity**: Shell modules retain considerable printing and error-handling logic, potentially leading to duplication.
+- **Mixed Patterns**: Until refactoring is complete, developers must work with both legacy and new patterns.
 
 ### Technical Details
-- **Backward Compatibility**: All existing APIs maintained unchanged
+- **Backward Compatibility**: All existing APIs remain unchanged.
 - **Performance**: No measurable performance impact on PDF generation
-- **Error Handling**: Preserved existing error handling patterns
+- **Error Handling**: Existing error handling patterns are preserved.
 - **Type Safety**: Maintained strong type hints throughout
 - **Incremental Adoption**: Pattern can be applied module by module without disrupting existing functionality
 
 ## Implementation Details
 
 ### Files Modified
-- `src/simple_resume/core/resume.py`: Refactored `to_pdf()` method to use strategy pattern
-- `src/simple_resume/utilities.py`: Extracted configuration processing logic
+- `src/simple_resume/core/resume.py`: Refactored `to_pdf()` to use the Strategy pattern.
+- `src/simple_resume/utilities.py`: Configuration processing logic extracted.
 - Various CLI and shell modules to use new core functions
 
 ### Files Added / Refactored
-- `src/simple_resume/core/pdf_generation_strategy.py`: Houses the Strategy/Orchestrator types extracted from `Resume.to_pdf()`
-- `src/simple_resume/core/config_core.py`: Refactored to contain the pure configuration pipeline (`prepare_config`, `apply_palette_block`, `finalize_config`)
-- `src/simple_resume/core/color_service.py`: Introduces `ColorCalculationService` relied on by the config pipeline
+- `src/simple_resume/core/pdf_generation_strategy.py`: Contains Strategy/Orchestrator types extracted from `Resume.to_pdf()`.
+- `src/simple_resume/core/config_core.py`: Refactored to house the pure configuration pipeline (`prepare_config`, `apply_palette_block`, `finalize_config`).
+- `src/simple_resume/core/color_service.py`: Introduces `ColorCalculationService` for the config pipeline.
 - `src/simple_resume/utils/io.py` and `src/simple_resume/utils/colors.py`: Path-handling helpers plus backwards-compatible shims
 - `src/simple_resume/session/`: New session management module following functional core pattern
 - `src/simple_resume/core/generation_plan.py`: Command generation logic extracted from CLI
@@ -110,10 +110,10 @@ To fix this, we are adopting the "functional core, imperative shell" pattern to 
 ### Key Classes
 ```python
 # PDF Generation Strategy Pattern
-abstract PdfGenerationStrategy
+Abstract PdfGenerationStrategy
 ├── WeasyPrintStrategy
 └── LatexStrategy
-└── (future) HeadlessBatchStrategy
+└── (Future) HeadlessBatchStrategy
 
 # Configuration Pipeline Helpers
 core.config_core.prepare_config()
@@ -154,7 +154,7 @@ GeneratePlanOptions -> list[GenerationCommand]
 - **Future**: Template system architecture ADR should reference this pattern
 
 ## Documentation
-This ADR is maintained alongside the `Functional-Core-Shell-Inventory.md` to document architecture progress and track the new pure modules (`core.pdf_generation_strategy`, `core.config_core`, `session/`) so we can quantify progress.
+We maintain this ADR alongside `Functional-Core-Shell-Inventory.md`. This documents architecture progress and tracks new pure modules (e.g., `core.pdf_generation_strategy`, `core.config_core`, `session/`) to quantify progress.
 
 ## Author
 - **Primary**: Development Team

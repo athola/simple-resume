@@ -26,6 +26,17 @@ jobs:
     - name: Install dependencies
       run: uv sync --extra utils --group dev
 
+    - name: Verify sdist contains sources and templates
+      run: |
+        set -euo pipefail
+        rm -f dist/simple_resume-*.tar.gz
+        UV_CACHE_DIR=.uv-cache uv build --sdist >/dev/null
+        TARBALL=$(ls -t dist/simple_resume-*.tar.gz | head -n1)
+        tar -tf "$TARBALL" > /tmp/sdist_files.txt
+        grep -q "simple_resume-.*/simple_resume/shell/cli/main.py" /tmp/sdist_files.txt
+        grep -q "simple_resume-.*/simple_resume/shell/assets/templates/html/resume_no_bars.html" /tmp/sdist_files.txt
+        echo "sdist contains required source files and templates"
+
     - name: Run tests
       run: uv run pytest
 
@@ -50,12 +61,4 @@ jobs:
       run: uv sync --extra utils --group dev
 
     - name: Run architectural tests
-      run: uv run pytest tests/architecture/test_layer_separation.py -v --tb=short
-      continue-on-error: true  # Expected to fail during refactoring
-
-    - name: Report architecture status
-      if: failure()
-      run: |
-        echo "[WARNING] Architectural tests are currently failing (expected during refactoring)"
-        echo "See CORE_REFACTOR_PLAN.md for remediation timeline"
-        echo "Violations will be fixed in Phases 2-5 of the modernization plan"
+      run: uv run pytest tests/architecture -v --tb=short --cov-fail-under=0

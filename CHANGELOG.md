@@ -21,24 +21,24 @@ Initial public release.
 -   FontAwesome icon integration.
 -   Palette registry with support for Palettable, procedural HCL, and ColourLovers.
 -   Consolidated CLI entry point: `simple-resume generate`.
--   **New sample resumes**: Added demo files for features:
+-   Added demo files for features:
 -   `sample_multipage_demo.yaml` - Multi-page resume with proper pagination
 -   `sample_palette_demo.yaml` - Color scheme demonstrations
 -   `sample_dark_sidebar.yaml` - Dark theme with sidebar layout
 -   `sample_latex.yaml` - LaTeX-specific formatting examples
 -   `sample_contrast_demo.yaml` - Color contrast accessibility examples
--   **Architecture documentation**: Added functional core-shell inventory and API surface design documentation.
--   **Wiki**: Added new guides for color schemes, migration, and PDF renderer evaluation.
--   **LaTeX documentation**: Added LaTeX support documentation to README.md with configuration examples and compilation instructions.
--   **README**: Improved Custom Styling section with LaTeX subsection and linking to the Usage Guide.
+-   Added functional core-shell inventory and API surface design documentation.
+-   Added new guides for color schemes, migration, and PDF renderer evaluation.
+-   Added LaTeX support documentation to README.md with configuration examples and compilation instructions.
+-   Improved Custom Styling section with LaTeX subsection and linking to the Usage Guide.
 
 ### Changed
 
--   **Major architectural refactor**: Migrated to functional core, imperative shell architecture with a redesigned API surface (commit 0a0b231).
--   **Session management**: Improved ResumeSession with better caching, statistics tracking, and configuration handling.
--   **Core resume functionality**: Refactored Resume class with a pandas-like API and method chaining support.
--   **Error handling**: Refined exception hierarchy with more detailed error reporting.
--   **Template resolution**: Fixed template handling issues and improved the secondary lookup path.
+-   Migrated to functional core, imperative shell architecture with a redesigned API surface (commit 0a0b231).
+-   Improved ResumeSession with better caching, statistics tracking, and configuration handling.
+-   Refactored Resume class with a pandas-like API and method chaining support.
+-   Refined exception hierarchy with more detailed error reporting.
+-   Fixed template handling issues and improved the secondary lookup path.
 -   Refactored core architecture to be more modular.
 -   Improved CLI user experience and error messages.
 -   Optimized PDF generation.
@@ -46,14 +46,41 @@ Initial public release.
 
 ### Fixed
 
--   **Template resolution**: Fixed sidebar pagination issues and template lookup problems.
--   **Color handling**: Corrected color contrast calculations and palette application.
--   **Path resolution**: Improved file path handling across different operating systems.
--   **Validation**: Improved configuration validation with better error messages.
+-   Fixed sidebar pagination issues and template lookup problems.
+-   Corrected color contrast calculations and palette application.
+-   Improved file path handling across different operating systems.
+-   Improved configuration validation with better error messages.
 -   Resolved LaTeX path handling issue to ensure sample resumes compile correctly with XeLaTeX and pdflatex.
 -   Fixed several edge cases in template resolution and improved error reporting.
 -   Corrected color contrast calculations to improve accessibility.
 -   Resolved dependency injection issues in core components.
+
+## [0.1.1] - 2025-12-02
+
+### Added
+
+-   `simple_resume.core.colors` module with stable, documented color manipulation utilities.
+-   MkDocs configuration for auto-generated API reference documentation.
+-   `GenerateOptions` dataclass for simplified generation configuration.
+-   Type annotations with `cast()` for lazy-loaded generation functions.
+-   Comprehensive docstrings with `.. versionadded::` annotations.
+
+### Changed
+
+-   Standardized `generate()` function signature to use `GenerateOptions` consistently.
+-   Enhanced README with improved Python quickstart examples.
+-   Refactored architecture to strict Functional Core / Imperative Shell pattern.
+-   Updated documentation links to point to new API reference.
+-   Updated architecture documentation to reflect completion of core/generate/pdf.py refactor (Effect system eliminates weasyprint import violation).
+-   Core layer now at 100% purity with zero known architectural violations.
+
+### Fixed
+
+-   Type mismatches between lazy and core generation function signatures.
+-   `preview()` return type now correctly annotated as `GenerationResult | BatchGenerationResult`.
+-   Packaging now bundles HTML templates and static assets to prevent `TemplateNotFound` errors in wheels and editable installs.
+-   Eliminated weasyprint import from core layer via Effect system pattern.
+-   Fixed WindowsPath instantiation errors on Linux CI runners.
 
 ## [Unreleased]
 

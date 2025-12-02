@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from simple_resume.palettes.common import Palette, PaletteSource, get_cache_dir
+from simple_resume.core.palettes.common import Palette, PaletteSource, get_cache_dir
 
 
 class TestPalette:

@@ -2,28 +2,30 @@
 
 ## Status
 
-Accepted (2025-11-09)
+Superseded by ADR-009 (FCIS Architecture) - Color utilities now in `simple_resume.core.colors`
+
+Original: Accepted (2025-11-09)
 
 ## Context
 
-Original API surface had organizational issues:
+The original API surface presented organizational issues:
 
 1. Redundant wrapper functions adding no abstraction (`utilities.calculate_text_color()` wrapping `core.colors.get_contrasting_text_color()`)
 2. Utility functions incorrectly exposed as `Resume` class methods (e.g., `Resume.calculate_text_color()`)
 3. No clear public API namespace; users imported from internal `core.*` modules
 4. Inconsistent function naming (`is_valid_color()` and `validate_color()` coexisting)
 
-This violated established API design patterns from mature libraries (pandas, requests) and created maintenance burden.
+This violated established API design patterns from mature libraries (e.g., pandas, requests) and created a maintenance burden.
 
 ## Decision
 
 ### 1. Adopt Industry-Standard API Organization Patterns
 
-Following research into pandas and requests API design:
+After researching pandas and requests API design:
 
 **pandas pattern:**
 
-- Class methods: Operations ON object (`df.groupby()`, `df.plot()`)
+- Class methods: Operations on an object (`df.groupby()`, `df.plot()`)
 - Top-level functions: Create/combine objects (`pd.read_csv()`, `pd.concat()`)
 - `pandas.api.*` submodules: Specialized utilities (`pandas.api.types`, `pandas.api.extensions`)
 - Core is PRIVATE: Users never import from `pandas.core.*`
@@ -32,7 +34,7 @@ Following research into pandas and requests API design:
 
 - Session class methods: Stateful operations only
 - Utility modules: Separate modules for utilities (`requests.utils`, `requests.auth`)
-- Key insight: Utilities are NOT on the Session class
+- Key insight: Utilities do not reside on the Session class.
 
 **Our implementation:**
 
@@ -54,7 +56,7 @@ Following research into pandas and requests API design:
 
 **Rationale:**
 
-- No backward compatibility aliases - clean API surface
+- No backward compatibility aliases, leading to a clean API surface.
 - Each function exists in ONE authoritative location
 - No wrappers that add zero value
 
@@ -93,7 +95,7 @@ Public API re-exports or simplifies:
 
 ### Why Remove Utilities from Resume Class?
 
-Color utilities are pure functions, not operating on Resume data. Following the requests pattern (e.g., `dict_from_cookiejar()` in `requests.utils`, not on Session class), we moved color utilities to their own module.
+Color utilities are pure functions that do not operate on Resume data. Following the requests pattern (e.g., `dict_from_cookiejar()` in `requests.utils`, not on Session class), we moved color utilities to their own module.
 
 **Before (incorrect):**
 
@@ -104,17 +106,17 @@ text_color = Resume.calculate_text_color("#FFFFFF")  # Why is this on Resume?
 
 ```text
 
-**After (correct):**
+**After (FCIS pattern):**
 ```python
-from simple_resume.api import colors
-text_color = colors.calculate_text_color("#FFFFFF")  # Obvious location
+from simple_resume.core import colors
+text_color = colors.get_contrasting_text_color("#FFFFFF")  # Core utility
 
 
 ```text
 
 ### Why No Wrapper Functions?
 
-Wrappers like `calculate_text_color = get_contrasting_text_color` violate DRY, creating:
+Wrappers (e.g., `calculate_text_color = get_contrasting_text_color`) violate DRY, creating:
 - Maintenance burden (two names for same function)
 - Import confusion (which to use?)
 - Documentation duplication
@@ -122,13 +124,13 @@ Wrappers like `calculate_text_color = get_contrasting_text_color` violate DRY, c
 
 Direct imports eliminate these issues.
 
-### Why `api.*` Namespace?
+### Why `core.*` Namespace? (Updated for FCIS)
 
-Following pandas (`pandas.api.types`, `pandas.api.extensions`):
-- Provides stable public interface with semantic versioning
-- Allows internal refactoring without breaking users
-- Clear separation: `api.*` is public, `core.*` is private
-- Users never import from `core.*` modules
+With FCIS architecture (Functional Core, Imperative Shell):
+- `core.*` contains pure functions with no I/O or side effects
+- Color utilities are pure calculations - they belong in core
+- No need for separate API layer when functions are already pure
+- Direct imports from `core.*` are appropriate for library code
 
 ## Consequences
 
@@ -143,8 +145,8 @@ Following pandas (`pandas.api.types`, `pandas.api.extensions`):
 
 ### Negative
 
-- **Breaking change**: Users importing from `Resume` class must update
-- **Migration effort**: Tests moved to `test_api_colors.py`
+- **Breaking change**: Users importing from the `Resume` class must update their code.
+- **Migration effort**: Tests must be moved to `test_api_colors.py`.
 
 ### Migration Path
 
@@ -159,18 +161,18 @@ lum = Resume.calculate_luminance("#808080")
 
 ```text
 
-**After:**
+**After (FCIS):**
 ```python
-from simple_resume.api import colors
+from simple_resume.core import colors
 
-text_color = colors.calculate_text_color("#FFFFFF")
+text_color = colors.get_contrasting_text_color("#FFFFFF")
 is_valid = colors.is_valid_color("#FF0000")
 lum = colors.calculate_luminance("#808080")
 
 
 ```text
 
-Use `from simple_resume.api import colors` in all new code.
+Use `from simple_resume.core import colors` in all new code.
 
 ### Monitoring
 
@@ -180,13 +182,13 @@ Use `from simple_resume.api import colors` in all new code.
 
 ## Follow-up Tasks
 
-1. Remove color utility wrappers from `utilities.py`, `color_utils.py`, and `Resume`
-2. Create `simple_resume.api.colors` public module
-3. Move color utility tests to `test_api_colors.py`
-4. Update `__all__` exports to reflect authoritative functions only
+1. Remove color utility wrappers from `utilities.py`, `color_utils.py`, and the `Resume` class.
+2. Create the `simple_resume.api.colors` public module.
+3. Move color utility tests to `test_api_colors.py`.
+4. Update `__all__` exports to include only authoritative functions.
 5. Review other utility functions for similar issues (e.g., skill_utils)
 6. Document public API in user guide
-7. Add API stability policy to CONTRIBUTING.md
+7. Add an API stability policy to CONTRIBUTING.md.
 
 ## References
 

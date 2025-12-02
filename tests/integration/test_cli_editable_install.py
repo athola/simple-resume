@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from simple_resume import config
+from simple_resume.shell.config import PACKAGE_ROOT
 from tests.bdd import Scenario
 
 
@@ -36,7 +36,7 @@ def test_generate_html_cli_after_editable_install(
     story: Scenario, tmp_path_factory: pytest.TempPathFactory
 ) -> None:
     story.given("a clean workspace that performs pip install -e ..")
-    repo_root = config.PACKAGE_ROOT.parent.parent
+    repo_root = PACKAGE_ROOT.parent.parent
     work_dir = Path(tempfile.mkdtemp(dir=repo_root))
     try:
         try:
