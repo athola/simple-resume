@@ -1,214 +1,129 @@
 ![Simple-Resume preview screenshot](assets/preview.png)
 
-_A CLI tool for generating resumes from YAML files._
+_Generate polished PDF and HTML resumes from a single YAML file._
 
-[![CI Status](https://github.com/athola/simple-resume/workflows/CI/badge.svg)](
-  https://github.com/athola/simple-resume/actions/workflows/CI.yml
-)
-[![Code Coverage](https://codecov.io/gh/athola/simple-resume/branch/main/graph/badge.svg)](
-  https://codecov.io/gh/athola/simple-resume
-)
-[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](
-  https://github.com/athola/simple-resume/blob/main/LICENSE
-)
-[![PyPI Version](https://img.shields.io/pypi/v/simple-resume.svg)](
-  https://pypi.org/project/simple-resume/
-)
-[![Open Bugs](https://img.shields.io/github/issues/athola/simple-resume/bug.svg)](
-  https://github.com/athola/simple-resume/issues?q=is%3Aopen+is%3Aissue+label%3Abug
-)
-[![Open Pull Requests](https://img.shields.io/github/issues-pr/athola/simple-resume.svg)](
-  https://github.com/athola/simple-resume/pulls
-)
+[![Code Quality](https://github.com/athola/simple-resume/workflows/Code%20Quality/badge.svg)](https://github.com/athola/simple-resume/actions/workflows/code-quality.yml)
+[![Linting](https://github.com/athola/simple-resume/workflows/Linting/badge.svg)](https://github.com/athola/simple-resume/actions/workflows/lint.yml)
+[![Test Suite](https://github.com/athola/simple-resume/workflows/Test%20Suite/badge.svg)](https://github.com/athola/simple-resume/actions/workflows/test.yml)
+[![Code Coverage](https://codecov.io/gh/athola/simple-resume/branch/main/graph/badge.svg)](https://codecov.io/gh/athola/simple-resume)
+[![PyPI Version](https://img.shields.io/pypi/v/simple-resume.svg)](https://pypi.org/project/simple-resume/)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-# Simple-Resume
+# simple-resume
 
-This tool generates PDF, HTML, and LaTeX resumes from a single YAML source file. This lets you version-control your resume content and apply different templates or color schemes. Use it as a command-line utility or Python library.
+`simple-resume` is a Python 3.10+ CLI and library for converting structured YAML into production-ready resumes (PDF, HTML, or LaTeX). Templates and static assets ship with the package such that users can render without needing to create additional content.
 
-## Getting Started
+## Why Simple-Resume
 
-### Installation
+- Keep your resume version-controlled as plain YAML.
+- Swap templates, palettes, and formats without rewriting content.
+- Pure-Python core with shell adapters; effects are testable and side-effect aware.
+- Bundled HTML templates and static assets prevent “TemplateNotFound” errors in wheels/editable installs.
+
+## Supported platforms
+
+- Python: 3.10+ (tested in CI)
+- OS: Linux, macOS, Windows. PDF output uses WeasyPrint; ensure Cairo/Pango/GTK are available on your platform (see [Usage Guide](wiki/Usage-Guide.md#system-dependencies)).
+
+## Installation
 
 ```bash
-# Install with uv (recommended)
+# With uv (recommended)
 uv add simple-resume
 
-# Install with pip
+# With pip
 pip install simple-resume
 ```
 
-### Development Setup
+### Development setup
 
 ```bash
 git clone https://github.com/athola/simple-resume.git
 cd simple-resume
-
-# Development install with uv
-uv sync --dev --extra utils
-
-# Development install with pip
-pip install -e .
+uv sync --dev --extra utils   # or: pip install -e .[dev,utils]
 ```
 
-## Quick Start
+## Quick start (CLI)
 
-### 1. Create Your Resume
-
-Create a YAML file with your resume content. The `template` field specifies which base template to use.
+Create a minimal YAML in `resume_private/input/my_resume.yaml`:
 
 ```yaml
-# resume_private/input/my_resume.yaml
-template: resume_base
-
+template: resume_no_bars
 full_name: Jane Doe
-job_title: Software Engineer
-
-address:
-  - 123 Tech Street
-  - San Francisco, CA
-
-phone: "(555) 123-4567"
 email: jane.doe@example.com
-web: https://jandoe.dev
-linkedin: in/janedoe
-github: janedoe
-
-description: |
-  Software engineer with 5+ years of experience building scalable
-  web applications and leading cross-functional teams.
-
 body:
-  experience:
-    - title: Senior Software Engineer
+  Experience:
+    - title: Senior Engineer
       company: TechCorp
       start: 2022
       end: Present
       description: |
-        * Led development of microservices architecture serving 1M+ users
-        * Mentored junior developers and conducted code reviews
-        * Improved system performance by 40% through optimization
-
-  skills:
-    - Python
-    - JavaScript
-    - React
-    - Node.js
-    - PostgreSQL
-    - Docker
-    - AWS
+        - Lead microservices migration
+        - Improved latency by 40%
 ```
 
-### 2. Generate Resume
-
-Use `simple-resume generate` to create your resume in PDF or HTML format.
+Generate output:
 
 ```bash
-# Generate a PDF
-uv run simple-resume generate --format pdf
-
-# Generate an HTML file
-uv run simple-resume generate --format html
-
-# Generate a PDF and open it
-uv run simple-resume generate --format pdf --open
+uv run simple-resume generate --format pdf         # PDF
+uv run simple-resume generate --format html --open # HTML + open in browser
 ```
 
-### 3. Use the Python API
+Built-in templates: `resume_no_bars`, `resume_with_bars`, `demo.html` (see `src/simple_resume/shell/assets/templates/html/`). Static assets live under `.../assets/static/`.
 
-The tool can also be used as a library, providing a chained API for configuration.
+## Python API
 
 ```python
-from simple_resume import Resume
-from simple_resume.session import ResumeSession
+from simple_resume import generate, preview
+from simple_resume.shell.generate import GenerateOptions
 
-# Method 1: Direct, single-file conversion
-resume = Resume.read_yaml("resume_private/input/my_resume.yaml")
-result = resume.to_pdf(open_after=True)
-html_result = resume.to_html()
+options = GenerateOptions(formats=["pdf", "html"], template="resume_with_bars")
+results = generate("resume_private/input/my_resume.yaml", options)
+print(results["pdf"].output_path)
 
-# Method 2: Use a session for consistent settings across multiple resumes
+# Browser preview
+preview("resume_private/input/my_resume.yaml")
+```
+
+For batch operations:
+
+```python
+from simple_resume.shell.session import ResumeSession
+
 with ResumeSession(data_dir="resume_private") as session:
-    resume = session.resume("my_resume")
-    # Apply different styles with method chaining
-    dark_resume = resume.with_palette("Professional Blue").with_template("resume_base")
-    result = dark_resume.to_pdf(open_after=True)
-
-    # Generate all resumes in batch
-    batch_results = session.generate_all(format="pdf", open_after=False)
+    session.generate_all(format="pdf")
 ```
 
-### 4. Custom Styling
+## Customization
 
-Apply a color palette by name or custom palette file path.
+- **Palettes**: `--palette "Professional Blue"` or `--palette path/to/palette.yaml`.
+- **Custom templates**: `--template custom.html` with `--templates-dir /path/to/templates`.
+- **LaTeX**: set `config.output_mode: latex` and compile with your TeX toolchain (see [Usage Guide](wiki/Usage-Guide.md#latex-output)).
+- **Color utilities**: `simple_resume.core.colors.get_contrasting_text_color` for accessibility checks.
 
-```bash
-# Use a built-in palette
-uv run simple-resume generate --palette "Professional Blue"
+## Workflows & docs
 
-# Use a custom palette file
-uv run simple-resume generate --palette resume_private/palettes/my-theme.yaml
-```
+- **Guides**: [Getting Started](wiki/Getting-Started.md), [Usage](wiki/Usage-Guide.md), [Workflows](wiki/Workflows.md), [Path Handling](wiki/Path-Handling-Guide.md).
+- **Architecture**: [Architecture Guide](wiki/Architecture-Guide.md) and `wiki/architecture/`.
+- **Migration**: [Migration Guide](wiki/Migration-Guide.md) plus [Generate module migration](wiki/Migration-Guide-Generate-Module.md).
+- **Development**: [Development Guide](wiki/Development-Guide.md), [Contributing](wiki/Contributing.md), [PDF renderer evaluation](wiki/PDF-Renderer-Evaluation.md).
+- **Samples**: `sample/` directory; `sample_dark_sidebar.html` preview.
 
-#### LaTeX Support
+## Troubleshooting
 
-Generate LaTeX source files for advanced typesetting capabilities. This requires a LaTeX distribution (like TeX Live, MiKTeX, or MacTeX) to be installed on your system.
-
-```yaml
-# In your YAML file
-config:
-  output_mode: latex
-```
-
-When `output_mode: latex` is set, the generate command produces a `.tex` file instead of PDF or HTML. This gives you full control over typesetting, custom fonts, mathematical equations, and academic formatting.
-
-```bash
-# Generate LaTeX source (configured via YAML)
-uv run simple-resume generate
-
-# Compile with pdflatex (requires LaTeX installation)
-pdflatex resume_output.tex
-```
-
-For detailed LaTeX configuration and examples, see the [LaTeX Output section in the Usage Guide](wiki/Usage-Guide.md#latex-output).
-
-### 5. API Utilities
-
-The API includes color utilities, for example, to calculate an accessible text color for a given background.
-
-```python
-from simple_resume.api import colors
-
-accent = colors.calculate_text_color("#F6F6F6")
-assert accent == "#000000"
-```
-
-## Documentation
-
-- **[Getting Started](wiki/Getting-Started.md)**
-- **[Usage Guide](wiki/Usage-Guide.md)**
-- **[Development Guide](wiki/Development-Guide.md)**
-- **[Migration Guide](wiki/Migration-Guide.md)** - For upgrading from earlier versions
-- **[Color Schemes](wiki/Color-Schemes.md)** - For creating and using custom palettes
-- **[Workflows](wiki/Workflows.md)** - Common patterns and examples
-- **[API Reference](docs/reference.md)**
-
-## Getting Help
-
-For bugs and feature requests, open a GitHub issue. For questions, use GitHub Discussions.
-
-- **[GitHub Issues](https://github.com/athola/simple-resume/issues)**
-- **[GitHub Discussions](https://github.com/athola/simple-resume/discussions)**
-
-See `sample/` for more example resume files.
+- `TemplateNotFound`: confirm installation includes packaged assets (bundled in wheels/editable installs); custom templates require `--templates-dir`.
+- PDF on Linux: install system libs `cairo`, `pango`, `gdk-pixbuf` (WeasyPrint requirement).
 
 ## Contributing
 
-1. Fork repository and create feature branch.
-2. Set up environment by following the [Development Guide](wiki/Development-Guide.md).
-3. Make changes and add tests.
-4. Run `make check-all` to run all checks.
-5. Submit a pull request.
+1. Follow the [Development Guide](wiki/Development-Guide.md) to set up tools.
+2. Run `make lint` and `make test` (or `make check-all validate`) before opening a PR.
+3. Submit issues or ideas in [GitHub Issues](https://github.com/athola/simple-resume/issues) or discussions.
 
 ## License
 
-This project is licensed under the MIT License.
+MIT License. See [LICENSE](LICENSE).
+
+## Star history
+
+[![Star History Chart](https://api.star-history.com/svg?repos=athola/simple-resume&type=date&legend=top-left)](https://www.star-history.com/#athola/simple-resume&type=date&legend=top-left)

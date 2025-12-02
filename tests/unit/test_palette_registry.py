@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 
-from simple_resume.palettes.registry import (
-    Palette,
-    PaletteRegistry,
+from simple_resume.core.palettes.registry import Palette, PaletteRegistry
+from simple_resume.core.palettes.sources import PalettableRecord
+from simple_resume.shell.palettes.loader import (
     get_palette_registry,
+    load_default_palettes,
     reset_palette_registry,
 )
-from simple_resume.palettes.sources import PalettableRecord, load_default_palettes
 from tests.bdd import Scenario
 
 
@@ -56,10 +58,11 @@ def test_global_registry_uses_palettable(
         )
 
     monkeypatch.setattr(
-        "simple_resume.palettes.registry.ensure_bundled_palettes_loaded", fake_ensure
+        "simple_resume.shell.palettes.loader.discover_palettable",
+        fake_ensure,
     )
     monkeypatch.setattr(
-        "simple_resume.palettes.registry.load_palettable_palette", fake_load
+        "simple_resume.shell.palettes.loader.load_palettable_palette", fake_load
     )
     reset_palette_registry()
 
@@ -70,3 +73,24 @@ def test_global_registry_uses_palettable(
     palette = registry.get("mock palette")
     assert palette.source == "palettable"
     assert len(palette.swatches) == 2
+
+
+def test_palette_registry_to_json(story: Scenario) -> None:
+    story.given("a registry with multiple palettes")
+    registry = PaletteRegistry()
+    palette1 = Palette(name="Test1", swatches=("#FF0000", "#00FF00"), source="test")
+    palette2 = Palette(name="Test2", swatches=("#0000FF",), source="test")
+
+    registry.register(palette1)
+    registry.register(palette2)
+
+    story.when("the registry is serialized to JSON")
+    result = registry.to_json()
+
+    story.then("a valid JSON string with all palettes is returned")
+    parsed = json.loads(result)
+    assert len(parsed) == 2
+    assert parsed[0]["name"] == "Test1"
+    assert parsed[0]["swatches"] == ["#FF0000", "#00FF00"]
+    assert parsed[1]["name"] == "Test2"
+    assert parsed[1]["swatches"] == ["#0000FF"]

@@ -1,28 +1,20 @@
 # Development Guide
 
-This guide sets up a local development environment for `simple-resume`.
+This guide explains how to set up a local development environment for `simple-resume`.
 
-## Environment Setup
+First, fork and clone the repository. This project uses `uv` for dependency management. To install all development and optional dependencies, run the following command:
 
-1.  **Fork and clone the repository:**
-
-    Fork the repository on GitHub, then clone it locally.
-
-2.  **Install dependencies:**
-
-    This project uses `uv` for dependency management. Install all development and optional dependencies with:
-
-    ```bash
-    uv sync --dev --extra utils
-    ```
+```bash
+uv sync --dev --extra utils
+```
 
 ## Running Code Quality Checks
 
-A `Makefile` simplifies common development tasks.
+The `Makefile` provides commands for running common development tasks.
 
 ### Running Tests
 
-Run the full test suite, including unit and integration tests, with:
+To run the full test suite, including unit and integration tests, use the following command:
 
 ```bash
 make test
@@ -30,13 +22,14 @@ make test
 
 ### Linting and Formatting
 
-`ruff` handles linting and code formatting. Run all checks, including linting, formatting, and type-checking, with:
+The `ruff` tool is used for linting and code formatting. To run all checks, including linting, formatting, type-checking, and security scans, use the following command:
 
 ```bash
 make check-all
+make validate  # Runs secondary validation, like checking the README preview and release assets.
 ```
 
-You can also run individual checks:
+Individual checks can also be run:
 
 ```bash
 # Run the linter
@@ -48,23 +41,23 @@ make format
 
 ## Architecture
 
-This project follows a **functional core, imperative shell** architecture pattern:
+The project uses a **functional core, imperative shell** pattern to separate pure data transformations from code that produces side effects.
 
-- **Core**: Pure functions in `src/simple_resume/core/` that handle data transformations without side effects
-- **Shell**: Imperative code in `src/simple_resume/shell/` that handles I/O, user interaction, and external dependencies
-- **API Surface**: Public API in `src/simple_resume/` provides a pandas-like interface with symmetric I/O patterns
+-   **Functional Core (`src/simple_resume/core/`)**: Contains pure functions for data manipulation. These functions are predictable and do not have side effects, which makes them easy to test.
+-   **Imperative Shell (`src/simple_resume/shell/`)**: Manages I/O, user interaction, and integrations with external services. Side effects are handled in this layer.
+-   **API Surface (`src/simple_resume/`)**: The public API provides an interface for reading and writing resume data (e.g., `read_yaml()`, `to_pdf()`).
 
 ### Key Components
 
--   **`Resume` class**: Main API with pandas-like methods (`read_yaml()`, `to_pdf()`, `to_html()`)
--   **`ResumeSession`**: Manages consistent configuration across multiple operations
--   **Palette system**: Supports built-in, remote, and procedurally generated color schemes
--   **Template system**: Jinja2-based templates with LaTeX support
--   **Validation**: Comprehensive validation with detailed error reporting
+-   **`Resume` class**: The main entry point for the public API. It provides methods such as `read_yaml()`, `to_pdf()`, and `to_html()`.
+-   **`ResumeSession`**: A class that manages configuration settings for consistency across multiple operations.
+-   **Palette System**: A system for color management that supports built-in themes, remote palettes, and generated color schemes.
+-   **Template System**: Uses Jinja2 for HTML and LaTeX templating.
+-   **Validation**: A validation layer that provides error messages for configuration and data issues.
 
 ## Testing
 
-The project maintains >85% test coverage with comprehensive unit and integration tests:
+The project maintains over 85% test coverage with unit and integration tests.
 
 ```bash
 # Run all tests
@@ -78,13 +71,33 @@ make test-integration
 make test-coverage
 ```
 
+## Documentation
+
+Our documentation is organized into these key areas:
+
+-   **[Architecture Decisions (ADRs)](../architecture/)**: Records the history and reasoning behind significant technical decisions.
+-   **[Usage Guide](Usage-Guide.md)**: Explains how to use the library's features with practical examples.
+-   **[Migration Guide](Migration-Guide-Generate-Module.md)**: Provides instructions for upgrading between major versions.
+-   **[Lazy Loading Guide](Lazy-Loading-Guide.md)**: Describes performance optimization strategies.
+-   **[API Reference](../docs/reference.md)**: A reference for the public API.
+
+When contributing to the documentation, please adhere to the following best practices:
+
+-   Write clearly and concisely.
+-   Add code examples for all major features.
+-   Document both lazy and eager loading approaches.
+-   Explain performance trade-offs.
+-   Provide migration paths for breaking changes.
+-   Update ADRs for significant architectural changes.
+-   Keep docstrings current.
+
 ## Contributing
 
-Before starting, read the [Contributing Guide](Contributing.md) for information on the development process, coding standards, and submitting pull requests.
+Please read the [Contributing Guide](Contributing.md) for information on the development process, coding standards, and how to submit pull requests.
 
 ### Development Workflow
 
-1. Create a feature branch from main
-2. Make your changes with comprehensive tests
-3. Run `make check-all` to ensure all checks pass
-4. Submit a pull request with clear description of changes
+1.  Create a feature branch from `main`.
+2.  Make your changes and add tests.
+3.  Run `make check-all` and `make validate` to ensure that all automated checks pass.
+4.  Submit a pull request with a clear description of your changes.

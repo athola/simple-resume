@@ -1,10 +1,10 @@
 # Markdown Guide
 
-This guide explains Markdown usage for resume content formatting.
+This guide explains how to use Markdown to format the content of your resume.
 
 ## Supported Features
 
-Supported Markdown features:
+The following Markdown features are supported:
 
 -   **Bold**
 -   *Italic*
@@ -16,19 +16,25 @@ Supported Markdown features:
 
 ## Formatting the Projects Section
 
-The `Projects` section showcases personal or open-source work.
+The `Projects` section is for showcasing personal or open-source work.
 
 ### Example
 
 ```yaml
 Projects:
   -
+    # The start and end dates of the project.
     start: ""
     end: 2024
+    # The title of the project.
     title: "My Awesome Project"
+    # A link to the project's repository or website.
     title_link: "https://github.com/username/repo-name"
+    # The name of the company or organization.
     company: "Personal Project"
+    # A link to the company's website.
     company_link: "https://github.com/username"
+    # A description of the project.
     description: |
       Reduced latency by 75% by implementing a caching layer.
 
@@ -39,16 +45,16 @@ Projects:
 
 ### Recommendations
 
--   Quantify results (e.g., "Reduced latency by 75%").
--   Include links to code or live demos.
--   Highlight technologies used with a "Tech Stack" line.
+-   Quantify your results (e.g., "Reduced latency by 75%").
+-   Include links to code repositories or live demos.
+-   Highlight the technologies you used with a "Tech Stack" line.
 
 ## General Formatting Tips
 
--   Use code blocks with language identifiers (e.g., `python`, `javascript`) for syntax highlighting in the HTML resume.
--   Quantify accomplishments with numbers (e.g., "Reduced latency by 45%", "Increased revenue by $200K").
--   Start bullet points with action verbs.
+-   Use code blocks with language identifiers (e.g., `python`, `javascript`) to enable syntax highlighting in the HTML version of your resume.
+-   Quantify your accomplishments with numbers (e.g., "Reduced latency by 45%", "Increased revenue by $200K").
+-   Begin bullet points with action verbs.
 
 ## Implementation Details
 
-This project uses the `markdown` Python library with extensions for fenced code blocks, tables, and syntax highlighting to render Markdown.
+This project uses the 'markdown' Python library to render Markdown. We enable the 'fenced_code', 'tables', and 'codehilite' extensions.

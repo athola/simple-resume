@@ -1,0 +1,58 @@
+[
+  {
+    "name": "default",
+    "colors": [
+      "#0395DE",
+      "#F6F6F6",
+      "#DFDFDF",
+      "#616161",
+      "#757575"
+    ],
+    "source": "default",
+    "metadata": {
+      "description": "Professional blue default palette"
+    }
+  },
+  {
+    "name": "modern_teal",
+    "colors": [
+      "#0891B2",
+      "#F0FDFA",
+      "#CCFBF1",
+      "#134E4A",
+      "#0E7490"
+    ],
+    "source": "default",
+    "metadata": {
+      "description": "Default teal palette"
+    }
+  },
+  {
+    "name": "ocean",
+    "colors": [
+      "#005B96",
+      "#E6F7FF",
+      "#A7C6ED",
+      "#013A63",
+      "#0A2463"
+    ],
+    "source": "default",
+    "metadata": {
+      "description": "Classic ocean blues used by legacy templates"
+    }
+  },
+  {
+    "name": "ocean_blue",
+    "colors": [
+      "#0275D8",
+      "#F0F8FF",
+      "#CFE2FF",
+      "#023E8A",
+      "#03045E"
+    ],
+    "source": "default",
+    "metadata": {
+      "description": "Ocean-inspired palette for CLI demos"
+    }
+  }
+]

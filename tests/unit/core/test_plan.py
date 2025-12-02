@@ -6,9 +6,10 @@ from typing import Any
 import pytest
 
 from simple_resume.core import plan
-from simple_resume.core.resume import RenderMode, ResumeConfig
-from simple_resume.exceptions import ValidationError
-from simple_resume.palettes.exceptions import PaletteGenerationError
+from simple_resume.core.exceptions import ValidationError
+from simple_resume.core.models import RenderMode, ResumeConfig
+from simple_resume.core.palettes.exceptions import PaletteGenerationError
+from simple_resume.shell.palettes.loader import get_palette_registry
 from tests.bdd import Scenario
 
 
@@ -22,7 +23,8 @@ class TestPlanValidation:
             "sidebar_color": "#F6F6F6",
         }
 
-        result = plan.validate_resume_config(raw_config)
+        registry = get_palette_registry()
+        result = plan.validate_resume_config(raw_config, registry=registry)
 
         assert result.is_valid
         assert result.errors == []
@@ -33,7 +35,8 @@ class TestPlanValidation:
     def test_validate_config_invalid_page_dimensions(self) -> None:
         raw_config = {"page_width": -10, "page_height": 0}
 
-        result = plan.validate_resume_config(raw_config)
+        registry = get_palette_registry()
+        result = plan.validate_resume_config(raw_config, registry=registry)
 
         assert not result.is_valid
         assert any("positive" in error.lower() for error in result.errors)
@@ -42,7 +45,8 @@ class TestPlanValidation:
     def test_validate_config_sidebar_wider_than_page(self) -> None:
         raw_config = {"page_width": 100, "sidebar_width": 150}
 
-        result = plan.validate_resume_config(raw_config)
+        registry = get_palette_registry()
+        result = plan.validate_resume_config(raw_config, registry=registry)
 
         assert not result.is_valid
         assert any("sidebar width" in error.lower() for error in result.errors)
@@ -50,14 +54,16 @@ class TestPlanValidation:
     def test_validate_config_invalid_colors(self) -> None:
         raw_config = {"theme_color": "invalid_color", "sidebar_color": "#ZZZZZZ"}
 
-        result = plan.validate_resume_config(raw_config)
+        registry = get_palette_registry()
+        result = plan.validate_resume_config(raw_config, registry=registry)
 
         assert not result.is_valid
         assert any("theme_color" in error for error in result.errors)
         assert any("sidebar_color" in error for error in result.errors)
 
     def test_validate_config_defaults_filling(self) -> None:
-        result = plan.validate_resume_config({})
+        registry = get_palette_registry()
+        result = plan.validate_resume_config({}, registry=registry)
 
         assert result.is_valid
         assert result.normalized_config is not None
@@ -71,7 +77,8 @@ class TestPlanValidation:
             "sidebar_width": "60",
         }
 
-        result = plan.validate_resume_config(raw_config)
+        registry = get_palette_registry()
+        result = plan.validate_resume_config(raw_config, registry=registry)
 
         assert result.is_valid
         assert result.normalized_config is not None
@@ -82,7 +89,10 @@ class TestPlanValidation:
         filename = "test_resume.yaml"
         raw_config = {"page_width": -10}
 
-        result = plan.validate_resume_config(raw_config, filename=filename)
+        registry = get_palette_registry()
+        result = plan.validate_resume_config(
+            raw_config, filename=filename, registry=registry
+        )
 
         assert not result.is_valid
         assert any(filename in error for error in result.errors)
@@ -96,8 +106,9 @@ class TestPlanValidation:
             "sidebar_color": "#F6F6F6",
         }
 
+        registry = get_palette_registry()
         config = plan.validate_resume_config_or_raise(
-            raw_config, filename="test_config.yaml"
+            raw_config, filename="test_config.yaml", registry=registry
         )
 
         assert isinstance(config, ResumeConfig)
@@ -113,9 +124,10 @@ class TestPlanValidation:
             "sidebar_color": "#F6F6F6",
         }
 
+        registry = get_palette_registry()
         with pytest.raises(ValidationError) as exc_info:
             plan.validate_resume_config_or_raise(
-                raw_config, filename="test_config.yaml"
+                raw_config, filename="test_config.yaml", registry=registry
             )
 
         exc_value = exc_info.value
@@ -133,8 +145,9 @@ class TestPlanHelpers:
         )
         raw_config = {"template": "resume_no_bars"}
 
+        registry = get_palette_registry()
         normalized, palette_meta, config_for_validation = (
-            plan.normalize_with_palette_fallback(raw_config)
+            plan.normalize_with_palette_fallback(raw_config, registry=registry)
         )
 
         assert normalized["template"] == "resume_no_bars"
@@ -156,6 +169,7 @@ class TestPlanHelpers:
 
         def fake_normalize(
             config: dict[str, Any],
+            **kwargs: Any,
         ) -> tuple[dict[str, Any], dict[str, Any]]:
             captured_calls.append(config.copy())
             if "palette" in config:
@@ -164,10 +178,12 @@ class TestPlanHelpers:
 
         monkeypatch.setattr(plan, "normalize_config", fake_normalize)
 
+        registry = get_palette_registry()
         normalized, palette_meta, config_for_validation = (
             plan.normalize_with_palette_fallback(
                 raw_config,
                 palette_meta_source={"palette": fallback_meta},
+                registry=registry,
             )
         )
 
@@ -192,7 +208,7 @@ class TestPlanHelpers:
         transformed = plan.transform_for_mode(original, RenderMode.HTML)
 
         description = transformed["description"]
-        assert "font-weight: 700 !important;" in description
+        assert "font-weight: 600 !important;" in description
         assert "Bold</strong>" in description
 
     def test_transform_for_mode_html_prefers_bold_color(self) -> None:
@@ -218,7 +234,10 @@ class TestPlanHelpers:
         assert "color: #111827" in description
 
     def test_build_render_plan_latex_mode(self) -> None:
-        config = plan.validate_resume_config_or_raise({"output_mode": "latex"})
+        registry = get_palette_registry()
+        config = plan.validate_resume_config_or_raise(
+            {"output_mode": "latex"}, registry=registry
+        )
 
         render_plan = plan.build_render_plan(
             "Test",
@@ -235,7 +254,8 @@ class TestPlanHelpers:
         assert render_plan.palette_metadata == {"palette": "meta"}
 
     def test_build_render_plan_html_requires_context(self) -> None:
-        config = plan.validate_resume_config_or_raise({})
+        registry = get_palette_registry()
+        config = plan.validate_resume_config_or_raise({}, registry=registry)
 
         with pytest.raises(ValueError, match="context"):
             plan.build_render_plan(
@@ -248,7 +268,8 @@ class TestPlanHelpers:
             )
 
     def test_build_render_plan_html_requires_template(self) -> None:
-        config = plan.validate_resume_config_or_raise({})
+        registry = get_palette_registry()
+        config = plan.validate_resume_config_or_raise({}, registry=registry)
 
         with pytest.raises(ValueError, match="template"):
             plan.build_render_plan(
@@ -261,7 +282,8 @@ class TestPlanHelpers:
             )
 
     def test_build_render_plan_html_success(self) -> None:
-        config = plan.validate_resume_config_or_raise({})
+        registry = get_palette_registry()
+        config = plan.validate_resume_config_or_raise({}, registry=registry)
         context = {"key": "value"}
 
         render_plan = plan.build_render_plan(
@@ -291,7 +313,8 @@ class TestPlanHelpers:
     )
     def test_config_numeric_conversion(self, width: Any, expected_type: type) -> None:
         raw_config = {"page_width": width}
-        result = plan.validate_resume_config(raw_config)
+        registry = get_palette_registry()
+        result = plan.validate_resume_config(raw_config, registry=registry)
 
         if width is not None and result.is_valid:
             assert result.normalized_config is not None
@@ -311,7 +334,8 @@ class TestPlanHelpers:
         self, page_width: int, sidebar_width: int
     ) -> None:
         raw_config = {"page_width": page_width, "sidebar_width": sidebar_width}
-        result = plan.validate_resume_config(raw_config)
+        registry = get_palette_registry()
+        result = plan.validate_resume_config(raw_config, registry=registry)
 
         if sidebar_width >= page_width:
             assert not result.is_valid

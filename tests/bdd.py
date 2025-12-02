@@ -78,28 +78,30 @@ class Scenario:
 
     def case(
         self,
+        description: str | None = None,
         *,
-        given: str | list[str],
-        when: str | list[str],
-        then: str | list[str],
+        given: str | list[str] | None = None,
+        when: str | list[str] | None = None,
+        then: str | list[str] | None = None,
     ) -> None:
-        """Register Given/When/Then clauses in one call."""
+        """Register a scenario with optional Given/When/Then clauses."""
 
-        if isinstance(given, str):
-            self.given(given)
-        else:
-            for clause in given:
-                self.given(clause)
-        if isinstance(when, str):
-            self.when(when)
-        else:
-            for clause in when:
-                self.when(clause)
-        if isinstance(then, str):
-            self.then(then)
-        else:
-            for clause in then:
-                self.then(clause)
+        desc = description if description is not None else ""
+        if desc:
+            self.note(desc)
+
+        def _record(clauses: str | list[str] | None, writer) -> None:
+            if clauses is None:
+                return
+            if isinstance(clauses, str):
+                writer(clauses)
+            else:
+                for clause in clauses:
+                    writer(clause)
+
+        _record(given, self.given)
+        _record(when, self.when)
+        _record(then, self.then)
 
 
 def scenario(name: str) -> Scenario:

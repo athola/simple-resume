@@ -1,11 +1,11 @@
 # Migration Guide
 
-This guide explains migrating to the latest `simple-resume` version. The new version features improved error handling, a new programmatic API, and a consolidated CLI under the `simple-resume` command.
+This guide covers migrating to the latest `simple-resume` version. It introduces improved error handling, a new programmatic API, and a consolidated CLI under the `simple-resume` command.
 
 ## Who Should Read This
 
--   **CLI Users** (Low Impact): If you only use command-line tools, switch to the new `simple-resume generate` command and update YAML files.
--   **Programmatic Users** (High Impact): If you import `simple-resume` functions in Python code, update imports and API calls to use the new `simple_resume.generation` module.
+-   **CLI Users** (Low Impact): If you use only command-line tools, switch to the new `simple-resume generate` command and update YAML files.
+-   **Programmatic Users** (High Impact): If you import `simple-resume` functions in Python code, update imports and API calls to use the new `simple_resume` module.
 -   **Custom Template Authors** (Medium Impact): If you maintain custom Jinja2 templates, minor syntax updates for dictionary access may be required.
 
 ## Breaking Changes Summary
@@ -13,7 +13,7 @@ This guide explains migrating to the latest `simple-resume` version. The new ver
 | Component | Previous Behavior | New Requirement | Action Required |
 |-----------|-------------------|-----------------|-----------------|
 | **YAML Structure** | `template` key was inside `config` block. | `template` key is now at root level. | Move `template` key out of `config` block. |
-| **Programmatic API** | Functions imported from `generate_pdf`, `generate_html`. | Functions now imported from `simple_resume.generation`. | Update import statements, function calls. |
+| **Programmatic API** | Functions imported from `generate_pdf`, `generate_html`. | Functions now imported from `simple_resume`. | Update import statements, function calls. |
 | **Jinja2 Templates** | Dictionary access used dot notation. | Dictionary access now uses bracket notation. | Update custom templates to use bracket notation (e.g., `group["items"]`). |
 | **Error Handling** | Library raised generic exceptions. | Library now has specific exception hierarchy. | Update `try...except` blocks for specific exceptions (optional). |
 | **CLI Entry Points** | CLI invoked by directly executing Python files. | CLI now invoked through unified `simple-resume` command. | Use `uv run simple-resume generate --format pdf` instead of direct Python file execution. |
@@ -68,12 +68,12 @@ uv run simple-resume generate --format html --open
 
 #### Python API Changes
 
-The API restructured for greater functionality.
+The API was restructured to provide greater functionality.
 
 **Before (v0.0.x):**
 
 ```python
-from simple_resume.generation import generate_pdf as generate_pdf_cli
+from simple_resume import generate_pdf as generate_pdf_cli
 
 # Old approach: Call CLI function directly
 generate_pdf_cli()
@@ -82,7 +82,7 @@ generate_pdf_cli()
 **After (v0.1.0+):**
 
 ```python
-from simple_resume.generation import generate_pdf
+from simple_resume import generate_pdf
 
 # New approach: Use the functional API with result objects
 result = generate_pdf(name="my_resume", data_dir="resume_private")
@@ -96,7 +96,7 @@ else:
 #### Batch Processing Example
 
 ```python
-from simple_resume.session import ResumeSession
+from simple_resume.shell.session import ResumeSession
 
 with ResumeSession(data_dir="resumes/") as session:
     for resume_name in ["resume_1", "resume_2", "resume_3"]:
@@ -132,17 +132,17 @@ uv run simple-resume generate --format pdf --data-dir your_dir
 **Before (v0.0.x):**
 
 ```python
-from simple_resume.generation import generate_pdf as generate_resume_pdf
-from simple_resume.utilities import load_yaml_data
+from simple_resume import generate_pdf as generate_resume_pdf
+from simple_resume.shell.runtime.content import get_content
 
-data = load_yaml_data("resume.yaml")
+data = get_content("resume.yaml")
 pdf_path = generate_resume_pdf(data, "output.pdf")
 ```
 
 **After (v0.1.0+):**
 
 ```python
-from simple_resume.generation import generate_pdf
+from simple_resume import generate_pdf
 from simple_resume.core.resume import Resume
 
 # Option 1: Generate from a file name (recommended)
@@ -206,7 +206,7 @@ The v0.1.0 release includes these new features:
 
 ### Fluent API
 
-Chain operations on `Resume` objects for more readable code.
+Chain operations on `Resume` objects for more readable and maintainable code.
 
 ```python
 from simple_resume.core.resume import Resume
@@ -221,10 +221,10 @@ resume = (
 
 ### Session Management
 
-The new session management system processes multiple resumes more efficiently with shared configuration, reducing I/O overhead by up to 40% for batch operations.
+The new session management system processes multiple resumes more efficiently with shared configuration, reducing I/O overhead by up to 40% in batch operations.
 
 ```python
-from simple_resume.session import ResumeSession
+from simple_resume.shell.session import ResumeSession
 
 with ResumeSession(data_dir="resumes/") as session:
     for name in ["resume_tech", "resume_academic"]:
@@ -288,15 +288,15 @@ Use this checklist to track migration progress.
 - [ ] Update all YAML files: move `template` key to root level.
 - [ ] Test generation with new `uv run simple-resume generate` command.
 - [ ] Update documentation or scripts referencing old command syntax.
-- [ ] If using custom templates, update dictionary access to bracket notation.
+- [ ] Update dictionary access to bracket notation in custom templates.
 - [ ] Verify output matches expectations.
 
 ### Programmatic Users
 
-- [ ] Update import statements to use new `simple_resume.generation` module.
+- [ ] Update import statements to use new `simple_resume` module.
 - [ ] Replace old CLI function calls with new API functions.
 - [ ] Update error handling to use new specific exception classes.
-- [ ] Consider using new session management feature for batch operations.
+- [ ] Use the new session management feature for batch operations if applicable.
 - [ ] Review and update custom template code.
 - [ ] Update tests to verify new API behavior.
 - [ ] Update documentation or comments referencing old API.
@@ -306,21 +306,21 @@ Use this checklist to track migration progress.
 - [ ] Update your custom templates to use bracket notation instead of dot notation for dictionary access.
 -   [ ] Test templates with new data model.
 -   [ ] Verify all template variables are accessible.
--   [ ] Update template documentation.
+-   [ ] Document template updates.
 
-## Deprecation Timeline
+## API Timeline
 
 | Version | Status | Notes |
 |---------|--------|-------|
-| **v0.0.x** | Deprecated | Old CLI scripts and imports continue to work but emit warnings. |
-| **v0.1.x** | Current | New API recommended. Old API deprecated. |
-| **v0.2.x** | Planned | The old API will be removed. |
+| **v0.0.x** | Legacy | Previous version with basic functionality. |
+| **v0.1.x** | Current | Stable API with modern architecture. |
+| **v0.2.x** | Future | Planned enhancements and new features. |
 
-**Recommendation**: Migrate to the new API soon to avoid breaking changes in future releases.
+**Recommendation**: Use the current stable API for all new development.
 
 ## Getting Help
 
-If issues arise during migration, follow these steps:
+If you encounter issues during migration, follow these steps:
 
 1.  Review the [Usage Guide](Usage-Guide.md) and [Development Guide](Development-Guide.md).
 2.  Search for similar issues on [GitHub](https://github.com/athola/simple-resume/issues).

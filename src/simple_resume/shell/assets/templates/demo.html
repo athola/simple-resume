@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ resume_name or "Resume" }}</title>
+</head>
+<body>
+    {% if content %}
+        {{ content | safe }}
+    {% else %}
+        <p>Hello</p>
+    {% endif %}
+</body>
+</html>

@@ -1,101 +1,92 @@
 # Getting Started
 
-This guide covers installing the tool, creating a resume from a YAML file, and generating PDF or HTML output.
+This guide provides a walkthrough for installing `simple-resume`, creating a resume from a YAML file, and generating it as a PDF or HTML document.
 
-## Installation
+## 1. Installation and Setup
 
-Prerequisites: Python 3.9+ and `uv` installed.
+This guide is for setting up a local development environment. For standard user installation, see the [README.md](../README.md).
 
-1.  Clone the repository:
+First, ensure you have Python 3.9+ and `uv` installed. Then, clone the repository and install the required dependencies:
 
-    ```bash
-    git clone https://github.com/athola/simple-resume.git
-    cd simple-resume
-    ```
-
-2.  Install dependencies:
-
-    ```bash
-    uv sync
-    ```
-
-## Creating Your Resume
-
-1.  **Start with a sample:**
-
-    Copy a sample file to use as a starting point.
-
-    ```bash
-    cp sample/input/sample_1.yaml resume_private/input/my_resume.yaml
-    ```
-
-2.  **Edit the YAML file:**
-
-    Open `resume_private/input/my_resume.yaml` and replace the placeholder content with your own information.
-
-    ```yaml
-    full_name: "Your Name"
-    job_title: "Your Job Title"
-    email: "your.email@example.com"
-
-    body:
-      experience:
-        - company: "Your Company"
-          position: "Your Position"
-    ```
-
-3.  **Generate the resume:**
-
-    Run the following command to generate your resume. The `--open` flag opens the output file in your default application (e.g., browser for HTML, PDF viewer for PDF).
-
-    ```bash
-    uv run simple-resume generate --format html --open
-    uv run simple-resume generate --format pdf --open
-    ```
-
-    To generate multiple resumes at once, point the `--data-dir` argument to a directory containing your YAML files.
-
-### Using the Python API
-
-The tool can also be used as a Python library for programmatic use:
-
-```python
-from simple_resume import Resume
-from simple_resume.session import ResumeSession
-
-# Load and generate a resume
-resume = Resume.read_yaml("resume_private/input/my_resume.yaml")
-result = resume.to_pdf(open_after=True)
-
-# Use a session for consistent settings (e.g., data directory)
-with ResumeSession(data_dir="resume_private") as session:
-    resume = session.resume("my_resume")
-    # Apply different styles
-    styled_resume = resume.with_palette("Professional Blue").with_template("resume_base")
-    result = styled_resume.to_pdf()
+```bash
+git clone https://github.com/athola/simple-resume.git
+cd simple-resume
+uv sync
 ```
 
-## Customization
+## 2. Create and Generate Your Resume
 
-### Templates
+### Start with a Sample
 
-You can change the resume's layout by specifying a different template in your YAML file.
+To get started, copy one of the sample files to the `resume_private/input` directory.
+
+```bash
+cp sample/input/sample_1.yaml resume_private/input/my_resume.yaml
+```
+
+### Edit the Content
+
+Open `resume_private/input/my_resume.yaml` in a text editor and replace the placeholder content with your own information.
+
+```yaml
+full_name: "Your Name"
+job_title: "Your Job Title"
+email: "your.email@example.com"
+# ... and so on
+```
+
+### Generate the Output
+
+Use the `generate` command to create your resume. The `--open` flag will open the generated file in your default browser or PDF viewer.
+
+```bash
+# Generate an HTML resume
+uv run simple-resume generate --format html --open
+
+# Generate a PDF resume
+uv run simple-resume generate --format pdf --open
+```
+
+To generate multiple resumes at once, use the `--data-dir` argument to specify a directory containing your YAML files.
+
+## 3. Customize Your Resume
+
+The appearance of your resume can be customized by editing the YAML file.
+
+### Change the Template
+
+To change the layout of your resume, specify a different `template` in your YAML file.
 
 ```yaml
 template: resume_no_bars  # A minimalist design
-# template: resume_with_bars  # A design that includes skill level bars
+# template: resume_with_bars  # A design with skill level bars
 ```
 
-### Color Schemes
+### Template Variables
 
-Apply a color scheme by adding the `color_scheme` key under a `config` section in your YAML.
+Templates have access to the following variables from your YAML file:
+
+| Variable | Description |
+|----------|-------------|
+| `name` | Full name |
+| `title` | Job title |
+| `contact` | Contact information |
+| `summary` | Professional summary |
+| `experience` | Work experience list |
+| `education` | Education list |
+| `skills` | Skills list |
+| `colors` | Color palette values |
+
+### Apply a Color Scheme
+
+To apply a color scheme, add the `color_scheme` key to the `config` section of your YAML file.
 
 ```yaml
 config:
   color_scheme: "Professional Blue"
 ```
 
-For more details, see the [Color Schemes guide](Color-Schemes.md).
+For more information on color schemes, see the [Color Schemes guide](Color-Schemes.md).
 
 ## Next Steps
 
@@ -104,19 +95,19 @@ For more details, see the [Color Schemes guide](Color-Schemes.md).
 
 ## Sample Files
 
-The `sample/` directory contains examples demonstrating different features:
+The `sample/` directory contains the following examples:
 
--   **`sample_1.yaml`**, **`sample_2.yaml`** - Basic resume examples
--   **`sample_multipage_demo.yaml`** - Multi-page resume with proper pagination
--   **`sample_palette_demo.yaml`** - Demonstrates various color schemes
--   **`sample_dark_sidebar.yaml`** - Dark theme with sidebar layout
--   **`sample_latex.yaml`** - LaTeX-specific formatting examples
--   **`sample_contrast_demo.yaml`** - Color contrast accessibility examples
+-   **`sample_1.yaml`** and **`sample_2.yaml`**: Basic resume examples.
+-   **`sample_multipage_demo.yaml`**: A multi-page resume with proper pagination.
+-   **`sample_palette_demo.yaml`**: A demonstration of various color schemes.
+-   **`sample_dark_sidebar.yaml`**: A dark theme with a sidebar layout.
+-   **`sample_latex.yaml`**: Examples of LaTeX-specific formatting.
+-   **`sample_contrast_demo.yaml`**: Examples of color contrast accessibility.
 
 ## Troubleshooting
 
--   **PDF generation fails**: This tool supports WeasyPrint and LaTeX for PDF creation. Ensure their dependencies are installed.
--   **YAML syntax errors**: YAML is sensitive to indentation. Use a linter or validator to check your syntax.
--   **Template not found**: Check the template name in your YAML file. Available templates include `resume_base`, `resume_no_bars`, and `resume_with_bars`.
+-   **PDF Generation Fails**: PDF generation depends on WeasyPrint or LaTeX. Ensure that their dependencies are installed correctly.
+-   **YAML Syntax Errors**: YAML is sensitive to indentation. Use a YAML linter to check for syntax errors.
+-   **Template Not Found**: Ensure that the `template` name in your YAML file matches an available template (e.g., `resume_base`, `resume_no_bars`).
 
 For other issues, please open an issue on [GitHub](https://github.com/athola/simple-resume/issues).

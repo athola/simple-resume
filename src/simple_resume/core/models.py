@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ..config import Paths
-from ..constants import OutputFormat, RenderMode
+from simple_resume.core.constants import OutputFormat, RenderMode
+from simple_resume.core.paths import Paths
 
 
 @dataclass(frozen=True)
@@ -89,6 +89,7 @@ class GenerationConfig:
 
 __all__ = [
     "GenerationConfig",
+    "RenderMode",
     "RenderPlan",
     "ResumeConfig",
     "ValidationResult",

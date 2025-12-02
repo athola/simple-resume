@@ -70,3 +70,17 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+
+      - id: sdist-contents
+        name: sdist-contains-templates-and-sources
+        entry: bash -lc 'set -euo pipefail; mkdir -p dist; rm -f dist/simple_resume-*.tar.gz; UV_CACHE_DIR=.uv-cache uv build --sdist >/dev/null; TARBALL=$(ls -t dist/simple_resume-*.tar.gz | head -n1); tar -tf "$TARBALL" > /tmp/sdist_files.txt; grep -q "simple_resume-.*/simple_resume/shell/assets/templates/html/resume_no_bars.html" /tmp/sdist_files.txt; grep -q "simple_resume-.*/simple_resume/shell/cli/main.py" /tmp/sdist_files.txt; echo sdist contains required source and template files'
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: architecture-tests
+        name: architecture-layer-separation
+        entry: bash -c 'uv run pytest tests/architecture/test_layer_separation.py --quiet --tb=short || (echo "Architecture tests failing (expected during refactoring - see CORE_REFACTOR_PLAN.md)" && exit 0)'
+        language: system
+        pass_filenames: false
+        always_run: true

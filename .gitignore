@@ -12,6 +12,8 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.pre-commit-cache/
+.npm-cache/
 
 # Jupyter checkpoints
 /.ipynb_checkpoints
@@ -24,12 +26,15 @@ cover
 */cover
 coverage.xml
 */coverage.xml
+coverage.json
+*/coverage.json
 htmlcov/
 */htmlcov/
 nosetests.xml
 */nosetests.xml
 pylint.xml
 */pylint.xml
+.coverage*
 
 # Temporary files from build processes
 *.tmp
@@ -59,8 +64,10 @@ resume_private/output/
 *.pdf
 *.html
 *.tex
-!src/simple_resume/templates/*.html
+!src/simple_resume/templates/html/*.html
 !src/simple_resume/templates/latex/*.tex
+!src/simple_resume/shell/assets/templates/html/*.html
+!src/simple_resume/shell/assets/templates/demo.html
 
 # Preview images (but keep main preview.jpg/png for README)
 *preview_new*
@@ -89,3 +96,5 @@ src/static/images/*
 *.swp
 commit_msg.txt
 bandit-report.json
+*.log
+output.json

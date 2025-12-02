@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 import tempfile
 from collections.abc import Iterator
 from pathlib import Path
@@ -11,8 +12,18 @@ from unittest.mock import Mock
 import pytest
 import yaml
 
-from .bdd import Scenario
-from .bdd import scenario as make_scenario
+# Ensure project sources are importable even when not installed in the env
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+SRC_PATH = PROJECT_ROOT / "src"
+
+resolved_sys_paths = {str(Path(p).resolve()) for p in sys.path}
+if str(SRC_PATH) not in resolved_sys_paths:
+    sys.path.insert(0, str(SRC_PATH))
+
+# Import for service registration fixture
+from simple_resume.shell.services import register_default_services  # noqa: E402
+from tests.bdd import Scenario  # noqa: E402
+from tests.bdd import scenario as make_scenario  # noqa: E402
 
 
 @pytest.fixture
@@ -312,6 +323,12 @@ def mock_weasyprint() -> dict[str, Mock]:
 
 
 @pytest.fixture(autouse=True)
+def register_default_services_fixture() -> None:
+    """Register default services for all tests."""
+    register_default_services()
+
+
+@pytest.fixture(autouse=True)
 def mock_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     """Mock environment variables and paths for testing."""
     # Mock paths to avoid dependency on actual file structure
@@ -326,7 +343,7 @@ def mock_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     }
 
     for key, value in test_paths.items():
-        monkeypatch.setattr(f"simple_resume.config.{key}", value)
+        monkeypatch.setattr(f"simple_resume.shell.config.{key}", value)
 
 
 @pytest.fixture
