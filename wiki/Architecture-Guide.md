@@ -507,24 +507,27 @@ These modules are fully compliant with the architecture.
 - `core/colors.py`: Pure color math
 - `core/color_service.py`: Pure color decisions
 - `core/hydration_core.py`: Pure transformation with dependency injection
+- `core/generate/pdf.py`: Effect-based PDF generation (no I/O)
+- `core/generate/html.py`: Effect-based HTML generation (no I/O)
+- `core/resume.py`: Late-bound dependencies (no shell imports)
+- `core/result.py`: Pure data structures (no subprocess)
 - `shell/generation.py`: Uses a dependency injection pattern
 
-### Modules Under Refactoring
+### Recently Completed Refactorings
 
-These modules are currently being refactored to comply with the architecture.
+These modules have been refactored to comply with the architecture.
 
-- `core/pdf_generation.py`: Removing file I/O (Phase 2)
-- `core/html_generation.py`: Removing file I/O (Phase 2)
-- `core/resume.py`: Moving I/O to the shell (Phase 3)
-- `core/config_core.py`: Removing network calls (Phase 4)
-- `core/strategies.py`: Removing shell imports (Phase 2)
+- `core/generate/pdf.py`: File I/O removed via Effect system (Completed 2025-12-02)
+- `core/generate/html.py`: File I/O removed via Effect system (Completed)
+- `core/resume.py`: Shell imports eliminated via late binding (Completed)
+- `core/result.py`: Subprocess dependencies removed (Completed)
 
 ### Progress Metrics
 
 | Metric | Current | Target |
 |---|---|---|
 | Core purity | 100% | 90%+ |
-| P0 violations | 6 | 0 |
+| Known violations | 0 | 0 |
 | Test coverage | 85% | 90%+ |
 | Core test speed | < 1s | < 1s |
 

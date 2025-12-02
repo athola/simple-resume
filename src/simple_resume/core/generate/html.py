@@ -18,7 +18,6 @@ from jinja2 import TemplateNotFound
 
 from simple_resume.core.constants import RenderMode
 from simple_resume.core.effects import Effect, MakeDirectory, WriteFile
-from simple_resume.core.exceptions import ConfigurationError
 from simple_resume.core.generate.exceptions import TemplateError
 from simple_resume.core.models import RenderPlan
 from simple_resume.core.protocols import TemplateLocator
@@ -50,7 +49,17 @@ class _PackageTemplateLocator(TemplateLocator):
             )
 
 
-_DEFAULT_TEMPLATE_LOCATOR = _PackageTemplateLocator()
+def create_default_template_locator() -> _PackageTemplateLocator:
+    """Create a default package template locator.
+
+    Returns:
+        New _PackageTemplateLocator instance
+
+    This factory pattern avoids global state while providing convenient
+    access to the default template locator when needed.
+
+    """
+    return _PackageTemplateLocator()
 
 
 @dataclass(frozen=True)
@@ -78,7 +87,7 @@ class HtmlGeneratorFactory:
 
     def __init__(
         self,
-        default_template_locator: TemplateLocator | None = _DEFAULT_TEMPLATE_LOCATOR,
+        default_template_locator: TemplateLocator | None = None,
     ):
         """Initialize factory with optional default template locator.
 
@@ -106,10 +115,8 @@ class HtmlGeneratorFactory:
             return injected
         if self._default_template_locator is not None:
             return self._default_template_locator
-        raise ConfigurationError(
-            "No template locator available. "
-            "Either inject one or ensure factory is configured with a default."
-        )
+        # Create default locator on-demand using factory
+        return create_default_template_locator()
 
     def create_prepare_html_function(
         self,
@@ -219,7 +226,7 @@ def _prepare_html_with_jinja_impl(
     try:
         template = env.get_template(params.render_plan.template_name)
     except TemplateNotFound:
-        fallback_locator = _DEFAULT_TEMPLATE_LOCATOR
+        fallback_locator = create_default_template_locator()
         env = get_template_environment(str(fallback_locator.get_template_location()))
         template = env.get_template(params.render_plan.template_name)
 
@@ -261,7 +268,7 @@ def _prepare_html_with_jinja_impl(
 
 
 def create_html_generator_factory(
-    default_template_locator: TemplateLocator | None = _DEFAULT_TEMPLATE_LOCATOR,
+    default_template_locator: TemplateLocator | None = None,
 ) -> HtmlGeneratorFactory:
     """Create a new HTML generator factory.
 

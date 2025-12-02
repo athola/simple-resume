@@ -67,16 +67,12 @@ def _get_lazy_core() -> _LazyRuntimeLoader:
     return _LazyRuntimeLoader()
 
 
-# Expose a shared singleton for easier patching in tests
-_lazy_core = _get_lazy_core()
-
-
 def generate_pdf(
     config: GenerationConfig,
     **config_overrides: Any,
 ) -> Any:
     """Generate PDF resumes using a configuration object (lazy-loaded wrapper)."""
-    return _lazy_core.generate_pdf(config, **config_overrides)
+    return _get_lazy_core().generate_pdf(config, **config_overrides)
 
 
 def generate_html(
@@ -84,7 +80,7 @@ def generate_html(
     **config_overrides: Any,
 ) -> Any:
     """Generate HTML resumes using a configuration object (lazy-loaded wrapper)."""
-    return _lazy_core.generate_html(config, **config_overrides)
+    return _get_lazy_core().generate_html(config, **config_overrides)
 
 
 def generate_all(
@@ -92,7 +88,7 @@ def generate_all(
     **config_overrides: Any,
 ) -> Any:
     """Generate resumes in all specified formats (lazy-loaded wrapper)."""
-    return _lazy_core.generate_all(config, **config_overrides)
+    return _get_lazy_core().generate_all(config, **config_overrides)
 
 
 def generate_resume(
@@ -100,7 +96,7 @@ def generate_resume(
     **config_overrides: Any,
 ) -> Any:
     """Generate a resume in a specific format (lazy-loaded wrapper)."""
-    return _lazy_core.generate_resume(config, **config_overrides)
+    return _get_lazy_core().generate_resume(config, **config_overrides)
 
 
 def generate(
@@ -109,7 +105,7 @@ def generate(
     **overrides: Any,
 ) -> Any:
     """Render one or more formats for the same source (lazy-loaded wrapper)."""
-    return _lazy_core.generate(source, options, **overrides)
+    return _get_lazy_core().generate(source, options, **overrides)
 
 
 def preview(
@@ -122,7 +118,7 @@ def preview(
     **overrides: Any,
 ) -> Any:
     """Render a single resume to HTML with preview defaults (lazy-loaded wrapper)."""
-    return _lazy_core.preview(
+    return _get_lazy_core().preview(
         source,
         data_dir=data_dir,
         template=template,

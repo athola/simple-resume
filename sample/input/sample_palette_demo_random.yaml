@@ -1,14 +1,14 @@
 template: resume_with_bars
-full_name: Emerson Carter
-job_title: Staff Engineer
+full_name: Riley Foster
+job_title: Engineering Manager
 address:
 - 101 Color Way
 - Austin, TX
-phone: (512) 555-8712
-email: emerson.carter.my7cai19@example.com
-web: https://emersoncarter.dev
-linkedin: in/emerson-carter-ruh8
-github: emersoncarter
+phone: (512) 555-8781
+email: riley.foster.kmqsb3pc@example.com
+web: https://rileyfoster.dev
+linkedin: in/riley-foster-v08j
+github: rileyfoster
 titles:
   contact: Contact
   skills: Skills
@@ -18,11 +18,11 @@ titles:
   keyskills: Key Skills
   languages: Languages
 description: 'Experienced with caching strategies and modern development practices.
-  Experienced with microservices architecture and modern development practices.
+  Experienced with caching strategies and modern development practices.
 
 
-  Experienced with database design and modern development practices. Experienced with
-  caching strategies and modern development practices.'
+  Experienced with caching strategies and modern development practices. Experienced
+  with caching strategies and modern development practices.'
 skills:
   UI/UX Design: 55
   Frontend Development: 48
@@ -75,20 +75,26 @@ body:
     end: Present
     title: Principal Design Technologist
     title_link: https://spectrumlabs.design/systems
-    company: ByteBridge
+    company: NexGen Solutions
     company_link: https://spectrumlabs.design
-    description: '- Reduced latency by 55% through optimization
+    description: '- Streamlined development workflow reducing build time by 73%
 
-      - Reduced operational costs by 40% through efficient resource allocation'
+      - Mentored team of 8 engineers on best practices
+
+      - Architected scalable solution handling 632K requests/day'
     tech_stack: TypeScript, React, Styled Components, Figma API, Python, PostgreSQL
   - start: 2018
     end: 2022
     title: Senior UX Engineer
-    company: Horizon Digital
+    company: StreamFlow
     company_link: https://auroraanalytics.io
-    description: '- Implemented monitoring system tracking 97+ metrics
+    description: '- Led migration of 9 services to cloud infrastructure
 
-      - Reduced operational costs by 53% through efficient resource allocation'
+      - Increased test coverage from 65% to 91%
+
+      - Led migration of 19 services to cloud infrastructure
+
+      - Improved deployment frequency by 6x using automation'
     tech_stack: React, TypeScript, Jest, Storybook, Webpack, Node.js
   Projects:
   - start: 2024
@@ -96,104 +102,103 @@ body:
     title: Adaptive Palette Generator
     title_link: https://github.com/caseypalette/adaptive-palettes
     company: Personal Project
-    description: '- Created automated testing suite reducing manual effort by 54%
+    description: '- Developed content delivery network integrating with Azure
 
-      - Developed user authentication service integrating with GCP'
+      - Optimized frontend rendering achieving sub-100ms response times
+
+      - Created automated testing suite reducing manual effort by 58%
+
+      - Designed and implemented user authentication service using Vue.js and Nuxt'
   - start: 2023
     end: 2023
     title: Voice of Customer Pipeline
     company: Open Source Collective
     company_link: https://github.com/caseypalette/voc-pipeline
-    description: '- Built service to handle multi-tenant operations
+    description: '- Optimized database queries achieving 50% cost reduction
 
-      - Optimized API endpoints achieving 99.9% uptime
+      - Designed and implemented data pipeline using React and TypeScript
 
-      - Designed and implemented search engine using React and TypeScript'
+      - Designed and implemented search engine using Python and FastAPI'
   Awards & Honors:
   - start: 2023
     end: 2023
     title: "UX Awards \u2014 Best Systems Initiative"
     company: DesignOps Summit
-    description: '- Experienced with system monitoring and modern development practices.
+    description: '- Experienced with automated testing and modern development practices.
 
-      - Experienced with system monitoring and modern development practices.'
+      - Experienced with orchestration and modern development practices.'
   - start: 2022
     end: 2022
     title: "Webby Awards \u2014 People\u2019s Voice (Productivity)"
     company: The Webby Awards
-    description: '- Experienced with caching strategies and modern development practices.
+    description: '- Experienced with automated testing and modern development practices.
 
-      - Experienced with cloud infrastructure and modern development practices.
-
-      - Experienced with API design and modern development practices.'
+      - Experienced with CI/CD pipelines and modern development practices.'
   Publications:
   - start: 2022
     end: 2022
     title: Designing Color Systems for Accessibility
     title_link: https://medium.com/@caseypalette/color-systems-accessibility
     company: Medium
-    description: '- Experienced with system monitoring and modern development practices.
+    description: '- Experienced with microservices architecture and modern development
+      practices.
 
-      - Experienced with cloud infrastructure and modern development practices.'
+      - Experienced with caching strategies and modern development practices.
+
+      - Experienced with performance optimization and modern development practices.'
   - start: 2021
     end: 2021
     title: Measuring Design Impact with Product Analytics
     company: Design Leadership Forum
-    description: '- Experienced with system monitoring and modern development practices.
+    description: '- Experienced with database design and modern development practices.
 
-      - Experienced with API design and modern development practices.
-
-      - Experienced with API design and modern development practices.
-
-      - Experienced with API design and modern development practices.'
+      - Experienced with load balancing and modern development practices.'
   Speaking Engagements:
   - start: 2024
     end: 2024
     title: "Keynote \u2014 Measuring Design Impact"
     company: ColorConf
-    description: '- Experienced with API design and modern development practices.
+    description: '- Experienced with CI/CD pipelines and modern development practices.
 
-      - Experienced with database design and modern development practices.
+      - Experienced with CI/CD pipelines and modern development practices.
 
-      - Experienced with database design and modern development practices.'
+      - Experienced with API design and modern development practices.
+
+      - Experienced with performance optimization and modern development practices.'
   - start: 2023
     end: 2023
     title: "Workshop \u2014 Accessible Theming in Practice"
     company: Config by Figma
-    description: '- Experienced with API design and modern development practices.
+    description: '- Experienced with database design and modern development practices.
 
-      - Experienced with containerization and modern development practices.
-
-      - Experienced with containerization and modern development practices.
-
-      - Experienced with caching strategies and modern development practices.'
+      - Experienced with microservices architecture and modern development practices.'
   Volunteer Service:
   - start: 2021
     end: Present
     title: "Mentor \u2014 Inclusive Design"
     company: ADPList
-    description: '- Experienced with automated testing and modern development practices.
+    description: '- Experienced with CI/CD pipelines and modern development practices.
 
-      - Experienced with automated testing and modern development practices.'
+      - Experienced with cloud infrastructure and modern development practices.'
   - start: 2020
     end: Present
     title: "Organizer \u2014 Civic Tech Nights"
     company: Austin Design Week
-    description: '- Experienced with cloud infrastructure and modern development practices.
+    description: '- Experienced with orchestration and modern development practices.
 
-      - Experienced with performance optimization and modern development practices.
-
-      - Experienced with microservices architecture and modern development practices.'
+      - Experienced with containerization and modern development practices.'
   Education:
   - start: 2014
     end: 2018
     title: B.S. Human-Centered Design
     company: University of Texas at Austin
-    description: '- Experienced with caching strategies and modern development practices.
+    description: '- Experienced with automated testing and modern development practices.
 
-      - Experienced with performance optimization and modern development practices.'
+      - Experienced with system monitoring and modern development practices.
+
+      - Experienced with orchestration and modern development practices.'
 config:
-  color_scheme: BrownBlue12_5_r
+  color_scheme: Turbid_18
   palette:
     source: generator
     type: hcl
@@ -221,8 +226,8 @@ config:
   date_container_padding_left: 6
   description_container_padding_left: 2
   frame_padding: 10
-  frame_color: '#644F4F'
-  bold_color: '#4B3B3B'
+  frame_color: '#C4A24E'
+  bold_color: '#937A3A'
   section_icon_circle_size: 7.8mm
   section_icon_circle_x_offset: -0.5mm
   section_icon_design_size: 4mm
@@ -230,8 +235,8 @@ config:
   section_icon_design_y_offset: -0.4mm
   section_heading_text_margin: -6mm
   output_mode: markdown
-  theme_color: '#007A99'
-  sidebar_color: '#01EFFF'
-  sidebar_text_color: '#04FDFF'
-  bar_background_color: '#049B7A'
-  date2_color: '#331900'
+  theme_color: '#E9F6AB'
+  sidebar_color: '#E0E495'
+  sidebar_text_color: '#D9D380'
+  bar_background_color: '#D2C26D'
+  date2_color: '#CBB25C'

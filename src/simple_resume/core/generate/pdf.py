@@ -44,7 +44,17 @@ class _PackageTemplateLocator(TemplateLocator):
             )
 
 
-_DEFAULT_TEMPLATE_LOCATOR = _PackageTemplateLocator()
+def create_default_template_locator() -> _PackageTemplateLocator:
+    """Create a default package template locator.
+
+    Returns:
+        New _PackageTemplateLocator instance
+
+    This factory pattern avoids global state while providing convenient
+    access to the default template locator when needed.
+
+    """
+    return _PackageTemplateLocator()
 
 
 class _DefaultLaTeXRenderer(LaTeXRenderer):
@@ -65,7 +75,17 @@ class _DefaultLaTeXRenderer(LaTeXRenderer):
             return None, None, None
 
 
-_DEFAULT_LATEX_RENDERER = _DefaultLaTeXRenderer()
+def create_default_latex_renderer() -> _DefaultLaTeXRenderer:
+    """Create a default LaTeX renderer.
+
+    Returns:
+        New _DefaultLaTeXRenderer instance
+
+    This factory pattern avoids global state while providing convenient
+    access to the default LaTeX renderer when needed.
+
+    """
+    return _DefaultLaTeXRenderer()
 
 
 @dataclass(frozen=True)
@@ -137,7 +157,8 @@ class PdfGeneratorFactory:
             return injected
         if self._template_locator is not None:
             return self._template_locator
-        return _DEFAULT_TEMPLATE_LOCATOR
+        # Create default locator on-demand using factory
+        return create_default_template_locator()
 
     def _get_latex_renderer(self, injected: LaTeXRenderer | None) -> LaTeXRenderer:
         """Get LaTeX renderer, preferring injected over default."""
@@ -145,7 +166,8 @@ class PdfGeneratorFactory:
             return injected
         if self._latex_renderer is not None:
             return self._latex_renderer
-        return _DEFAULT_LATEX_RENDERER
+        # Create default renderer on-demand using factory
+        return create_default_latex_renderer()
 
     def create_prepare_pdf_with_weasyprint_function(
         self,
@@ -375,29 +397,6 @@ class PdfGeneratorFactory:
         return generate_pdf_with_latex
 
 
-def create_pdf_generator_factory(
-    effect_executor: EffectExecutor | None = None,
-    template_locator: TemplateLocator | None = None,
-    latex_renderer: LaTeXRenderer | None = None,
-) -> PdfGeneratorFactory:
-    """Create a new PDF generator factory.
-
-    Args:
-        effect_executor: Optional default effect executor
-        template_locator: Optional default template locator
-        latex_renderer: Optional default LaTeX renderer
-
-    Returns:
-        New factory instance
-
-    """
-    return PdfGeneratorFactory(
-        effect_executor=effect_executor,
-        template_locator=template_locator,
-        latex_renderer=latex_renderer,
-    )
-
-
 def _prepare_pdf_with_weasyprint_impl(
     params: _PdfGenerationParams,
     factory: PdfGeneratorFactory,
@@ -599,7 +598,7 @@ def prepare_pdf_with_weasyprint(
         TemplateError: If render plan is invalid or uses LaTeX mode
 
     """
-    factory = create_pdf_generator_factory()
+    factory = PdfGeneratorFactory()
     params = _PdfGenerationParams(
         render_plan=render_plan,
         output_path=output_path,
@@ -654,7 +653,7 @@ def prepare_pdf_with_latex(
         ConfigurationError: If paths is None or LaTeX renderer unavailable
 
     """
-    factory = create_pdf_generator_factory()
+    factory = PdfGeneratorFactory()
     if isinstance(config, LatexGenerationContext):
         params = _PdfGenerationParams(
             render_plan=render_plan,
@@ -689,7 +688,7 @@ def generate_pdf_with_weasyprint(
     This function executes the effects produced by prepare_pdf_with_weasyprint
     and returns the result and page count.
     """
-    factory = create_pdf_generator_factory(
+    factory = PdfGeneratorFactory(
         effect_executor=config.effect_executor,
         template_locator=config.template_locator,
         latex_renderer=config.latex_renderer,
@@ -706,7 +705,6 @@ def generate_pdf_with_weasyprint(
 
 __all__ = [
     "PdfGeneratorFactory",
-    "create_pdf_generator_factory",
     "prepare_pdf_with_weasyprint",
     "prepare_pdf_with_latex",
     "generate_pdf_with_weasyprint",

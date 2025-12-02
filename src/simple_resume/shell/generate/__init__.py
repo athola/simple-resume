@@ -15,7 +15,6 @@ from simple_resume.core.generate.html import (
 )
 from simple_resume.core.generate.pdf import (
     PdfGeneratorFactory,
-    create_pdf_generator_factory,
 )
 
 # Re-export lazy loading versions for backward compatibility

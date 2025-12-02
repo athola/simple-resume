@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     pass
 
 from simple_resume.core.generate.html import create_html_generator_factory
-from simple_resume.core.generate.pdf import create_pdf_generator_factory
+from simple_resume.core.generate.pdf import PdfGeneratorFactory
 from simple_resume.core.markdown import render_markdown_content
 from simple_resume.core.protocols import (
     ContentLoader,
@@ -214,7 +214,7 @@ def register_default_services() -> None:
     html_factory = create_html_generator_factory(template_locator)
 
     # Set default dependencies for core PDF generation
-    pdf_factory = create_pdf_generator_factory(
+    pdf_factory = PdfGeneratorFactory(
         effect_executor=effect_executor,
         template_locator=template_locator,
         latex_renderer=latex_renderer,

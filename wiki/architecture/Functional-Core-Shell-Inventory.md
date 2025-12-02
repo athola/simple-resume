@@ -17,7 +17,7 @@ Pure functions and data structures with no I/O operations.
 | `core/exceptions.py` | Exception hierarchy | Pure |
 | `core/file_operations.py` | Pure file path operations (no I/O) | Pure |
 | `core/generate/html.py` | HTML generation planning | Pure |
-| `core/generate/pdf.py` | PDF generation planning | Known violation (weasyprint) |
+| `core/generate/pdf.py` | PDF generation planning (Effect system) | Pure |
 | `core/generate/plan.py` | Generation plan creation | Pure |
 | `core/hydration.py` | Data hydration transformations | Pure |
 | `core/latex/` | LaTeX rendering logic (context, conversion, escaping, etc.) | Pure |
@@ -126,7 +126,7 @@ def open_file(path: Path, format_type: str | None = None) -> bool:
 
 | File | Violation | Tracked In | Status |
 | --- | --- | --- | --- |
-| `core/generate/pdf.py` | imports weasyprint | test_layer_separation.py | Planned refactor |
+| `core/generate/pdf.py` | Previously imported weasyprint | N/A | Fixed (Effect system) |
 | `core/result.py` | Previously had subprocess | N/A | Fixed |
 | `core/resume.py` | Previously imported shell at module level | N/A | Fixed (late binding) |
 
@@ -149,10 +149,10 @@ def open_file(path: Path, format_type: str | None = None) -> bool:
 
 ## Next Steps
 
-1. **Refactor `core/generate/pdf.py`**: Remove weasyprint import, use protocol abstraction
-2. **Add architecture test for absolute imports**: Detect `from simple_resume.shell.*` in core
-3. **Increase test coverage**: Target 85%+ for core modules
-4. **Document API stability**: Mark public vs internal APIs
+1. **Add architecture test for absolute imports**: Detect `from simple_resume.shell.*` in core
+2. **Increase test coverage**: Target 85%+ for core modules
+3. **Document API stability**: Mark public vs internal APIs
+4. **Verify architecture tests**: Ensure test_layer_separation.py passes with updated structure
 
 ## Related Documentation
 
