@@ -436,3 +436,75 @@ palette:
         assert config["palette"]["bar_background_color"] == "#CCCCCC"
     finally:
         temp_path.unlink()
+
+
+def test_load_palette_file_without_trailing_newline(story: Scenario, caplog) -> None:
+    """Regression test: palette files parse without trailing newline."""
+    story.given("a palette file with all color definitions but no trailing newline")
+    palette_content = """palette:
+  theme_color: "#2C3E50"
+  sidebar_color: "#F8F9FA"
+  bar_background_color: "#C4916C"
+  date2_color: "#34495E"
+  sidebar_text_color: "#2C3E50"
+  heading_icon_color: "#C4916C"
+  frame_color: "#C4916C"
+  bold_color: "#1A252F\""""
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".yaml", delete=False, newline=""
+    ) as f:
+        # Write without automatic newline addition
+        f.write(palette_content.lstrip())
+        temp_path = Path(f.name)
+
+    try:
+        story.when("load_palette_from_file parses the file")
+        result = load_palette_from_file(temp_path)
+
+        story.then("all color properties are loaded correctly despite missing newline")
+        assert result["palette"]["theme_color"] == "#2C3E50"
+        assert result["palette"]["sidebar_color"] == "#F8F9FA"
+        assert result["palette"]["bar_background_color"] == "#C4916C"
+        assert result["palette"]["date2_color"] == "#34495E"
+        assert result["palette"]["sidebar_text_color"] == "#2C3E50"
+        assert result["palette"]["heading_icon_color"] == "#C4916C"
+        assert result["palette"]["frame_color"] == "#C4916C"
+        assert result["palette"]["bold_color"] == "#1A252F"
+
+        story.then("a warning is logged about the missing trailing newline")
+        assert any(
+            "missing a trailing newline" in record.message for record in caplog.records
+        ), "Expected warning about missing trailing newline not found"
+    finally:
+        temp_path.unlink()
+
+
+def test_load_palette_file_with_trailing_newline_no_warning(
+    story: Scenario, caplog
+) -> None:
+    """Palette files with proper trailing newline should not generate warnings."""
+    story.given("a palette file with proper trailing newline")
+    palette_content = """palette:
+  theme_color: "#D04040"
+  sidebar_color: "#E8B8C0"
+"""
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        f.write(palette_content)
+        temp_path = Path(f.name)
+
+    try:
+        story.when("load_palette_from_file parses the file")
+        result = load_palette_from_file(temp_path)
+
+        story.then("no warning is logged about trailing newline")
+        assert not any(
+            "missing a trailing newline" in record.message for record in caplog.records
+        ), "Unexpected warning about missing trailing newline"
+
+        story.then("palette loads successfully")
+        assert result["palette"]["theme_color"] == "#D04040"
+        assert result["palette"]["sidebar_color"] == "#E8B8C0"
+    finally:
+        temp_path.unlink()
