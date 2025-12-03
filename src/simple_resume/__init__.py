@@ -82,7 +82,7 @@ from simple_resume.shell.runtime.lazy_import import (
 )
 
 # Version
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 # Public API exports - organized by functionality
 __all__ = [

@@ -2,23 +2,17 @@
 
 _Generate polished PDF and HTML resumes from a single YAML file._
 
+[![PyPI Downloads](https://img.shields.io/pypi/dm/simple-resume?style=flat-square)](https://pypi.org/project/simple-resume/)
+[![MIT License](https://img.shields.io/github/license/athola/simple-resume?style=flat-square)](https://github.com/athola/simple-resume/blob/main/LICENSE)
 [![Code Quality](https://github.com/athola/simple-resume/workflows/Code%20Quality/badge.svg)](https://github.com/athola/simple-resume/actions/workflows/code-quality.yml)
 [![Linting](https://github.com/athola/simple-resume/workflows/Linting/badge.svg)](https://github.com/athola/simple-resume/actions/workflows/lint.yml)
 [![Test Suite](https://github.com/athola/simple-resume/workflows/Test%20Suite/badge.svg)](https://github.com/athola/simple-resume/actions/workflows/test.yml)
 [![Code Coverage](https://codecov.io/gh/athola/simple-resume/branch/main/graph/badge.svg)](https://codecov.io/gh/athola/simple-resume)
 [![PyPI Version](https://img.shields.io/pypi/v/simple-resume.svg)](https://pypi.org/project/simple-resume/)
-[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 # simple-resume
 
 `simple-resume` is a Python 3.10+ CLI and library for converting structured YAML into production-ready resumes (PDF, HTML, or LaTeX). Templates and static assets ship with the package such that users can render without needing to create additional content.
-
-## Why Simple-Resume
-
-- Keep your resume version-controlled as plain YAML.
-- Swap templates, palettes, and formats without rewriting content.
-- Pure-Python core with shell adapters; effects are testable and side-effect aware.
-- Bundled HTML templates and static assets prevent “TemplateNotFound” errors in wheels/editable installs.
 
 ## Supported platforms
 
@@ -34,6 +28,43 @@ uv add simple-resume
 # With pip
 pip install simple-resume
 ```
+
+## Why Simple-Resume
+
+- Keep your resume version-controlled as plain YAML.
+- Swap templates, palettes, and formats without rewriting content.
+- Pure-Python core with shell adapters; effects are testable and side-effect aware.
+- Bundled HTML templates and static assets prevent "TemplateNotFound" errors in wheels/editable installs.
+
+## Feature Comparison
+
+| Feature | simple-resume | JSON Resume | HackMyResume | Resume.io |
+|---------|---------------|-------------|---------------|-----------|
+| **Open Source** | ✓ | ✓ | ✓ | ✗ |
+| **Data Format** | YAML | JSON | JSON/FRESH | Proprietary |
+| **Version Control** | ✓ Git-friendly | ✓ Git-friendly | ✓ Git-friendly | ✗ Cloud-only |
+| **Local Processing** | ✓ 100% private | ✓ 100% private | ✓ 100% private | ✗ Cloud storage |
+| **Template System** | HTML + Jinja2 | JSON themes | Multiple formats | Web builder |
+| **LaTeX Support** | ✓ Professional | ✗ | ✗ | ✗ |
+| **Python API** | ✓ Native | ✗ | ✗ | ✗ |
+| **CLI Tools** | ✓ | ✓ | ✓ | ✗ |
+| **Real-time Preview** | ✓ HTML + auto-reload | ✗ | ✗ | ✓ |
+| **Custom Themes** | ✓ Unlimited | ~ Limited | ~ Limited | ~ Paid only |
+| **Color Palettes** | ✓ Professional | ✗ | ~ Basic | ~ Limited |
+| **Privacy** | ✓ | ✓ | ✓ | ✗ Data stored on servers |
+| **Setup Time** | 5 min | 10 min | 15 min | 2 min |
+| **Learning Curve** | Moderate | Easy | Easy | Easiest |
+
+### Key Advantages
+
+**Best for Developers**: Version control, automation, Python integration, privacy
+**Best for Privacy**: 100% local processing with no data exposure
+**Most Flexible**: HTML templates + unlimited customization
+**Professional Output**: LaTeX typesetting for academic/technical resumes
+
+**Legend: ✓ = Supported, ✗ = Not Supported, ~ = Limited**
+
+*See [Detailed Comparison](wiki/Comparison.md) for full analysis and use case recommendations.*
 
 ### Development setup
 

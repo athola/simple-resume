@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,8 @@ from simple_resume.shell.io_utils import (
 )
 from simple_resume.shell.palettes.fetch import execute_palette_fetch
 from simple_resume.shell.palettes.loader import get_palette_registry
+
+logger = logging.getLogger(__name__)
 
 
 def _normalize_with_palette(
@@ -109,6 +112,20 @@ def load_palette_from_file(palette_file: str | Path) -> dict[str, Any]:
         raise FileNotFoundError(f"Palette file not found: {path}")
     if path.suffix.lower() not in {".yaml", ".yml"}:
         raise ValueError("Palette file must be a YAML file")
+
+    # Check for missing trailing newline (common YAML parsing issue)
+    with path.open("rb") as f:
+        f.seek(0, 2)  # Seek to end
+        if f.tell() > 0:  # File is not empty
+            f.seek(-1, 2)  # Seek to last byte
+            last_byte = f.read(1)
+            if last_byte != b"\n":
+                logger.warning(
+                    "Palette file '%s' is missing a trailing newline. "
+                    "This may cause YAML parsing issues. "
+                    "Consider adding a newline at the end of the file.",
+                    path.name,
+                )
 
     content = read_yaml_file(path)
     palette_data: Any = content.get("palette", content)
