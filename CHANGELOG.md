@@ -2,6 +2,18 @@
 
 This file documents all notable project changes. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2025-12-03
+
+### Added
+
+-   Enhanced HTML template preview support
+-   Content generation utilities for shell templates
+-   Improved palette file handling and test coverage
+
+### Fixed
+
+-   Handle YAML files without trailing newlines
+
 ## [0.1.2] - 2025-12-02
 
 ### Added
