@@ -1,0 +1,64 @@
+# Classic Theme for Simple Resume
+# A traditional, professional design inspired by academic and corporate resumes
+#
+# Usage:
+#   1. Copy this file to your project and customize
+#   2. Or include these settings in your resume YAML under 'config:'
+#
+# Colors: Navy blue and burgundy - timeless professional palette
+
+config:
+  # Color palette - classic navy/burgundy
+  palette:
+    source: generator
+    type: hcl
+    size: 5
+    seed: 1985
+    hue_range: [220, 280]         # Navy to purple range
+    luminance_range: [0.25, 0.65]
+    chroma: 0.15                  # Rich but not flashy
+
+  # Page dimensions (A4)
+  page_width: 210
+  page_height: 297
+  padding: 12
+
+  # Sidebar styling - wider for traditional look
+  sidebar_width: 65
+  sidebar_padding_top: 6
+  sidebar_padding_bottom: 6
+  sidebar_padding_left: 6
+  sidebar_padding_right: 6
+
+  # Profile image
+  profile_width: 52
+  profile_image_padding_bottom: 8
+
+  # Main content area
+  pitch_padding_top: 10
+  pitch_padding_bottom: 8
+  pitch_padding_left: 6
+  h2_padding_left: 6
+  h2_width: 135
+
+  # Experience entries - more generous spacing
+  h3_padding_top: 5
+  date_container_width: 15
+  date_container_padding_left: 8
+  description_container_padding_left: 4
+  skill_container_padding_top: 3
+
+  # Frame (for preview)
+  frame_padding: 15
+  frame_color: "#f5f5f0"         # Warm off-white
+  bold_color: "#2c3e50"
+
+  # Section heading icons - larger, more prominent
+  section_icon_circle_size: "9mm"
+  section_icon_circle_x_offset: "0mm"
+  section_icon_design_size: "5mm"
+  section_icon_design_x_offset: "0mm"
+  section_icon_design_y_offset: "0mm"
+  section_heading_text_margin: "-6mm"
+  section_heading_marker_margin_left: "-12mm"
+  section_heading_marker_line_height: "16mm"

@@ -1,0 +1,64 @@
+# Executive Theme for Simple Resume
+# A sophisticated, premium design for senior professionals
+#
+# Usage:
+#   1. Copy this file to your project and customize
+#   2. Or include these settings in your resume YAML under 'config:'
+#
+# Colors: Deep charcoal with gold accents - executive presence
+
+config:
+  # Color palette - sophisticated dark with gold
+  palette:
+    source: generator
+    type: hcl
+    size: 5
+    seed: 1999
+    hue_range: [35, 55]           # Gold/amber range
+    luminance_range: [0.15, 0.60]
+    chroma: 0.20                  # Rich but refined
+
+  # Page dimensions (A4)
+  page_width: 210
+  page_height: 297
+  padding: 12
+
+  # Sidebar styling - refined proportions
+  sidebar_width: 58
+  sidebar_padding_top: 8
+  sidebar_padding_bottom: 8
+  sidebar_padding_left: 6
+  sidebar_padding_right: 6
+
+  # Profile image
+  profile_width: 46
+  profile_image_padding_bottom: 7
+
+  # Main content area
+  pitch_padding_top: 10
+  pitch_padding_bottom: 6
+  pitch_padding_left: 6
+  h2_padding_left: 6
+  h2_width: 140
+
+  # Experience entries
+  h3_padding_top: 5
+  date_container_width: 14
+  date_container_padding_left: 7
+  description_container_padding_left: 4
+  skill_container_padding_top: 2
+
+  # Frame (for preview)
+  frame_padding: 14
+  frame_color: "#2d2d2d"         # Dark charcoal
+  bold_color: "#1a1a1a"
+
+  # Section heading icons
+  section_icon_circle_size: "8mm"
+  section_icon_circle_x_offset: "0mm"
+  section_icon_design_size: "4.2mm"
+  section_icon_design_x_offset: "0mm"
+  section_icon_design_y_offset: "0mm"
+  section_heading_text_margin: "-5mm"
+  section_heading_marker_margin_left: "-10mm"
+  section_heading_marker_line_height: "15mm"

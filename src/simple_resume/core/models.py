@@ -40,6 +40,12 @@ class ResumeConfig:
     section_icon_design_y_offset: str = "-0.4mm"
     section_heading_text_margin: str = "-6mm"
 
+    # Contact icon customization
+    contact_icon_size: str = "5mm"
+    contact_icon_margin_top: str = "0.5mm"
+    contact_icon_margin_right: str = "2mm"
+    contact_icon_gap: str = "4mm"
+
 
 @dataclass(frozen=True)
 class RenderPlan:

@@ -102,6 +102,14 @@ def _build_resume_config(normalized_config: dict[str, Any]) -> ResumeConfig:
         section_heading_text_margin=normalized_config.get(
             "section_heading_text_margin", "-6mm"
         ),
+        contact_icon_size=normalized_config.get("contact_icon_size", "5mm"),
+        contact_icon_margin_top=normalized_config.get(
+            "contact_icon_margin_top", "0.5mm"
+        ),
+        contact_icon_margin_right=normalized_config.get(
+            "contact_icon_margin_right", "2mm"
+        ),
+        contact_icon_gap=normalized_config.get("contact_icon_gap", "4mm"),
     )
 
 

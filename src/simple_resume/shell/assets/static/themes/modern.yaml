@@ -1,0 +1,64 @@
+# Modern Theme for Simple Resume
+# A clean, contemporary design with subtle colors and elegant spacing
+#
+# Usage:
+#   1. Copy this file to your project and customize
+#   2. Or include these settings in your resume YAML under 'config:'
+#
+# Colors: Soft blue-gray palette with professional accent colors
+
+config:
+  # Color palette - soft blue-gray tones
+  palette:
+    source: generator
+    type: hcl
+    size: 5
+    seed: 2024
+    hue_range: [200, 220]        # Blue range
+    luminance_range: [0.35, 0.75]
+    chroma: 0.12                  # Subtle saturation
+
+  # Page dimensions (A4)
+  page_width: 210
+  page_height: 297
+  padding: 10
+
+  # Sidebar styling
+  sidebar_width: 55
+  sidebar_padding_top: 8
+  sidebar_padding_bottom: 8
+  sidebar_padding_left: 5
+  sidebar_padding_right: 5
+
+  # Profile image
+  profile_width: 45
+  profile_image_padding_bottom: 6
+
+  # Main content area
+  pitch_padding_top: 8
+  pitch_padding_bottom: 6
+  pitch_padding_left: 5
+  h2_padding_left: 5
+  h2_width: 140
+
+  # Experience entries
+  h3_padding_top: 4
+  date_container_width: 14
+  date_container_padding_left: 6
+  description_container_padding_left: 3
+  skill_container_padding_top: 2
+
+  # Frame (for preview)
+  frame_padding: 12
+  frame_color: "#f8f9fa"
+  bold_color: "#495057"
+
+  # Section heading icons
+  section_icon_circle_size: "8mm"
+  section_icon_circle_x_offset: "0mm"
+  section_icon_design_size: "4.5mm"
+  section_icon_design_x_offset: "0mm"
+  section_icon_design_y_offset: "0mm"
+  section_heading_text_margin: "-5mm"
+  section_heading_marker_margin_left: "-10mm"
+  section_heading_marker_line_height: "15mm"

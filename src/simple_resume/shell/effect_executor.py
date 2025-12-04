@@ -14,14 +14,16 @@ Usage:
     executor.execute_many(effects)
 """
 
+import shutil
 import subprocess  # nosec B404
 import webbrowser
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import weasyprint
 
 from simple_resume.core.effects import (
+    CopyFile,
     DeleteFile,
     Effect,
     MakeDirectory,
@@ -54,22 +56,23 @@ class EffectExecutor:
             Various I/O exceptions: Depending on the operation
 
         """
-        if isinstance(effect, WriteFile):
-            return self._write_file(effect.path, effect.content, effect.encoding)
-        elif isinstance(effect, MakeDirectory):
-            return self._make_directory(effect.path, effect.parents)
-        elif isinstance(effect, DeleteFile):
-            return self._delete_file(effect.path)
-        elif isinstance(effect, OpenBrowser):
-            return self._open_browser(effect.url)
-        elif isinstance(effect, RunCommand):
-            return self._run_command(effect.command, effect.cwd)
-        elif isinstance(effect, RenderPdf):
-            return self._render_pdf(
-                effect.html, effect.css, effect.output_path, effect.base_url
-            )
-        else:
+        # Dispatch table for effect types
+        handlers: dict[type[Effect], Callable[[Any], Any]] = {
+            WriteFile: lambda e: self._write_file(e.path, e.content, e.encoding),
+            MakeDirectory: lambda e: self._make_directory(e.path, e.parents),
+            DeleteFile: lambda e: self._delete_file(e.path),
+            CopyFile: lambda e: self._copy_file(e.source, e.destination),
+            OpenBrowser: lambda e: self._open_browser(e.url),
+            RunCommand: lambda e: self._run_command(e.command, e.cwd),
+            RenderPdf: lambda e: self._render_pdf(
+                e.html, e.css, e.output_path, e.base_url
+            ),
+        }
+
+        handler = handlers.get(type(effect))
+        if handler is None:
             raise ValueError(f"Unknown effect type: {type(effect)}")
+        return handler(effect)
 
     def execute_many(self, effects: list[Effect]) -> None:
         """Execute multiple effects in sequence.
@@ -128,6 +131,19 @@ class EffectExecutor:
 
         """
         path.unlink(missing_ok=True)
+
+    def _copy_file(self, source: Path, destination: Path) -> None:
+        """Copy a file from source to destination.
+
+        Creates parent directories if they don't exist.
+
+        Args:
+            source: Source file path
+            destination: Destination file path
+
+        """
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
 
     def _open_browser(self, url: str) -> None:
         """Open a URL in the default web browser.

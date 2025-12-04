@@ -119,6 +119,24 @@ class RunCommand(Effect):
 
 
 @dataclass(frozen=True)
+class CopyFile(Effect):
+    """Effect: Copy a file from source to destination.
+
+    Attributes:
+        source: Source file path
+        destination: Destination file path
+
+    """
+
+    source: Path
+    destination: Path
+
+    def describe(self) -> str:
+        """Return human-readable description."""
+        return f"Copy file: {self.source} -> {self.destination}"
+
+
+@dataclass(frozen=True)
 class RenderPdf(Effect):
     """Effect: Render HTML+CSS to PDF at the target path.
 

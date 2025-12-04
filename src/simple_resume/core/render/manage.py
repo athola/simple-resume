@@ -6,6 +6,7 @@ between different rendering backends without any I/O side effects.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from jinja2 import Environment, FileSystemLoader
@@ -23,8 +24,15 @@ def get_template_environment(template_path: str) -> Environment:
         Jinja2 Environment configured for rendering
 
     """
+    # Include both templates and static/css directories for CSS inlining
+    template_dir = Path(template_path)
+    css_dir = template_dir.parent / "static" / "css"
+    search_paths = [str(template_dir)]
+    if css_dir.exists():
+        search_paths.append(str(css_dir))
+
     return Environment(
-        loader=FileSystemLoader(template_path),
+        loader=FileSystemLoader(search_paths),
         autoescape=True,
         trim_blocks=True,
         lstrip_blocks=True,

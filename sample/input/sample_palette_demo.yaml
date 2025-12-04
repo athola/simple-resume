@@ -228,3 +228,9 @@ config:
   section_icon_design_x_offset: "-0.1mm"     # Horizontal position of icon within circle
   section_icon_design_y_offset: "-0.4mm"     # Vertical position of icon within circle
   section_heading_text_margin: "-6mm"        # Left margin of heading text (Education, etc)
+
+  # Contact icon layout customization
+  contact_icon_size: "5mm"                   # Size of contact icons (HEAD default)
+  contact_icon_margin_top: "0.5mm"           # Top margin of contact icons
+  contact_icon_margin_right: "2mm"           # Right margin of contact icons
+  contact_icon_gap: "4mm"                    # Gap between icon and contact text

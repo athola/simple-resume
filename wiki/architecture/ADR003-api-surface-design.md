@@ -102,17 +102,15 @@ Color utilities are pure functions that do not operate on Resume data. Following
 ```python
 from simple_resume.core.resume import Resume
 text_color = Resume.calculate_text_color("#FFFFFF")  # Why is this on Resume?
+```
 
-
-```text
 
 **After (FCIS pattern):**
+
 ```python
 from simple_resume.core import colors
 text_color = colors.get_contrasting_text_color("#FFFFFF")  # Core utility
-
-
-```text
+```
 
 ### Why No Wrapper Functions?
 
@@ -151,26 +149,25 @@ With FCIS architecture (Functional Core, Imperative Shell):
 ### Migration Path
 
 **Before:**
+
 ```python
 from simple_resume.core.resume import Resume
 
 text_color = Resume.calculate_text_color("#FFFFFF")
 is_valid = Resume.validate_color("#FF0000")
 lum = Resume.calculate_luminance("#808080")
+```
 
-
-```text
 
 **After (FCIS):**
+
 ```python
 from simple_resume.core import colors
 
 text_color = colors.get_contrasting_text_color("#FFFFFF")
 is_valid = colors.is_valid_color("#FF0000")
 lum = colors.calculate_luminance("#808080")
-
-
-```text
+```
 
 Use `from simple_resume.core import colors` in all new code.
 
@@ -186,7 +183,7 @@ Use `from simple_resume.core import colors` in all new code.
 2. Create the `simple_resume.api.colors` public module.
 3. Move color utility tests to `test_api_colors.py`.
 4. Update `__all__` exports to include only authoritative functions.
-5. Review other utility functions for similar issues (e.g., skill_utils)
+5. Review other utility functions for similar issues (e.g., `skill_utils`)
 6. Document public API in user guide
 7. Add an API stability policy to CONTRIBUTING.md.
 
@@ -195,4 +192,4 @@ Use `from simple_resume.core import colors` in all new code.
 - pandas API Documentation: <https://pandas.pydata.org/docs/reference/index.html>
 - requests API Documentation: <https://requests.readthedocs.io/en/latest/api/>
 - Functional Core, Imperative Shell: <https://www.destroyallsoftware.com/screencasts/catalog/functional-core-imperative-shell>
-- ADR-002: Functional Core, Imperative Shell (related pattern)
+- [ADR-002: Functional Core, Imperative Shell](./ADR002-functional-core-imperative-shell) (related pattern)

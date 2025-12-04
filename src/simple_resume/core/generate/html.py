@@ -232,26 +232,12 @@ def _prepare_html_with_jinja_impl(
 
     html = template.render(**params.render_plan.context).lstrip()
 
-    # Pure operations: Add base tag for asset resolution
-    base_path = (
-        params.render_plan.base_path
-        if isinstance(params.render_plan.base_path, Path)
-        else Path(params.render_plan.base_path)
-    )
-    base_uri = base_path.resolve().as_uri().rstrip("/") + "/"
-    base_tag = f'<base href="{base_uri}">'
-    if "<head>" in html:
-        html_with_base = html.replace("<head>", f"<head>\n  {base_tag}", 1)
-    else:
-        # Preserve leading whitespace/doctype, insert base tag after it.
-        stripped = html.lstrip("\n\r")
-        prefix = html[: len(html) - len(stripped)]
-        html_with_base = f"{prefix}{base_tag}\n{stripped}"
-
     # Create effects for shell execution
+    # Note: Base tag is NOT added - shell layer copies assets to output directory
+    # so relative paths like "static/css/common.css" work from the HTML location
     effects: list[Effect] = [
         MakeDirectory(path=params.output_path.parent, parents=True),
-        WriteFile(path=params.output_path, content=html_with_base, encoding="utf-8"),
+        WriteFile(path=params.output_path, content=html, encoding="utf-8"),
     ]
 
     # Create metadata
@@ -259,12 +245,12 @@ def _prepare_html_with_jinja_impl(
         format_type="html",
         template_name=params.render_plan.template_name or "unknown",
         generation_time=0.0,
-        file_size=len(html_with_base.encode("utf-8")),
+        file_size=len(html.encode("utf-8")),
         resume_name=params.resume_name,
         palette_info=params.render_plan.palette_metadata,
     )
 
-    return html_with_base, effects, metadata
+    return html, effects, metadata
 
 
 def create_html_generator_factory(

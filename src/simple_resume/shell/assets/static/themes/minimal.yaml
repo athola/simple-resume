@@ -1,0 +1,64 @@
+# Minimal Theme for Simple Resume
+# A clean, light design with maximum whitespace and subtle styling
+#
+# Usage:
+#   1. Copy this file to your project and customize
+#   2. Or include these settings in your resume YAML under 'config:'
+#
+# Colors: Light grays with a subtle accent - lets content shine
+
+config:
+  # Color palette - light and airy
+  palette:
+    source: generator
+    type: hcl
+    size: 5
+    seed: 2025
+    hue_range: [0, 30]            # Warm neutrals
+    luminance_range: [0.65, 0.92] # Light tones
+    chroma: 0.06                  # Very subtle color
+
+  # Page dimensions (A4)
+  page_width: 210
+  page_height: 297
+  padding: 15                     # More breathing room
+
+  # Sidebar styling - narrow and light
+  sidebar_width: 50
+  sidebar_padding_top: 10
+  sidebar_padding_bottom: 10
+  sidebar_padding_left: 6
+  sidebar_padding_right: 6
+
+  # Profile image
+  profile_width: 40
+  profile_image_padding_bottom: 8
+
+  # Main content area - generous spacing
+  pitch_padding_top: 12
+  pitch_padding_bottom: 8
+  pitch_padding_left: 8
+  h2_padding_left: 8
+  h2_width: 145
+
+  # Experience entries - spacious
+  h3_padding_top: 6
+  date_container_width: 16
+  date_container_padding_left: 10
+  description_container_padding_left: 5
+  skill_container_padding_top: 3
+
+  # Frame (for preview)
+  frame_padding: 20
+  frame_color: "#ffffff"         # Pure white
+  bold_color: "#6c757d"
+
+  # Section heading icons - understated
+  section_icon_circle_size: "7mm"
+  section_icon_circle_x_offset: "0mm"
+  section_icon_design_size: "3.5mm"
+  section_icon_design_x_offset: "0mm"
+  section_icon_design_y_offset: "0mm"
+  section_heading_text_margin: "-4mm"
+  section_heading_marker_margin_left: "-9mm"
+  section_heading_marker_line_height: "14mm"

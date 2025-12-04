@@ -12,6 +12,7 @@ from types import ModuleType
 from typing import Any
 
 # Import internal modules that will receive injected dependencies
+from simple_resume.core.effects import CopyFile, MakeDirectory
 from simple_resume.core.generate import html as _html_generation
 from simple_resume.core.generate import pdf as _pdf_generation
 from simple_resume.core.generate.html import create_html_generator_factory
@@ -21,7 +22,7 @@ from simple_resume.core.protocols import EffectExecutor as EffectExecutorProtoco
 from simple_resume.core.protocols import TemplateLocator
 from simple_resume.core.render import get_template_environment
 from simple_resume.core.result import GenerationMetadata, GenerationResult
-from simple_resume.shell.config import TEMPLATE_LOC
+from simple_resume.shell.config import ASSETS_ROOT, TEMPLATE_LOC
 from simple_resume.shell.effect_executor import EffectExecutor
 
 
@@ -90,6 +91,44 @@ def generate_pdf_with_weasyprint(
         )
 
 
+def _get_asset_copy_effects(output_dir: Path) -> list[CopyFile | MakeDirectory]:
+    """Generate effects to copy CSS and font files to output directory.
+
+    This ensures HTML files work standalone without needing a base tag
+    or server. Assets are copied to output_dir/static/css/ and output_dir/static/fonts/.
+
+    Args:
+        output_dir: The directory where HTML output is being written
+
+    Returns:
+        List of effects to create directories and copy files
+
+    """
+    effects: list[CopyFile | MakeDirectory] = []
+    static_src = ASSETS_ROOT / "static"
+
+    # CSS files
+    css_src = static_src / "css"
+    css_dest = output_dir / "static" / "css"
+    effects.append(MakeDirectory(path=css_dest, parents=True))
+
+    for css_file in css_src.glob("*.css"):
+        effects.append(CopyFile(source=css_file, destination=css_dest / css_file.name))
+
+    # Font files
+    fonts_src = static_src / "fonts"
+    fonts_dest = output_dir / "static" / "fonts"
+    if fonts_src.exists():
+        effects.append(MakeDirectory(path=fonts_dest, parents=True))
+        for font_file in fonts_src.glob("*"):
+            if font_file.is_file():
+                effects.append(
+                    CopyFile(source=font_file, destination=fonts_dest / font_file.name)
+                )
+
+    return effects
+
+
 def generate_html_with_jinja(
     render_plan: RenderPlan,
     output_path: Path,
@@ -122,9 +161,14 @@ def generate_html_with_jinja(
             template_locator=locator,
         )
 
+        # Add effects to copy static assets (CSS, fonts) to output directory
+        output_dir = output_path.parent
+        asset_effects = _get_asset_copy_effects(output_dir)
+        all_effects = list(effects) + asset_effects
+
         # Execute the effects to actually create the files
         executor = effect_executor or EffectExecutor()
-        executor.execute_many(effects)
+        executor.execute_many(all_effects)
 
         # Create and return GenerationResult
         return GenerationResult(

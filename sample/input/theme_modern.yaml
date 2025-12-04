@@ -1,0 +1,72 @@
+# Theme Demo: Modern
+# Clean, contemporary design with soft blue-gray tones
+
+template: resume_with_bars
+theme: modern
+
+full_name: Alex Modern
+job_title: Product Designer
+
+address:
+  - San Francisco, CA
+
+phone: "(415) 555-0123"
+email: alex.modern@example.com
+web: https://alexmodern.design
+linkedin: in/alex-modern
+github: alexmodern
+
+image_uri: images/default_profile_1.jpg
+
+titles:
+  contact: Contact
+  skills: Skills
+  expertise: Strengths
+  keyskills: Tools
+
+description: |
+  Product designer with 8+ years crafting **user-centered experiences** for
+  tech companies. Passionate about design systems, accessibility, and
+  bridging the gap between design and engineering.
+
+skills:
+  Product Design: 55
+  Design Systems: 50
+  User Research: 48
+  Prototyping: 45
+
+expertise:
+  - Design thinking
+  - Cross-functional leadership
+  - Accessibility (WCAG 2.1)
+
+keyskills:
+  - Figma
+  - Framer
+  - React
+  - Storybook
+
+body:
+  Experience:
+    -
+      start: 2021
+      end: Present
+      title: Senior Product Designer
+      company: TechCorp
+      description: |
+        - Led design system initiative serving 12 product teams
+        - Reduced design-to-dev handoff time by 40%
+    -
+      start: 2018
+      end: 2021
+      title: Product Designer
+      company: StartupXYZ
+      description: |
+        - Designed core product features used by 500K+ users
+        - Established user research practice from scratch
+  Education:
+    -
+      start: 2014
+      end: 2018
+      title: B.A. Interaction Design
+      company: California College of the Arts

@@ -1,0 +1,42 @@
+/**
+ * Font Face Declarations for Simple Resume
+ *
+ * These fonts are loaded from static/fonts/ directory.
+ * Path resolution: From templates, use ../static/fonts/
+ * From CSS in static/css/, use ../fonts/
+ */
+
+@font-face {
+  font-family: "Avenir 35";
+  src: url("../fonts/AvenirLTStd-Light.otf");
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Avenir 45";
+  src: url("../fonts/AvenirLTStd-Book.otf");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Avenir 55";
+  src: url("../fonts/AvenirLTStd-Roman.otf");
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Avenir 65";
+  src: url("../fonts/AvenirLTStd-Medium.otf");
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Avenir 46 Oblique";
+  src: url("../fonts/AvenirLTStd-Oblique.otf");
+  font-weight: 400;
+  font-style: oblique;
+}

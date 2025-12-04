@@ -444,15 +444,16 @@ def _prepare_pdf_with_weasyprint_impl(
     css_string = f"@page {{size: {page_width}mm {page_height}mm; margin: 0mm;}}"
 
     # Create effects for shell execution (no PDF rendering here)
+    # Use static/css as base_url so font paths like "../fonts/AvenirLTStd-Light.otf"
+    # resolve correctly to assets/static/fonts/AvenirLTStd-Light.otf
+    css_base_url = template_loc.parent / "static" / "css"
     effects: list[Effect] = [
         MakeDirectory(path=params.output_path.parent, parents=True),
         RenderPdf(
             html=html,
             css=css_string,
             output_path=params.output_path,
-            # Always anchor asset resolution to the template directory to
-            # avoid relying on potentially incorrect plan.base_path values.
-            base_url=str(template_loc),
+            base_url=str(css_base_url),
         ),
     ]
 
