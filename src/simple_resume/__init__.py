@@ -4,8 +4,9 @@
 Symbols listed in `:data:simple_resume.__all__` are covered by the
 stability contract, mirroring pandas' curated ``pandas.api`` surface.
 Other components (utility helpers, palette plumbing, rendering shell, etc.)
-reside under `:mod:simple_resume.internal` and may change without notice.
-Import from ``simple_resume.internal`` only if prepared to track upstream changes.
+reside under `:mod:simple_resume.core` and `:mod:simple_resume.shell`
+and may change without notice. Import from those modules only if prepared
+to track upstream changes.
 
 High-level categories include:
 
@@ -20,7 +21,8 @@ High-level categories include:
   (e.g., `:mod:simple_resume.core.colors`) provides pure functions,
   while shell layer handles I/O and side effects.
 
-Refer to ``docs/reference.md`` for a complete API map and stability labels.
+Refer to ``README.md`` and ``wiki/architecture/ADR003-api-surface-design.md``
+for the API map and stability notes.
 """
 
 from __future__ import annotations
@@ -38,7 +40,13 @@ from simple_resume.core.exceptions import (
 )
 
 # Core classes (data models only - no I/O methods)
-from simple_resume.core.models import GenerationConfig, RenderPlan, ResumeConfig
+from simple_resume.core.models import (
+    GenerationConfig,
+    RenderPlan,
+    ResumeConfig,
+    ValidationResult,
+)
+from simple_resume.core.resume import Resume
 
 # Public API namespaces - higher-level generation functions
 from simple_resume.shell.generate import (
@@ -88,8 +96,10 @@ __version__ = "0.1.3"
 __all__ = [
     "__version__",
     # Core models (data only)
+    "Resume",
     "ResumeConfig",
     "RenderPlan",
+    "ValidationResult",
     # Exceptions
     "SimpleResumeError",
     "ValidationError",

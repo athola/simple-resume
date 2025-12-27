@@ -195,18 +195,18 @@ def open_file_in_browser(
     if browser:
         # Use specified browser command for opening the file
         subprocess.Popen(  # noqa: S603  # nosec B603
-            [browser, file_path],
+            [browser, str(file_path)],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
     else:
         # Use default system opener
         subprocess.run(  # noqa: S603  # nosec B603
-            ["xdg-open", file_path]
+            ["xdg-open", str(file_path)]
             if Path("/usr/bin/xdg-open").exists()
-            else ["open", file_path]
+            else ["open", str(file_path)]
             if Path("/usr/bin/open").exists()
-            else ["start", file_path],
+            else ["start", str(file_path)],
             check=False,
         )
 

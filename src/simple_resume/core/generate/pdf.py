@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-import logging
-from contextlib import ExitStack
 from dataclasses import dataclass
-from importlib import import_module, resources
 from pathlib import Path
 from typing import Any, Callable
 
@@ -19,73 +16,6 @@ from simple_resume.core.models import RenderPlan
 from simple_resume.core.protocols import EffectExecutor, LaTeXRenderer, TemplateLocator
 from simple_resume.core.render import get_template_environment
 from simple_resume.core.result import GenerationMetadata, GenerationResult
-
-
-class _PackageTemplateLocator(TemplateLocator):
-    """Default locator that points to bundled template assets."""
-
-    def __init__(self) -> None:
-        self._stack = ExitStack()
-        self._template_path = self._stack.enter_context(
-            resources.as_file(
-                resources.files("simple_resume.shell") / "assets" / "templates"
-            )
-        )
-
-    def get_template_location(self) -> Path:
-        return self._template_path
-
-    def __del__(self) -> None:
-        try:
-            self._stack.close()
-        except Exception as exc:  # pragma: no cover - best-effort cleanup
-            logging.getLogger(__name__).debug(
-                "Failed to close template locator resources: %s", exc
-            )
-
-
-def create_default_template_locator() -> _PackageTemplateLocator:
-    """Create a default package template locator.
-
-    Returns:
-        New _PackageTemplateLocator instance
-
-    This factory pattern avoids global state while providing convenient
-    access to the default template locator when needed.
-
-    """
-    return _PackageTemplateLocator()
-
-
-class _DefaultLaTeXRenderer(LaTeXRenderer):
-    """Fallback renderer that proxies to shell latex helpers when available."""
-
-    def get_latex_functions(self) -> tuple[Any, Any, Any]:
-        try:
-            module = import_module("simple_resume.shell.render.latex")
-            LatexCompilationError = module.LatexCompilationError
-            compile_tex_to_pdf = module.compile_tex_to_pdf
-            render_resume_latex_from_data = module.render_resume_latex_from_data
-            return (
-                LatexCompilationError,
-                compile_tex_to_pdf,
-                render_resume_latex_from_data,
-            )
-        except Exception:
-            return None, None, None
-
-
-def create_default_latex_renderer() -> _DefaultLaTeXRenderer:
-    """Create a default LaTeX renderer.
-
-    Returns:
-        New _DefaultLaTeXRenderer instance
-
-    This factory pattern avoids global state while providing convenient
-    access to the default LaTeX renderer when needed.
-
-    """
-    return _DefaultLaTeXRenderer()
 
 
 @dataclass(frozen=True)
@@ -157,8 +87,10 @@ class PdfGeneratorFactory:
             return injected
         if self._template_locator is not None:
             return self._template_locator
-        # Create default locator on-demand using factory
-        return create_default_template_locator()
+        raise ConfigurationError(
+            "No template locator available. "
+            "Inject one or configure the factory with a default."
+        )
 
     def _get_latex_renderer(self, injected: LaTeXRenderer | None) -> LaTeXRenderer:
         """Get LaTeX renderer, preferring injected over default."""
@@ -166,8 +98,10 @@ class PdfGeneratorFactory:
             return injected
         if self._latex_renderer is not None:
             return self._latex_renderer
-        # Create default renderer on-demand using factory
-        return create_default_latex_renderer()
+        raise ConfigurationError(
+            "No LaTeX renderer available. "
+            "Inject one or configure the factory with a default."
+        )
 
     def create_prepare_pdf_with_weasyprint_function(
         self,
@@ -494,6 +428,18 @@ def _prepare_pdf_with_latex_impl(
     LatexCompilationError, compile_tex_to_pdf, render_resume_latex_from_data = (
         get_latex_functions(renderer)
     )
+    if any(
+        func is None
+        for func in (
+            LatexCompilationError,
+            compile_tex_to_pdf,
+            render_resume_latex_from_data,
+        )
+    ):
+        raise ConfigurationError(
+            "LaTeX renderer unavailable. "
+            "Inject a renderer that provides compilation functions."
+        )
 
     # Prepare LaTeX generation context and resolve paths.
     if params.existing_context is not None:

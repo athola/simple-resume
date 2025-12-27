@@ -351,6 +351,30 @@ class TestPrepareHtmlWithJinja:
                 resume_name="test_resume",
             )
 
+    def test_raises_template_error_when_locator_missing(self, story: Scenario) -> None:
+        """Raises TemplateError when the template locator is missing."""
+        story.given("a valid HTML render plan without a template locator")
+        story.when("preparing HTML without a locator")
+        with TemporaryDirectory() as temp_dir:
+            render_plan = RenderPlan(
+                name="test",
+                mode=RenderMode.HTML,
+                template_name="demo.html",
+                context={"name": "Test"},
+                config=ResumeConfig(),
+                base_path=temp_dir,
+            )
+            output_path = Path(temp_dir) / "resume.html"
+
+            factory = create_html_generator_factory()
+            prepare_html_func = factory.create_prepare_html_function()
+            with pytest.raises(TemplateError, match="template locator"):
+                prepare_html_func(
+                    render_plan=render_plan,
+                    output_path=output_path,
+                    resume_name="test_resume",
+                )
+
     def test_no_io_operations_performed(self, story: Scenario) -> None:
         """prepare_html_with_jinja performs NO I/O operations (critical test)."""
         story.given("HTML preparation is pure and should emit effects only")

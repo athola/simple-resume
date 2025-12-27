@@ -34,10 +34,10 @@ class ResumeConfig:
 
     # Layout customization fields (section heading icons)
     section_icon_circle_size: str = "7.8mm"
-    section_icon_circle_x_offset: str = "-0.5mm"
-    section_icon_design_size: str = "4mm"
-    section_icon_design_x_offset: str = "-0.1mm"
-    section_icon_design_y_offset: str = "-0.4mm"
+    section_icon_circle_x_offset: str = "0mm"
+    section_icon_design_size: str = "3.5mm"
+    section_icon_design_x_offset: str = "0mm"
+    section_icon_design_y_offset: str = "0mm"
     section_heading_text_margin: str = "-6mm"
 
     # Contact icon customization

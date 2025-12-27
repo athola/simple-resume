@@ -49,7 +49,7 @@ html {
    ======================================================================== */
 
 h1, h2, h3, h4, h5, h6 {
-  font-weight: normal;
+  font-weight: 700;
   margin: 0px;
 }
 
@@ -59,7 +59,7 @@ h1, h2, h3, h5 {
 
 h1 {
   font-size: 30pt;
-  font-family: 'Avenir 35', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Avenir 65', 'Avenir 55', 'Helvetica Neue', Arial, sans-serif;
   padding-top: 0;
   padding-bottom: 0;
   padding-right: var(--padding);
@@ -69,7 +69,7 @@ h1 {
 
 h2 {
   font-size: 16pt;
-  font-family: 'Avenir 55', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Avenir 65', 'Avenir 55', 'Helvetica Neue', Arial, sans-serif;
   width: var(--h2-width);
   padding-top: 1.5mm;
   padding-bottom: 0.5mm;
@@ -83,18 +83,18 @@ h2:first-of-type {
 
 h3 {
   font-size: 14pt;
-  font-family: 'Avenir 45', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Avenir 65', 'Avenir 55', 'Helvetica Neue', Arial, sans-serif;
   padding-top: var(--h3-padding-top);
 }
 
 h4 {
   font-size: 10pt;
-  font-family: 'Avenir 45', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Avenir 65', 'Avenir 55', 'Helvetica Neue', Arial, sans-serif;
 }
 
 h5 {
   font-size: 10pt;
-  font-family: 'Avenir 55', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Avenir 65', 'Avenir 55', 'Helvetica Neue', Arial, sans-serif;
   padding-right: var(--padding);
   position: absolute;
   right: 0px;
@@ -246,14 +246,32 @@ li:before {
 .contact-block {
   display: flex;
   align-items: flex-start;
-  gap: var(--contact-icon-gap, 4mm);
   width: 100%;
+  overflow: hidden; /* WeasyPrint: ensure proper containment */
+}
+
+.contact-block .icon {
+  flex-shrink: 0;
+  width: var(--contact-icon-size, 5mm);
+  height: var(--contact-icon-size, 5mm);
+}
+
+.contact-block .icon svg {
+  width: var(--contact-icon-size, 5mm);
+  height: var(--contact-icon-size, 5mm);
+  display: block;
+}
+
+.contact-block .icon svg * {
+  fill: currentColor;
 }
 
 .contact-container {
   flex: 1;
   min-width: 0;
   overflow-wrap: break-word;
+  overflow: hidden; /* WeasyPrint: prevent text overflow issues */
+  padding-left: var(--contact-text-padding-left, 2mm);
 }
 
 .contact-text {
@@ -300,7 +318,7 @@ li:before {
 }
 
 .description-container {
-  margin-bottom: 1.2mm;
+  margin-bottom: var(--entry-margin-bottom, 4mm);
   position: relative;
   padding-left: var(--description-container-padding-left);
   padding-right: var(--padding);
@@ -360,7 +378,7 @@ li:before {
 .tech-stack-value {
   font-size: 8pt;
   font-family: 'Avenir 45', 'Helvetica Neue', Arial, sans-serif;
-  line-height: 1.25;
+  line-height: 1.4;
   margin: 0;
 }
 
@@ -373,6 +391,7 @@ li:before {
   border-left: none;
   padding-left: var(--description-container-padding-left);
   padding-top: 2mm;
+  padding-bottom: var(--tech-stack-margin-bottom, 2mm);
 }
 
 /* ========================================================================
@@ -449,7 +468,7 @@ li:before {
   flex-shrink: 0;
   line-height: 0;
   margin-top: var(--contact-icon-margin-top, 0.5mm);
-  margin-right: var(--contact-icon-margin-right, 2mm);
+  /* margin-right removed - spacing handled by gap in .contact-block */
 }
 
 .icon svg {
@@ -472,7 +491,7 @@ li:before {
   line-height: 0;
   flex-shrink: 0;
   position: relative;
-  transform: translate(var(--section-icon-design-x-offset), var(--section-icon-design-y-offset));
+  transform: translate(var(--section-icon-design-x-offset), var(--section-icon-design-y-offset)) scale(var(--section-icon-design-scale, 1));
 }
 
 .icon-inline svg {
@@ -525,7 +544,7 @@ li:before {
 .section-heading {
   display: flex;
   align-items: center;
-  margin: 1mm 0 0.6mm;
+  margin: var(--section-heading-margin-top, 5mm) 0 var(--section-heading-margin-bottom, 1mm);
 }
 
 .section-heading-marker {

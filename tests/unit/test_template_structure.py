@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 from simple_resume.core.generate.html import create_html_generator_factory
 from simple_resume.core.models import RenderMode, RenderPlan, ResumeConfig
 from simple_resume.shell.runtime import content as runtime_content
+from simple_resume.shell.services import DefaultTemplateLocator
 from tests.bdd import scenario
 from tests.conftest import (
     create_complete_resume_data,
@@ -45,9 +46,15 @@ def _render(name: str) -> BeautifulSoup:
     )
     with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False) as tmp:
         tmp_path = Path(tmp.name)
-    factory = create_html_generator_factory()
+    template_locator = DefaultTemplateLocator()
+    factory = create_html_generator_factory(default_template_locator=template_locator)
     prepare_html_func = factory.create_prepare_html_function()
-    html, _, _ = prepare_html_func(render_plan, tmp_path, resume_name="test")
+    html, _, _ = prepare_html_func(
+        render_plan,
+        tmp_path,
+        resume_name="test",
+        template_locator=template_locator,
+    )
     return BeautifulSoup(html, "html.parser")
 
 

@@ -11,7 +11,7 @@
 # Project metadata
 PROJECT_NAME := simple-resume
 PROJECT_MODULE := simple_resume
-PYTHON_VERSION := 3.9
+PYTHON_VERSION := 3.10
 
 # Paths (all configurable)
 SRC_DIR := src

@@ -1,14 +1,14 @@
 template: resume_with_bars
-full_name: Riley Foster
-job_title: Engineering Manager
+full_name: Taylor Lee
+job_title: DevOps Engineer
 address:
 - 101 Color Way
 - Austin, TX
-phone: (512) 555-8781
-email: riley.foster.kmqsb3pc@example.com
-web: https://rileyfoster.dev
-linkedin: in/riley-foster-v08j
-github: rileyfoster
+phone: (512) 555-4200
+email: taylor.lee.tnf1z7sr@example.com
+web: https://taylorlee.dev
+linkedin: in/taylor-lee-9680
+github: taylorlee
 titles:
   contact: Contact
   skills: Skills
@@ -17,11 +17,11 @@ titles:
   programming: Technical Tooling
   keyskills: Key Skills
   languages: Languages
-description: 'Experienced with caching strategies and modern development practices.
-  Experienced with caching strategies and modern development practices.
+description: 'Experienced with automated testing and modern development practices.
+  Experienced with microservices architecture and modern development practices.
 
 
-  Experienced with caching strategies and modern development practices. Experienced
+  Experienced with cloud infrastructure and modern development practices. Experienced
   with caching strategies and modern development practices.'
 skills:
   UI/UX Design: 55
@@ -48,14 +48,11 @@ programming:
   Prototyping:
   - TypeScript
   - React
-  - WebGL
   Data & Automation:
   - Python
-  - dbt
   - SQL
   Infrastructure:
   - Terraform
-  - GitHub Actions
   - Docker
 keyskills:
 - Service blueprints
@@ -75,26 +72,26 @@ body:
     end: Present
     title: Principal Design Technologist
     title_link: https://spectrumlabs.design/systems
-    company: NexGen Solutions
+    company: StreamFlow
     company_link: https://spectrumlabs.design
-    description: '- Streamlined development workflow reducing build time by 73%
+    description: '- Reduced operational costs by 63% through efficient resource allocation
 
-      - Mentored team of 8 engineers on best practices
+      - Improved deployment frequency by 3x using automation
 
-      - Architected scalable solution handling 632K requests/day'
+      - Increased test coverage from 68% to 80%'
     tech_stack: TypeScript, React, Styled Components, Figma API, Python, PostgreSQL
   - start: 2018
     end: 2022
     title: Senior UX Engineer
-    company: StreamFlow
+    company: NexGen Solutions
     company_link: https://auroraanalytics.io
-    description: '- Led migration of 9 services to cloud infrastructure
+    description: '- Improved deployment frequency by 4x using automation
 
-      - Increased test coverage from 65% to 91%
+      - Streamlined development workflow reducing build time by 53%
 
-      - Led migration of 19 services to cloud infrastructure
+      - Reduced latency by 48% through optimization
 
-      - Improved deployment frequency by 6x using automation'
+      - Reduced latency by 32% through optimization'
     tech_stack: React, TypeScript, Jest, Storybook, Webpack, Node.js
   Projects:
   - start: 2024
@@ -102,103 +99,103 @@ body:
     title: Adaptive Palette Generator
     title_link: https://github.com/caseypalette/adaptive-palettes
     company: Personal Project
-    description: '- Developed content delivery network integrating with Azure
+    description: '- Optimized database queries achieving 50% cost reduction
 
-      - Optimized frontend rendering achieving sub-100ms response times
+      - Created automated code review process reducing manual effort by 74%
 
-      - Created automated testing suite reducing manual effort by 58%
-
-      - Designed and implemented user authentication service using Vue.js and Nuxt'
+      - Developed data pipeline integrating with GCP'
   - start: 2023
     end: 2023
     title: Voice of Customer Pipeline
     company: Open Source Collective
     company_link: https://github.com/caseypalette/voc-pipeline
-    description: '- Optimized database queries achieving 50% cost reduction
+    description: '- Optimized API endpoints achieving 99.9% uptime
 
-      - Designed and implemented data pipeline using React and TypeScript
-
-      - Designed and implemented search engine using Python and FastAPI'
+      - Designed and implemented payment processing system using Vue.js and Nuxt'
   Awards & Honors:
   - start: 2023
     end: 2023
     title: "UX Awards \u2014 Best Systems Initiative"
     company: DesignOps Summit
-    description: '- Experienced with automated testing and modern development practices.
+    description: '- Experienced with system monitoring and modern development practices.
 
-      - Experienced with orchestration and modern development practices.'
+      - Experienced with API design and modern development practices.
+
+      - Experienced with CI/CD pipelines and modern development practices.'
   - start: 2022
     end: 2022
     title: "Webby Awards \u2014 People\u2019s Voice (Productivity)"
     company: The Webby Awards
-    description: '- Experienced with automated testing and modern development practices.
+    description: '- Experienced with microservices architecture and modern development
+      practices.
 
-      - Experienced with CI/CD pipelines and modern development practices.'
+      - Experienced with cloud infrastructure and modern development practices.
+
+      - Experienced with database design and modern development practices.'
   Publications:
   - start: 2022
     end: 2022
     title: Designing Color Systems for Accessibility
     title_link: https://medium.com/@caseypalette/color-systems-accessibility
     company: Medium
-    description: '- Experienced with microservices architecture and modern development
-      practices.
+    description: '- Experienced with orchestration and modern development practices.
 
-      - Experienced with caching strategies and modern development practices.
-
-      - Experienced with performance optimization and modern development practices.'
+      - Experienced with system monitoring and modern development practices.'
   - start: 2021
     end: 2021
     title: Measuring Design Impact with Product Analytics
     company: Design Leadership Forum
     description: '- Experienced with database design and modern development practices.
 
-      - Experienced with load balancing and modern development practices.'
+      - Experienced with database design and modern development practices.'
   Speaking Engagements:
   - start: 2024
     end: 2024
     title: "Keynote \u2014 Measuring Design Impact"
     company: ColorConf
-    description: '- Experienced with CI/CD pipelines and modern development practices.
+    description: '- Experienced with API design and modern development practices.
 
-      - Experienced with CI/CD pipelines and modern development practices.
-
-      - Experienced with API design and modern development practices.
-
-      - Experienced with performance optimization and modern development practices.'
+      - Experienced with cloud infrastructure and modern development practices.'
   - start: 2023
     end: 2023
     title: "Workshop \u2014 Accessible Theming in Practice"
     company: Config by Figma
-    description: '- Experienced with database design and modern development practices.
+    description: '- Experienced with load balancing and modern development practices.
 
-      - Experienced with microservices architecture and modern development practices.'
+      - Experienced with performance optimization and modern development practices.
+
+      - Experienced with system monitoring and modern development practices.'
   Volunteer Service:
   - start: 2021
     end: Present
     title: "Mentor \u2014 Inclusive Design"
     company: ADPList
-    description: '- Experienced with CI/CD pipelines and modern development practices.
+    description: '- Experienced with system monitoring and modern development practices.
+
+      - Experienced with load balancing and modern development practices.
 
       - Experienced with cloud infrastructure and modern development practices.'
   - start: 2020
     end: Present
     title: "Organizer \u2014 Civic Tech Nights"
     company: Austin Design Week
-    description: '- Experienced with orchestration and modern development practices.
+    description: '- Experienced with database design and modern development practices.
 
-      - Experienced with containerization and modern development practices.'
+      - Experienced with cloud infrastructure and modern development practices.'
   Education:
   - start: 2014
     end: 2018
     title: B.S. Human-Centered Design
     company: University of Texas at Austin
-    description: '- Experienced with automated testing and modern development practices.
+    description: '- Experienced with API design and modern development practices.
 
-      - Experienced with system monitoring and modern development practices.
+      - Experienced with caching strategies and modern development practices.
 
-      - Experienced with orchestration and modern development practices.'
+      - Experienced with API design and modern development practices.
+
+      - Experienced with containerization and modern development practices.'
 config:
-  color_scheme: Turbid_18
+  color_scheme: LaJolla_6
   palette:
     source: generator
     type: hcl
@@ -211,11 +208,12 @@ config:
     - 0.25
     - 0.78
     chroma: 0.18
-  padding: 12
+  padding: 8
   page_width: 210
   page_height: 297
   sidebar_width: 60
   sidebar_padding_top: 6
+  sidebar_padding_left: 8
   profile_image_padding_bottom: 6
   pitch_padding_top: 4
   pitch_padding_bottom: 4
@@ -226,17 +224,21 @@ config:
   date_container_padding_left: 6
   description_container_padding_left: 2
   frame_padding: 10
-  frame_color: '#C4A24E'
-  bold_color: '#937A3A'
-  section_icon_circle_size: 7.8mm
-  section_icon_circle_x_offset: -0.5mm
+  frame_color: '#1A1A01'
+  bold_color: '#141401'
+  section_icon_circle_size: 8.6mm
+  section_icon_circle_x_offset: -0.75mm
   section_icon_design_size: 4mm
-  section_icon_design_x_offset: -0.1mm
-  section_icon_design_y_offset: -0.4mm
+  section_icon_design_x_offset: -1.5mm
+  section_icon_design_y_offset: -0.5mm
+  section_icon_design_scale: '0.8'
   section_heading_text_margin: -6mm
+  contact_icon_size: 5mm
+  contact_icon_margin_top: 0.5mm
+  contact_text_padding_left: 2mm
   output_mode: markdown
-  theme_color: '#E9F6AB'
-  sidebar_color: '#E0E495'
-  sidebar_text_color: '#D9D380'
-  bar_background_color: '#D2C26D'
-  date2_color: '#CBB25C'
+  theme_color: '#FFFFCC'
+  sidebar_color: '#F6D470'
+  sidebar_text_color: '#E79452'
+  bar_background_color: '#C2554A'
+  date2_color: '#68352A'

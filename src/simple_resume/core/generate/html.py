@@ -6,11 +6,8 @@ without global state management.
 
 from __future__ import annotations
 
-import logging
 import os
-from contextlib import ExitStack
 from dataclasses import dataclass
-from importlib import resources
 from pathlib import Path
 from typing import Callable
 
@@ -23,43 +20,6 @@ from simple_resume.core.models import RenderPlan
 from simple_resume.core.protocols import TemplateLocator
 from simple_resume.core.render import get_template_environment
 from simple_resume.core.result import GenerationMetadata
-
-
-class _PackageTemplateLocator(TemplateLocator):
-    """Locator for bundled HTML templates inside package assets."""
-
-    def __init__(self) -> None:
-        self._stack = ExitStack()
-        self._template_path = self._stack.enter_context(
-            resources.as_file(
-                resources.files("simple_resume.shell") / "assets" / "templates"
-            )
-        )
-
-    def get_template_location(self) -> Path:
-        return self._template_path
-
-    def __del__(self) -> None:
-        # Ensure we don't leak the context when the locator is garbage collected.
-        try:
-            self._stack.close()
-        except Exception as exc:  # pragma: no cover - best-effort cleanup
-            logging.getLogger(__name__).debug(
-                "Failed to close template locator resources: %s", exc
-            )
-
-
-def create_default_template_locator() -> _PackageTemplateLocator:
-    """Create a default package template locator.
-
-    Returns:
-        New _PackageTemplateLocator instance
-
-    This factory pattern avoids global state while providing convenient
-    access to the default template locator when needed.
-
-    """
-    return _PackageTemplateLocator()
 
 
 @dataclass(frozen=True)
@@ -115,8 +75,10 @@ class HtmlGeneratorFactory:
             return injected
         if self._default_template_locator is not None:
             return self._default_template_locator
-        # Create default locator on-demand using factory
-        return create_default_template_locator()
+        raise TemplateError(
+            "template locator required for HTML generation. "
+            "Inject one or configure a default."
+        )
 
     def create_prepare_html_function(
         self,
@@ -225,10 +187,13 @@ def _prepare_html_with_jinja_impl(
     env = get_template_environment(str(template_loc))
     try:
         template = env.get_template(params.render_plan.template_name)
-    except TemplateNotFound:
-        fallback_locator = create_default_template_locator()
-        env = get_template_environment(str(fallback_locator.get_template_location()))
-        template = env.get_template(params.render_plan.template_name)
+    except TemplateNotFound as exc:
+        raise TemplateError(
+            f"Template not found: {params.render_plan.template_name}",
+            template_name=params.render_plan.template_name,
+            template_path=str(template_loc),
+            filename=params.filename,
+        ) from exc
 
     html = template.render(**params.render_plan.context).lstrip()
 

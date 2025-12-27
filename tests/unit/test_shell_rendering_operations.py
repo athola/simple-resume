@@ -240,7 +240,7 @@ class TestShellRenderingOperations:
         open_file_in_browser(test_file, browser="firefox")
 
         mock_popen.assert_called_once_with(
-            ["firefox", test_file],
+            ["firefox", str(test_file)],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
@@ -261,7 +261,7 @@ class TestShellRenderingOperations:
 
         open_file_in_browser(test_file)
 
-        mock_run.assert_called_once_with(["xdg-open", test_file], check=False)
+        mock_run.assert_called_once_with(["xdg-open", str(test_file)], check=False)
 
     def test_create_generation_result_with_all_metadata(
         self, story: Scenario, tmp_path: Path
