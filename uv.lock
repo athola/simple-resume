@@ -2325,6 +2325,7 @@ dev = [
     { name = "beautifulsoup4" },
     { name = "blacken-docs" },
     { name = "interrogate" },
+    { name = "mypy" },
     { name = "pdf2image" },
     { name = "pre-commit" },
     { name = "pytest" },
@@ -2332,6 +2333,7 @@ dev = [
     { name = "safety" },
     { name = "twine" },
     { name = "ty" },
+    { name = "types-markdown" },
     { name = "types-pyyaml" },
 ]
 
@@ -2359,6 +2361,7 @@ dev = [
     { name = "beautifulsoup4", specifier = ">=4.12.3,<5.0" },
     { name = "blacken-docs", specifier = ">=1.16.0,<2.0" },
     { name = "interrogate", specifier = ">=1.7.0,<2.0" },
+    { name = "mypy", specifier = ">=1.11.0,<2.0" },
     { name = "pdf2image", specifier = ">=1.17.0,<2.0" },
     { name = "pre-commit", specifier = ">=4.0.1,<5.0" },
     { name = "pytest", specifier = ">=8.3.3,<9.0" },
@@ -2366,6 +2369,7 @@ dev = [
     { name = "safety", specifier = ">=3.7.0,<4.0" },
     { name = "twine", specifier = ">=6.2.0" },
     { name = "ty", specifier = ">=0.0.1a23" },
+    { name = "types-markdown", specifier = ">=3.7.2,<4.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20250915" },
 ]
 

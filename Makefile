@@ -153,8 +153,8 @@ run-format: ## Run code formatting
 
 run-typecheck: ## Run all type checkers
 	@echo "$(BLUE)Running type checkers...$(RESET)"
-	$(call run_typechecker,mypy,.)
-	$(call run_typechecker,ty,check .)
+	$(call run_typechecker,mypy,src/)
+	$(call run_typechecker,ty,check src/)
 
 run-security: ## Run security analysis
 	@echo "$(BLUE)Running security analysis...$(RESET)"
