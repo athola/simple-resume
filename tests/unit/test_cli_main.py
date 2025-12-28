@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 from types import SimpleNamespace
-from typing import cast
+from typing import Any, cast
 
 import pytest
 
@@ -516,7 +516,7 @@ def test_run_session_generation_unsupported_command_type(
         overrides={},
     )
 
-    cli._run_session_generation(resume, session, [command])
+    cli._run_session_generation(cast(Any, resume), cast(Any, session), [command])
     captured = capsys.readouterr()
 
     assert "Session generate only supports single-resume commands" in captured.out
@@ -542,7 +542,7 @@ def test_run_session_generation_pdf_success(
     result = SimpleNamespace(exists=True, output_path="test.pdf")
     monkeypatch.setattr(cli, "to_pdf", lambda *a, **k: result)
 
-    cli._run_session_generation(resume, session, [command])
+    cli._run_session_generation(cast(Any, resume), cast(Any, session), [command])
     captured = capsys.readouterr()
 
     assert "PDF generated: test.pdf" in captured.out
@@ -568,7 +568,7 @@ def test_run_session_generation_html_success(
     result = SimpleNamespace(exists=True, output_path="test.html")
     monkeypatch.setattr(cli, "to_html", lambda *a, **k: result)
 
-    cli._run_session_generation(resume, session, [command])
+    cli._run_session_generation(cast(Any, resume), cast(Any, session), [command])
     captured = capsys.readouterr()
 
     assert "HTML generated: test.html" in captured.out
@@ -590,12 +590,12 @@ def test_run_session_generation_unsupported_format(
 
     command = GenerationCommand(
         kind=CommandType.SINGLE,
-        format=UnsupportedFormat(),
+        format=cast(Any, UnsupportedFormat()),
         config=GenerationConfig(output_path=None),
         overrides={},
     )
 
-    cli._run_session_generation(resume, session, [command])
+    cli._run_session_generation(cast(Any, resume), cast(Any, session), [command])
     captured = capsys.readouterr()
 
     assert "Unsupported format" in captured.out
@@ -623,7 +623,7 @@ def test_run_session_generation_error(
 
     monkeypatch.setattr(cli, "to_pdf", raise_error)
 
-    cli._run_session_generation(resume, session, [command])
+    cli._run_session_generation(cast(Any, resume), cast(Any, session), [command])
     captured = capsys.readouterr()
 
     assert "Generation error for test" in captured.out
@@ -649,7 +649,7 @@ def test_run_session_generation_failure(
     result = SimpleNamespace(exists=False)
     monkeypatch.setattr(cli, "to_pdf", lambda *a, **k: result)
 
-    cli._run_session_generation(resume, session, [command])
+    cli._run_session_generation(cast(Any, resume), cast(Any, session), [command])
     captured = capsys.readouterr()
 
     assert "Failed to generate PDF" in captured.out

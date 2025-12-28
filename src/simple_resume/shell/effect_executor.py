@@ -193,8 +193,13 @@ class EffectExecutor:
             # Guard against test doubles returning non-bytes payloads.
             try:
                 pdf_bytes = bytes(pdf_bytes)
-            except Exception:
-                pdf_bytes = b""
+            except Exception as exc:
+                raise RuntimeError(
+                    "WeasyPrint returned invalid output (not bytes)"
+                ) from exc
+
+        if not pdf_bytes:
+            raise RuntimeError("WeasyPrint returned empty PDF output")
 
         # Ensure parent directories and write file
         output_path.parent.mkdir(parents=True, exist_ok=True)

@@ -405,8 +405,8 @@ def test_load_palettable_palette_returns_none_when_no_colors(
     story.given("a palettable palette with empty colors")
 
     class EmptyPalette:
-        hex_colors = []
-        colors = []
+        hex_colors: list[str] = []
+        colors: list[tuple[int, int, int]] = []
 
     fake_module = SimpleNamespace(EmptyPal=EmptyPalette)
     monkeypatch.setitem(sys.modules, "palettable.empty", fake_module)

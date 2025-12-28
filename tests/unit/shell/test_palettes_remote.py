@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError, URLError
 
@@ -392,7 +393,7 @@ class TestColourLoversClient:
             "https://example.com",
             404,
             "Not Found",
-            {},
+            cast(Any, {}),
             None,
         )
 

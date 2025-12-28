@@ -22,7 +22,7 @@ from simple_resume.core.generate.pdf import (
 )
 from simple_resume.core.models import RenderPlan, ResumeConfig
 from simple_resume.core.paths import Paths
-from simple_resume.core.protocols import TemplateLocator
+from simple_resume.core.protocols import LaTeXRenderer, TemplateLocator
 from simple_resume.shell.config import TEMPLATE_LOC
 from tests.bdd import Scenario
 
@@ -33,14 +33,14 @@ def _make_template_locator() -> TemplateLocator:
     return locator
 
 
-def _make_latex_renderer(tex_content: str) -> object:
+def _make_latex_renderer(tex_content: str) -> LaTeXRenderer:
     render_fn = MagicMock(return_value=MagicMock(tex=tex_content))
 
     class _StubLatexRenderer:
         def get_latex_functions(self) -> tuple[object, object, object]:
             return (RuntimeError, lambda *args, **kwargs: None, render_fn)
 
-    return _StubLatexRenderer()
+    return _StubLatexRenderer()  # type: ignore[return-value]
 
 
 class TestPreparePdfWithWeasyprint:

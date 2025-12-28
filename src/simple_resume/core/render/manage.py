@@ -40,7 +40,8 @@ def dynamic_font_size(
         This errs on the side of reduction to prevent text wrapping.
 
     """
-    if not text:
+    # Handle edge cases: empty text or invalid dimensions
+    if not text or available_width_mm <= 0:
         return f"{max_font_pt}pt"
 
     text_length = len(text)

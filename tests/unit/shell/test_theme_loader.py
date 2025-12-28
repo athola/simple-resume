@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator
+
 import pytest
 
 from simple_resume.shell.themes import (
@@ -15,7 +17,7 @@ from simple_resume.shell.themes import (
 
 
 @pytest.fixture(autouse=True)
-def clear_cache() -> None:
+def clear_cache() -> Generator[None, None, None]:
     """Clear theme cache before and after each test."""
     clear_theme_cache()
     yield

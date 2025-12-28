@@ -11,7 +11,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-import yaml  # type: ignore
+import yaml
 
 logger = logging.getLogger(__name__)
 
@@ -82,11 +82,15 @@ def load_theme(theme_name: str) -> dict[str, Any]:
 
     Raises:
         FileNotFoundError: If theme doesn't exist.
-        ValueError: If theme file is invalid.
+        ValueError: If theme file is invalid or theme name contains path traversal.
 
     """
     themes_dir = get_themes_directory()
-    theme_path = themes_dir / f"{theme_name}.yaml"
+    theme_path = (themes_dir / f"{theme_name}.yaml").resolve()
+
+    # Validate path stays within themes directory (prevent path traversal)
+    if not theme_path.is_relative_to(themes_dir.resolve()):
+        raise ValueError(f"Invalid theme name: {theme_name}")
 
     theme_data = _load_theme_file(theme_path)
 
@@ -97,9 +101,15 @@ def load_theme(theme_name: str) -> dict[str, Any]:
     return dict(theme_data)
 
 
+class ThemeLoadError(Exception):
+    """Raised when theme loading fails in strict mode."""
+
+
 def apply_theme_to_config(
     user_config: dict[str, Any],
     theme_name: str,
+    *,
+    strict: bool = False,
 ) -> dict[str, Any]:
     """Apply a theme to user configuration.
 
@@ -108,14 +118,20 @@ def apply_theme_to_config(
     Args:
         user_config: User's configuration dictionary.
         theme_name: Name of the theme to apply.
+        strict: If True, raise ThemeLoadError on failure instead of falling back.
 
     Returns:
         Merged configuration with theme defaults and user overrides.
+
+    Raises:
+        ThemeLoadError: If strict=True and theme loading fails.
 
     """
     try:
         theme_config = load_theme(theme_name)
     except (FileNotFoundError, ValueError) as exc:
+        if strict:
+            raise ThemeLoadError(f"Failed to load theme '{theme_name}': {exc}") from exc
         logger.warning("Failed to load theme '%s': %s", theme_name, exc)
         return user_config
 
@@ -204,6 +220,7 @@ def clear_theme_cache() -> None:
 
 
 __all__ = [
+    "ThemeLoadError",
     "apply_theme_to_config",
     "clear_theme_cache",
     "get_themes_directory",

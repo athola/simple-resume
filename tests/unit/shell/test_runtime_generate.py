@@ -648,7 +648,7 @@ class TestExecuteGenerationCommands:
             kind=CommandType.BATCH_SINGLE,
             format=OutputFormat.HTML,
             config=config,
-            overrides=None,
+            overrides={},
         )
 
         # Patch the _FORMAT_EXECUTORS dict
@@ -667,7 +667,7 @@ class TestExecuteGenerationCommands:
         """Test executing command without format raises error."""
         config = GenerationConfig(name="test", data_dir=tmp_path)
         command = GenerationCommand(
-            kind=CommandType.SINGLE, format=None, config=config, overrides=None
+            kind=CommandType.SINGLE, format=None, config=config, overrides={}
         )
 
         with pytest.raises(ValueError, match="Missing format"):
@@ -686,7 +686,7 @@ class TestExecuteGenerationCommands:
             kind=CommandType.SINGLE,
             format=mock_format,
             config=config,
-            overrides=None,
+            overrides={},
         )
 
         with pytest.raises(ValueError, match="Unsupported format"):
@@ -723,11 +723,11 @@ class TestExecuteGenerationCommands:
         """Test executing command with unsupported type raises error."""
         # Create a mock command type
         mock_type = MagicMock()
-        mock_type.__str__ = lambda self: "UNSUPPORTED"
+        mock_type.configure_mock(**{"__str__.return_value": "UNSUPPORTED"})
 
         config = GenerationConfig(name="test", data_dir=tmp_path)
         command = GenerationCommand(
-            kind=mock_type, format=OutputFormat.PDF, config=config, overrides=None
+            kind=mock_type, format=OutputFormat.PDF, config=config, overrides={}
         )
 
         with pytest.raises(ValueError, match="Unsupported command type"):
@@ -744,13 +744,13 @@ class TestExecuteGenerationCommands:
             kind=CommandType.SINGLE,
             format=OutputFormat.PDF,
             config=config,
-            overrides=None,
+            overrides={},
         )
         html_command = GenerationCommand(
             kind=CommandType.SINGLE,
             format=OutputFormat.HTML,
             config=config,
-            overrides=None,
+            overrides={},
         )
 
         # Patch the _FORMAT_EXECUTORS dict
