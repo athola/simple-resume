@@ -2,6 +2,48 @@
 
 This file documents all notable project changes. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2025-12-29
+
+### Changed
+
+-   Relocated `plan.py` to `core/render/plan.py` for better module organization
+-   Consolidated render plan logic within the render subpackage
+-   Migrated inline CSS styles to external stylesheet architecture
+-   Updated HTML template structure for cleaner separation of concerns
+
+### Removed
+
+-   Deleted standalone `core/plan.py` (functionality moved to `core/render/plan.py`)
+
+## [0.1.4] - 2025-12-28
+
+### Added
+
+-   External CSS architecture with bundled theme presets (modern, classic, bold, minimal, executive)
+-   ThemeLoader for dynamic theme configuration and merging
+-   Dynamic font sizing plus spacing/icon layout configuration options
+-   Strict mode for theme loading to fail fast instead of silent fallback
+-   Path traversal protection in `load_theme()` using resolve/is_relative_to
+-   Input validation for negative width in `dynamic_font_size()`
+-   Comprehensive visual regression testing and documentation
+
+### Changed
+
+-   Refactored templates to use `<link>` tags instead of inline styles
+-   Core HTML/PDF generation now requires injected template locator and LaTeX renderer
+-   Improved EffectExecutor with dispatch pattern and CopyFile support
+-   Expanded shell/runtime tests for layout controls
+
+### Fixed
+
+-   RuntimeError raised on empty/invalid PDF output instead of silent failure
+-   GenerationResult size units corrected
+-   Makefile Python version compatibility
+
+### Breaking Changes
+
+-   Core HTML/PDF generation requires an injected template locator and LaTeX renderer; implicit package defaults were removed
+
 ## [0.1.3] - 2025-12-03
 
 ### Added

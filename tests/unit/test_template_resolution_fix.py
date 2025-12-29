@@ -17,8 +17,8 @@ import pytest
 from jinja2.loaders import FileSystemLoader
 
 from simple_resume.core.models import RenderMode, RenderPlan, ResumeConfig
-from simple_resume.core.plan import prepare_render_data
 from simple_resume.core.render import get_template_environment
+from simple_resume.core.render.plan import prepare_render_data
 from simple_resume.core.resume import Resume
 from simple_resume.shell.config import TEMPLATE_LOC, resolve_paths
 from simple_resume.shell.palettes.loader import get_palette_registry

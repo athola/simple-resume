@@ -28,14 +28,14 @@ from simple_resume.core.exceptions import (
 )
 from simple_resume.core.models import RenderPlan, ValidationResult
 from simple_resume.core.paths import Paths
-from simple_resume.core.plan import (
-    prepare_render_data,
-    validate_resume_config,
-)
 from simple_resume.core.protocols import (
     ContentLoader,
     PaletteLoader,
     PathResolver,
+)
+from simple_resume.core.render.plan import (
+    prepare_render_data,
+    validate_resume_config,
 )
 
 
