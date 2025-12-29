@@ -1,0 +1,85 @@
+# Theme Demo: Executive
+# Sophisticated dark with gold accents - for senior leadership
+
+template: resume_with_bars
+theme: executive
+
+full_name: Richard Executive
+job_title: Chief Technology Officer
+
+address:
+  - New York, NY
+
+phone: "(212) 555-0999"
+email: r.executive@fortune500.com
+linkedin: in/richard-executive
+
+image_uri: images/default_profile_1.jpg
+
+titles:
+  contact: Contact
+  skills: Leadership
+  expertise: Strategic Focus
+  keyskills: Technologies
+
+description: |
+  Seasoned technology executive with **20+ years** leading digital
+  transformation at Fortune 500 companies. Track record of building
+  world-class engineering organizations and delivering $500M+ in value.
+
+skills:
+  Strategic Planning: 58
+  Team Building: 55
+  Digital Transformation: 52
+  P&L Management: 50
+
+expertise:
+  - Enterprise Architecture
+  - Cloud Migration
+  - AI/ML Strategy
+  - M&A Integration
+
+keyskills:
+  - AWS/Azure/GCP
+  - Kubernetes
+  - Data Platforms
+  - Agile at Scale
+
+body:
+  Experience:
+    -
+      start: 2020
+      end: Present
+      title: Chief Technology Officer
+      company: Global Industries Inc.
+      description: |
+        - Lead 500+ person engineering organization
+        - Drove $200M cloud transformation initiative
+        - Reduced infrastructure costs by 40%
+    -
+      start: 2015
+      end: 2020
+      title: SVP Engineering
+      company: TechGiant Corp
+      description: |
+        - Scaled team from 50 to 300 engineers
+        - Launched platform serving 100M+ users
+  Board Positions:
+    -
+      start: 2022
+      end: Present
+      title: Board Advisor
+      company: AI Startup Ventures
+      description: |
+        - Advising 5 portfolio companies on technology strategy
+  Education:
+    -
+      start: 2000
+      end: 2002
+      title: MBA
+      company: Wharton School of Business
+    -
+      start: 1996
+      end: 2000
+      title: B.S. Computer Science
+      company: Carnegie Mellon University

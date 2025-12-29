@@ -1,0 +1,82 @@
+/**
+ * Web Preview Styles for Simple Resume
+ *
+ * Enhancements for web browser preview mode.
+ * These styles make the resume look better in a browser context.
+ */
+
+/* ========================================================================
+   PREVIEW FRAME
+   ======================================================================== */
+
+/* The frame wraps the page when in preview mode */
+.frame {
+  /* Add subtle shadow for depth */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+
+  /* Center the preview */
+  margin: 20px auto;
+
+  /* Ensure it doesn't stretch too wide */
+  max-width: fit-content;
+}
+
+/* ========================================================================
+   BROWSER-SPECIFIC ENHANCEMENTS
+   ======================================================================== */
+
+/* Smooth font rendering in browsers */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Interactive elements */
+a:hover {
+  opacity: 0.8;
+}
+
+/* ========================================================================
+   SCROLLING & VIEWPORT
+   ======================================================================== */
+
+/* Ensure smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Add some breathing room */
+body {
+  padding: 20px 0;
+  min-height: 100vh;
+}
+
+/* ========================================================================
+   RESPONSIVE PREVIEW
+   ======================================================================== */
+
+@media screen and (max-width: 250mm) {
+  .frame {
+    /* Scale down for smaller screens */
+    transform-origin: top center;
+    margin: 10px auto;
+  }
+
+  body {
+    padding: 10px;
+    overflow-x: auto;
+  }
+}
+
+/* ========================================================================
+   DEBUG HELPERS (development only)
+   ======================================================================== */
+
+/*
+ * Uncomment these for debugging layout issues:
+ *
+ * .sidebar { outline: 1px solid red; }
+ * .body { outline: 1px solid blue; }
+ * .content { outline: 1px solid green; }
+ * .description-container { outline: 1px solid orange; }
+ */

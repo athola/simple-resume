@@ -15,7 +15,10 @@ DEFAULT_COLOR_SCHEME: Final[dict[str, str]] = {
     "bold_color": "#585858",
 }
 
-# WCAG relative luminance calculation constants
+# WCAG 2.1 relative luminance formula constants
+# Reference: https://www.w3.org/TR/WCAG21/#dfn-relative-luminance
+# These constants implement the standard relative luminance calculation
+# for determining color contrast and accessibility compliance.
 WCAG_LINEARIZATION_THRESHOLD: Final[float] = 0.03928
 WCAG_LINEARIZATION_DIVISOR: Final[float] = 12.92
 WCAG_LINEARIZATION_EXPONENT: Final[float] = 2.4

@@ -1,0 +1,84 @@
+# Theme Demo: Minimal
+# Light and airy with maximum whitespace
+
+template: resume_with_bars
+theme: minimal
+
+full_name: Dr. Sarah Minimal
+job_title: Research Scientist
+
+address:
+  - Cambridge, MA
+
+phone: "(617) 555-0321"
+email: s.minimal@university.edu
+web: https://scholar.google.com/minimal
+linkedin: in/sarah-minimal
+
+image_uri: images/default_profile_1.jpg
+
+titles:
+  contact: Contact
+  skills: Research Areas
+  expertise: Focus
+  keyskills: Methods
+
+description: |
+  Computational biologist investigating **machine learning applications**
+  in drug discovery. Published 25+ peer-reviewed papers with 2,000+ citations.
+  NIH-funded principal investigator.
+
+skills:
+  Machine Learning: 55
+  Computational Biology: 52
+  Drug Discovery: 48
+  Data Analysis: 50
+
+expertise:
+  - Deep learning for genomics
+  - Protein structure prediction
+  - Clinical trial analysis
+
+keyskills:
+  - Python
+  - PyTorch
+  - R
+  - Bioinformatics
+
+body:
+  Experience:
+    -
+      start: 2019
+      end: Present
+      title: Assistant Professor
+      company: MIT
+      description: |
+        - Lead lab of 8 graduate students and postdocs
+        - PI on $2M NIH R01 grant
+    -
+      start: 2016
+      end: 2019
+      title: Postdoctoral Fellow
+      company: Broad Institute
+      description: |
+        - Developed AlphaFold-inspired protein modeling tools
+        - Published in Nature and Cell
+  Publications:
+    -
+      start: 2023
+      end: 2023
+      title: "Deep learning for drug-target interaction"
+      company: Nature Methods
+      description: |
+        - First author, 150+ citations
+  Education:
+    -
+      start: 2012
+      end: 2016
+      title: Ph.D. Computational Biology
+      company: Stanford University
+    -
+      start: 2008
+      end: 2012
+      title: B.S. Computer Science
+      company: UC Berkeley

@@ -197,11 +197,19 @@
           {% set combined_text = title_text ~ " " ~ company_text %}
           {% set combined_text_length = (title_text | length) + (company_text | length) + 1 %}
 
-          <!-- More aggressive reduction for very long combined text -->
-          {% if combined_text_length > 65 %}
-            {% set combined_font_size = dynamic_font_size(combined_text, heading_width_mm * 0.85, 11.5, 7.5) or "11.5pt" %}
+          <!-- Tiered reduction based on combined text length -->
+          {% if combined_text_length > 75 %}
+            {# Very long (75+): aggressive reduction #}
+            {% set combined_font_size = dynamic_font_size(combined_text, heading_width_mm * 0.65, 11.5, 7.0) or "11.5pt" %}
+          {% elif combined_text_length > 55 %}
+            {# Long (55-75): moderate reduction #}
+            {% set combined_font_size = dynamic_font_size(combined_text, heading_width_mm * 0.72, 11.5, 7.5) or "11.5pt" %}
+          {% elif combined_text_length > 45 %}
+            {# Medium (45-55): light reduction #}
+            {% set combined_font_size = dynamic_font_size(combined_text, heading_width_mm * 0.80, 11.5, 8.5) or "11.5pt" %}
           {% else %}
-            {% set combined_font_size = dynamic_font_size(combined_text, heading_width_mm * 0.90, 11.5, 8.5) or "11.5pt" %}
+            {# Short: standard sizing #}
+            {% set combined_font_size = dynamic_font_size(combined_text, heading_width_mm * 0.90, 11.5, 9.0) or "11.5pt" %}
           {% endif %}
           {% set title_font_size = combined_font_size %}
           {% set company_font_size = combined_font_size %}

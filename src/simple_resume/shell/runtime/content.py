@@ -21,6 +21,7 @@ from simple_resume.shell.io_utils import (
 )
 from simple_resume.shell.palettes.fetch import execute_palette_fetch
 from simple_resume.shell.palettes.loader import get_palette_registry
+from simple_resume.shell.themes import resolve_theme_in_data
 
 logger = logging.getLogger(__name__)
 
@@ -78,9 +79,16 @@ def hydrate_resume_data(
     filename: str = "",
     transform_markdown: bool = True,
 ) -> dict[str, Any]:
-    """Return normalized resume data using pure core helpers."""
+    """Return normalized resume data using pure core helpers.
+
+    If the source YAML contains a 'theme' key, the theme is loaded
+    and merged with the config before processing.
+    """
+    # Resolve theme references before hydration
+    resolved_data = resolve_theme_in_data(source_yaml)
+
     return hydrate_resume_structure(
-        source_yaml,
+        resolved_data,
         filename=filename,
         transform_markdown=transform_markdown,
         normalize_config_fn=_normalize_with_palette,
@@ -94,10 +102,17 @@ def get_content(
     paths: Paths | None = None,
     transform_markdown: bool = True,
 ) -> dict[str, Any]:
-    """Load, hydrate, and optionally transform a resume payload."""
+    """Load, hydrate, and optionally transform a resume payload.
+
+    Theme references are automatically resolved before processing.
+    """
     raw_data, filename, _ = load_resume_yaml(name, paths=paths)
+
+    # Resolve theme references before hydration
+    resolved_data = resolve_theme_in_data(raw_data)
+
     return hydrate_resume_structure(
-        raw_data,
+        resolved_data,
         filename=filename,
         transform_markdown=transform_markdown,
         normalize_config_fn=_normalize_with_palette,

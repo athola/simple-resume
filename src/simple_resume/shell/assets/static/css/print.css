@@ -1,0 +1,99 @@
+/**
+ * Print/PDF Styles for Simple Resume
+ *
+ * PDF-specific styles and WeasyPrint workarounds.
+ * Used for PDF generation via WeasyPrint.
+ *
+ * Note: @page size is dynamically set via inline CSS for each resume
+ * based on resume_config values. This file contains base print rules.
+ */
+
+/* ========================================================================
+   PAGE RULES
+   ======================================================================== */
+
+@page {
+  /* Base page rule - actual size is set dynamically via inline CSS */
+  margin: 0;
+}
+
+@page resume {
+  /* Named page for resume content flow */
+  margin: 0;
+}
+
+/* ========================================================================
+   PRINT-SPECIFIC LAYOUT
+   ======================================================================== */
+
+@media print {
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .page {
+    page-break-after: always;
+    page-break-inside: avoid;
+  }
+
+  /* Ensure sidebar flows across pages properly */
+  .sidebar-container {
+    page-break-inside: auto;
+    break-inside: auto;
+  }
+
+  /* Prevent orphan headings */
+  h2, h3 {
+    page-break-after: avoid;
+  }
+
+  /* Keep content blocks together when possible */
+  .content {
+    page-break-inside: auto;
+  }
+
+  .description-container {
+    page-break-inside: auto;
+  }
+
+  /* Section headings should not be separated from content */
+  .section-heading {
+    page-break-after: avoid;
+  }
+}
+
+/* ========================================================================
+   WEASYPRINT WORKAROUNDS
+   ======================================================================== */
+
+/*
+ * WeasyPrint has some CSS limitations. Document known issues here.
+ *
+ * Known issues:
+ * - calc() with CSS variables can be unreliable in some contexts
+ * - Some flexbox edge cases may render differently than browsers
+ * - @font-face src: format() hint is optional but recommended
+ *
+ * Workarounds applied:
+ * - Use explicit dimensions where possible instead of calc()
+ * - Test all flexbox layouts thoroughly
+ * - Font paths use relative URLs from template location
+ */
+
+/* Ensure proper box-sizing for WeasyPrint */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* WeasyPrint handles background gradients well, but explicit sizing helps */
+.page {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Ensure SVG icons render properly in PDF */
+.icon svg,
+.icon-inline svg {
+  overflow: visible;
+}

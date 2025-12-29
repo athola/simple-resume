@@ -6,11 +6,8 @@ without global state management.
 
 from __future__ import annotations
 
-import logging
 import os
-from contextlib import ExitStack
 from dataclasses import dataclass
-from importlib import resources
 from pathlib import Path
 from typing import Callable
 
@@ -23,43 +20,6 @@ from simple_resume.core.models import RenderPlan
 from simple_resume.core.protocols import TemplateLocator
 from simple_resume.core.render import get_template_environment
 from simple_resume.core.result import GenerationMetadata
-
-
-class _PackageTemplateLocator(TemplateLocator):
-    """Locator for bundled HTML templates inside package assets."""
-
-    def __init__(self) -> None:
-        self._stack = ExitStack()
-        self._template_path = self._stack.enter_context(
-            resources.as_file(
-                resources.files("simple_resume.shell") / "assets" / "templates"
-            )
-        )
-
-    def get_template_location(self) -> Path:
-        return self._template_path
-
-    def __del__(self) -> None:
-        # Ensure we don't leak the context when the locator is garbage collected.
-        try:
-            self._stack.close()
-        except Exception as exc:  # pragma: no cover - best-effort cleanup
-            logging.getLogger(__name__).debug(
-                "Failed to close template locator resources: %s", exc
-            )
-
-
-def create_default_template_locator() -> _PackageTemplateLocator:
-    """Create a default package template locator.
-
-    Returns:
-        New _PackageTemplateLocator instance
-
-    This factory pattern avoids global state while providing convenient
-    access to the default template locator when needed.
-
-    """
-    return _PackageTemplateLocator()
 
 
 @dataclass(frozen=True)
@@ -115,8 +75,10 @@ class HtmlGeneratorFactory:
             return injected
         if self._default_template_locator is not None:
             return self._default_template_locator
-        # Create default locator on-demand using factory
-        return create_default_template_locator()
+        raise TemplateError(
+            "template locator required for HTML generation. "
+            "Inject one or configure a default."
+        )
 
     def create_prepare_html_function(
         self,
@@ -225,33 +187,22 @@ def _prepare_html_with_jinja_impl(
     env = get_template_environment(str(template_loc))
     try:
         template = env.get_template(params.render_plan.template_name)
-    except TemplateNotFound:
-        fallback_locator = create_default_template_locator()
-        env = get_template_environment(str(fallback_locator.get_template_location()))
-        template = env.get_template(params.render_plan.template_name)
+    except TemplateNotFound as exc:
+        raise TemplateError(
+            f"Template not found: {params.render_plan.template_name}",
+            template_name=params.render_plan.template_name,
+            template_path=str(template_loc),
+            filename=params.filename,
+        ) from exc
 
     html = template.render(**params.render_plan.context).lstrip()
 
-    # Pure operations: Add base tag for asset resolution
-    base_path = (
-        params.render_plan.base_path
-        if isinstance(params.render_plan.base_path, Path)
-        else Path(params.render_plan.base_path)
-    )
-    base_uri = base_path.resolve().as_uri().rstrip("/") + "/"
-    base_tag = f'<base href="{base_uri}">'
-    if "<head>" in html:
-        html_with_base = html.replace("<head>", f"<head>\n  {base_tag}", 1)
-    else:
-        # Preserve leading whitespace/doctype, insert base tag after it.
-        stripped = html.lstrip("\n\r")
-        prefix = html[: len(html) - len(stripped)]
-        html_with_base = f"{prefix}{base_tag}\n{stripped}"
-
     # Create effects for shell execution
+    # Note: Base tag is NOT added - shell layer copies assets to output directory
+    # so relative paths like "static/css/common.css" work from the HTML location
     effects: list[Effect] = [
         MakeDirectory(path=params.output_path.parent, parents=True),
-        WriteFile(path=params.output_path, content=html_with_base, encoding="utf-8"),
+        WriteFile(path=params.output_path, content=html, encoding="utf-8"),
     ]
 
     # Create metadata
@@ -259,12 +210,12 @@ def _prepare_html_with_jinja_impl(
         format_type="html",
         template_name=params.render_plan.template_name or "unknown",
         generation_time=0.0,
-        file_size=len(html_with_base.encode("utf-8")),
+        file_size=len(html.encode("utf-8")),
         resume_name=params.resume_name,
         palette_info=params.render_plan.palette_metadata,
     )
 
-    return html_with_base, effects, metadata
+    return html, effects, metadata
 
 
 def create_html_generator_factory(

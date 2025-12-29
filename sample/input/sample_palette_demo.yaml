@@ -23,10 +23,7 @@ titles:
   languages: Languages
 
 description: |
-  Demonstration resume highlighting the **palette** configuration block and
-  every major resume section supported by Simple-Resume. Colors below come from
-  the built-in palette generator, so you can tweak hue, chroma, and luminance
-  directly from YAML.
+  Demo resume showing palette configuration. Colors from the built-in generator.
 
 skills:
   UI/UX Design: 55
@@ -56,14 +53,11 @@ programming:
   Prototyping:
     - TypeScript
     - React
-    - WebGL
   Data & Automation:
     - Python
-    - dbt
     - SQL
   Infrastructure:
     - Terraform
-    - GitHub Actions
     - Docker
 
 keyskills:
@@ -203,11 +197,12 @@ config:
     luminance_range: [0.25, 0.78]
     chroma: 0.18
 
-  padding: 12
+  padding: 8
   page_width: 210
   page_height: 297
   sidebar_width: 60
   sidebar_padding_top: 5
+  sidebar_padding_left: 8
   profile_image_padding_bottom: 6
   pitch_padding_top: 4
   pitch_padding_bottom: 4
@@ -222,9 +217,21 @@ config:
   bold_color: "#585858"  # Darkened frame for bold text
 
   # Section heading icon layout customization
-  section_icon_circle_size: "7.8mm"          # Size of the circular icon background
-  section_icon_circle_x_offset: "-0.5mm"     # Horizontal position adjustment of circle
+  section_icon_circle_size: "8.6mm"          # Size of the circular icon background
+  section_icon_circle_x_offset: "-0.75mm"    # Horizontal position adjustment of circle
   section_icon_design_size: "4mm"            # Size of the icon design (briefcase, cog, etc)
-  section_icon_design_x_offset: "-0.1mm"     # Horizontal position of icon within circle
-  section_icon_design_y_offset: "-0.4mm"     # Vertical position of icon within circle
+  section_icon_design_x_offset: "-1.5mm"     # Horizontal position of icon within circle
+  section_icon_design_y_offset: "-0.5mm"     # Vertical position of icon within circle
+  section_icon_design_scale: "0.8"           # Scale factor for icon (0.8 = 80% size)
   section_heading_text_margin: "-6mm"        # Left margin of heading text (Education, etc)
+
+  # Section and entry spacing
+  section_heading_margin_top: "5mm"          # Space above section headings (Experience, Education, etc)
+  section_heading_margin_bottom: "1mm"       # Space below section headings
+  entry_margin_bottom: "4mm"                 # Space between entries within a section
+  tech_stack_margin_bottom: "2mm"            # Space below tech stack before next entry
+
+  # Contact icon layout customization
+  contact_icon_size: "5mm"                   # Size of contact icons (HEAD default)
+  contact_icon_margin_top: "0.5mm"           # Top margin of contact icons
+  contact_text_padding_left: "2mm"           # Padding between icon and contact text

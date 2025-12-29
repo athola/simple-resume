@@ -146,7 +146,7 @@ class GenerationResult:
         elif size < GB_FACTOR:
             return f"{size / MB_FACTOR:.1f} MB"
         else:
-            return f"{size / GB_FACTOR:.1f} TB"
+            return f"{size / GB_FACTOR:.1f} GB"
 
     def __bool__(self) -> bool:
         """Return True if the output file exists."""

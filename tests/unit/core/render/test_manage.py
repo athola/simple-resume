@@ -7,11 +7,95 @@ from pathlib import Path
 from simple_resume.core.constants import RenderMode
 from simple_resume.core.models import RenderPlan, ResumeConfig
 from simple_resume.core.render.manage import (
+    dynamic_font_size,
     get_template_environment,
     prepare_html_generation_request,
     prepare_pdf_generation_request,
     validate_render_plan,
 )
+
+
+class TestDynamicFontSize:
+    """Tests for dynamic_font_size function - safety margin for long text."""
+
+    def test_long_text_returns_smaller_than_max(self) -> None:
+        """Test that very long text returns font size smaller than max.
+
+        Long text like job titles with company names should scale down
+        to fit within the available width, verifying the safety margin works.
+        """
+        # Test with a realistic long job title
+        company = "International Business Machines Corporation"
+        long_text = f"Senior Software Engineer at {company}"
+        available_width_mm = 100.0  # Typical resume body width
+        max_font_pt = 11.5
+        min_font_pt = 8.0
+
+        result = dynamic_font_size(
+            long_text,
+            available_width_mm,
+            max_font_pt=max_font_pt,
+            min_font_pt=min_font_pt,
+        )
+
+        # Extract numeric value from "X.Xpt" format
+        font_size = float(result.replace("pt", ""))
+
+        # Long text should require scaling down
+        assert font_size < max_font_pt
+
+    def test_font_size_respects_minimum_bound(self) -> None:
+        """Test that returned font size never goes below min_font_pt.
+
+        Even with extremely long text and small available width,
+        the function should enforce the minimum font size constraint.
+        """
+        # Extremely long text with tight width constraint
+        company = "International Business Machines Corporation"
+        very_long_text = f"Senior Principal Staff Software Engineer at {company}"
+        available_width_mm = 50.0  # Very small width
+        max_font_pt = 11.5
+        min_font_pt = 8.0
+
+        result = dynamic_font_size(
+            very_long_text,
+            available_width_mm,
+            max_font_pt=max_font_pt,
+            min_font_pt=min_font_pt,
+        )
+
+        # Extract numeric value from "X.Xpt" format
+        font_size = float(result.replace("pt", ""))
+
+        # Should never go below minimum
+        assert font_size >= min_font_pt
+
+    def test_typical_resume_width_with_long_text(self) -> None:
+        """Test with 100mm available width (typical resume body) and long text.
+
+        This tests the common real-world scenario where typical job titles
+        need to fit within standard resume column widths.
+        """
+        # Moderately long job title
+        text = "Lead Software Engineer at Microsoft"
+        available_width_mm = 100.0  # Standard resume body width
+        max_font_pt = 11.5
+        min_font_pt = 8.0
+
+        result = dynamic_font_size(
+            text,
+            available_width_mm,
+            max_font_pt=max_font_pt,
+            min_font_pt=min_font_pt,
+        )
+
+        # Extract numeric value from "X.Xpt" format
+        font_size = float(result.replace("pt", ""))
+
+        # Font size should be within valid range
+        assert min_font_pt <= font_size <= max_font_pt
+        # Result should include "pt" suffix
+        assert result.endswith("pt")
 
 
 class TestGetTemplateEnvironment:

@@ -8,8 +8,10 @@ from tests.bdd import Scenario
 EXPECTED_PUBLIC_SYMBOLS = {
     "__version__",
     # Core models (data only)
+    "Resume",
     "ResumeConfig",
     "RenderPlan",
+    "ValidationResult",
     # Exceptions
     "SimpleResumeError",
     "ValidationError",

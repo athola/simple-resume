@@ -181,8 +181,8 @@ class TestPrepareHtmlWithJinja:
                 html_write_effects[0].content, str
             )  # HTML content is string
 
-    def test_html_includes_base_tag(self, story: Scenario) -> None:
-        """prepare_html_with_jinja includes base tag for asset resolution."""
+    def test_html_does_not_include_base_tag(self, story: Scenario) -> None:
+        """prepare_html_with_jinja does NOT include base tag - assets copied instead."""
         story.given("a base path is specified in the render plan")
         story.when("rendering HTML content")
         with TemporaryDirectory() as temp_dir:
@@ -224,13 +224,15 @@ class TestPrepareHtmlWithJinja:
                     template_locator=mock_locator,
                 )
 
-            # Should include base tag
-            assert "<base href=" in html_content
+            # Should NOT include base tag - shell layer copies assets to output dir
+            assert "<base href=" not in html_content
+            # Should return rendered HTML as-is
+            assert "Test content" in html_content
 
-    def test_html_base_tag_without_head(self, story: Scenario) -> None:
-        """prepare_html_with_jinja handles HTML without <head> tag."""
+    def test_html_without_head_preserved_as_is(self, story: Scenario) -> None:
+        """prepare_html_with_jinja preserves HTML without modifications."""
         story.given("a template without a head element")
-        story.when("injecting the base href into rendered HTML")
+        story.when("rendering HTML")
         with TemporaryDirectory() as temp_dir:
             base_path = Path(temp_dir) / "base"
             render_plan = RenderPlan(
@@ -243,45 +245,37 @@ class TestPrepareHtmlWithJinja:
             )
             output_path = Path(temp_dir) / "resume.html"
 
-            # Mock template that returns HTML without <head> tag
+            # Create a mock template locator for testing
+            mock_locator = MagicMock(spec=TemplateLocator)
+            mock_locator.get_template_location.return_value = Path(temp_dir)
+
             with patch(
                 "simple_resume.core.generate.html.get_template_environment"
             ) as mock_env:
-                mock_template = mock_env.return_value.get_template.return_value
+                # Setup mock template environment and template
+                mock_template_env = MagicMock()
+                mock_template = MagicMock()
                 mock_template.render.return_value = (
                     "<html><body>No head tag</body></html>"
                 )
+                mock_template_env.get_template.return_value = mock_template
+                mock_env.return_value = mock_template_env
 
-                # Create a mock template locator for testing
-                mock_locator = MagicMock(spec=TemplateLocator)
-                mock_locator.get_template_location.return_value = Path(temp_dir)
+                factory = create_html_generator_factory(
+                    default_template_locator=mock_locator
+                )
+                prepare_html_func = factory.create_prepare_html_function()
+                html_content, _, _ = prepare_html_func(
+                    render_plan=render_plan,
+                    output_path=output_path,
+                    resume_name="test_resume",
+                    template_locator=mock_locator,
+                )
 
-                with patch(
-                    "simple_resume.core.generate.html.get_template_environment"
-                ) as inner_mock_env:
-                    # Setup mock template environment and template
-                    mock_template_env = MagicMock()
-                    mock_template = MagicMock()
-                    mock_template.render.return_value = (
-                        "<html><body>No head tag</body></html>"
-                    )
-                    mock_template_env.get_template.return_value = mock_template
-                    inner_mock_env.return_value = mock_template_env
-
-                    factory = create_html_generator_factory(
-                        default_template_locator=mock_locator
-                    )
-                    prepare_html_func = factory.create_prepare_html_function()
-                    html_content, _, _ = prepare_html_func(
-                        render_plan=render_plan,
-                        output_path=output_path,
-                        resume_name="test_resume",
-                        template_locator=mock_locator,
-                    )
-
-                # Should prepend base tag when no <head> present
-                assert html_content.startswith("<base href=")
-                assert "No head tag" in html_content
+            # HTML should be preserved as-is (no base tag injection)
+            assert "<base href=" not in html_content
+            assert "No head tag" in html_content
+            assert html_content.startswith("<html>")
 
     def test_raises_template_error_for_latex_mode(self, story: Scenario) -> None:
         """prepare_html_with_jinja raises error when render plan uses LaTeX mode."""
@@ -356,6 +350,30 @@ class TestPrepareHtmlWithJinja:
                 output_path=output_path,
                 resume_name="test_resume",
             )
+
+    def test_raises_template_error_when_locator_missing(self, story: Scenario) -> None:
+        """Raises TemplateError when the template locator is missing."""
+        story.given("a valid HTML render plan without a template locator")
+        story.when("preparing HTML without a locator")
+        with TemporaryDirectory() as temp_dir:
+            render_plan = RenderPlan(
+                name="test",
+                mode=RenderMode.HTML,
+                template_name="demo.html",
+                context={"name": "Test"},
+                config=ResumeConfig(),
+                base_path=temp_dir,
+            )
+            output_path = Path(temp_dir) / "resume.html"
+
+            factory = create_html_generator_factory()
+            prepare_html_func = factory.create_prepare_html_function()
+            with pytest.raises(TemplateError, match="template locator"):
+                prepare_html_func(
+                    render_plan=render_plan,
+                    output_path=output_path,
+                    resume_name="test_resume",
+                )
 
     def test_no_io_operations_performed(self, story: Scenario) -> None:
         """prepare_html_with_jinja performs NO I/O operations (critical test)."""

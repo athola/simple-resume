@@ -179,9 +179,13 @@ class TestTemplateResolutionFix:
         # Mock the rendering to avoid actual file generation
         with patch("weasyprint.HTML") as mock_html_class:
             with patch("weasyprint.CSS") as mock_css_class:
-                # Create a mock PDF writer that returns a mock result
+                # Create a mock PDF writer that returns valid bytes
                 mock_css_instance = Mock()
+                mock_pdf_doc = Mock()
+                mock_pdf_doc.pages = [1]
+                mock_pdf_doc.write_pdf = Mock(return_value=b"%PDF-1.4")
                 mock_html_instance = Mock()
+                mock_html_instance.render.return_value = mock_pdf_doc
                 mock_html_class.return_value = mock_html_instance
                 mock_css_class.return_value = mock_css_instance
 

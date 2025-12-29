@@ -1,0 +1,82 @@
+# Theme Demo: Classic
+# Traditional professional design with navy/burgundy colors
+
+template: resume_with_bars
+theme: classic
+
+full_name: Margaret Classic
+job_title: Senior Financial Analyst
+
+address:
+  - Boston, MA
+
+phone: "(617) 555-0456"
+email: m.classic@example.com
+linkedin: in/margaret-classic
+
+image_uri: images/default_profile_1.jpg
+
+titles:
+  contact: Contact
+  skills: Competencies
+  expertise: Areas of Expertise
+  certification: Certifications
+  keyskills: Technical Skills
+
+description: |
+  Experienced financial analyst with **15 years** in investment banking and
+  corporate finance. CFA charterholder with expertise in valuation,
+  financial modeling, and strategic advisory.
+
+skills:
+  Financial Modeling: 58
+  Valuation Analysis: 55
+  Risk Assessment: 50
+  Portfolio Management: 48
+
+expertise:
+  - Mergers & Acquisitions
+  - Capital Markets
+  - Corporate Strategy
+  - Due Diligence
+
+certification:
+  - CFA Charterholder
+  - FRM Certified
+  - Series 7 & 63
+
+keyskills:
+  - Bloomberg Terminal
+  - Excel/VBA
+  - Python
+  - SQL
+
+body:
+  Experience:
+    -
+      start: 2018
+      end: Present
+      title: Vice President, Corporate Finance
+      company: Goldman & Partners
+      description: |
+        - Lead analyst on $2B+ M&A transactions
+        - Manage team of 5 junior analysts
+    -
+      start: 2012
+      end: 2018
+      title: Associate, Investment Banking
+      company: Morgan Stanley
+      description: |
+        - Executed 20+ debt and equity offerings
+        - Built financial models for Fortune 500 clients
+  Education:
+    -
+      start: 2010
+      end: 2012
+      title: MBA, Finance
+      company: Harvard Business School
+    -
+      start: 2006
+      end: 2010
+      title: B.S. Economics
+      company: University of Pennsylvania

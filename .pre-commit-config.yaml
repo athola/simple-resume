@@ -25,7 +25,7 @@ repos:
     rev: v1.18.2
     hooks:
       - id: mypy
-        additional_dependencies: [types-markdown, flask, oyaml, weasyprint]
+        additional_dependencies: [types-markdown, types-pyyaml, flask, oyaml, weasyprint]
         args: [--strict, --config-file=pyproject.toml]
         files: ^src/
 

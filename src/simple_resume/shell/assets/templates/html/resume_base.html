@@ -1,17 +1,7 @@
-{%- macro dynamic_font_size(text, max_width_mm=38, base_font_pt=8.5, min_font_pt=7) -%}
-{%- set text_length = text | length -%}
-{%- set char_width_ratio = 0.5 -%}
-{%- set estimated_width_mm = (text_length * base_font_pt * char_width_ratio * 0.3527) -%}
-{%- if estimated_width_mm > max_width_mm -%}
-  {%- set scale_factor = max_width_mm / estimated_width_mm -%}
-  {%- set calculated_font = (base_font_pt * scale_factor) | round(1) -%}
-  {%- if calculated_font >= min_font_pt -%}
-    {{ calculated_font }}pt
-  {%- endif -%}
-{%- else -%}
-  {{ base_font_pt }}pt
-{%- endif -%}
-{%- endmacro %}
+{# NOTE: dynamic_font_size is now provided as a Python global function in manage.py
+   The old macro has been removed to avoid namespace collision.
+   Usage: {% set size = dynamic_font_size(text, width_mm, max_pt, min_pt) %}
+#}
 
 {%- macro render_sidebar_entries(entries, available_width, base_font_pt=9, min_font_pt=7) -%}
 {%- set ns = namespace(normalized=[]) -%}
@@ -293,6 +283,41 @@
   {%- endif -%}
 {%- endif -%}
 
+{# ========================================================================== #}
+{# SECTION HEADER COLOR CALCULATION                                          #}
+{# ========================================================================== #}
+{# Calculate section header color based on theme color luminance.            #}
+{# Light theme colors get dark text, dark theme colors keep their color.     #}
+{# ========================================================================== #}
+
+{%- set theme_color = resume_config["theme_color"] -%}
+{%- set section_header_color = theme_color -%}
+
+{%- if theme_color.startswith('#') -%}
+  {%- set hex_color = theme_color[1:] -%}
+  {%- if hex_color|length == 3 -%}
+    {%- set r = (hex_color[0:1] * 2) | int(base=16) -%}
+    {%- set g = (hex_color[1:2] * 2) | int(base=16) -%}
+    {%- set b = (hex_color[2:3] * 2) | int(base=16) -%}
+  {%- elif hex_color|length == 6 -%}
+    {%- set r = hex_color[0:2] | int(base=16) -%}
+    {%- set g = hex_color[2:4] | int(base=16) -%}
+    {%- set b = hex_color[4:6] | int(base=16) -%}
+  {%- else -%}
+    {%- set r = 0 -%}
+    {%- set g = 0 -%}
+    {%- set b = 0 -%}
+  {%- endif -%}
+
+  {%- set luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255 -%}
+  {%- if luminance >= 0.5 -%}
+    {%- set section_header_color = "#2c3e50" -%}
+  {%- endif -%}
+{%- else -%}
+  {# Fallback for non-hex colors #}
+  {%- set section_header_color = "#2c3e50" -%}
+{%- endif -%}
+
 <!-- DEBUG: Color Contrast Calculation Results -->
 <!-- Sidebar: {{ sidebar_color }} (luminance: {{ "%.3f"|format(sidebar_luminance) if sidebar_luminance is not none else "PARSE_ERROR" }}) -->
 <!-- Requested Icon: {{ requested_sidebar_icon_color if requested_sidebar_icon_color else "auto" }} -->
@@ -304,545 +329,94 @@
 
 <html>
   <head>
-    <!-- Avenir fonts (https://www.onlinewebfonts.com/package/Avenir_LT_Std) -->
+    <!-- CSS Custom Properties from YAML config - MUST be first for WeasyPrint -->
     <style>
-      @font-face {
-        font-family: "Avenir 35";
-        src: url("AvenirLTStd-Light.otf");
-        font-weight: 300;
-        font-style: normal;
-      }
-      @font-face {
-        font-family: "Avenir 45";
-        src: url("AvenirLTStd-Book.otf");
-        font-weight: 400;
-        font-style: normal;
-      }
-      @font-face {
-        font-family: "Avenir 55";
-        src: url("AvenirLTStd-Roman.otf");
-        font-weight: 500;
-        font-style: normal;
-      }
-      @font-face {
-        font-family: "Avenir 65";
-        src: url("AvenirLTStd-Medium.otf");
-        font-weight: 700;
-        font-style: normal;
-      }
-    </style>
+      :root {
+        /* Colors */
+        --sidebar-color: {{ resume_config["sidebar_color"] }};
+        --sidebar-text-color: {{ resume_config["sidebar_text_color"] }};
+        --theme-color: {{ resume_config["theme_color"] }};
+        --date2-color: {{ resume_config["date2_color"] }};
+        --bar-background-color: {{ resume_config["bar_background_color"] }};
+        --frame-color: {{ resume_config["frame_color"] }};
+        --heading-icon-color: {{ resume_config["heading_icon_color"] }};
+        --section-icon-color: {{ section_icon_color }};
+        --section-header-color: {{ section_header_color }};
 
-    <!-- Documents styles -->
-    <!-- TODO (long-term): Migrate to external stylesheets
-         Separated, modular CSS files have been created in src/simple_resume/static/css/:
-         - common.css: Shared styles for PDF and web preview
-         - print.css: PDF-specific styles and WeasyPrint workarounds
-         - preview.css: Web preview enhancements
+        /* Page dimensions */
+        --page-width: {{ resume_config["page_width"] }}mm;
+        --page-height: {{ resume_config["page_height"] }}mm;
+        --sidebar-width: {{ resume_config["sidebar_width"] }}mm;
+        --body-width: {{ resume_config["page_width"] - resume_config["sidebar_width"] }}mm;
+        --padding: {{ resume_config["padding"] }}mm;
 
-         Current: Inline styles (for WeasyPrint compatibility)
-         Future: <link> tags to external CSS files
+        /* Sidebar padding */
+        --sidebar-padding-top: {{ resume_config["sidebar_padding_top"] }}mm;
+        --sidebar-padding-bottom: {{ resume_config["sidebar_padding_bottom"] }}mm;
+        --sidebar-padding-left: {{ resume_config["sidebar_padding_left"] }}mm;
+        --sidebar-padding-right: {{ resume_config["sidebar_padding_right"] }}mm;
 
-         See: src/simple_resume/static/css/README.md for migration guide
-         See: wiki/PDF-Renderer-Evaluation.md for PDF renderer options
-    -->
-    <style>
-      /* General style */
-      html, body {
-        margin: 0;
-        padding: 0;
-      }
+        /* Content spacing */
+        --pitch-padding-top: {{ resume_config["pitch_padding_top"] }}mm;
+        --pitch-padding-bottom: {{ resume_config["pitch_padding_bottom"] }}mm;
+        --pitch-padding-left: {{ resume_config["pitch_padding_left"] }}mm;
+        --h2-padding-left: {{ resume_config["h2_padding_left"] }}mm;
+        --h2-padding-left-full: {{ resume_config["h2_padding_left"] + 18 }}mm;
+        --h2-width: {{ resume_config["page_width"] - resume_config["sidebar_width"] - resume_config["h2_padding_left"] - 18 }}mm;
+        --h3-padding-top: {{ resume_config["h3_padding_top"] }}mm;
+        --date-container-width: {{ resume_config["date_container_width"] }}mm;
+        --description-container-padding-left: {{ resume_config["description_container_padding_left"] }}mm;
+        --skill-container-padding-top: {{ resume_config["skill_container_padding_top"] }}mm;
+        --profile-image-padding-bottom: {{ resume_config["profile_image_padding_bottom"] }}mm;
+        --profile-width: {{ resume_config["sidebar_width"] - 2*resume_config["padding"] }}mm;
+        --frame-padding: {{ resume_config["frame_padding"] }}mm;
 
-      p, ul, li {
-        margin: 0;
-        padding: 0;
-      }
+        /* Section icon styling */
+        --section-icon-circle-size: {{ resume_config["section_icon_circle_size"] }};
+        --section-icon-circle-x-offset: {{ resume_config["section_icon_circle_x_offset"] }};
+        --section-icon-design-size: {{ resume_config["section_icon_design_size"] }};
+        --section-icon-design-x-offset: {{ resume_config["section_icon_design_x_offset"] }};
+        --section-icon-design-y-offset: {{ resume_config["section_icon_design_y_offset"] }};
+        --section-heading-text-margin: {{ resume_config["section_heading_text_margin"] }};
+        --section-heading-marker-margin-left: -{{ (resume_config["h2_padding_left"] + 18) - (resume_config["date_container_width"] + 3) + 3 }}mm;
+        --section-heading-marker-line-height: calc(2.8mm + {{ resume_config["section_icon_circle_size"] }});
 
-      body {
-        margin: 0 !important;
-        padding: 0 !important;
-        background: linear-gradient(
-          to right,
-          {{ resume_config["sidebar_color"] }} 0,
-          {{ resume_config["sidebar_color"] }} {{ resume_config["sidebar_width"] }}mm,
-          white {{ resume_config["sidebar_width"] }}mm,
-          white 100%
-        );
-        background-repeat: no-repeat;
-        background-size: 100% 100%;
-      }
+        --section-icon-design-scale: {{ resume_config.get("section_icon_design_scale", "1") }};
 
-      html {
-        margin: 0 !important;
-        padding: 0 !important;
+        /* Section and entry spacing */
+        --section-heading-margin-top: {{ resume_config.get("section_heading_margin_top", "5mm") }};
+        --section-heading-margin-bottom: {{ resume_config.get("section_heading_margin_bottom", "1mm") }};
+        --entry-margin-bottom: {{ resume_config.get("entry_margin_bottom", "4mm") }};
+        --tech-stack-margin-bottom: {{ resume_config.get("tech_stack_margin_bottom", "2mm") }};
+
+        /* Contact icon styling */
+        --contact-icon-size: {{ resume_config.get("contact_icon_size", "5mm") }};
+        --contact-icon-margin-top: {{ resume_config.get("contact_icon_margin_top", "0.5mm") }};
+        --contact-text-padding-left: {{ resume_config.get("contact_text_padding_left", "2mm") }};
       }
 
-      /* Titles */
-      h1, h2, h3, h4, h5, h6 {
-        font-weight: normal;
-        margin: 0px;
-      }
-      h1, h2, h3, h5 {
-        color: {{ resume_config["theme_color"] }};
-      }
-      h1 {
-        font-size: 30pt;
-        font-family: 'Avenir 35';
-        padding-top: 0;
-        padding-bottom: 0;
-        padding-right: {{ resume_config["padding"] }}mm;
-        text-align: center;
-        border-bottom: none;
-      }
-      .markdown-strong {
-        font-family: 'Avenir 65', 'Avenir 55', 'Avenir 45', 'Helvetica Neue', Arial, sans-serif !important;
-        font-weight: 700 !important;
-      }
-      h2 {
-        font-size: 16pt;
-        font-family: 'Avenir 55';
-        width: {{ resume_config["page_width"] - resume_config["sidebar_width"] - resume_config["h2_padding_left"] - 18}}mm;
-        padding-top: 1.5mm;
-        padding-bottom: 0.5mm;
-        padding-left: {{ resume_config["h2_padding_left"] + 18 }}mm;
-        page-break-after: avoid;
-      }
-      h2:first-of-type {
-        padding-top: {{ resume_config["pitch_padding_top"] }}mm;
-      }
-      h3 {
-        font-size: 14pt;
-        font-family: 'Avenir 45';
-        padding-top: {{ resume_config["h3_padding_top"] }}mm;
-      }
-      h4 {
-        font-size: 10pt;
-        font-family: 'Avenir 45';
-      }
-      h5 {
-        font-size: 10pt;
-        font-family: 'Avenir 55';
-        padding-right: {{ resume_config["padding"] }}mm;
-        position:absolute;
-        right:0px;
-        top:0px;
-        text-align: right;
-      }
-      .sidebar h5 {
-        color: {{ resume_config["sidebar_text_color"] }};
-      }
-      .sidebar h1, .sidebar h2, .sidebar h3, .sidebar h4 {
-        color: {{ resume_config["sidebar_text_color"] }};
-      }
-      .sidebar p, .sidebar ul, .sidebar li, .sidebar a {
-        color: {{ resume_config["sidebar_text_color"] }};
-      }
-      a {
-        color: inherit; /* blue colors for links too */
-        text-decoration: inherit; /* no underline */
-      }
-
-      /* List styles */
-      ul {
-        list-style-type: none;
-      }
-      li:before {
-        content: "- ";
-      }
-
-      /* Layout styles */
-      .frame {
-        padding-top: {{ resume_config["frame_padding"] }}mm;
-        padding-bottom: {{ resume_config["frame_padding"] }}mm;
-        padding-left: {{ resume_config["frame_padding"] }}mm;
-        padding-right: {{ resume_config["frame_padding"] }}mm;
-        background-color: {{ resume_config["frame_color"] }};
-      }
+      /* Dynamic @page size for PDF rendering */
       @page {
         size: {{ resume_config["page_width"] }}mm {{ resume_config["page_height"] }}mm;
         margin: 0;
       }
-
-      /* Define named pages for content flow */
       @page resume {
         size: {{ resume_config["page_width"] }}mm {{ resume_config["page_height"] }}mm;
         margin: 0;
       }
-      .page {
-        width: {{ resume_config["page_width"] }}mm;
-        min-height: {{ resume_config["page_height"] }}mm;
-        font-size: 8.5pt;
-        line-height: 1;
-        font-family: 'Avenir 35';
-        background: linear-gradient(
-          to right,
-          {{ resume_config["sidebar_color"] }} 0,
-          {{ resume_config["sidebar_color"] }} {{ resume_config["sidebar_width"] }}mm,
-          white {{ resume_config["sidebar_width"] }}mm,
-          white 100%
-        );
-        background-repeat: no-repeat;
-        background-size: 100% 100%;
-        margin: 0;
-        padding: 0;
-        position: relative;
-        border: none;
-        /* Clear floats to prevent layout issues */
-        overflow: hidden;
-        /* Ensure proper page height to prevent extra pages */
-        height: {{ resume_config["page_height"] }}mm;
-        max-height: {{ resume_config["page_height"] }}mm;
-      }
-      .sidebar-container {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: {{ resume_config["sidebar_width"] }}mm;
-        margin: 0;
-        padding: 0;
-        background-color: transparent;
-        /* Allow content to flow across pages - KEY FIX */
-        page-break-inside: auto;
-        break-inside: auto;
-        overflow: visible;
-      }
-      .sidebar {
-        padding-top: {{ resume_config["sidebar_padding_top"] }}mm;
-        padding-bottom: {{ resume_config["sidebar_padding_bottom"] }}mm;
-        padding-left: {{ resume_config["sidebar_padding_left"] }}mm;
-        padding-right: {{ resume_config["sidebar_padding_right"] }}mm;
-        color: {{ resume_config["sidebar_text_color"] }};
-        background-color: {{ resume_config["sidebar_color"] }};
-        overflow: visible;
-        position: relative;
-        z-index: 10;
-      }
-      .body {
-	margin-left: {{ resume_config["sidebar_width"] }}mm;
-        width: {{ resume_config["page_width"] - resume_config["sidebar_width"] }}mm;
-        min-height: {{ resume_config["page_height"] }}mm;
-	position: relative;
-      }
 
-      /* Content styles */
-      .pitch {
-        padding-top: {{ resume_config["pitch_padding_top"] }}mm;
-        padding-bottom: {{ resume_config["pitch_padding_bottom"] }}mm;
-        padding-left: {{ resume_config["pitch_padding_left"] }}mm;
-        padding-right: {{ resume_config["padding"] }}mm;
-        border-bottom: 2px solid {{ resume_config["sidebar_color"] }};
-      }
-      .skill-container {
-        padding-top: {{ resume_config["skill_container_padding_top"] }}mm;
-      }
-      .skill-spacer {
-        padding-top: 0.5mm;
-        clear: both;
-      }
-      .contact-block {
-        display: flex;
-        align-items: flex-start;
-        gap: 4mm;
-        width: 100%;
-      }
-      .contact-container {
-        flex: 1;
-        min-width: 0;
-        overflow-wrap: break-word;
-      }
-      .contact-text {
-        font-size: 8.5pt;
-        word-break: break-word;
-        overflow-wrap: break-word;
-        hyphens: auto;
-      }
-      .content {
-        display: grid;
-        grid-template-columns: {{ resume_config["date_container_width"] }}mm auto;
-        column-gap: 3mm;
-        padding-top: 0.5mm;
-        align-items: flex-start;
-        page-break-inside: auto;
-      }
-      .spacer {
-        clear: both;
-      }
-      .body .spacer {
-        clear: left;
-      }
-      .date-container {
-        padding-left: 3mm;
-      }
-      .description-container {
-        margin-bottom: 1.2mm;
-      }
-      .entry-spacer {
-        clear: both;
-        height: 1.5mm;
-      }
-      .date2, .description {
-        padding-top: 0.5mm;
-      }
-      .date1 {
-        font-size: 9pt;
-      }
-      .date2 {
-        font-size: 8pt;
-        color: {{ resume_config["date2_color"] }};
-      }
-      .date1, .date2 {
-        text-align: center;
-      }
-      .description-container {
-        position:relative;
-        padding-left: {{ resume_config["description_container_padding_left"] }}mm;
-        padding-right: {{ resume_config["padding"] }}mm;
-        border-left: 2px solid {{ resume_config["sidebar_color"] }};
-      }
-      .content .date-container {
-        grid-column: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-      .content .description-container {
-        grid-column: 2;
-      }
-      .tech-stack-label {
-        font-size: 8pt;
-        font-family: 'Avenir 45';
-        color: {{ resume_config["date2_color"] }};
-        margin: 0;
-      }
-      .tech-stack-value {
-        font-size: 8pt;
-        font-family: 'Avenir 45';
-        line-height: 1.25;
-        margin: 0;
-      }
-      .tech-stack-label-container {
-        align-self: center;
-        padding-top: 2mm;
-      }
-      .tech-stack-value-container {
-        border-left: none;
-        padding-left: {{ resume_config["description_container_padding_left"] }}mm;
-        padding-top: 2mm;
-      }
-      .heading-row {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        column-gap: 3mm;
-        row-gap: 0.5mm;
-        align-items: flex-start;
-        width: 100%;
-      }
-      .heading-title {
-        min-width: 0;
-      }
-      .heading-title h4,
-      .heading-title p {
-        margin-top: 0;
-      }
-      .heading-company {
-        justify-self: end;
-        text-align: right;
-        min-width: 0;
-      }
-      .heading-company h5 {
-        margin: 0 !important;
-        word-wrap: break-word;
-        overflow-wrap: anywhere;
-        position: static;
-        right: auto;
-        top: auto;
-        padding-right: 0;
-        text-align: right;
-      }
-      .description {
-        line-height: 1.35;
-      }
+    </style>
 
-      /* Space between lines */
-      .pitch p {
-        font-size: 9pt;
-        line-height: 1.4;
-      }
-
-      .description p, .description li {
-        line-height: 1.2;
-      }
-
-      /* Bars */
-      .bar-container {
-        padding-top: 1mm;
-      }
-      .bar-grey, .bar-blue {
-        height: 1mm;
-        float: left;
-      }
-      .bar-grey {
-        background-color: {{ resume_config["bar_background_color"] }};
-      }
-      .bar-blue {
-        background-color: {{ resume_config["theme_color"] }};
-      }
-
-      /* Contact icons */
-      .icon {
-        width: 5mm;
-        height: 5mm;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: {{ resume_config["sidebar_text_color"] }};
-        flex-shrink: 0;
-        line-height: 0;
-        margin-top: 0.5mm;
-        margin-right: 2mm;
-      }
-      .icon svg {
-        width: 100%;
-        height: 100%;
-        display: block;
-      }
-      .icon svg * {
-        fill: currentColor;
-      }
-      /* Adjust this to change the position of the icon design */
-      .section-heading-icon .icon-inline {
-        width: {{ resume_config["section_icon_design_size"] }};
-        height: {{ resume_config["section_icon_design_size"] }};
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        line-height: 0;
-        flex-shrink: 0;
-        position: relative;
-        transform: translate({{ resume_config["section_icon_design_x_offset"] }}, {{ resume_config["section_icon_design_y_offset"] }});
-      }
-      .icon-inline svg {
-        width: 100%;
-        height: 100%;
-        display: block;
-      }
-      .icon-inline svg * {
-        fill: currentColor;
-      }
-      .profile {
-        width: {{ resume_config["sidebar_width"] - 2*resume_config["padding"] }}mm;
-        height: {{ resume_config["sidebar_width"] - 2*resume_config["padding"] }}mm;
-        padding-bottom: {{ resume_config["profile_image_padding_bottom"] }}mm;
-      }
-
-      /* Timeline icons */
-      .timeline-icon {
-        position: absolute;
-        left: -6mm;
-        top: -16mm;
-        width: 10mm;
-        height: 10mm;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10;
-      }
-      .timeline-icon .icon {
-        width: 5mm;
-        height: 5mm;
-      }
-      .timeline-icon .icon svg {
-        width: 100%;
-        height: 100%;
-      }
-      .section-heading {
-        display: flex;
-        align-items: center;
-        margin: 1mm 0 0.6mm;
-      }
-      .section-heading-marker {
-        position: relative;
-        width: {{ resume_config["section_icon_circle_size"] }};
-        height: {{ resume_config["section_icon_circle_size"] }};
-        display: block;
-        margin-left: -{{ (resume_config["h2_padding_left"] + 18) - (resume_config["date_container_width"] + 3) + 3 }}mm;
-        flex: 0 0 {{ resume_config["section_icon_circle_size"] }};
-        overflow: visible;
-        z-index: 10;
-      }
-      .section-heading-marker::after {
-        content: "";
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        height: calc(2.8mm + {{ resume_config["section_icon_circle_size"] }});
-        border-left: 2px solid {{ resume_config["sidebar_color"] }};
-      }
-      /* Adjust this to change the position of the icon circle */
-      .section-heading-icon {
-        width: {{ resume_config["section_icon_circle_size"] }};
-        height: {{ resume_config["section_icon_circle_size"] }};
-        border-radius: 50%;
-        background-color: {{ resume_config["sidebar_color"] }};
-        border: 2px solid {{ resume_config["sidebar_color"] }};
-        color: {{ resume_config["heading_icon_color"] }};
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-sizing: border-box;
-        position: relative;
-        transform: translateX({{ resume_config["section_icon_circle_x_offset"] }});
-        z-index: 10;
-        line-height: 0;
-        overflow: visible;
-      }
-      /* This changes the position of the section heading text */
-      .section-heading-text {
-        display: inline-flex;
-        align-items: center;
-        line-height: 1;
-        margin-left: {{ resume_config["section_heading_text_margin"] }};
-      }
-
-      /* Smart color selection for section headers based on luminance analysis */
-      {% set theme_color = resume_config["theme_color"] %}
-      {% set section_header_color = theme_color %}
-
-      {% if theme_color.startswith('#') %}
-        {% set hex_color = theme_color[1:] %}
-        {% if hex_color|length == 3 %}
-          {% set r = (hex_color[0:1] * 2) | int(base=16) %}
-          {% set g = (hex_color[1:2] * 2) | int(base=16) %}
-          {% set b = (hex_color[2:3] * 2) | int(base=16) %}
-        {% elif hex_color|length == 6 %}
-          {% set r = hex_color[0:2] | int(base=16) %}
-          {% set g = hex_color[2:4] | int(base=16) %}
-          {% set b = hex_color[4:6] | int(base=16) %}
-        {% else %}
-          {% set r = 0 %}
-          {% set g = 0 %}
-          {% set b = 0 %}
-        {% endif %}
-
-        {% set luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255 %}
-        {% if luminance >= 0.5 %}
-          {% set section_header_color = "#2c3e50" %}
-        {% endif %}
-      {% else %}
-        {# Fallback for non-hex colors #}
-        {% set section_header_color = "#2c3e50" %}
-      {% endif %}
-
-      .section-heading-text {
-        color: {{ section_header_color }} !important;
-      }
-      .section-heading + .content {
-        padding-top: 0;
-      }
-      .description-container {
-        position: relative;
-      }
+    <!-- Inlined CSS files from static/css/ -->
+    <style>
+{% autoescape false %}
+{% include "fonts.css" %}
+{% include "common.css" %}
+{% include "print.css" %}
+{% if preview %}
+{% include "preview.css" %}
+{% endif %}
+{% endautoescape %}
     </style>
   </head>
 

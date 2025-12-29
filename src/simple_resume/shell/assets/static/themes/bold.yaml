@@ -1,0 +1,64 @@
+# Bold Theme for Simple Resume
+# A high-contrast, vibrant design that makes a strong visual impact
+#
+# Usage:
+#   1. Copy this file to your project and customize
+#   2. Or include these settings in your resume YAML under 'config:'
+#
+# Colors: Deep dark sidebar with vibrant accent colors
+
+config:
+  # Color palette - dark with vibrant accents
+  palette:
+    source: generator
+    type: hcl
+    size: 6
+    seed: 2023
+    hue_range: [180, 260]         # Teal to purple range
+    luminance_range: [0.12, 0.55] # Dark tones for sidebar
+    chroma: 0.28                  # High saturation
+
+  # Page dimensions (A4)
+  page_width: 210
+  page_height: 297
+  padding: 10
+
+  # Sidebar styling - bold dark sidebar
+  sidebar_width: 62
+  sidebar_padding_top: 5
+  sidebar_padding_bottom: 5
+  sidebar_padding_left: 5
+  sidebar_padding_right: 5
+
+  # Profile image
+  profile_width: 50
+  profile_image_padding_bottom: 5
+
+  # Main content area - tighter spacing
+  pitch_padding_top: 6
+  pitch_padding_bottom: 4
+  pitch_padding_left: 4
+  h2_padding_left: 4
+  h2_width: 138
+
+  # Experience entries - compact but readable
+  h3_padding_top: 4
+  date_container_width: 13
+  date_container_padding_left: 6
+  description_container_padding_left: 2
+  skill_container_padding_top: 2
+
+  # Frame (for preview)
+  frame_padding: 10
+  frame_color: "#1a1a2e"         # Dark frame
+  bold_color: "#16213e"
+
+  # Section heading icons - prominent
+  section_icon_circle_size: "8.5mm"
+  section_icon_circle_x_offset: "-0.5mm"
+  section_icon_design_size: "4.5mm"
+  section_icon_design_x_offset: "-0.1mm"
+  section_icon_design_y_offset: "-0.2mm"
+  section_heading_text_margin: "-6mm"
+  section_heading_marker_margin_left: "-11mm"
+  section_heading_marker_line_height: "15mm"

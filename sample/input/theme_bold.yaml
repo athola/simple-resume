@@ -1,0 +1,80 @@
+# Theme Demo: Bold
+# High-contrast with vibrant accents - makes a statement
+
+template: resume_with_bars
+theme: bold
+
+full_name: Jordan Bold
+job_title: Creative Director
+
+address:
+  - Brooklyn, NY
+
+phone: "(718) 555-0789"
+email: jordan@boldcreative.io
+web: https://boldcreative.io
+linkedin: in/jordan-bold
+
+image_uri: images/default_profile_1.jpg
+
+titles:
+  contact: Contact
+  skills: Skills
+  expertise: Specialties
+  keyskills: Stack
+
+description: |
+  Award-winning creative director pushing boundaries in **brand identity**
+  and **motion design**. 10+ years transforming ideas into iconic visual
+  experiences for global brands.
+
+skills:
+  Brand Strategy: 58
+  Motion Design: 55
+  Art Direction: 52
+  Creative Leadership: 50
+
+expertise:
+  - Brand Identity
+  - Motion Graphics
+  - 3D Visualization
+  - Campaign Direction
+
+keyskills:
+  - After Effects
+  - Cinema 4D
+  - Blender
+  - Figma
+
+body:
+  Experience:
+    -
+      start: 2020
+      end: Present
+      title: Creative Director
+      company: Bold Creative Studio
+      description: |
+        - Founded boutique agency with $1M+ annual revenue
+        - Clients include Nike, Spotify, and Apple
+    -
+      start: 2016
+      end: 2020
+      title: Senior Motion Designer
+      company: AKQA
+      description: |
+        - Led motion design for Super Bowl campaigns
+        - Won 3 Cannes Lions and 2 D&AD Pencils
+  "Awards & Recognition":
+    -
+      start: 2023
+      end: 2023
+      title: ADC Gold Cube
+      company: The One Club
+      description: |
+        - Best Motion Design, Brand Experience category
+  Education:
+    -
+      start: 2012
+      end: 2016
+      title: BFA Motion Graphics
+      company: School of Visual Arts

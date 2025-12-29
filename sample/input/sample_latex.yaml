@@ -138,9 +138,13 @@ config:
   output_mode: latex
 
   # Section heading icon layout customization (not used in LaTeX)
-  section_icon_circle_size: "7.8mm"
-  section_icon_circle_x_offset: "-0.5mm"
+  section_icon_circle_size: "8.6mm"
+  section_icon_circle_x_offset: "-0.75mm"
   section_icon_design_size: "4mm"
-  section_icon_design_x_offset: "-0.1mm"
-  section_icon_design_y_offset: "-0.4mm"
+  section_icon_design_x_offset: "-1.5mm"
+  section_icon_design_y_offset: "-0.5mm"
+  section_icon_design_scale: "0.8"
   section_heading_text_margin: "-6mm"
+
+  # Contact icon layout customization
+  contact_text_padding_left: "2mm"

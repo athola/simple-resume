@@ -16,6 +16,8 @@ from simple_resume.core.palettes.common import Palette
 from simple_resume.core.palettes.exceptions import PaletteRemoteError
 from simple_resume.core.palettes.sources import (
     PalettableRecord,
+    _cache_path,
+    load_palettable_palette,
     parse_palettable_cache,
     parse_palette_data,
     serialize_palettable_records,
@@ -24,7 +26,6 @@ from simple_resume.shell.palettes.loader import (
     build_palettable_registry_snapshot,
     ensure_palettable_loaded,
     load_default_palettes,
-    load_palettable_palette,
 )
 from simple_resume.shell.palettes.remote import ColourLoversClient
 from tests.bdd import Scenario
@@ -335,3 +336,150 @@ def test_colourlovers_cache_key_uses_blake2b(
     story.then("the cache filename uses a BLAKE2b digest and resides in the cache dir")
     assert cache_path.name == f"{expected_digest}.json"
     assert cache_path.parent == tmp_path / "colourlovers"
+
+
+def test_load_palettable_palette_from_core_with_hex_colors(
+    monkeypatch: pytest.MonkeyPatch, story: Scenario
+) -> None:
+    story.given("a palettable palette object with hex_colors attribute")
+
+    class FakePalette:
+        hex_colors = ["#FF5733", "#33FF57"]
+
+    fake_module = SimpleNamespace(TestPalette=FakePalette)
+    monkeypatch.setitem(sys.modules, "palettable.test", fake_module)
+
+    record = PalettableRecord(
+        name="TestPalette",
+        module="palettable.test",
+        attribute="TestPalette",
+        category="test",
+        palette_type="qualitative",
+        size=2,
+    )
+
+    story.when("load_palettable_palette is called from core")
+    palette = load_palettable_palette(record)
+
+    story.then("it returns a Palette with swatches and metadata")
+    assert palette is not None
+    assert palette.name == "TestPalette"
+    assert palette.swatches == ("#FF5733", "#33FF57")
+    assert palette.source == "palettable"
+    assert palette.metadata["category"] == "test"
+    assert palette.metadata["palette_type"] == "qualitative"
+    assert palette.metadata["size"] == 2
+
+
+def test_load_palettable_palette_with_colors_fallback(
+    monkeypatch: pytest.MonkeyPatch, story: Scenario
+) -> None:
+    story.given("a palettable palette with colors but not hex_colors")
+
+    class FakePalette:
+        colors = ["AABBCC", "DDEEFF"]
+
+    fake_module = SimpleNamespace(ColorsPalette=FakePalette)
+    monkeypatch.setitem(sys.modules, "palettable.colors", fake_module)
+
+    record = PalettableRecord(
+        name="ColorsPalette",
+        module="palettable.colors",
+        attribute="ColorsPalette",
+        category="misc",
+        palette_type="sequential",
+        size=2,
+    )
+
+    story.when("load_palettable_palette is called")
+    palette = load_palettable_palette(record)
+
+    story.then("it falls back to colors attribute and normalizes hex format")
+    assert palette is not None
+    assert palette.swatches == ("#AABBCC", "#DDEEFF")
+
+
+def test_load_palettable_palette_returns_none_when_no_colors(
+    monkeypatch: pytest.MonkeyPatch, story: Scenario
+) -> None:
+    story.given("a palettable palette with empty colors")
+
+    class EmptyPalette:
+        hex_colors: list[str] = []
+        colors: list[tuple[int, int, int]] = []
+
+    fake_module = SimpleNamespace(EmptyPal=EmptyPalette)
+    monkeypatch.setitem(sys.modules, "palettable.empty", fake_module)
+
+    record = PalettableRecord(
+        name="EmptyPal",
+        module="palettable.empty",
+        attribute="EmptyPal",
+        category="test",
+        palette_type="sequential",
+        size=0,
+    )
+
+    story.when("load_palettable_palette is called")
+    palette = load_palettable_palette(record)
+
+    story.then("it returns None when palette has no colors")
+    assert palette is None
+
+
+def test_load_palettable_palette_returns_none_on_import_error(
+    story: Scenario,
+) -> None:
+    story.given("a record pointing to a non-existent module")
+
+    record = PalettableRecord(
+        name="NonExistent",
+        module="palettable.nonexistent.module",
+        attribute="SomePalette",
+        category="test",
+        palette_type="qualitative",
+        size=5,
+    )
+
+    story.when("load_palettable_palette is called")
+    palette = load_palettable_palette(record)
+
+    story.then("it returns None when module import fails")
+    assert palette is None
+
+
+def test_load_palettable_palette_returns_none_on_attribute_error(
+    monkeypatch: pytest.MonkeyPatch, story: Scenario
+) -> None:
+    story.given("a module that exists but doesn't have the attribute")
+
+    fake_module = SimpleNamespace()  # No palette attribute
+    monkeypatch.setitem(sys.modules, "palettable.noattr", fake_module)
+
+    record = PalettableRecord(
+        name="MissingAttr",
+        module="palettable.noattr",
+        attribute="NonExistentPalette",
+        category="test",
+        palette_type="sequential",
+        size=3,
+    )
+
+    story.when("load_palettable_palette is called")
+    palette = load_palettable_palette(record)
+
+    story.then("it returns None when attribute doesn't exist")
+    assert palette is None
+
+
+def test_cache_path_returns_correct_path(story: Scenario) -> None:
+    story.given("a cache filename")
+    filename = "test_cache.json"
+
+    story.when("_cache_path is called")
+    result = _cache_path(filename)
+
+    story.then("it returns the path in ~/.cache/simple_resume/")
+    expected = Path.home() / ".cache" / "simple_resume" / filename
+    assert result == expected
+    assert result.name == filename

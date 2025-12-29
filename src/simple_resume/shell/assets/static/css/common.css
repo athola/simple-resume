@@ -1,0 +1,599 @@
+/**
+ * Common Styles for Simple Resume
+ *
+ * Shared styles for PDF and web preview.
+ * Uses CSS custom properties for theme customization.
+ *
+ * Required CSS custom properties (injected via <style> in template):
+ * --sidebar-color, --sidebar-width, --theme-color, --sidebar-text-color,
+ * --page-width, --page-height, --padding, --date2-color, --frame-color,
+ * --bar-background-color, --heading-icon-color, --section-icon-color,
+ * and various padding/sizing properties.
+ */
+
+/* ========================================================================
+   RESET & BASE STYLES
+   ======================================================================== */
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+p, ul, li {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: linear-gradient(
+    to right,
+    var(--sidebar-color) 0,
+    var(--sidebar-color) var(--sidebar-width),
+    white var(--sidebar-width),
+    white 100%
+  );
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+html {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* ========================================================================
+   TYPOGRAPHY
+   ======================================================================== */
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  margin: 0px;
+}
+
+h1, h2, h3, h5 {
+  color: var(--theme-color);
+}
+
+h1 {
+  font-size: 30pt;
+  font-family: 'Avenir 65', 'Avenir 55', 'Helvetica Neue', Arial, sans-serif;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-right: var(--padding);
+  text-align: center;
+  border-bottom: none;
+}
+
+h2 {
+  font-size: 16pt;
+  font-family: 'Avenir 65', 'Avenir 55', 'Helvetica Neue', Arial, sans-serif;
+  width: var(--h2-width);
+  padding-top: 1.5mm;
+  padding-bottom: 0.5mm;
+  padding-left: var(--h2-padding-left-full);
+  page-break-after: avoid;
+}
+
+h2:first-of-type {
+  padding-top: var(--pitch-padding-top);
+}
+
+h3 {
+  font-size: 14pt;
+  font-family: 'Avenir 65', 'Avenir 55', 'Helvetica Neue', Arial, sans-serif;
+  padding-top: var(--h3-padding-top);
+}
+
+h4 {
+  font-size: 10pt;
+  font-family: 'Avenir 65', 'Avenir 55', 'Helvetica Neue', Arial, sans-serif;
+}
+
+h5 {
+  font-size: 10pt;
+  font-family: 'Avenir 65', 'Avenir 55', 'Helvetica Neue', Arial, sans-serif;
+  padding-right: var(--padding);
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  text-align: right;
+}
+
+/* Sidebar typography */
+.sidebar h5 {
+  color: var(--sidebar-text-color);
+}
+
+.sidebar h1,
+.sidebar h2,
+.sidebar h3,
+.sidebar h4 {
+  color: var(--sidebar-text-color);
+}
+
+.sidebar p,
+.sidebar ul,
+.sidebar li,
+.sidebar a {
+  color: var(--sidebar-text-color);
+}
+
+/* Links */
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+/* Strong text / bold */
+.markdown-strong {
+  font-family: 'Avenir 65', 'Avenir 55', 'Avenir 45', 'Helvetica Neue', Arial, sans-serif !important;
+  font-weight: 700 !important;
+}
+
+/* ========================================================================
+   LIST STYLES
+   ======================================================================== */
+
+ul {
+  list-style-type: none;
+}
+
+li:before {
+  content: "- ";
+}
+
+/* ========================================================================
+   LAYOUT - PAGE STRUCTURE
+   ======================================================================== */
+
+.frame {
+  padding-top: var(--frame-padding);
+  padding-bottom: var(--frame-padding);
+  padding-left: var(--frame-padding);
+  padding-right: var(--frame-padding);
+  background-color: var(--frame-color);
+}
+
+.page {
+  width: var(--page-width);
+  min-height: var(--page-height);
+  font-size: 8.5pt;
+  line-height: 1;
+  font-family: 'Avenir 35', 'Helvetica Neue', Arial, sans-serif;
+  background: linear-gradient(
+    to right,
+    var(--sidebar-color) 0,
+    var(--sidebar-color) var(--sidebar-width),
+    white var(--sidebar-width),
+    white 100%
+  );
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  border: none;
+  overflow: hidden;
+  height: var(--page-height);
+  max-height: var(--page-height);
+}
+
+.sidebar-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--sidebar-width);
+  margin: 0;
+  padding: 0;
+  background-color: transparent;
+  page-break-inside: auto;
+  break-inside: auto;
+  overflow: visible;
+}
+
+.sidebar {
+  padding-top: var(--sidebar-padding-top);
+  padding-bottom: var(--sidebar-padding-bottom);
+  padding-left: var(--sidebar-padding-left);
+  padding-right: var(--sidebar-padding-right);
+  color: var(--sidebar-text-color);
+  background-color: var(--sidebar-color);
+  overflow: visible;
+  position: relative;
+  z-index: 10;
+}
+
+.body {
+  margin-left: var(--sidebar-width);
+  width: var(--body-width);
+  min-height: var(--page-height);
+  position: relative;
+}
+
+/* ========================================================================
+   CONTENT SECTIONS
+   ======================================================================== */
+
+.pitch {
+  padding-top: var(--pitch-padding-top);
+  padding-bottom: var(--pitch-padding-bottom);
+  padding-left: var(--pitch-padding-left);
+  padding-right: var(--padding);
+  border-bottom: 2px solid var(--sidebar-color);
+}
+
+.pitch p {
+  font-size: 9pt;
+  line-height: 1.4;
+}
+
+/* ========================================================================
+   SKILLS & CONTACT COMPONENTS
+   ======================================================================== */
+
+.skill-container {
+  padding-top: var(--skill-container-padding-top);
+}
+
+.skill-spacer {
+  padding-top: 0.5mm;
+  clear: both;
+}
+
+.contact-block {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  overflow: hidden; /* WeasyPrint: ensure proper containment */
+}
+
+.contact-block .icon {
+  flex-shrink: 0;
+  width: var(--contact-icon-size, 5mm);
+  height: var(--contact-icon-size, 5mm);
+}
+
+.contact-block .icon svg {
+  width: var(--contact-icon-size, 5mm);
+  height: var(--contact-icon-size, 5mm);
+  display: block;
+}
+
+.contact-block .icon svg * {
+  fill: currentColor;
+}
+
+.contact-container {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: break-word;
+  overflow: hidden; /* WeasyPrint: prevent text overflow issues */
+  padding-left: var(--contact-text-padding-left, 2mm);
+}
+
+.contact-text {
+  font-size: 8.5pt;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+/* ========================================================================
+   GRID CONTENT LAYOUT
+   ======================================================================== */
+
+.content {
+  display: grid;
+  grid-template-columns: var(--date-container-width) auto;
+  column-gap: 3mm;
+  padding-top: 0.5mm;
+  align-items: flex-start;
+  page-break-inside: auto;
+}
+
+.spacer {
+  clear: both;
+}
+
+.body .spacer {
+  clear: left;
+}
+
+.date-container {
+  padding-left: 3mm;
+}
+
+.content .date-container {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.content .description-container {
+  grid-column: 2;
+}
+
+.description-container {
+  margin-bottom: var(--entry-margin-bottom, 4mm);
+  position: relative;
+  padding-left: var(--description-container-padding-left);
+  padding-right: var(--padding);
+  border-left: 2px solid var(--sidebar-color);
+}
+
+.entry-spacer {
+  clear: both;
+  height: 1.5mm;
+}
+
+/* ========================================================================
+   DATE STYLING
+   ======================================================================== */
+
+.date2, .description {
+  padding-top: 0.5mm;
+}
+
+.date1 {
+  font-size: 9pt;
+}
+
+.date2 {
+  font-size: 8pt;
+  color: var(--date2-color);
+}
+
+.date1, .date2 {
+  text-align: center;
+}
+
+/* ========================================================================
+   DESCRIPTION & CONTENT
+   ======================================================================== */
+
+.description {
+  line-height: 1.35;
+}
+
+.description p,
+.description li {
+  line-height: 1.2;
+}
+
+/* ========================================================================
+   TECH STACK
+   ======================================================================== */
+
+.tech-stack-label {
+  font-size: 8pt;
+  font-family: 'Avenir 45', 'Helvetica Neue', Arial, sans-serif;
+  color: var(--date2-color);
+  margin: 0;
+}
+
+.tech-stack-value {
+  font-size: 8pt;
+  font-family: 'Avenir 45', 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.tech-stack-label-container {
+  align-self: center;
+  padding-top: 2mm;
+}
+
+.tech-stack-value-container {
+  border-left: none;
+  padding-left: var(--description-container-padding-left);
+  padding-top: 2mm;
+  padding-bottom: var(--tech-stack-margin-bottom, 2mm);
+}
+
+/* ========================================================================
+   HEADING ROW (TITLE + COMPANY)
+   ======================================================================== */
+
+.heading-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 3mm;
+  row-gap: 0.5mm;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.heading-title {
+  min-width: 0;
+}
+
+.heading-title h4,
+.heading-title p {
+  margin-top: 0;
+}
+
+.heading-company {
+  justify-self: end;
+  text-align: right;
+  min-width: 0;
+}
+
+.heading-company h5 {
+  margin: 0 !important;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  position: static;
+  right: auto;
+  top: auto;
+  padding-right: 0;
+  text-align: right;
+}
+
+/* ========================================================================
+   SKILL BARS
+   ======================================================================== */
+
+.bar-container {
+  padding-top: 1mm;
+}
+
+.bar-grey, .bar-blue {
+  height: 1mm;
+  float: left;
+}
+
+.bar-grey {
+  background-color: var(--bar-background-color);
+}
+
+.bar-blue {
+  background-color: var(--theme-color);
+}
+
+/* ========================================================================
+   ICONS
+   ======================================================================== */
+
+.icon {
+  width: var(--contact-icon-size, 5mm);
+  height: var(--contact-icon-size, 5mm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sidebar-text-color);
+  flex-shrink: 0;
+  line-height: 0;
+  margin-top: var(--contact-icon-margin-top, 0.5mm);
+  /* margin-right removed - spacing handled by gap in .contact-block */
+}
+
+.icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.icon svg * {
+  fill: currentColor;
+}
+
+/* Inline icons for section headings */
+.section-heading-icon .icon-inline {
+  width: var(--section-icon-design-size);
+  height: var(--section-icon-design-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  flex-shrink: 0;
+  position: relative;
+  transform: translate(var(--section-icon-design-x-offset), var(--section-icon-design-y-offset)) scale(var(--section-icon-design-scale, 1));
+}
+
+.icon-inline svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.icon-inline svg * {
+  fill: currentColor;
+}
+
+/* ========================================================================
+   PROFILE IMAGE
+   ======================================================================== */
+
+.profile {
+  width: var(--profile-width);
+  height: var(--profile-width);
+  padding-bottom: var(--profile-image-padding-bottom);
+}
+
+/* ========================================================================
+   TIMELINE & SECTION HEADINGS
+   ======================================================================== */
+
+.timeline-icon {
+  position: absolute;
+  left: -6mm;
+  top: -16mm;
+  width: 10mm;
+  height: 10mm;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.timeline-icon .icon {
+  width: 5mm;
+  height: 5mm;
+}
+
+.timeline-icon .icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  margin: var(--section-heading-margin-top, 5mm) 0 var(--section-heading-margin-bottom, 1mm);
+}
+
+.section-heading-marker {
+  position: relative;
+  width: var(--section-icon-circle-size);
+  height: var(--section-icon-circle-size);
+  display: block;
+  margin-left: var(--section-heading-marker-margin-left);
+  flex: 0 0 var(--section-icon-circle-size);
+  overflow: visible;
+  z-index: 10;
+}
+
+.section-heading-marker::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  height: var(--section-heading-marker-line-height);
+  border-left: 2px solid var(--sidebar-color);
+}
+
+.section-heading-icon {
+  width: var(--section-icon-circle-size);
+  height: var(--section-icon-circle-size);
+  border-radius: 50%;
+  background-color: var(--sidebar-color);
+  border: 2px solid var(--sidebar-color);
+  color: var(--heading-icon-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  position: relative;
+  transform: translateX(var(--section-icon-circle-x-offset));
+  z-index: 10;
+  line-height: 0;
+  overflow: visible;
+}
+
+.section-heading-text {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  margin-left: var(--section-heading-text-margin);
+  color: var(--section-header-color) !important;
+}
+
+.section-heading + .content {
+  padding-top: 0;
+}

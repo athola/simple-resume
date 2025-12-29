@@ -102,20 +102,28 @@ def _build_resume_config(normalized_config: dict[str, Any]) -> ResumeConfig:
             "section_icon_circle_size", "7.8mm"
         ),
         section_icon_circle_x_offset=normalized_config.get(
-            "section_icon_circle_x_offset", "-0.5mm"
+            "section_icon_circle_x_offset", "0mm"
         ),
         section_icon_design_size=normalized_config.get(
-            "section_icon_design_size", "4mm"
+            "section_icon_design_size", "3.5mm"
         ),
         section_icon_design_x_offset=normalized_config.get(
-            "section_icon_design_x_offset", "-0.1mm"
+            "section_icon_design_x_offset", "0mm"
         ),
         section_icon_design_y_offset=normalized_config.get(
-            "section_icon_design_y_offset", "-0.4mm"
+            "section_icon_design_y_offset", "0mm"
         ),
         section_heading_text_margin=normalized_config.get(
             "section_heading_text_margin", "-6mm"
         ),
+        contact_icon_size=normalized_config.get("contact_icon_size", "5mm"),
+        contact_icon_margin_top=normalized_config.get(
+            "contact_icon_margin_top", "0.5mm"
+        ),
+        contact_icon_margin_right=normalized_config.get(
+            "contact_icon_margin_right", "2mm"
+        ),
+        contact_icon_gap=normalized_config.get("contact_icon_gap", "4mm"),
     )
 
 

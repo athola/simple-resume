@@ -13,11 +13,13 @@ import yaml
 from bs4 import BeautifulSoup
 
 from simple_resume.core.effects import Effect
+from simple_resume.core.generate.exceptions import TemplateError
 from simple_resume.core.generate.html import create_html_generator_factory
 from simple_resume.core.paths import Paths
 from simple_resume.core.result import GenerationMetadata
 from simple_resume.core.resume import Resume
 from simple_resume.shell.runtime.content import get_content
+from simple_resume.shell.services import DefaultTemplateLocator
 from tests.bdd import scenario
 from tests.conftest import create_complete_resume_data
 
@@ -60,9 +62,15 @@ def render_resume_html(
     with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False) as tmp:
         tmp_path = Path(tmp.name)
 
-    factory = create_html_generator_factory()
+    template_locator = DefaultTemplateLocator()
+    factory = create_html_generator_factory(default_template_locator=template_locator)
     prepare_html_func = factory.create_prepare_html_function()
-    return prepare_html_func(render_plan, tmp_path, resume_name=name)
+    return prepare_html_func(
+        render_plan,
+        tmp_path,
+        resume_name=name,
+        template_locator=template_locator,
+    )
 
 
 class TestResumeWorkflowIntegration:
@@ -266,11 +274,12 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
         )
 
         story.when("render_resume_html is invoked")
-        with pytest.raises(Exception) as exc:
+        with pytest.raises(TemplateError) as exc:
             render_resume_html("missing", paths=paths)
 
         story.then("the error message references the missing template")
-        assert "missing_template" in str(exc.value)
+        assert exc.value.template_name is not None
+        assert "missing_template" in exc.value.template_name
 
     def test_performance_with_large_resume_dataset(self, temp_dir: Path) -> None:
         """Basic performance sanity check for bulk rendering."""

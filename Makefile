@@ -11,7 +11,7 @@
 # Project metadata
 PROJECT_NAME := simple-resume
 PROJECT_MODULE := simple_resume
-PYTHON_VERSION := 3.9
+PYTHON_VERSION := 3.10
 
 # Paths (all configurable)
 SRC_DIR := src
@@ -102,7 +102,7 @@ endef
 .PHONY: help install lint format typecheck check-all fix-all clean
 .PHONY: generate-pdf generate-pdf-sample view-sample dev-setup ci
 .PHONY: test test-coverage validate validate-readme-preview update-preview-image
-.PHONY: demo-% demo-palette-random demo-latex clean-cache
+.PHONY: demo-% demo-palette-random demo-latex demo-themes demo-theme-% clean-cache
 .PHONY: check-deps install-deps run-lint run-format run-typecheck run-security
 
 # =============================================================================
@@ -153,8 +153,8 @@ run-format: ## Run code formatting
 
 run-typecheck: ## Run all type checkers
 	@echo "$(BLUE)Running type checkers...$(RESET)"
-	$(call run_typechecker,mypy,.)
-	$(call run_typechecker,ty,check .)
+	$(call run_typechecker,mypy,src/)
+	$(call run_typechecker,ty,check src/)
 
 run-security: ## Run security analysis
 	@echo "$(BLUE)Running security analysis...$(RESET)"
@@ -244,6 +244,37 @@ demo-palette-random: ## Generate and preview a randomized palette demo resume
 	$(UV_CMD) run $(PROJECT_NAME) generate --format $(DEFAULT_FORMAT) --data-dir $(SAMPLE_DIR)
 	@echo "$(GREEN)[OK] Random palette demo generated: $(OUTPUT_DIR)/sample_palette_demo_random.pdf$(RESET)"
 	$(call open_file,$(OUTPUT_DIR)/sample_palette_demo_random.pdf)
+
+# Theme names for demo generation
+THEME_NAMES := modern classic bold minimal executive
+
+demo-themes: ## Generate and preview all theme demos in browser
+	@echo "$(BLUE)Generating all theme demos...$(RESET)"
+	@for theme in $(THEME_NAMES); do \
+		echo "$(BLUE)  Generating theme_$$theme...$(RESET)"; \
+		$(UV_CMD) run $(PROJECT_NAME) generate theme_$$theme --format html --data-dir $(SAMPLE_DIR); \
+	done
+	@echo "$(GREEN)[OK] All theme demos generated$(RESET)"
+	@echo ""
+	@echo "$(BOLD)Opening theme demos in browser...$(RESET)"
+	@for theme in $(THEME_NAMES); do \
+		$(OPEN_CMD) "$(OUTPUT_DIR)/theme_$$theme.html" 2>/dev/null || true; \
+		sleep 0.5; \
+	done
+	@echo ""
+	@echo "$(GREEN)Theme Gallery:$(RESET)"
+	@echo "  - modern:    Clean contemporary design"
+	@echo "  - classic:   Traditional professional look"
+	@echo "  - bold:      High-contrast vibrant colors"
+	@echo "  - minimal:   Light and airy whitespace"
+	@echo "  - executive: Sophisticated dark with gold"
+
+demo-theme-%: ## Generate and preview a specific theme demo (e.g., demo-theme-modern)
+	@echo "$(BLUE)Generating theme demo: $(subst demo-theme-,,$@)$(RESET)"
+	$(eval THEME := $(subst demo-theme-,,$@))
+	$(UV_CMD) run $(PROJECT_NAME) generate theme_$(THEME) --formats $(FORMATS) --data-dir $(SAMPLE_DIR)
+	@echo "$(GREEN)[OK] Theme demo generated: $(OUTPUT_DIR)/theme_$(THEME).pdf$(RESET)"
+	$(call open_file,$(OUTPUT_DIR)/theme_$(THEME).html)
 
 view-sample: generate-pdf-sample ## Generate and view sample PDF output
 	@echo "$(BOLD)Sample Resume PDFs Generated$(RESET)"

@@ -25,12 +25,15 @@ from tests.bdd import Scenario
 class TestShellRenderingOperations:
     """Test shell rendering operations functionality."""
 
-    def test_generate_html_with_jinja_injects_base_href(
+    def test_generate_html_with_jinja_preserves_html_without_base_href(
         self,
         story: Scenario,
         tmp_path: Path,
     ) -> None:
-        """Test that HTML generation includes base href for asset resolution."""
+        """Test that HTML generation preserves content without base href injection.
+
+        Assets (CSS, fonts) are copied to output directory instead of using base href.
+        """
         story.given("a render plan with base path configured")
         story.when("generating HTML via the shell helper")
         render_plan = RenderPlan(
@@ -54,9 +57,10 @@ class TestShellRenderingOperations:
         ):
             result = generate_html_with_jinja(render_plan, output_path)
 
-        # Verify base href injection
+        # Verify NO base href injection - assets are copied to output dir instead
         written = output_path.read_text(encoding="utf-8")
-        assert '<base href="' in written
+        assert '<base href="' not in written
+        assert "content" in written
         assert result.output_path == output_path
 
     def test_generate_pdf_with_weasyprint_renders_template(
@@ -236,7 +240,7 @@ class TestShellRenderingOperations:
         open_file_in_browser(test_file, browser="firefox")
 
         mock_popen.assert_called_once_with(
-            ["firefox", test_file],
+            ["firefox", str(test_file)],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
@@ -257,7 +261,7 @@ class TestShellRenderingOperations:
 
         open_file_in_browser(test_file)
 
-        mock_run.assert_called_once_with(["xdg-open", test_file], check=False)
+        mock_run.assert_called_once_with(["xdg-open", str(test_file)], check=False)
 
     def test_create_generation_result_with_all_metadata(
         self, story: Scenario, tmp_path: Path

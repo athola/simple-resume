@@ -340,6 +340,42 @@ class Resume:
             source_yaml_data=new_raw,
         )
 
+    def with_theme(self, theme_name: str) -> Resume:
+        """Return a new `Resume` with a theme applied.
+
+        Themes provide preset configurations (colors, layout, spacing).
+        User configuration overrides theme defaults.
+
+        Available themes: modern, classic, bold, minimal, executive
+
+        Args:
+            theme_name: Name of the theme to apply.
+
+        Returns:
+            New `Resume` instance with theme configuration applied.
+
+        Example:
+            >>> resume = Resume.read_yaml("my_resume").with_theme("modern")
+
+        """
+        new_data = copy.deepcopy(self._data)
+        new_raw = (
+            copy.deepcopy(self._raw_data)
+            if getattr(self, "_raw_data", None) is not None
+            else copy.deepcopy(self._data)
+        )
+
+        # Add theme key - will be resolved by shell layer during processing
+        new_raw["theme"] = theme_name
+
+        return Resume(
+            processed_resume_data=new_data,
+            name=self._name,
+            paths=self._paths,
+            filename=self._filename,
+            source_yaml_data=new_raw,
+        )
+
     def with_palette(self, palette: str | dict[str, Any]) -> Resume:
         """Return a new `Resume` with a different color palette.
 

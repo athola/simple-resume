@@ -133,16 +133,15 @@ class TestGenerationResult:
 
     def test_size_human_gigabytes(self, tmp_path) -> None:
         """Test size_human property for GB+ files."""
-        # We can't actually create a TB file, but we can test the method directly
-        # by creating a metadata object with a known file_size
+        # Patch the size property to return a large GB-sized value
         file_path = tmp_path / "test.pdf"
         file_path.write_text("test")
         result = GenerationResult(output_path=file_path, format_type="pdf")
 
-        # Patch the size property to return a TB-sized value
+        # Test with a multi-gigabyte file size
         with patch.object(type(result), "size", new_callable=PropertyMock) as mock_size:
-            mock_size.return_value = 2 * 1024 * 1024 * 1024 * 1024  # 2 TB
-            assert "TB" in result.size_human
+            mock_size.return_value = 2 * 1024 * 1024 * 1024  # 2 GB
+            assert "GB" in result.size_human
 
     def test_exists_property_true(self, tmp_path) -> None:
         """Test exists property for existing file."""

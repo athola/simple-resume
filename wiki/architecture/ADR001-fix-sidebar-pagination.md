@@ -136,7 +136,7 @@ The chosen solution was selected for the following reasons:
 
 ### Files Modified
 
--   `src/simple_resume/templates/resume_base.html`
+-   [src/simple_resume/shell/assets/templates/resume_base.html](../../src/simple_resume/shell/assets/templates/html/resume_base.html)
 
 ### Key CSS Properties
 
