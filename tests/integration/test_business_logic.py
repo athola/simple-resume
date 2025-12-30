@@ -13,7 +13,10 @@ from typing import Any, TypedDict
 
 import yaml
 
+from simple_resume.core.palettes.registry import PaletteRegistry
 from simple_resume.core.paths import Paths
+from simple_resume.core.render.manage import get_template_environment
+from simple_resume.core.render.plan import prepare_render_data
 from simple_resume.shell.runtime.content import get_content
 
 
@@ -664,3 +667,183 @@ in software development.
         # Process through business logic
         processed_resume = get_content("test_resume", paths=paths)
         return processed_resume
+
+
+class TestMinimalConfigRendering:
+    """Integration tests for template rendering with minimal configuration.
+
+    Issue #26: Ensure templates render correctly when using minimal config,
+    relying on defaults from both the config normalization and template
+    defensive .get() patterns.
+    """
+
+    def test_template_renders_with_minimal_config(self) -> None:
+        """Verify templates render without KeyError using only required fields.
+
+        This test validates that Issue #25 (defensive .get() in templates) and
+        Issue #27 (consolidated plan.py) work together to allow minimal config.
+        """
+        # Minimal data with only required fields - rely on defaults
+        minimal_data = {
+            "full_name": "Test User",
+            "config": {"output_mode": "html"},  # Minimal non-empty config
+        }
+
+        # Should not raise KeyError
+        result = prepare_render_data(minimal_data, registry=PaletteRegistry())
+
+        # Verify render plan was created
+        assert result is not None
+        assert result.context is not None
+
+        # Verify color keys that are always defaulted are present
+        # Note: page_width/height/sidebar_width may be None - templates use .get()
+        always_present_keys = [
+            "theme_color",
+            "sidebar_color",
+            "sidebar_text_color",
+            "bar_background_color",
+            "date2_color",
+            "frame_color",
+        ]
+        for key in always_present_keys:
+            assert key in result.context, f"Missing required key: {key}"
+
+    def test_resume_config_dict_has_color_keys(self) -> None:
+        """Verify resume_config dict in context has color keys templates access."""
+        minimal_data = {
+            "full_name": "Test User",
+            "config": {"output_mode": "html"},
+        }
+
+        result = prepare_render_data(minimal_data, registry=PaletteRegistry())
+
+        # The resume_config dict is what templates access via resume_config.get()
+        resume_config = result.context.get("resume_config", {})
+
+        # Keys that are always present after normalization (colors and computed values)
+        # Note: page_width/height/sidebar_width may NOT be in resume_config when not
+        # specified - templates use defensive .get() with defaults for these
+        always_normalized_keys = [
+            "sidebar_color",
+            "theme_color",
+            "sidebar_padding_left",
+            "sidebar_padding_right",
+            "sidebar_padding_top",
+            "sidebar_padding_bottom",
+            "sidebar_text_color",
+            "sidebar_bold_color",
+            "bold_font_weight",
+            "bar_background_color",
+            "date2_color",
+            "frame_color",
+            "heading_icon_color",
+            "h2_padding_top",
+            "h3_padding_top",
+            "section_heading_margin_top",
+            "section_heading_margin_bottom",
+        ]
+
+        for key in always_normalized_keys:
+            assert key in resume_config, (
+                f"Missing key '{key}' in resume_config - templates may fail"
+            )
+
+    def test_template_rendering_with_jinja2(self) -> None:
+        """Integration test: render base template with minimal config.
+
+        This tests that Issue #25's defensive .get() patterns in resume_base.html
+        work correctly - the CSS variables should be rendered with defaults even
+        when config values are missing.
+
+        Note: Extended templates (resume_no_bars, resume_with_bars) require
+        additional context like 'titles' dict which is outside Issue #25's scope.
+        """
+        minimal_data = {
+            "full_name": "Test User",
+            "description": "A test description",
+            "config": {"output_mode": "html"},
+            "body": {},  # Empty body sections
+        }
+
+        result = prepare_render_data(minimal_data, registry=PaletteRegistry())
+
+        # Set up Jinja2 environment with actual templates using production setup
+        templates_path = (
+            Path(__file__).parent.parent.parent
+            / "src"
+            / "simple_resume"
+            / "shell"
+            / "assets"
+            / "templates"
+        )
+        env = get_template_environment(str(templates_path))
+
+        # Test resume_base.html - this contains the CSS variable .get() patterns
+        template = env.get_template("html/resume_base.html")
+
+        # Should render without KeyError due to defensive .get() patterns
+        # This is the key test - any KeyError here means Issue #25 regressed
+        rendered = template.render(**result.context)
+        assert rendered, "Template produced empty output"
+
+        # Verify CSS variables from resume_config.get() are rendered with defaults
+        assert "--sidebar-color:" in rendered, "Missing sidebar-color CSS variable"
+        assert "--theme-color:" in rendered, "Missing theme-color CSS variable"
+        assert "--page-width:" in rendered, "Missing page-width CSS variable"
+        assert "--page-height:" in rendered, "Missing page-height CSS variable"
+        assert "--sidebar-width:" in rendered, "Missing sidebar-width CSS variable"
+
+        # Verify default values are used (from Issue #25's .get() defaults)
+        assert "#F6F6F6" in rendered, "Default sidebar-color not applied"
+        assert "#0395DE" in rendered, "Default theme-color not applied"
+        assert "210mm" in rendered, "Default page-width not applied"
+        assert "297mm" in rendered, "Default page-height not applied"
+        assert "65mm" in rendered, "Default sidebar-width not applied"
+
+    def test_cover_template_renders_with_minimal_config(self) -> None:
+        """Verify cover.html template works with minimal config.
+
+        Issue #25 added defensive .get() patterns to cover.html.
+        This test ensures cover letters render correctly when
+        optional config values (cover_padding_top, etc.) are missing.
+        """
+        minimal_data = {
+            "full_name": "Test User",
+            "template": "cover",
+            "description": "Cover letter content here.",
+            "config": {"output_mode": "html"},
+            "body": {},
+        }
+
+        result = prepare_render_data(minimal_data, registry=PaletteRegistry())
+
+        # Verify resume_config exists
+        assert result.context is not None
+        resume_config = result.context.get("resume_config", {})
+        assert isinstance(resume_config, dict)
+
+        # Set up Jinja2 environment with actual templates
+        templates_path = (
+            Path(__file__).parent.parent.parent
+            / "src"
+            / "simple_resume"
+            / "shell"
+            / "assets"
+            / "templates"
+        )
+        env = get_template_environment(str(templates_path))
+        template = env.get_template("html/cover.html")
+
+        # Should render without KeyError due to defensive .get() patterns
+        rendered = template.render(**result.context)
+        assert rendered, "Cover template produced empty output"
+
+        # Verify no invalid CSS from None values
+        assert "Nonemm" not in rendered, "Invalid CSS from None+mm concatenation"
+        assert "Nonepx" not in rendered, "Invalid CSS from None+px concatenation"
+        assert "None}" not in rendered, "Invalid CSS value from None"
+
+        # Verify cover-specific CSS variables are present
+        assert "padding-top:" in rendered, "Missing cover padding-top"
+        assert "padding-bottom:" in rendered, "Missing cover padding-bottom"

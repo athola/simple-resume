@@ -24,7 +24,7 @@ def _render(name: str) -> BeautifulSoup:
     # Resume data is provided via the tests for control
     resume_data = runtime_content.get_content(name)
 
-    # Build context from resume data (mimicking core/plan.py logic)
+    # Build context from resume data (mimicking core/render/plan.py logic)
     context = dict(resume_data)
     # Move 'config' to 'resume_config' for template compatibility
     if "config" in context:

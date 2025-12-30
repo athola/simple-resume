@@ -32,7 +32,7 @@
     <div class="skill-container contact-block">
       {{ contact_icon("phone") }}
       <div class="contact-container">
-        {% set available_width = resume_config['sidebar_width'] - resume_config['sidebar_padding_left'] - resume_config['sidebar_padding_right'] - 6 %}
+        {% set available_width = resume_config.get('sidebar_width', 65) - resume_config.get('sidebar_padding_left', 10) - resume_config.get('sidebar_padding_right', 10) - 6 %}
         {% set font_size = dynamic_font_size(phone, available_width) %}
         <p class="contact-text"{% if font_size %} style="font-size: {{ font_size }};"{% endif %}>{{ phone }}</p>
       </div>
@@ -44,7 +44,7 @@
     <div class="skill-container contact-block">
       {{ contact_icon("email") }}
       <div class="contact-container">
-        {% set available_width = resume_config['sidebar_width'] - resume_config['sidebar_padding_left'] - resume_config['sidebar_padding_right'] - 6 %}
+        {% set available_width = resume_config.get('sidebar_width', 65) - resume_config.get('sidebar_padding_left', 10) - resume_config.get('sidebar_padding_right', 10) - 6 %}
         {% set font_size = dynamic_font_size(email, available_width) %}
         <p class="contact-text"{% if font_size %} style="font-size: {{ font_size }};"{% endif %}>
           <a href="mailto:{{ email }}" style="display: block;">
@@ -60,7 +60,7 @@
     <div class="skill-container contact-block">
       {{ contact_icon("web") }}
       <div class="contact-container">
-        {% set available_width = resume_config['sidebar_width'] - resume_config['sidebar_padding_left'] - resume_config['sidebar_padding_right'] - 6 %}
+        {% set available_width = resume_config.get('sidebar_width', 65) - resume_config.get('sidebar_padding_left', 10) - resume_config.get('sidebar_padding_right', 10) - 6 %}
         {% set font_size = dynamic_font_size(web, available_width) %}
         <p class="contact-text"{% if font_size %} style="font-size: {{ font_size }};"{% endif %}>
           <a href="{{ web }}">
@@ -76,7 +76,7 @@
     <div class="skill-container contact-block">
       {{ contact_icon("linkedin") }}
       <div class="contact-container">
-        {% set available_width = resume_config['sidebar_width'] - resume_config['sidebar_padding_left'] - resume_config['sidebar_padding_right'] - 6 %}
+        {% set available_width = resume_config.get('sidebar_width', 65) - resume_config.get('sidebar_padding_left', 10) - resume_config.get('sidebar_padding_right', 10) - 6 %}
         {% set font_size = dynamic_font_size(linkedin, available_width) %}
         <p class="contact-text"{% if font_size %} style="font-size: {{ font_size }};"{% endif %}>
           <a href="https://www.linkedin.com/{{ linkedin }}">
@@ -92,7 +92,7 @@
     <div class="skill-container contact-block">
       {{ contact_icon("github") }}
       <div class="contact-container">
-        {% set available_width = resume_config['sidebar_width'] - resume_config['sidebar_padding_left'] - resume_config['sidebar_padding_right'] - 6 %}
+        {% set available_width = resume_config.get('sidebar_width', 65) - resume_config.get('sidebar_padding_left', 10) - resume_config.get('sidebar_padding_right', 10) - 6 %}
         {% set font_size = dynamic_font_size(github, available_width) %}
         <p class="contact-text"{% if font_size %} style="font-size: {{ font_size }};"{% endif %}>
           <a href="https://github.com/{{ github }}">
@@ -110,15 +110,15 @@
   <h3>{{ titles["skills"] or "Skills" }}</h3>
   <div class="skill-container">
     {% for name, value in skills.items() %}
-      {% set normalized_value = (value / 100.0) * (resume_config['sidebar_width'] - 2*resume_config['padding']) %}
-      {% set available_width = resume_config['sidebar_width'] - resume_config['sidebar_padding_left'] - resume_config['sidebar_padding_right'] %}
+      {% set normalized_value = (value / 100.0) * (resume_config.get('sidebar_width', 65) - 2*resume_config.get('padding', 12)) %}
+      {% set available_width = resume_config.get('sidebar_width', 65) - resume_config.get('sidebar_padding_left', 10) - resume_config.get('sidebar_padding_right', 10) %}
       {% set font_size = dynamic_font_size(name, available_width, 9, 7) %}
       <p style="margin-bottom: 0;{% if font_size %} font-size: {{ font_size }};{% endif %}">
         {{ name }}
       </p>
       <div class="bar-container">
         <div class="bar-blue" style="width: {{ normalized_value }}mm"></div>
-        <div class="bar-grey" style="width: {{ resume_config['sidebar_width'] - 2*resume_config['padding'] - normalized_value }}mm"></div>
+        <div class="bar-grey" style="width: {{ resume_config.get('sidebar_width', 65) - 2*resume_config.get('padding', 12) - normalized_value }}mm"></div>
       </div>
       <div class="skill-spacer"></div>
     {% endfor %}
@@ -129,7 +129,7 @@
   {% if certification %}
     <h3>{{ titles["certification"] }}</h3>
     <div class="skill-container">
-      {% set available_width = resume_config['sidebar_width'] - resume_config['sidebar_padding_left'] - resume_config['sidebar_padding_right'] %}
+      {% set available_width = resume_config.get('sidebar_width', 65) - resume_config.get('sidebar_padding_left', 10) - resume_config.get('sidebar_padding_right', 10) %}
       {{ render_sidebar_entries(certification, available_width, 9, 7) }}
     </div>
   {% endif %}
@@ -139,15 +139,15 @@
     <h3>{{ titles["languages"] or "Languages" }}</h3>
     <div class="skill-container">
       {% for name, value in languages.items() %}
-        {% set normalized_value = (value / 100.0) * (resume_config['sidebar_width'] - 2*resume_config['padding']) %}
-        {% set available_width = resume_config['sidebar_width'] - resume_config['sidebar_padding_left'] - resume_config['sidebar_padding_right'] %}
+        {% set normalized_value = (value / 100.0) * (resume_config.get('sidebar_width', 65) - 2*resume_config.get('padding', 12)) %}
+        {% set available_width = resume_config.get('sidebar_width', 65) - resume_config.get('sidebar_padding_left', 10) - resume_config.get('sidebar_padding_right', 10) %}
         {% set font_size = dynamic_font_size(name, available_width, 9, 7) %}
         <p style="margin-bottom: 0;{% if font_size %} font-size: {{ font_size }};{% endif %}">
           {{ name }}
         </p>
         <div class="bar-container">
           <div class="bar-blue" style="width: {{ normalized_value }}mm"></div>
-          <div class="bar-grey" style="width: {{ resume_config['sidebar_width'] - 2*resume_config['padding'] - normalized_value }}mm"></div>
+          <div class="bar-grey" style="width: {{ resume_config.get('sidebar_width', 65) - 2*resume_config.get('padding', 12) - normalized_value }}mm"></div>
         </div>
         <div class="skill-spacer"></div>
       {% endfor %}
@@ -160,11 +160,11 @@
     <div class="skill-container">
       {% for group in expertise_groups %}
         {% if group.title %}
-          <h4 style="margin: 2px 0; font-size: 9pt; font-weight: 600; color: {{ resume_config['sidebar_text_color'] }};">{{ group.title }}</h4>
+          <h4 style="margin: 2px 0; font-size: 9pt; font-weight: 600; color: {{ resume_config.get('sidebar_text_color', '#000000') }};">{{ group.title }}</h4>
         {% endif %}
         {% for item in group["items"] %}
           <p style="margin-bottom: 2px; margin-left: 0.5mm; position: relative; padding-left: 2mm;">
-            <span style="position: absolute; left: 0; top: 0; color: {{ resume_config['sidebar_text_color'] }}; opacity: 0.6;">•</span>
+            <span style="position: absolute; left: 0; top: 0; color: {{ resume_config.get('sidebar_text_color', '#000000') }}; opacity: 0.6;">•</span>
             {{ item }}
           </p>
         {% endfor %}
@@ -179,9 +179,9 @@
     <div class="skill-container">
       {% for group in programming_groups %}
         {% if group.title %}
-          <h4 style="margin: 2px 0; font-size: 9pt; font-weight: 600; color: {{ resume_config['sidebar_text_color'] }};">{{ group.title }}</h4>
+          <h4 style="margin: 2px 0; font-size: 9pt; font-weight: 600; color: {{ resume_config.get('sidebar_text_color', '#000000') }};">{{ group.title }}</h4>
         {% endif %}
-        {% set available_width = resume_config['sidebar_width'] - resume_config['sidebar_padding_left'] - resume_config['sidebar_padding_right'] %}
+        {% set available_width = resume_config.get('sidebar_width', 65) - resume_config.get('sidebar_padding_left', 10) - resume_config.get('sidebar_padding_right', 10) %}
         {{ render_sidebar_entries(group["items"], available_width, 9, 7) }}
         <div class="skill-spacer"></div>
       {% endfor %}
@@ -194,11 +194,11 @@
     <div class="skill-container">
       {% for group in keyskills_groups %}
         {% if group.title %}
-          <h4 style="margin: 2px 0; font-size: 9pt; font-weight: 600; color: {{ resume_config['sidebar_text_color'] }};">{{ group.title }}</h4>
+          <h4 style="margin: 2px 0; font-size: 9pt; font-weight: 600; color: {{ resume_config.get('sidebar_text_color', '#000000') }};">{{ group.title }}</h4>
         {% endif %}
         {% for item in group["items"] %}
           <p style="margin-bottom: 2px; margin-left: 0.5mm; position: relative; padding-left: 2mm;">
-            <span style="position: absolute; left: 0; top: 0; color: {{ resume_config['sidebar_text_color'] }}; opacity: 0.6;">•</span>
+            <span style="position: absolute; left: 0; top: 0; color: {{ resume_config.get('sidebar_text_color', '#000000') }}; opacity: 0.6;">•</span>
             {{ item }}
           </p>
         {% endfor %}
@@ -231,7 +231,7 @@
           </p>
 
           {% if data["start"] %}
-            <p class="date-separator" style="text-align: center; font-size: 8pt; padding-top: 1mm; color: {{ resume_config['date2_color'] }};">—</p>
+            <p class="date-separator" style="text-align: center; font-size: 8pt; padding-top: 1mm; color: {{ resume_config.get('date2_color', '#616161') }};">—</p>
             <p class="date2">
               {{ data["start"] }}
             </p>
@@ -242,7 +242,7 @@
         <div class="description-container">
 
           <!-- Calculate font size based on combined length of title and company -->
-          {% set heading_width_mm = resume_config["page_width"] - resume_config["sidebar_width"] - resume_config["padding"] - resume_config["date_container_width"] - 3 - resume_config["description_container_padding_left"] - 1 %}
+          {% set heading_width_mm = resume_config.get("page_width", 210) - resume_config.get("sidebar_width", 65) - resume_config.get("padding", 12) - resume_config.get("date_container_width", 15) - 3 - resume_config.get("description_container_padding_left", 4) - 1 %}
           {% set title_text = data["title"] | default("", true) %}
           {% set company_text = data["company"] | default("", true) %}
 
@@ -275,7 +275,7 @@
           {% endif %}
 
           <!-- Smart color selection based on luminance analysis -->
-          {% set theme_color = resume_config["theme_color"] %}
+          {% set theme_color = resume_config.get("theme_color", "#0395DE") %}
           {% set company_color = theme_color %}
           {% set company_link_color = theme_color %}
 
@@ -354,7 +354,7 @@
         {% if name | lower == "education" and activities %}
           <!-- Activities Row -->
           <div class="date-container" style="padding-top: 3mm;">
-            <p style="font-size: 8pt; font-family: 'Avenir 45'; color: {{ resume_config['date2_color'] }}; text-align: center; width: {{ resume_config["padding"] }}mm;">Activities</p>
+            <p style="font-size: 8pt; font-family: 'Avenir 45'; color: {{ resume_config.get('date2_color', '#616161') }}; text-align: center; width: {{ resume_config.get("padding", 12) }}mm;">Activities</p>
           </div>
           <div class="description-container" style="padding-top: 3mm;">
             <p style="font-size: 8pt; font-family: 'Avenir 45'; line-height: 1.4; margin: 0;">

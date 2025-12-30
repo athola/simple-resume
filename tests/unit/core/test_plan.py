@@ -5,10 +5,10 @@ from typing import Any
 
 import pytest
 
-from simple_resume.core import plan
 from simple_resume.core.exceptions import ValidationError
 from simple_resume.core.models import RenderMode, ResumeConfig
 from simple_resume.core.palettes.exceptions import PaletteGenerationError
+from simple_resume.core.render import plan
 from simple_resume.shell.palettes.loader import get_palette_registry
 from tests.bdd import Scenario
 
@@ -176,6 +176,7 @@ class TestPlanHelpers:
                 raise PaletteGenerationError("palette failure")
             return {"template": config.get("template", "default")}, {"verified": True}
 
+        # Patch the canonical implementation module where normalize_config is used
         monkeypatch.setattr(plan, "normalize_config", fake_normalize)
 
         registry = get_palette_registry()
@@ -239,67 +240,71 @@ class TestPlanHelpers:
             {"output_mode": "latex"}, registry=registry
         )
 
-        render_plan = plan.build_render_plan(
-            "Test",
-            RenderMode.LATEX,
-            config,
+        plan_config = plan.RenderPlanConfig(
+            name="Test",
+            mode=RenderMode.LATEX,
+            config=config,
             context=None,
             base_path=tempfile.gettempdir(),
             palette_meta={"palette": "meta"},
         )
+        result = plan.build_render_plan(plan_config)
 
-        assert render_plan.mode is RenderMode.LATEX
-        assert render_plan.template_name is None
-        assert render_plan.context is None
-        assert render_plan.palette_metadata == {"palette": "meta"}
+        assert result.mode is RenderMode.LATEX
+        assert result.template_name is None
+        assert result.context is None
+        assert result.palette_metadata == {"palette": "meta"}
 
     def test_build_render_plan_html_requires_context(self) -> None:
         registry = get_palette_registry()
         config = plan.validate_resume_config_or_raise({}, registry=registry)
 
+        plan_config = plan.RenderPlanConfig(
+            name="Test",
+            mode=RenderMode.HTML,
+            config=config,
+            context=None,
+            base_path=tempfile.gettempdir(),
+            template_name="resume.html",
+        )
         with pytest.raises(ValueError, match="context"):
-            plan.build_render_plan(
-                "Test",
-                RenderMode.HTML,
-                config,
-                context=None,
-                base_path=tempfile.gettempdir(),
-                template_name="resume.html",
-            )
+            plan.build_render_plan(plan_config)
 
     def test_build_render_plan_html_requires_template(self) -> None:
         registry = get_palette_registry()
         config = plan.validate_resume_config_or_raise({}, registry=registry)
 
+        plan_config = plan.RenderPlanConfig(
+            name="Test",
+            mode=RenderMode.HTML,
+            config=config,
+            context={"key": "value"},
+            base_path=tempfile.gettempdir(),
+            template_name=None,
+        )
         with pytest.raises(ValueError, match="template"):
-            plan.build_render_plan(
-                "Test",
-                RenderMode.HTML,
-                config,
-                context={"key": "value"},
-                base_path=tempfile.gettempdir(),
-                template_name=None,
-            )
+            plan.build_render_plan(plan_config)
 
     def test_build_render_plan_html_success(self) -> None:
         registry = get_palette_registry()
         config = plan.validate_resume_config_or_raise({}, registry=registry)
         context = {"key": "value"}
 
-        render_plan = plan.build_render_plan(
-            "Test",
-            RenderMode.HTML,
-            config,
-            context,
+        plan_config = plan.RenderPlanConfig(
+            name="Test",
+            mode=RenderMode.HTML,
+            config=config,
+            context=context,
             base_path=tempfile.gettempdir(),
             template_name="resume.html",
             palette_meta={"palette": "meta"},
         )
+        result = plan.build_render_plan(plan_config)
 
-        assert render_plan.mode is RenderMode.HTML
-        assert render_plan.context == context
-        assert render_plan.template_name == "resume.html"
-        assert render_plan.palette_metadata == {"palette": "meta"}
+        assert result.mode is RenderMode.HTML
+        assert result.context == context
+        assert result.template_name == "resume.html"
+        assert result.palette_metadata == {"palette": "meta"}
 
     @pytest.mark.parametrize(
         "width,expected_type",

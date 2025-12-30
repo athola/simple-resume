@@ -24,16 +24,16 @@
         font-weight: normal;
       }
       h1, h2, h3, h5 {
-        color: {{ resume_config["theme_color"] }};
+        color: {{ resume_config.get("theme_color", "#0395DE") }};
       }
       h1 {
         font-size: 30pt;
         font-family: 'Avenir 35';
         padding-top: 11mm;
         padding-bottom: 8.5mm;
-        padding-right: {{ resume_config["padding"] }}mm;
+        padding-right: {{ resume_config.get("padding", 12) }}mm;
         text-align: center;
-        border-bottom: 3px solid {{ resume_config["sidebar_color"] }};
+        border-bottom: 3px solid {{ resume_config.get("sidebar_color", "#F6F6F6") }};
       }
       h2 {
         font-size: 16pt;
@@ -66,30 +66,30 @@
 
       /* Layout styles */
       .frame {
-        padding-top: {{ resume_config["frame_padding"] }}mm;
-        padding-bottom: {{ resume_config["frame_padding"] }}mm;
-        padding-left: {{ resume_config["frame_padding"] }}mm;
-        padding-right: {{ resume_config["frame_padding"] }}mm;
-        background-color: {{ resume_config["frame_color"] }};
+        padding-top: {{ resume_config.get("frame_padding", 15) }}mm;
+        padding-bottom: {{ resume_config.get("frame_padding", 15) }}mm;
+        padding-left: {{ resume_config.get("frame_padding", 15) }}mm;
+        padding-right: {{ resume_config.get("frame_padding", 15) }}mm;
+        background-color: {{ resume_config.get("frame_color", "#757575") }};
       }
       .page {
         page-break-after: always;
-        width: {{ resume_config["page_width"] }}mm;
-        height: {{ resume_config["page_height"] }}mm;
+        width: {{ resume_config.get("page_width", 210) }}mm;
+        height: {{ resume_config.get("page_height", 297) }}mm;
         background-color: white;
       }
       .body {
         float: left;
-        width: {{ resume_config["page_width"] }}mm;
-        height: {{ resume_config["page_height"] }}mm;
+        width: {{ resume_config.get("page_width", 210) }}mm;
+        height: {{ resume_config.get("page_height", 297) }}mm;
       }
 
       /* Content styles */
       .description {
-        padding-top: {{ resume_config["cover_padding_top"] }}mm;
-        padding-bottom: {{ resume_config["cover_padding_bottom"] }}mm;
-        padding-left: {{ resume_config["cover_padding_h"] }}mm;
-        padding-right: {{ resume_config["cover_padding_h"] }}mm;
+        padding-top: {{ resume_config.get("cover_padding_top", 15) }}mm;
+        padding-bottom: {{ resume_config.get("cover_padding_bottom", 15) }}mm;
+        padding-left: {{ resume_config.get("cover_padding_h", 20) }}mm;
+        padding-right: {{ resume_config.get("cover_padding_h", 20) }}mm;
       }
 
       code {

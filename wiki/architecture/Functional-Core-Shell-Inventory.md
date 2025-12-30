@@ -25,8 +25,7 @@ Pure functions and data structures with no I/O operations.
 | `core/models.py` | Data models (RenderPlan, ValidationResult, RenderMode) | Pure |
 | `core/palettes/` | Palette resolution, generators, registry | Pure |
 | `core/paths.py` | Path data structure | Pure |
-| `core/plan.py` | Render plan preparation and validation | Pure |
-| `core/render/` | Render request preparation | Pure |
+| `core/render/` | Render request preparation; `plan.py` contains canonical render plan logic | Pure |
 | `core/result.py` | GenerationResult and BatchGenerationResult (pure data) | Pure |
 | `core/resume.py` | Resume class with dependency injection | Pure (late-bound I/O) |
 | `core/skills.py` | Skills data transformations | Pure |

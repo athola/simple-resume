@@ -111,7 +111,7 @@
 {%- endmacro %}
 
 {%- macro section_icon(section_name) -%}
-<div class="timeline-icon" style="background-color: {{ resume_config['sidebar_color'] }}; border: 2px solid {{ resume_config['sidebar_color'] }};">
+<div class="timeline-icon" style="background-color: {{ resume_config.get('sidebar_color', '#F6F6F6') }}; border: 2px solid {{ resume_config.get('sidebar_color', '#F6F6F6') }};">
   <span class="icon" aria-hidden="true" style="color: {{ section_icon_color }}">
     {{ section_icon_svg(section_name) }}
   </span>
@@ -290,7 +290,7 @@
 {# Light theme colors get dark text, dark theme colors keep their color.     #}
 {# ========================================================================== #}
 
-{%- set theme_color = resume_config["theme_color"] -%}
+{%- set theme_color = resume_config.get("theme_color", "#0395DE") -%}
 {%- set section_header_color = theme_color -%}
 
 {%- if theme_color.startswith('#') -%}
@@ -333,53 +333,53 @@
     <style>
       :root {
         /* Colors */
-        --sidebar-color: {{ resume_config["sidebar_color"] }};
-        --sidebar-text-color: {{ resume_config["sidebar_text_color"] }};
-        --theme-color: {{ resume_config["theme_color"] }};
-        --date2-color: {{ resume_config["date2_color"] }};
-        --bar-background-color: {{ resume_config["bar_background_color"] }};
-        --frame-color: {{ resume_config["frame_color"] }};
-        --heading-icon-color: {{ resume_config["heading_icon_color"] }};
+        --sidebar-color: {{ resume_config.get("sidebar_color", "#F6F6F6") }};
+        --sidebar-text-color: {{ resume_config.get("sidebar_text_color", "#000000") }};
+        --theme-color: {{ resume_config.get("theme_color", "#0395DE") }};
+        --date2-color: {{ resume_config.get("date2_color", "#616161") }};
+        --bar-background-color: {{ resume_config.get("bar_background_color", "#DFDFDF") }};
+        --frame-color: {{ resume_config.get("frame_color", "#757575") }};
+        --heading-icon-color: {{ resume_config.get("heading_icon_color", "#0395DE") }};
         --section-icon-color: {{ section_icon_color }};
         --section-header-color: {{ section_header_color }};
 
         /* Page dimensions */
-        --page-width: {{ resume_config["page_width"] }}mm;
-        --page-height: {{ resume_config["page_height"] }}mm;
-        --sidebar-width: {{ resume_config["sidebar_width"] }}mm;
-        --body-width: {{ resume_config["page_width"] - resume_config["sidebar_width"] }}mm;
-        --padding: {{ resume_config["padding"] }}mm;
+        --page-width: {{ resume_config.get("page_width", 210) }}mm;
+        --page-height: {{ resume_config.get("page_height", 297) }}mm;
+        --sidebar-width: {{ resume_config.get("sidebar_width", 65) }}mm;
+        --body-width: {{ resume_config.get("page_width", 210) - resume_config.get("sidebar_width", 65) }}mm;
+        --padding: {{ resume_config.get("padding", 12) }}mm;
 
         /* Sidebar padding */
-        --sidebar-padding-top: {{ resume_config["sidebar_padding_top"] }}mm;
-        --sidebar-padding-bottom: {{ resume_config["sidebar_padding_bottom"] }}mm;
-        --sidebar-padding-left: {{ resume_config["sidebar_padding_left"] }}mm;
-        --sidebar-padding-right: {{ resume_config["sidebar_padding_right"] }}mm;
+        --sidebar-padding-top: {{ resume_config.get("sidebar_padding_top", 0) }}mm;
+        --sidebar-padding-bottom: {{ resume_config.get("sidebar_padding_bottom", 12) }}mm;
+        --sidebar-padding-left: {{ resume_config.get("sidebar_padding_left", 10) }}mm;
+        --sidebar-padding-right: {{ resume_config.get("sidebar_padding_right", 10) }}mm;
 
         /* Content spacing */
-        --pitch-padding-top: {{ resume_config["pitch_padding_top"] }}mm;
-        --pitch-padding-bottom: {{ resume_config["pitch_padding_bottom"] }}mm;
-        --pitch-padding-left: {{ resume_config["pitch_padding_left"] }}mm;
-        --h2-padding-left: {{ resume_config["h2_padding_left"] }}mm;
-        --h2-padding-left-full: {{ resume_config["h2_padding_left"] + 18 }}mm;
-        --h2-width: {{ resume_config["page_width"] - resume_config["sidebar_width"] - resume_config["h2_padding_left"] - 18 }}mm;
-        --h3-padding-top: {{ resume_config["h3_padding_top"] }}mm;
-        --date-container-width: {{ resume_config["date_container_width"] }}mm;
-        --description-container-padding-left: {{ resume_config["description_container_padding_left"] }}mm;
-        --skill-container-padding-top: {{ resume_config["skill_container_padding_top"] }}mm;
-        --profile-image-padding-bottom: {{ resume_config["profile_image_padding_bottom"] }}mm;
-        --profile-width: {{ resume_config["sidebar_width"] - 2*resume_config["padding"] }}mm;
-        --frame-padding: {{ resume_config["frame_padding"] }}mm;
+        --pitch-padding-top: {{ resume_config.get("pitch_padding_top", 10) }}mm;
+        --pitch-padding-bottom: {{ resume_config.get("pitch_padding_bottom", 8) }}mm;
+        --pitch-padding-left: {{ resume_config.get("pitch_padding_left", 6) }}mm;
+        --h2-padding-left: {{ resume_config.get("h2_padding_left", 6) }}mm;
+        --h2-padding-left-full: {{ resume_config.get("h2_padding_left", 6) + 18 }}mm;
+        --h2-width: {{ resume_config.get("page_width", 210) - resume_config.get("sidebar_width", 65) - resume_config.get("h2_padding_left", 6) - 18 }}mm;
+        --h3-padding-top: {{ resume_config.get("h3_padding_top", 7) }}mm;
+        --date-container-width: {{ resume_config.get("date_container_width", 15) }}mm;
+        --description-container-padding-left: {{ resume_config.get("description_container_padding_left", 4) }}mm;
+        --skill-container-padding-top: {{ resume_config.get("skill_container_padding_top", 3) }}mm;
+        --profile-image-padding-bottom: {{ resume_config.get("profile_image_padding_bottom", 8) }}mm;
+        --profile-width: {{ resume_config.get("sidebar_width", 65) - 2*resume_config.get("padding", 12) }}mm;
+        --frame-padding: {{ resume_config.get("frame_padding", 15) }}mm;
 
         /* Section icon styling */
-        --section-icon-circle-size: {{ resume_config["section_icon_circle_size"] }};
-        --section-icon-circle-x-offset: {{ resume_config["section_icon_circle_x_offset"] }};
-        --section-icon-design-size: {{ resume_config["section_icon_design_size"] }};
-        --section-icon-design-x-offset: {{ resume_config["section_icon_design_x_offset"] }};
-        --section-icon-design-y-offset: {{ resume_config["section_icon_design_y_offset"] }};
-        --section-heading-text-margin: {{ resume_config["section_heading_text_margin"] }};
-        --section-heading-marker-margin-left: -{{ (resume_config["h2_padding_left"] + 18) - (resume_config["date_container_width"] + 3) + 3 }}mm;
-        --section-heading-marker-line-height: calc(2.8mm + {{ resume_config["section_icon_circle_size"] }});
+        --section-icon-circle-size: {{ resume_config.get("section_icon_circle_size", "7.8mm") }};
+        --section-icon-circle-x-offset: {{ resume_config.get("section_icon_circle_x_offset", "0mm") }};
+        --section-icon-design-size: {{ resume_config.get("section_icon_design_size", "3.5mm") }};
+        --section-icon-design-x-offset: {{ resume_config.get("section_icon_design_x_offset", "0mm") }};
+        --section-icon-design-y-offset: {{ resume_config.get("section_icon_design_y_offset", "0mm") }};
+        --section-heading-text-margin: {{ resume_config.get("section_heading_text_margin", "-6mm") }};
+        --section-heading-marker-margin-left: -{{ (resume_config.get("h2_padding_left", 6) + 18) - (resume_config.get("date_container_width", 15) + 3) + 3 }}mm;
+        --section-heading-marker-line-height: calc(2.8mm + {{ resume_config.get("section_icon_circle_size", "7.8mm") }});
 
         --section-icon-design-scale: {{ resume_config.get("section_icon_design_scale", "1") }};
 
@@ -397,11 +397,11 @@
 
       /* Dynamic @page size for PDF rendering */
       @page {
-        size: {{ resume_config["page_width"] }}mm {{ resume_config["page_height"] }}mm;
+        size: {{ resume_config.get("page_width", 210) }}mm {{ resume_config.get("page_height", 297) }}mm;
         margin: 0;
       }
       @page resume {
-        size: {{ resume_config["page_width"] }}mm {{ resume_config["page_height"] }}mm;
+        size: {{ resume_config.get("page_width", 210) }}mm {{ resume_config.get("page_height", 297) }}mm;
         margin: 0;
       }
 
