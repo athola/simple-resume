@@ -5,13 +5,16 @@ from __future__ import annotations
 import pytest
 
 from simple_resume.core.latex.fonts import fontawesome_support_block
+from tests.bdd import Scenario
 
 
 class TestFontawesomeSupportBlock:
     """Tests for fontawesome_support_block function."""
 
-    def test_fallback_without_directory(self) -> None:
+    def test_fallback_without_directory(self, story: Scenario) -> None:
         """Test fallback block when no directory is provided."""
+        story.given("None as font directory")
+        story.when("generating fontawesome support block")
         result = fontawesome_support_block(None)
 
         # Should contain fallback definitions
@@ -24,15 +27,19 @@ class TestFontawesomeSupportBlock:
         assert r"\newcommand{\faGithub}" in result
         assert r"\newcommand{\faLocation}" in result
 
-    def test_fallback_with_empty_string(self) -> None:
+    def test_fallback_with_empty_string(self, story: Scenario) -> None:
         """Test fallback when empty string is provided."""
+        story.given("an empty string as font directory")
+        story.when("generating fontawesome support block")
         result = fontawesome_support_block("")
 
         # Empty string should be treated same as None
         assert r"\IfFileExists{fontawesome.sty}" in result
 
-    def test_fontspec_with_directory(self) -> None:
+    def test_fontspec_with_directory(self, story: Scenario) -> None:
         """Test fontspec block when directory is provided."""
+        story.given("a valid font directory path '/path/to/fonts/'")
+        story.when("generating fontawesome support block")
         result = fontawesome_support_block("/path/to/fonts/")
 
         # Should contain fontspec definitions
@@ -41,15 +48,19 @@ class TestFontawesomeSupportBlock:
         assert r"\newfontfamily\FAFreeBrands" in result
         assert r"Path=/path/to/fonts/" in result
 
-    def test_font_file_references(self) -> None:
+    def test_font_file_references(self, story: Scenario) -> None:
         """Test that correct font files are referenced."""
+        story.given("a font directory '/fonts/'")
+        story.when("generating fontawesome support block")
         result = fontawesome_support_block("/fonts/")
 
         assert "Font Awesome 6 Free-Solid-900.otf" in result
         assert "Font Awesome 6 Brands-Regular-400.otf" in result
 
-    def test_iftex_conditional(self) -> None:
+    def test_iftex_conditional(self, story: Scenario) -> None:
         """Test that iftex conditional is used."""
+        story.given("a font directory path")
+        story.when("generating fontawesome support block")
         result = fontawesome_support_block("/fonts/")
 
         assert r"\usepackage{iftex}" in result
@@ -57,8 +68,10 @@ class TestFontawesomeSupportBlock:
         assert r"\else" in result
         assert r"\fi" in result
 
-    def test_icon_definitions_in_fallback(self) -> None:
+    def test_icon_definitions_in_fallback(self, story: Scenario) -> None:
         """Test that all icons are defined in fallback."""
+        story.given("no font directory (fallback mode)")
+        story.when("generating fontawesome support block")
         result = fontawesome_support_block(None)
 
         # All icons should have definitions
@@ -73,8 +86,10 @@ class TestFontawesomeSupportBlock:
         for icon in icons:
             assert icon in result
 
-    def test_icon_unicode_in_fontspec(self) -> None:
+    def test_icon_unicode_in_fontspec(self, story: Scenario) -> None:
         """Test that icons use unicode symbols in fontspec."""
+        story.given("a font directory for fontspec mode")
+        story.when("generating fontawesome support block")
         result = fontawesome_support_block("/fonts/")
 
         # Should use unicode symbols
@@ -85,20 +100,26 @@ class TestFontawesomeSupportBlock:
         assert r'\symbol{"F09B}' in result  # github
         assert r'\symbol{"F3C5}' in result  # location
 
-    def test_falocation_mapping(self) -> None:
+    def test_falocation_mapping(self, story: Scenario) -> None:
         """Test that faLocation is mapped to faMapMarker in fallback."""
+        story.given("fallback mode (no font directory)")
+        story.when("generating fontawesome support block")
         result = fontawesome_support_block(None)
 
         assert r"\providecommand{\faLocation}{\faMapMarker}" in result
 
-    def test_font_scale(self) -> None:
+    def test_font_scale(self, story: Scenario) -> None:
         """Test that font scale is set."""
+        story.given("a font directory for fontspec mode")
+        story.when("generating fontawesome support block")
         result = fontawesome_support_block("/fonts/")
 
         assert "Scale=0.72" in result
 
-    def test_indentation_in_conditional(self) -> None:
+    def test_indentation_in_conditional(self, story: Scenario) -> None:
         """Test proper indentation in ifPDFTeX blocks."""
+        story.given("a font directory for fontspec mode")
+        story.when("generating fontawesome support block")
         result = fontawesome_support_block("/fonts/")
 
         # Lines inside conditional should be indented
@@ -118,8 +139,10 @@ class TestFontawesomeSupportBlock:
             if in_if_block and line.strip():
                 assert line.startswith("  "), f"Line should be indented: {line}"
 
-    def test_fallback_text_commands(self) -> None:
+    def test_fallback_text_commands(self, story: Scenario) -> None:
         """Test that fallback uses text-based icons."""
+        story.given("fallback mode (no font directory)")
+        story.when("generating fontawesome support block")
         result = fontawesome_support_block(None)
 
         # Fallback should use simple text replacements
@@ -130,15 +153,19 @@ class TestFontawesomeSupportBlock:
         assert r"\textbf{GH}" in result  # GitHub
         assert r"\textbf{A}" in result  # Address/Location
 
-    def test_pure_function_no_side_effects(self) -> None:
+    def test_pure_function_no_side_effects(self, story: Scenario) -> None:
         """Test that function is pure (same input = same output)."""
+        story.given("the same font directory called twice")
+        story.when("comparing the results")
         result1 = fontawesome_support_block("/fonts/")
         result2 = fontawesome_support_block("/fonts/")
 
         assert result1 == result2
 
-    def test_none_and_empty_equivalent(self) -> None:
+    def test_none_and_empty_equivalent(self, story: Scenario) -> None:
         """Test that None and empty string produce same result."""
+        story.given("None and empty string as font directories")
+        story.when("comparing the generated blocks")
         result_none = fontawesome_support_block(None)
         result_empty = fontawesome_support_block("")
 
@@ -154,8 +181,10 @@ class TestFontawesomeSupportBlock:
         ],
     )
     def test_various_directories(
-        self, font_dir: str | None, expected_fragment: str
+        self, font_dir: str | None, expected_fragment: str, story: Scenario
     ) -> None:
         """Test with various font directory inputs."""
+        story.given(f"font directory '{font_dir}'")
+        story.when("generating fontawesome support block")
         result = fontawesome_support_block(font_dir)
         assert expected_fragment in result

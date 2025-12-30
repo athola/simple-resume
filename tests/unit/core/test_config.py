@@ -7,9 +7,12 @@ from simple_resume.core.config import (
     finalize_config,
     prepare_config,
 )
+from tests.bdd import Scenario
 
 
-def test_prepare_config_coerces_numeric_fields() -> None:
+def test_prepare_config_coerces_numeric_fields(story: Scenario) -> None:
+    story.given("a config with string numeric values")
+    story.when("preparing the config")
     config = {
         "page_width": "210",
         "page_height": "297",
@@ -27,7 +30,9 @@ def test_prepare_config_coerces_numeric_fields() -> None:
     assert isinstance(sidebar, int) and sidebar == 50
 
 
-def test_finalize_config_populates_default_colors() -> None:
+def test_finalize_config_populates_default_colors(story: Scenario) -> None:
+    story.given("a config with basic theme colors")
+    story.when("finalizing the config")
     config = {
         "theme_color": "#111111",
         "sidebar_color": "#FFFFFF",
@@ -46,8 +51,10 @@ def test_finalize_config_populates_default_colors() -> None:
 class TestApplyConfigDefaults:
     """Tests for apply_config_defaults() ensuring all defaults are centralized."""
 
-    def test_page_dimensions_default(self) -> None:
+    def test_page_dimensions_default(self, story: Scenario) -> None:
         """Verify page dimensions are set to A4 defaults."""
+        story.given("an empty config dictionary")
+        story.when("applying config defaults")
         config: dict = {}
         apply_config_defaults(config)
 
@@ -55,15 +62,19 @@ class TestApplyConfigDefaults:
         assert config["page_height"] == 297
         assert config["sidebar_width"] == 65
 
-    def test_base_padding_default(self) -> None:
+    def test_base_padding_default(self, story: Scenario) -> None:
         """Verify base padding is set to 12mm."""
+        story.given("an empty config dictionary")
+        story.when("applying config defaults")
         config: dict = {}
         apply_config_defaults(config)
 
         assert config["padding"] == 12
 
-    def test_sidebar_padding_derived_from_base(self) -> None:
+    def test_sidebar_padding_derived_from_base(self, story: Scenario) -> None:
         """Verify sidebar padding is derived from base padding."""
+        story.given("an empty config dictionary")
+        story.when("applying config defaults")
         config: dict = {}
         apply_config_defaults(config)
 
@@ -73,8 +84,10 @@ class TestApplyConfigDefaults:
         assert config["sidebar_padding_top"] == 0
         assert config["sidebar_padding_bottom"] == 12
 
-    def test_sidebar_padding_with_custom_base(self) -> None:
+    def test_sidebar_padding_with_custom_base(self, story: Scenario) -> None:
         """Verify sidebar padding uses custom base padding."""
+        story.given("a config with custom base padding of 16")
+        story.when("applying config defaults")
         config: dict = {"padding": 16}
         apply_config_defaults(config)
 
@@ -83,8 +96,10 @@ class TestApplyConfigDefaults:
         assert config["sidebar_padding_right"] == 14
         assert config["sidebar_padding_bottom"] == 16
 
-    def test_pitch_padding_defaults(self) -> None:
+    def test_pitch_padding_defaults(self, story: Scenario) -> None:
         """Verify pitch section padding defaults."""
+        story.given("an empty config dictionary")
+        story.when("applying config defaults")
         config: dict = {}
         apply_config_defaults(config)
 
@@ -92,8 +107,10 @@ class TestApplyConfigDefaults:
         assert config["pitch_padding_bottom"] == 8
         assert config["pitch_padding_left"] == 6
 
-    def test_heading_padding_defaults(self) -> None:
+    def test_heading_padding_defaults(self, story: Scenario) -> None:
         """Verify heading padding defaults."""
+        story.given("an empty config dictionary")
+        story.when("applying config defaults")
         config: dict = {}
         apply_config_defaults(config)
 
@@ -101,8 +118,10 @@ class TestApplyConfigDefaults:
         assert config["h2_padding_top"] == 8
         assert config["h3_padding_top"] == 7
 
-    def test_section_layout_defaults(self) -> None:
+    def test_section_layout_defaults(self, story: Scenario) -> None:
         """Verify section layout defaults match template expectations."""
+        story.given("an empty config dictionary")
+        story.when("applying config defaults")
         config: dict = {}
         apply_config_defaults(config)
 
@@ -113,8 +132,10 @@ class TestApplyConfigDefaults:
         assert config["entry_margin_bottom"] == 4
         assert config["tech_stack_margin_bottom"] == 2
 
-    def test_section_icon_defaults(self) -> None:
+    def test_section_icon_defaults(self, story: Scenario) -> None:
         """Verify section icon settings defaults."""
+        story.given("an empty config dictionary")
+        story.when("applying config defaults")
         config: dict = {}
         apply_config_defaults(config)
 
@@ -124,8 +145,10 @@ class TestApplyConfigDefaults:
         assert config["section_icon_design_x_offset"] == 0
         assert config["section_icon_design_y_offset"] == 0
 
-    def test_container_width_defaults(self) -> None:
+    def test_container_width_defaults(self, story: Scenario) -> None:
         """Verify container width and padding defaults."""
+        story.given("an empty config dictionary")
+        story.when("applying config defaults")
         config: dict = {}
         apply_config_defaults(config)
 
@@ -135,15 +158,19 @@ class TestApplyConfigDefaults:
         assert config["skill_spacer_padding_top"] == 3
         assert config["profile_image_padding_bottom"] == 8
 
-    def test_frame_padding_default(self) -> None:
+    def test_frame_padding_default(self, story: Scenario) -> None:
         """Verify frame (preview mode) padding default."""
+        story.given("an empty config dictionary")
+        story.when("applying config defaults")
         config: dict = {}
         apply_config_defaults(config)
 
         assert config["frame_padding"] == 15
 
-    def test_cover_page_padding_defaults(self) -> None:
+    def test_cover_page_padding_defaults(self, story: Scenario) -> None:
         """Verify cover page padding defaults."""
+        story.given("an empty config dictionary")
+        story.when("applying config defaults")
         config: dict = {}
         apply_config_defaults(config)
 
@@ -151,8 +178,10 @@ class TestApplyConfigDefaults:
         assert config["cover_padding_bottom"] == 15
         assert config["cover_padding_h"] == 20
 
-    def test_contact_section_defaults(self) -> None:
+    def test_contact_section_defaults(self, story: Scenario) -> None:
         """Verify contact section styling defaults."""
+        story.given("an empty config dictionary")
+        story.when("applying config defaults")
         config: dict = {}
         apply_config_defaults(config)
 
@@ -160,15 +189,19 @@ class TestApplyConfigDefaults:
         assert config["contact_icon_margin_top"] == 0.5
         assert config["contact_text_padding_left"] == 2
 
-    def test_font_settings_default(self) -> None:
+    def test_font_settings_default(self, story: Scenario) -> None:
         """Verify font settings defaults."""
+        story.given("an empty config dictionary")
+        story.when("applying config defaults")
         config: dict = {}
         apply_config_defaults(config)
 
         assert config["bold_font_weight"] == 600
 
-    def test_existing_values_not_overwritten(self) -> None:
+    def test_existing_values_not_overwritten(self, story: Scenario) -> None:
         """Verify that existing config values are not overwritten."""
+        story.given("a config with pre-existing custom values")
+        story.when("applying config defaults")
         config: dict = {
             "page_width": 180,
             "page_height": 260,
@@ -264,24 +297,32 @@ class TestNormalizationCompleteness:
             | self.EXPECTED_FONT_KEYS
         )
 
-    def test_all_expected_keys_populated(self, all_expected_keys: set) -> None:
+    def test_all_expected_keys_populated(
+        self, all_expected_keys: set, story: Scenario
+    ) -> None:
         """Verify that normalization populates ALL expected layout/styling keys."""
+        story.given("an empty config and a set of expected keys")
+        story.when("applying config defaults")
         config: dict = {}
         apply_config_defaults(config)
 
         missing_keys = all_expected_keys - set(config.keys())
         assert not missing_keys, f"Missing keys after normalization: {missing_keys}"
 
-    def test_no_none_values(self, all_expected_keys: set) -> None:
+    def test_no_none_values(self, all_expected_keys: set, story: Scenario) -> None:
         """Verify that no expected keys have None values."""
+        story.given("an empty config and a set of expected keys")
+        story.when("applying config defaults")
         config: dict = {}
         apply_config_defaults(config)
 
         none_keys = {k for k in all_expected_keys if config.get(k) is None}
         assert not none_keys, f"Keys with None values: {none_keys}"
 
-    def test_all_numeric_values(self, all_expected_keys: set) -> None:
+    def test_all_numeric_values(self, all_expected_keys: set, story: Scenario) -> None:
         """Verify that all layout/styling values are numeric (int or float)."""
+        story.given("an empty config and a set of expected keys")
+        story.when("applying config defaults and checking value types")
         config: dict = {}
         apply_config_defaults(config)
 

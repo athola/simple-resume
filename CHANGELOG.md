@@ -2,6 +2,22 @@
 
 This file documents all notable project changes. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2025-12-30
+
+### Changed
+
+-   Reorganized HTML templates into `html/` subdirectory (#18)
+-   Narrowed exception handling in `validate_resume_config` for clearer error messages (#30)
+-   Improved `RenderPlanConfig` type safety with `__post_init__` validation (#32)
+-   Reconciled layout constants to A4 standard (210×297mm) (#35)
+-   Centralized default values in `apply_config_defaults()` (#36)
+
+### Fixed
+
+-   Profile width arithmetic corrected (41mm → 45mm) (#33)
+-   Added warning logging for palette generation fallback (#31)
+-   Verified comprehensive test coverage for error paths (#34)
+
 ## [0.1.5] - 2025-12-29
 
 ### Changed
