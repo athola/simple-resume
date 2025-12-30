@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,8 @@ from simple_resume.core.models import RenderPlan, ResumeConfig, ValidationResult
 from simple_resume.core.palettes.exceptions import PaletteGenerationError
 from simple_resume.core.palettes.registry import PaletteRegistry
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass
 class RenderPlanConfig:
@@ -27,7 +30,15 @@ class RenderPlanConfig:
     context: dict[str, Any] | None = None
     base_path: Path | str = ""
     template_name: str | None = None
-    palette_meta: Any = None
+    palette_meta: dict[str, Any] | None = None
+
+    def __post_init__(self) -> None:
+        """Validate configuration after initialization."""
+        if self.mode is RenderMode.HTML:
+            if self.context is None:
+                raise ValueError("HTML mode requires context")
+            if self.template_name is None:
+                raise ValueError("HTML mode requires template_name")
 
 
 def _validate_color_fields(config: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
@@ -180,8 +191,8 @@ def validate_resume_config(
     except ValueError as exc:
         errors.append(str(exc))
         return ValidationResult(is_valid=False, errors=errors, warnings=warnings)
-    except Exception as exc:  # pragma: no cover - defensive
-        errors.append(f"Unexpected validation error: {exc}")
+    except (KeyError, TypeError, AttributeError) as exc:
+        errors.append(f"Configuration error: {exc}")
         return ValidationResult(is_valid=False, errors=errors, warnings=warnings)
 
 
@@ -237,6 +248,11 @@ def normalize_with_palette_fallback(
         )
         return normalized_config_dict, palette_meta, config_for_validation
     except PaletteGenerationError:
+        logger.warning(
+            "Palette generation failed, using default palette. "
+            "Original palette config: %s",
+            raw_config.get("palette"),
+        )
         fallback_meta = None
         if isinstance(palette_meta_source, dict):
             fallback_meta = palette_meta_source.get("palette")
@@ -262,13 +278,16 @@ def build_render_plan(plan_config: RenderPlanConfig) -> RenderPlan:
     """Build the final `RenderPlan` based on resolved mode and context.
 
     Args:
-        plan_config: Configuration for the render plan.
+        plan_config: Configuration for the render plan. Note that RenderPlanConfig
+            performs validation in __post_init__, so invalid HTML configurations
+            will raise ValueError at construction time.
 
     Returns:
         Configured RenderPlan object.
 
     Raises:
         ValueError: If HTML render plan is missing required context or template name.
+            This is a defensive check; RenderPlanConfig validates this at construction.
 
     """
     if plan_config.mode is RenderMode.LATEX:

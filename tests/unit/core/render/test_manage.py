@@ -185,7 +185,7 @@ class TestValidateRenderPlan:
             name="test",
             mode=RenderMode.HTML,
             config=ResumeConfig(),
-            template_name="demo.html",
+            template_name="html/demo.html",
         )
 
         result = validate_render_plan(render_plan)

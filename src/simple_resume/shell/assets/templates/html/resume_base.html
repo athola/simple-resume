@@ -368,31 +368,31 @@
         --description-container-padding-left: {{ resume_config.get("description_container_padding_left", 4) }}mm;
         --skill-container-padding-top: {{ resume_config.get("skill_container_padding_top", 3) }}mm;
         --profile-image-padding-bottom: {{ resume_config.get("profile_image_padding_bottom", 8) }}mm;
-        --profile-width: {{ resume_config.get("sidebar_width", 65) - 2*resume_config.get("padding", 12) }}mm;
+        --profile-width: {{ resume_config.get("profile_width") or (resume_config.get("sidebar_width", 65) - resume_config.get("sidebar_padding_left", 10) - resume_config.get("sidebar_padding_right", 10)) }}mm;
         --frame-padding: {{ resume_config.get("frame_padding", 15) }}mm;
 
         /* Section icon styling */
-        --section-icon-circle-size: {{ resume_config.get("section_icon_circle_size", "7.8mm") }};
-        --section-icon-circle-x-offset: {{ resume_config.get("section_icon_circle_x_offset", "0mm") }};
-        --section-icon-design-size: {{ resume_config.get("section_icon_design_size", "3.5mm") }};
-        --section-icon-design-x-offset: {{ resume_config.get("section_icon_design_x_offset", "0mm") }};
-        --section-icon-design-y-offset: {{ resume_config.get("section_icon_design_y_offset", "0mm") }};
-        --section-heading-text-margin: {{ resume_config.get("section_heading_text_margin", "-6mm") }};
+        --section-icon-circle-size: {{ resume_config.get("section_icon_circle_size", 7.8) }}mm;
+        --section-icon-circle-x-offset: {{ resume_config.get("section_icon_circle_x_offset", 0) }}mm;
+        --section-icon-design-size: {{ resume_config.get("section_icon_design_size", 3.5) }}mm;
+        --section-icon-design-x-offset: {{ resume_config.get("section_icon_design_x_offset", 0) }}mm;
+        --section-icon-design-y-offset: {{ resume_config.get("section_icon_design_y_offset", 0) }}mm;
+        --section-heading-text-margin: {{ resume_config.get("section_heading_text_margin", -6) }}mm;
         --section-heading-marker-margin-left: -{{ (resume_config.get("h2_padding_left", 6) + 18) - (resume_config.get("date_container_width", 15) + 3) + 3 }}mm;
-        --section-heading-marker-line-height: calc(2.8mm + {{ resume_config.get("section_icon_circle_size", "7.8mm") }});
+        --section-heading-marker-line-height: calc(2.8mm + {{ resume_config.get("section_icon_circle_size", 7.8) }}mm);
 
-        --section-icon-design-scale: {{ resume_config.get("section_icon_design_scale", "1") }};
+        --section-icon-design-scale: {{ resume_config.get("section_icon_design_scale", 1) }};
 
         /* Section and entry spacing */
-        --section-heading-margin-top: {{ resume_config.get("section_heading_margin_top", "5mm") }};
-        --section-heading-margin-bottom: {{ resume_config.get("section_heading_margin_bottom", "1mm") }};
-        --entry-margin-bottom: {{ resume_config.get("entry_margin_bottom", "4mm") }};
-        --tech-stack-margin-bottom: {{ resume_config.get("tech_stack_margin_bottom", "2mm") }};
+        --section-heading-margin-top: {{ resume_config.get("section_heading_margin_top", 5) }}mm;
+        --section-heading-margin-bottom: {{ resume_config.get("section_heading_margin_bottom", 1) }}mm;
+        --entry-margin-bottom: {{ resume_config.get("entry_margin_bottom", 4) }}mm;
+        --tech-stack-margin-bottom: {{ resume_config.get("tech_stack_margin_bottom", 2) }}mm;
 
         /* Contact icon styling */
-        --contact-icon-size: {{ resume_config.get("contact_icon_size", "5mm") }};
-        --contact-icon-margin-top: {{ resume_config.get("contact_icon_margin_top", "0.5mm") }};
-        --contact-text-padding-left: {{ resume_config.get("contact_text_padding_left", "2mm") }};
+        --contact-icon-size: {{ resume_config.get("contact_icon_size", 5) }}mm;
+        --contact-icon-margin-top: {{ resume_config.get("contact_icon_margin_top", 0.5) }}mm;
+        --contact-text-padding-left: {{ resume_config.get("contact_text_padding_left", 2) }}mm;
       }
 
       /* Dynamic @page size for PDF rendering */

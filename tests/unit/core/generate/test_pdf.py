@@ -54,7 +54,7 @@ class TestPreparePdfWithWeasyprint:
             render_plan = RenderPlan(
                 name="test_resume",
                 mode=RenderMode.HTML,
-                template_name="demo.html",
+                template_name="html/demo.html",
                 context={"name": "Test User", "title": "Engineer"},
                 config=ResumeConfig(page_width=210, page_height=297),
                 base_path="",
@@ -81,7 +81,7 @@ class TestPreparePdfWithWeasyprint:
             # Should return metadata
             assert metadata is not None
             assert metadata.format_type == "pdf"
-            assert metadata.template_name == "demo.html"
+            assert metadata.template_name == "html/demo.html"
             assert metadata.resume_name == "test_resume"
 
     def test_includes_make_directory_effect(self, story: Scenario) -> None:
@@ -92,7 +92,7 @@ class TestPreparePdfWithWeasyprint:
             render_plan = RenderPlan(
                 name="test",
                 mode=RenderMode.HTML,
-                template_name="demo.html",
+                template_name="html/demo.html",
                 context={"name": "Test"},
                 config=ResumeConfig(),
                 base_path="",
@@ -121,7 +121,7 @@ class TestPreparePdfWithWeasyprint:
             render_plan = RenderPlan(
                 name="test",
                 mode=RenderMode.HTML,
-                template_name="demo.html",
+                template_name="html/demo.html",
                 context={"name": "Test"},
                 config=ResumeConfig(),
                 base_path="",
@@ -173,7 +173,7 @@ class TestPreparePdfWithWeasyprint:
             render_plan = RenderPlan(
                 name="test",
                 mode=RenderMode.HTML,
-                template_name="demo.html",
+                template_name="html/demo.html",
                 context=None,  # Missing context
                 config=ResumeConfig(),
                 base_path="",
@@ -225,7 +225,7 @@ class TestPreparePdfWithWeasyprint:
             render_plan = RenderPlan(
                 name="test",
                 mode=RenderMode.HTML,
-                template_name="demo.html",
+                template_name="html/demo.html",
                 context={"name": "Test"},
                 config=ResumeConfig(),
                 base_path="",
@@ -249,7 +249,7 @@ class TestPreparePdfWithWeasyprint:
             render_plan = RenderPlan(
                 name="test",
                 mode=RenderMode.HTML,
-                template_name="demo.html",
+                template_name="html/demo.html",
                 context={"name": "Test"},
                 config=ResumeConfig(page_width=None, page_height=None),
                 base_path="",
@@ -276,7 +276,7 @@ class TestPreparePdfWithWeasyprint:
             render_plan = RenderPlan(
                 name="test",
                 mode=RenderMode.HTML,
-                template_name="demo.html",
+                template_name="html/demo.html",
                 context={"name": "Test"},
                 config=ResumeConfig(page_width=216, page_height=279),  # US Letter
                 base_path="",
@@ -307,7 +307,7 @@ class TestPreparePdfWithWeasyprint:
             render_plan = RenderPlan(
                 name="test",
                 mode=RenderMode.HTML,
-                template_name="demo.html",
+                template_name="html/demo.html",
                 context={"name": "Test"},
                 config=ResumeConfig(),
                 base_path="",
@@ -333,7 +333,7 @@ class TestPreparePdfWithWeasyprint:
             render_plan = RenderPlan(
                 name="test",
                 mode=RenderMode.HTML,
-                template_name="demo.html",
+                template_name="html/demo.html",
                 context={"name": "Test"},
                 config=ResumeConfig(),
                 base_path="",

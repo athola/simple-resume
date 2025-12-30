@@ -77,28 +77,100 @@ def _coerce_number(value: Any, *, field: str, prefix: str) -> float | int | None
 
 
 def apply_config_defaults(config: dict[str, Any]) -> None:
-    """Apply default padding and font weight settings to the configuration.
+    """Apply default layout, padding, and font weight settings to the configuration.
+
+    This function centralizes ALL default values to prevent silent failures.
+    Templates should only use .get() as a safety net with matching defaults.
 
     Args:
         config: The configuration dictionary to modify in-place.
 
     """
-    base_padding = config.get("padding", 12)
+    # ==========================================================================
+    # Page Dimensions (A4 default)
+    # ==========================================================================
+    config.setdefault("page_width", 210)
+    config.setdefault("page_height", 297)
+    config.setdefault("sidebar_width", 65)
 
+    # ==========================================================================
+    # Base Padding
+    # ==========================================================================
+    config.setdefault("padding", 12)
+    base_padding = config["padding"]
+
+    # ==========================================================================
+    # Sidebar Padding (derived from base padding)
+    # ==========================================================================
     config.setdefault("sidebar_padding_left", base_padding - 2)
     config.setdefault("sidebar_padding_right", base_padding - 2)
     config.setdefault("sidebar_padding_top", 0)
     config.setdefault("sidebar_padding_bottom", base_padding)
 
-    config.setdefault("skill_container_padding_top", 3)
-    config.setdefault("skill_spacer_padding_top", 3)
+    # ==========================================================================
+    # Pitch Section Padding
+    # ==========================================================================
+    config.setdefault("pitch_padding_top", 10)
+    config.setdefault("pitch_padding_bottom", 8)
+    config.setdefault("pitch_padding_left", 6)
+
+    # ==========================================================================
+    # Heading Padding
+    # ==========================================================================
+    config.setdefault("h2_padding_left", 6)
+    config.setdefault("h2_padding_top", 8)
     config.setdefault("h3_padding_top", 7)
 
-    config.setdefault("h2_padding_top", 8)
-    config.setdefault("section_heading_margin_top", 4)
-    config.setdefault("section_heading_margin_bottom", 2)
+    # ==========================================================================
+    # Section Layout
+    # ==========================================================================
+    config.setdefault("section_heading_margin_top", 5)
+    config.setdefault("section_heading_margin_bottom", 1)
+    config.setdefault("section_heading_text_margin", -6)
+    config.setdefault("section_icon_design_scale", 1)
+    config.setdefault("entry_margin_bottom", 4)
+    config.setdefault("tech_stack_margin_bottom", 2)
 
-    # Set default bold font weight
+    # ==========================================================================
+    # Section Icon Settings
+    # ==========================================================================
+    config.setdefault("section_icon_circle_size", 7.8)
+    config.setdefault("section_icon_circle_x_offset", 0)
+    config.setdefault("section_icon_design_size", 3.5)
+    config.setdefault("section_icon_design_x_offset", 0)
+    config.setdefault("section_icon_design_y_offset", 0)
+
+    # ==========================================================================
+    # Container Widths & Padding
+    # ==========================================================================
+    config.setdefault("date_container_width", 15)
+    config.setdefault("description_container_padding_left", 4)
+    config.setdefault("skill_container_padding_top", 3)
+    config.setdefault("skill_spacer_padding_top", 3)
+    config.setdefault("profile_image_padding_bottom", 8)
+
+    # ==========================================================================
+    # Frame (Preview Mode)
+    # ==========================================================================
+    config.setdefault("frame_padding", 15)
+
+    # ==========================================================================
+    # Cover Page Padding
+    # ==========================================================================
+    config.setdefault("cover_padding_top", 15)
+    config.setdefault("cover_padding_bottom", 15)
+    config.setdefault("cover_padding_h", 20)
+
+    # ==========================================================================
+    # Contact Section
+    # ==========================================================================
+    config.setdefault("contact_icon_size", 5)
+    config.setdefault("contact_icon_margin_top", 0.5)
+    config.setdefault("contact_text_padding_left", 2)
+
+    # ==========================================================================
+    # Font Settings
+    # ==========================================================================
     config.setdefault("bold_font_weight", 600)
 
 

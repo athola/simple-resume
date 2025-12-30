@@ -100,7 +100,7 @@ uv run simple-resume generate --format pdf         # PDF
 uv run simple-resume generate --format html --open # HTML + open in browser
 ```
 
-Built-in templates: `resume_no_bars`, `resume_with_bars`, `demo.html` (see `src/simple_resume/shell/assets/templates/html/`). Static assets live under `.../assets/static/`.
+Built-in templates: `resume_no_bars`, `resume_with_bars`, `demo` (see `src/simple_resume/shell/assets/templates/html/`). Static assets live under `.../assets/static/`.
 
 ## Python API
 

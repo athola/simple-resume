@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 from unittest import mock
@@ -145,6 +146,39 @@ class TestValidateResumeConfig:
         assert result.is_valid is False
         assert "Test error" in result.errors
 
+    @mock.patch("simple_resume.core.render.plan.normalize_config")
+    def test_key_error_handling(self, mock_normalize) -> None:
+        """Test handling of KeyError during validation."""
+        mock_normalize.side_effect = KeyError("missing_key")
+        raw_config: dict[str, Any] = {}
+        registry = PaletteRegistry()
+        result = validate_resume_config(raw_config, registry=registry)
+        assert result.is_valid is False
+        assert any("Configuration error" in err for err in result.errors)
+        assert any("missing_key" in err for err in result.errors)
+
+    @mock.patch("simple_resume.core.render.plan.normalize_config")
+    def test_type_error_handling(self, mock_normalize) -> None:
+        """Test handling of TypeError during validation."""
+        mock_normalize.side_effect = TypeError("expected str, got int")
+        raw_config: dict[str, Any] = {}
+        registry = PaletteRegistry()
+        result = validate_resume_config(raw_config, registry=registry)
+        assert result.is_valid is False
+        assert any("Configuration error" in err for err in result.errors)
+        assert any("expected str, got int" in err for err in result.errors)
+
+    @mock.patch("simple_resume.core.render.plan.normalize_config")
+    def test_attribute_error_handling(self, mock_normalize) -> None:
+        """Test handling of AttributeError during validation."""
+        mock_normalize.side_effect = AttributeError("'NoneType' has no attribute 'get'")
+        raw_config: dict[str, Any] = {}
+        registry = PaletteRegistry()
+        result = validate_resume_config(raw_config, registry=registry)
+        assert result.is_valid is False
+        assert any("Configuration error" in err for err in result.errors)
+        assert any("NoneType" in err for err in result.errors)
+
 
 class TestValidateResumeConfigOrRaise:
     """Tests for validate_resume_config_or_raise function."""
@@ -217,6 +251,26 @@ class TestNormalizeWithPaletteFallback:
 
         assert palette_meta is None
 
+    @mock.patch("simple_resume.core.render.plan.normalize_config")
+    def test_palette_fallback_logs_warning(
+        self, mock_normalize, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Test that a warning is logged when palette generation fails."""
+        mock_normalize.side_effect = [
+            PaletteGenerationError("Palette failed"),
+            ({}, None),
+        ]
+        raw_config = {"palette": "my-custom-palette", "theme_color": "#0395DE"}
+        registry = PaletteRegistry()
+
+        with caplog.at_level(logging.WARNING):
+            normalize_with_palette_fallback(raw_config, registry=registry)
+
+        assert len(caplog.records) == 1
+        assert caplog.records[0].levelname == "WARNING"
+        assert "Palette generation failed" in caplog.records[0].message
+        assert "my-custom-palette" in caplog.records[0].message
+
 
 class TestTransformForMode:
     """Tests for transform_for_mode function."""
@@ -236,6 +290,106 @@ class TestTransformForMode:
         result = transform_for_mode(content, RenderMode.HTML)
         mock_render.assert_called_once_with(content)
         assert result == {"name": "John", "rendered": True}
+
+
+class TestRenderPlanConfig:
+    """Tests for RenderPlanConfig dataclass validation."""
+
+    def test_latex_mode_no_validation_required(self) -> None:
+        """Test LATEX mode allows None context and template_name."""
+        config = ResumeConfig(output_mode="latex")
+        plan_config = RenderPlanConfig(
+            name="Test",
+            mode=RenderMode.LATEX,
+            config=config,
+            context=None,
+            template_name=None,
+        )
+        assert plan_config.mode == RenderMode.LATEX
+        assert plan_config.context is None
+        assert plan_config.template_name is None
+
+    def test_html_mode_requires_context(self) -> None:
+        """Test HTML mode raises ValueError when context is None."""
+        config = ResumeConfig(output_mode="html")
+        with pytest.raises(ValueError, match="HTML mode requires context"):
+            RenderPlanConfig(
+                name="Test",
+                mode=RenderMode.HTML,
+                config=config,
+                context=None,
+                template_name="template.html",
+            )
+
+    def test_html_mode_requires_template_name(self) -> None:
+        """Test HTML mode raises ValueError when template_name is None."""
+        config = ResumeConfig(output_mode="html")
+        with pytest.raises(ValueError, match="HTML mode requires template_name"):
+            RenderPlanConfig(
+                name="Test",
+                mode=RenderMode.HTML,
+                config=config,
+                context={"key": "value"},
+                template_name=None,
+            )
+
+    def test_html_mode_valid_configuration(self) -> None:
+        """Test HTML mode accepts valid context and template_name."""
+        config = ResumeConfig(output_mode="html")
+        plan_config = RenderPlanConfig(
+            name="Test",
+            mode=RenderMode.HTML,
+            config=config,
+            context={"key": "value"},
+            template_name="html/resume.html",
+        )
+        assert plan_config.mode == RenderMode.HTML
+        assert plan_config.context == {"key": "value"}
+        assert plan_config.template_name == "html/resume.html"
+
+    def test_palette_meta_accepts_dict(self) -> None:
+        """Test palette_meta accepts dict type."""
+        config = ResumeConfig(output_mode="latex")
+        plan_config = RenderPlanConfig(
+            name="Test",
+            mode=RenderMode.LATEX,
+            config=config,
+            palette_meta={"scheme": "blue", "primary": "#0395DE"},
+        )
+        assert plan_config.palette_meta == {"scheme": "blue", "primary": "#0395DE"}
+
+    def test_palette_meta_accepts_none(self) -> None:
+        """Test palette_meta accepts None."""
+        config = ResumeConfig(output_mode="latex")
+        plan_config = RenderPlanConfig(
+            name="Test",
+            mode=RenderMode.LATEX,
+            config=config,
+            palette_meta=None,
+        )
+        assert plan_config.palette_meta is None
+
+    def test_base_path_accepts_path_object(self) -> None:
+        """Test base_path accepts Path object."""
+        config = ResumeConfig(output_mode="latex")
+        plan_config = RenderPlanConfig(
+            name="Test",
+            mode=RenderMode.LATEX,
+            config=config,
+            base_path=Path("/tmp"),  # noqa: S108
+        )
+        assert plan_config.base_path == Path("/tmp")  # noqa: S108
+
+    def test_base_path_accepts_string(self) -> None:
+        """Test base_path accepts string."""
+        config = ResumeConfig(output_mode="latex")
+        plan_config = RenderPlanConfig(
+            name="Test",
+            mode=RenderMode.LATEX,
+            config=config,
+            base_path="/home/user",
+        )
+        assert plan_config.base_path == "/home/user"
 
 
 class TestBuildRenderPlan:
@@ -277,32 +431,28 @@ class TestBuildRenderPlan:
         assert plan.context == context
 
     def test_html_plan_requires_context(self) -> None:
-        """Test HTML plan raises error without context."""
+        """Test HTML plan raises error without context at construction time."""
         config = ResumeConfig(output_mode="html")
-        plan_config = RenderPlanConfig(
-            name="John Doe",
-            mode=RenderMode.HTML,
-            config=config,
-            template_name="template.html",
-        )
-
-        with pytest.raises(ValueError, match="HTML render plans require a context"):
-            build_render_plan(plan_config)
+        # Validation now happens in RenderPlanConfig.__post_init__
+        with pytest.raises(ValueError, match="HTML mode requires context"):
+            RenderPlanConfig(
+                name="John Doe",
+                mode=RenderMode.HTML,
+                config=config,
+                template_name="template.html",
+            )
 
     def test_html_plan_requires_template_name(self) -> None:
-        """Test HTML plan raises error without template_name."""
+        """Test HTML plan raises error without template_name at construction time."""
         config = ResumeConfig(output_mode="html")
-        plan_config = RenderPlanConfig(
-            name="John Doe",
-            mode=RenderMode.HTML,
-            config=config,
-            context={"name": "John"},
-        )
-
-        with pytest.raises(
-            ValueError, match="HTML render plans require a template name"
-        ):
-            build_render_plan(plan_config)
+        # Validation now happens in RenderPlanConfig.__post_init__
+        with pytest.raises(ValueError, match="HTML mode requires template_name"):
+            RenderPlanConfig(
+                name="John Doe",
+                mode=RenderMode.HTML,
+                config=config,
+                context={"name": "John"},
+            )
 
 
 class TestPrepareRenderData:

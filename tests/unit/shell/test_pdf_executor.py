@@ -29,7 +29,7 @@ class TestExecutePdfGeneration:
 
         metadata = GenerationMetadata(
             format_type="pdf",
-            template_name="demo.html",
+            template_name="html/demo.html",
             generation_time=0.0,
             file_size=0,
             resume_name="test_resume",
@@ -178,7 +178,7 @@ class TestExecutePdfGeneration:
 
         metadata = GenerationMetadata(
             format_type="pdf",
-            template_name="demo.html",
+            template_name="html/demo.html",
             generation_time=1.23,
             file_size=5000,
             resume_name="john_doe",
@@ -200,7 +200,7 @@ class TestExecutePdfGeneration:
 
         assert result.metadata is not None
         assert result.metadata.format_type == "pdf"
-        assert result.metadata.template_name == "demo.html"
+        assert result.metadata.template_name == "html/demo.html"
         assert result.metadata.resume_name == "john_doe"
         assert result.metadata.palette_info == palette_meta
         assert result.metadata.page_count == 2
@@ -226,7 +226,7 @@ class TestExecutePdfGenerationIntegration:
 
         metadata = GenerationMetadata(
             format_type="pdf",
-            template_name="demo.html",
+            template_name="html/demo.html",
             generation_time=0.5,
             file_size=len(pdf_content),
             resume_name="test_resume",
