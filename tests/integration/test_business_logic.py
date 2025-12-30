@@ -800,3 +800,50 @@ class TestMinimalConfigRendering:
         assert "210mm" in rendered, "Default page-width not applied"
         assert "297mm" in rendered, "Default page-height not applied"
         assert "65mm" in rendered, "Default sidebar-width not applied"
+
+    def test_cover_template_renders_with_minimal_config(self) -> None:
+        """Verify cover.html template works with minimal config.
+
+        Issue #25 added defensive .get() patterns to cover.html.
+        This test ensures cover letters render correctly when
+        optional config values (cover_padding_top, etc.) are missing.
+        """
+        minimal_data = {
+            "full_name": "Test User",
+            "template": "cover",
+            "description": "Cover letter content here.",
+            "config": {"output_mode": "html"},
+            "body": {},
+        }
+
+        result = prepare_render_data(minimal_data, registry=PaletteRegistry())
+
+        # Verify resume_config exists
+        assert result.context is not None
+        resume_config = result.context.get("resume_config", {})
+        assert isinstance(resume_config, dict)
+
+        # Set up Jinja2 environment with actual templates
+        templates_path = (
+            Path(__file__).parent.parent.parent
+            / "src"
+            / "simple_resume"
+            / "shell"
+            / "assets"
+            / "templates"
+        )
+        env = get_template_environment(str(templates_path))
+        template = env.get_template("html/cover.html")
+
+        # Should render without KeyError due to defensive .get() patterns
+        rendered = template.render(**result.context)
+        assert rendered, "Cover template produced empty output"
+
+        # Verify no invalid CSS from None values
+        assert "Nonemm" not in rendered, "Invalid CSS from None+mm concatenation"
+        assert "Nonepx" not in rendered, "Invalid CSS from None+px concatenation"
+        assert "None}" not in rendered, "Invalid CSS value from None"
+
+        # Verify cover-specific CSS variables are present
+        assert "padding-top:" in rendered, "Missing cover padding-top"
+        assert "padding-bottom:" in rendered, "Missing cover padding-bottom"

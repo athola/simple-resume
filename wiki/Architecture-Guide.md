@@ -40,7 +40,7 @@ flowchart TD
         CoreTitle[<b>Functional Core</b><br>Pure logic, deterministic]
 
         subgraph CoreModules [Core Modules]
-            CP[core/plan.py<br>Validation]
+            CP[core/render/plan.py<br>Validation]
             CC[core/colors.py<br>Color math]
             CH[core/hydration_core.py<br>Data transformation]
             CR[core/resume.py<br>Resume domain model]
@@ -503,7 +503,7 @@ This section tracks the progress of the migration to the new architecture.
 
 These modules are fully compliant with the architecture.
 
-- `core/plan.py`: Pure validation
+- `core/render/plan.py`: Pure validation
 - `core/colors.py`: Pure color math
 - `core/color_service.py`: Pure color decisions
 - `core/hydration_core.py`: Pure transformation with dependency injection
