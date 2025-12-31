@@ -34,7 +34,7 @@ class TestPrepareHtmlWithJinja:
             render_plan = RenderPlan(
                 name="test_resume",
                 mode=RenderMode.HTML,
-                template_name="demo.html",
+                template_name="html/demo.html",
                 context={"name": "Test User", "title": "Engineer"},
                 config=ResumeConfig(),
                 base_path=temp_dir,
@@ -81,7 +81,7 @@ class TestPrepareHtmlWithJinja:
             # Should return metadata
             assert metadata is not None
             assert metadata.format_type == "html"
-            assert metadata.template_name == "demo.html"
+            assert metadata.template_name == "html/demo.html"
 
     def test_includes_make_directory_effect(self, story: Scenario) -> None:
         """prepare_html_with_jinja includes MakeDirectory effect for output dir."""
@@ -91,7 +91,7 @@ class TestPrepareHtmlWithJinja:
             render_plan = RenderPlan(
                 name="test",
                 mode=RenderMode.HTML,
-                template_name="demo.html",
+                template_name="html/demo.html",
                 context={"name": "Test"},
                 config=ResumeConfig(),
                 base_path=temp_dir,
@@ -139,7 +139,7 @@ class TestPrepareHtmlWithJinja:
             render_plan = RenderPlan(
                 name="test",
                 mode=RenderMode.HTML,
-                template_name="demo.html",
+                template_name="html/demo.html",
                 context={"name": "Test"},
                 config=ResumeConfig(),
                 base_path=temp_dir,
@@ -190,7 +190,7 @@ class TestPrepareHtmlWithJinja:
             render_plan = RenderPlan(
                 name="test",
                 mode=RenderMode.HTML,
-                template_name="demo.html",
+                template_name="html/demo.html",
                 context={"name": "Test"},
                 config=ResumeConfig(),
                 base_path=str(base_path),
@@ -238,7 +238,7 @@ class TestPrepareHtmlWithJinja:
             render_plan = RenderPlan(
                 name="test",
                 mode=RenderMode.HTML,
-                template_name="demo.html",
+                template_name="html/demo.html",
                 context={"name": "Test"},
                 config=ResumeConfig(),
                 base_path=str(base_path),
@@ -309,7 +309,7 @@ class TestPrepareHtmlWithJinja:
             render_plan = RenderPlan(
                 name="test",
                 mode=RenderMode.HTML,
-                template_name="demo.html",
+                template_name="html/demo.html",
                 context=None,  # Missing context
                 config=ResumeConfig(),
                 base_path=temp_dir,
@@ -359,7 +359,7 @@ class TestPrepareHtmlWithJinja:
             render_plan = RenderPlan(
                 name="test",
                 mode=RenderMode.HTML,
-                template_name="demo.html",
+                template_name="html/demo.html",
                 context={"name": "Test"},
                 config=ResumeConfig(),
                 base_path=temp_dir,
@@ -383,7 +383,7 @@ class TestPrepareHtmlWithJinja:
             render_plan = RenderPlan(
                 name="test",
                 mode=RenderMode.HTML,
-                template_name="demo.html",
+                template_name="html/demo.html",
                 context={"name": "Test"},
                 config=ResumeConfig(),
                 base_path=temp_dir,
@@ -438,7 +438,7 @@ class TestPrepareHtmlWithJinja:
             render_plan = RenderPlan(
                 name="test",
                 mode=RenderMode.HTML,
-                template_name="demo.html",
+                template_name="html/demo.html",
                 context={"name": "Test"},
                 config=ResumeConfig(),
                 base_path=temp_dir,
@@ -486,7 +486,7 @@ class TestPrepareHtmlWithJinja:
             render_plan = RenderPlan(
                 name="test",
                 mode=RenderMode.HTML,
-                template_name="demo.html",
+                template_name="html/demo.html",
                 context={"name": "Test"},
                 config=ResumeConfig(),
                 base_path=temp_dir,

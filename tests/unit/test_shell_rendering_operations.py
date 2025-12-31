@@ -40,7 +40,7 @@ class TestShellRenderingOperations:
             name="Case",
             mode=RenderMode.HTML,
             config=ResumeConfig(),
-            template_name="demo.html",
+            template_name="html/demo.html",
             context={"body": "content"},
             base_path=str(tmp_path),
         )

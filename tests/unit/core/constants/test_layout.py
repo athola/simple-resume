@@ -2,56 +2,76 @@
 
 from __future__ import annotations
 
+from simple_resume.core.config import apply_config_defaults
 from simple_resume.core.constants import layout
+from tests.bdd import Scenario
 
 
 class TestLayoutConstants:
     """Test layout constant values."""
 
-    def test_default_page_dimensions(self) -> None:
-        """Test default page dimension constants."""
-        assert layout.DEFAULT_PAGE_WIDTH_MM == 190
-        assert layout.DEFAULT_PAGE_HEIGHT_MM == 270
+    def test_default_page_dimensions(self, story: Scenario) -> None:
+        """Test default page dimension constants (A4: 210x297mm)."""
+        story.given("the layout module with A4 defaults")
+        story.when("checking page dimension constants")
+        assert layout.DEFAULT_PAGE_WIDTH_MM == 210
+        assert layout.DEFAULT_PAGE_HEIGHT_MM == 297
 
-    def test_default_sidebar_width(self) -> None:
-        """Test default sidebar width constant."""
-        assert layout.DEFAULT_SIDEBAR_WIDTH_MM == 60
+    def test_default_sidebar_width(self, story: Scenario) -> None:
+        """Test default sidebar width constant (A4 standard layout: 65mm)."""
+        story.given("the layout module with A4 defaults")
+        story.when("checking the sidebar width constant")
+        assert layout.DEFAULT_SIDEBAR_WIDTH_MM == 65
 
-    def test_default_padding_values(self) -> None:
+    def test_default_padding_values(self, story: Scenario) -> None:
         """Test default padding constants."""
+        story.given("the layout module with default padding values")
+        story.when("checking padding constants")
         assert layout.DEFAULT_PADDING == 12
         assert layout.DEFAULT_SIDEBAR_PADDING_ADJUSTMENT == -2
         assert layout.DEFAULT_SIDEBAR_PADDING == 12
 
-    def test_frame_padding(self) -> None:
+    def test_frame_padding(self, story: Scenario) -> None:
         """Test frame padding constant."""
+        story.given("the layout module with frame padding default")
+        story.when("checking the frame padding constant")
         assert layout.DEFAULT_FRAME_PADDING == 10
 
-    def test_cover_letter_padding(self) -> None:
+    def test_cover_letter_padding(self, story: Scenario) -> None:
         """Test cover letter padding constants."""
+        story.given("the layout module with cover letter padding defaults")
+        story.when("checking cover letter padding constants")
         assert layout.DEFAULT_COVER_PADDING_TOP == 10
         assert layout.DEFAULT_COVER_PADDING_BOTTOM == 20
         assert layout.DEFAULT_COVER_PADDING_HORIZONTAL == 25
 
-    def test_validation_constraints_page_dimensions(self) -> None:
+    def test_validation_constraints_page_dimensions(self, story: Scenario) -> None:
         """Test page dimension validation constraints."""
+        story.given("the layout module with validation constraints")
+        story.when("checking page dimension min/max constraints")
         assert layout.MIN_PAGE_WIDTH_MM == 100
         assert layout.MAX_PAGE_WIDTH_MM == 300
         assert layout.MIN_PAGE_HEIGHT_MM == 150
         assert layout.MAX_PAGE_HEIGHT_MM == 400
 
-    def test_validation_constraints_sidebar(self) -> None:
+    def test_validation_constraints_sidebar(self, story: Scenario) -> None:
         """Test sidebar validation constraints."""
+        story.given("the layout module with validation constraints")
+        story.when("checking sidebar width min/max constraints")
         assert layout.MIN_SIDEBAR_WIDTH_MM == 30
         assert layout.MAX_SIDEBAR_WIDTH_MM == 100
 
-    def test_validation_constraints_padding(self) -> None:
+    def test_validation_constraints_padding(self, story: Scenario) -> None:
         """Test padding validation constraints."""
+        story.given("the layout module with validation constraints")
+        story.when("checking padding min/max constraints")
         assert layout.MIN_PADDING == 0
         assert layout.MAX_PADDING == 50
 
-    def test_all_exports(self) -> None:
+    def test_all_exports(self, story: Scenario) -> None:
         """Test that __all__ contains all expected constants."""
+        story.given("the layout module with __all__ exports defined")
+        story.when("checking the __all__ list contents")
         expected = [
             "DEFAULT_PAGE_WIDTH_MM",
             "DEFAULT_PAGE_HEIGHT_MM",
@@ -73,3 +93,131 @@ class TestLayoutConstants:
             "MAX_PADDING",
         ]
         assert layout.__all__ == expected
+
+
+class TestLayoutArithmetic:
+    """Test that layout calculations are mathematically consistent."""
+
+    def test_body_width_equals_page_minus_sidebar(self, story: Scenario) -> None:
+        """Test body_width = page_width - sidebar_width."""
+        story.given("a config with A4 page dimensions applied")
+        story.when("calculating body width from page minus sidebar")
+        config: dict = {}
+        apply_config_defaults(config)
+
+        page_width = config["page_width"]
+        sidebar_width = config["sidebar_width"]
+        expected_body_width = page_width - sidebar_width
+
+        # A4: 210mm - 65mm = 145mm
+        assert expected_body_width == 145
+        assert page_width == layout.DEFAULT_PAGE_WIDTH_MM
+        assert sidebar_width == layout.DEFAULT_SIDEBAR_WIDTH_MM
+
+    def test_sidebar_internal_width_calculation(self, story: Scenario) -> None:
+        """Test sidebar internal width = sidebar_width - left_padding - right_padding.
+
+        This verifies the arithmetic for profile_width calculation.
+        Previously there was an inconsistency using base padding (12mm) instead
+        of actual sidebar padding (10mm each side).
+        """
+        story.given("a config with sidebar and padding defaults")
+        story.when("calculating sidebar internal width minus padding")
+        config: dict = {}
+        apply_config_defaults(config)
+
+        sidebar_width = config["sidebar_width"]
+        sidebar_padding_left = config["sidebar_padding_left"]
+        sidebar_padding_right = config["sidebar_padding_right"]
+
+        # Verify padding is derived from base padding - 2
+        base_padding = config["padding"]
+        assert sidebar_padding_left == base_padding - 2  # 12 - 2 = 10
+        assert sidebar_padding_right == base_padding - 2  # 12 - 2 = 10
+
+        # Calculate available internal width
+        internal_width = sidebar_width - sidebar_padding_left - sidebar_padding_right
+
+        # A4 layout: 65mm - 10mm - 10mm = 45mm (not 41mm with old incorrect formula)
+        assert internal_width == 45
+
+    def test_profile_width_fits_within_sidebar(self, story: Scenario) -> None:
+        """Test that profile width calculation respects sidebar bounds.
+
+        When profile_width is not explicitly set, it should be calculated as:
+        sidebar_width - sidebar_padding_left - sidebar_padding_right
+        """
+        story.given("a config with sidebar width and padding applied")
+        story.when("calculating profile width from sidebar bounds")
+        config: dict = {}
+        apply_config_defaults(config)
+
+        sidebar_width = config["sidebar_width"]
+        sidebar_padding_left = config["sidebar_padding_left"]
+        sidebar_padding_right = config["sidebar_padding_right"]
+
+        calculated_profile_width = (
+            sidebar_width - sidebar_padding_left - sidebar_padding_right
+        )
+
+        # Must fit within sidebar (obvious sanity check)
+        assert calculated_profile_width > 0
+        assert calculated_profile_width < sidebar_width
+
+        # Specific value for A4 defaults
+        assert calculated_profile_width == 45
+
+    def test_h2_width_calculation(self, story: Scenario) -> None:
+        """Test h2 heading width = body_width - h2_padding_left - icon_offset.
+
+        The template uses: page_width - sidebar_width - h2_padding_left - 18
+        where 18 is for the section icon spacing.
+        """
+        story.given("a config with page, sidebar, and h2 padding values")
+        story.when("calculating h2 heading width with icon offset")
+        config: dict = {}
+        apply_config_defaults(config)
+
+        page_width = config["page_width"]
+        sidebar_width = config["sidebar_width"]
+        h2_padding_left = config["h2_padding_left"]
+        icon_offset = 18  # Fixed spacing for section icons
+
+        body_width = page_width - sidebar_width
+        h2_width = body_width - h2_padding_left - icon_offset
+
+        # A4 layout: (210 - 65) - 6 - 18 = 145 - 24 = 121mm
+        assert h2_width == 121
+
+    def test_padding_hierarchy_consistency(self, story: Scenario) -> None:
+        """Test that padding values maintain consistent hierarchy.
+
+        Base padding should be larger than sidebar-specific padding adjustments.
+        """
+        story.given("a config with base and sidebar padding defaults")
+        story.when("verifying padding hierarchy is consistent")
+        config: dict = {}
+        apply_config_defaults(config)
+
+        base_padding = config["padding"]
+        sidebar_padding_left = config["sidebar_padding_left"]
+        sidebar_padding_right = config["sidebar_padding_right"]
+
+        # Sidebar padding should be base - 2 (the adjustment factor)
+        adjustment = layout.DEFAULT_SIDEBAR_PADDING_ADJUSTMENT
+        expected_sidebar_padding = base_padding + adjustment
+        assert sidebar_padding_left == expected_sidebar_padding
+        assert sidebar_padding_right == expected_sidebar_padding
+
+    def test_page_dimensions_are_valid_a4(self, story: Scenario) -> None:
+        """Test that default dimensions match standard A4 paper."""
+        story.given("a config with default page dimension values")
+        story.when("verifying dimensions match A4 standard")
+        config: dict = {}
+        apply_config_defaults(config)
+
+        assert config["page_width"] == 210  # A4 width in mm
+        assert config["page_height"] == 297  # A4 height in mm
+
+        # Sidebar should be less than 1/3 of page width for good proportions
+        assert config["sidebar_width"] < config["page_width"] / 3 + 5

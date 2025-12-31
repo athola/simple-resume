@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from typing import Final
 
-# Default page dimensions in millimeters
-DEFAULT_PAGE_WIDTH_MM: Final[int] = 190
-DEFAULT_PAGE_HEIGHT_MM: Final[int] = 270
+# Default page dimensions in millimeters (A4 paper: 210x297mm)
+DEFAULT_PAGE_WIDTH_MM: Final[int] = 210
+DEFAULT_PAGE_HEIGHT_MM: Final[int] = 297
 
-# Default sidebar width in millimeters
-DEFAULT_SIDEBAR_WIDTH_MM: Final[int] = 60
+# Default sidebar width in millimeters (A4 standard layout)
+DEFAULT_SIDEBAR_WIDTH_MM: Final[int] = 65
 
 # Default padding values in points/millimeters
 DEFAULT_PADDING: Final[int] = 12

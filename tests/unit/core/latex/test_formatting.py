@@ -5,75 +5,102 @@ from __future__ import annotations
 import pytest
 
 from simple_resume.core.latex.formatting import format_date, linkify
+from tests.bdd import Scenario
 
 
 class TestFormatDate:
     """Tests for format_date function."""
 
-    def test_both_dates_provided(self) -> None:
+    def test_both_dates_provided(self, story: Scenario) -> None:
         """Test with both start and end dates."""
+        story.given("a start date '2020' and end date '2023'")
+        story.when("formatting the date range")
         result = format_date("2020", "2023")
         assert result == "2020 -- 2023"
 
-    def test_same_start_and_end(self) -> None:
+    def test_same_start_and_end(self, story: Scenario) -> None:
         """Test when start and end are the same."""
+        story.given("identical start and end dates '2023'")
+        story.when("formatting the date range")
         result = format_date("2023", "2023")
         assert result == "2023"
 
-    def test_only_start_date(self) -> None:
+    def test_only_start_date(self, story: Scenario) -> None:
         """Test with only start date."""
+        story.given("only a start date '2020' with None end date")
+        story.when("formatting the date range")
         result = format_date("2020", None)
         assert result == "2020"
 
-    def test_only_end_date(self) -> None:
+    def test_only_end_date(self, story: Scenario) -> None:
         """Test with only end date."""
+        story.given("None start date with end date '2023'")
+        story.when("formatting the date range")
         result = format_date(None, "2023")
         assert result == "2023"
 
-    def test_both_none(self) -> None:
+    def test_both_none(self, story: Scenario) -> None:
         """Test with both dates as None."""
+        story.given("both start and end dates as None")
+        story.when("formatting the date range")
         result = format_date(None, None)
         assert result is None
 
-    def test_empty_strings(self) -> None:
+    def test_empty_strings(self, story: Scenario) -> None:
         """Test with empty strings."""
+        story.given("both start and end as empty strings")
+        story.when("formatting the date range")
         result = format_date("", "")
         assert result is None
 
-    def test_start_empty_end_provided(self) -> None:
+    def test_start_empty_end_provided(self, story: Scenario) -> None:
         """Test with empty start and provided end."""
+        story.given("empty start string with end date '2023'")
+        story.when("formatting the date range")
         result = format_date("", "2023")
         assert result == "2023"
 
-    def test_start_provided_end_empty(self) -> None:
+    def test_start_provided_end_empty(self, story: Scenario) -> None:
         """Test with provided start and empty end."""
+        story.given("start date '2020' with empty end string")
+        story.when("formatting the date range")
         result = format_date("2020", "")
         assert result == "2020"
 
-    def test_whitespace_handling(self) -> None:
+    def test_whitespace_handling(self, story: Scenario) -> None:
         """Test that whitespace is stripped."""
+        story.given("dates with surrounding whitespace")
+        story.when("formatting the date range")
         result = format_date("  2020  ", "  2023  ")
         assert result == "2020 -- 2023"
 
-    def test_date_range_with_months(self) -> None:
+    def test_date_range_with_months(self, story: Scenario) -> None:
         """Test with month-year format."""
+        story.given("dates in month-year format")
+        story.when("formatting the date range")
         result = format_date("Jan 2020", "Dec 2023")
         assert result == "Jan 2020 -- Dec 2023"
 
-    def test_present_as_end_date(self) -> None:
+    def test_present_as_end_date(self, story: Scenario) -> None:
         """Test with 'Present' as end date."""
+        story.given("a start date with 'Present' as end date")
+        story.when("formatting the date range")
         result = format_date("2020", "Present")
         assert result == "2020 -- Present"
 
-    def test_markdown_in_dates(self) -> None:
+    def test_markdown_in_dates(self, story: Scenario) -> None:
         """Test that markdown is converted in dates."""
+        story.given("dates containing markdown formatting")
+        story.when("formatting the date range")
         result = format_date("**2020**", "*Present*")
         assert result is not None
         assert r"\textbf{2020}" in result
         assert r"\textit{Present}" in result
 
-    def test_special_chars_in_dates(self) -> None:
+    def test_special_chars_in_dates(self, story: Scenario) -> None:
         """Test that special LaTeX chars are escaped in dates."""
+        story.given("dates containing LaTeX special characters")
+        story.when("formatting the date range")
         result = format_date("2020 (Q1)", "2023 & beyond")
         assert result is not None
         assert r"\&" in result
@@ -91,73 +118,97 @@ class TestFormatDate:
         ],
     )
     def test_various_date_combinations(
-        self, start: str | None, end: str | None, expected: str | None
+        self, start: str | None, end: str | None, expected: str | None, story: Scenario
     ) -> None:
         """Test various date combinations."""
+        story.given(f"start date '{start}' and end date '{end}'")
+        story.when("formatting the date range")
         assert format_date(start, end) == expected
 
 
 class TestLinkify:
     """Tests for linkify function."""
 
-    def test_text_without_link(self) -> None:
+    def test_text_without_link(self, story: Scenario) -> None:
         """Test text without a link URL."""
+        story.given("text 'Company Name' with no link URL")
+        story.when("linkifying the text")
         result = linkify("Company Name", None)
         assert result == "Company Name"
 
-    def test_text_with_link(self) -> None:
+    def test_text_with_link(self, story: Scenario) -> None:
         """Test text with a link URL."""
+        story.given("text 'Company Name' with a link URL")
+        story.when("linkifying the text")
         result = linkify("Company Name", "https://example.com")
         assert result is not None
         assert r"\href{https://example.com}{Company Name}" in result
 
-    def test_none_text(self) -> None:
+    def test_none_text(self, story: Scenario) -> None:
         """Test with None text."""
+        story.given("None as text with a link URL")
+        story.when("linkifying")
         result = linkify(None, "https://example.com")
         assert result is None
 
-    def test_empty_text(self) -> None:
+    def test_empty_text(self, story: Scenario) -> None:
         """Test with empty text."""
+        story.given("empty string as text with a link URL")
+        story.when("linkifying")
         result = linkify("", "https://example.com")
         assert result is None
 
-    def test_none_link(self) -> None:
+    def test_none_link(self, story: Scenario) -> None:
         """Test with None link."""
+        story.given("text with None as link")
+        story.when("linkifying")
         result = linkify("Text", None)
         assert result == "Text"
 
-    def test_empty_link(self) -> None:
+    def test_empty_link(self, story: Scenario) -> None:
         """Test with empty link (treated as None)."""
+        story.given("text with empty string as link")
+        story.when("linkifying")
         result = linkify("Text", "")
         assert result == "Text"
 
-    def test_markdown_in_text(self) -> None:
+    def test_markdown_in_text(self, story: Scenario) -> None:
         """Test that markdown is converted in text."""
+        story.given("markdown-formatted text with no link")
+        story.when("linkifying")
         result = linkify("**Bold Company**", None)
         assert result is not None
         assert r"\textbf{Bold Company}" in result
 
-    def test_markdown_in_text_with_link(self) -> None:
+    def test_markdown_in_text_with_link(self, story: Scenario) -> None:
         """Test markdown conversion with link."""
+        story.given("markdown-formatted text with a link")
+        story.when("linkifying")
         result = linkify("*Company Name*", "https://example.com")
         assert result is not None
         assert r"\href{" in result
         assert r"\textit{Company Name}" in result
 
-    def test_special_chars_in_url(self) -> None:
+    def test_special_chars_in_url(self, story: Scenario) -> None:
         """Test that special chars are escaped in URL."""
+        story.given("a URL with special characters")
+        story.when("linkifying")
         result = linkify("Search", "https://example.com?q=test&foo=bar#section")
         assert result is not None
         assert r"\href{https://example.com?q=test\&foo=bar\#section}" in result
 
-    def test_special_chars_in_text(self) -> None:
+    def test_special_chars_in_text(self, story: Scenario) -> None:
         """Test that special chars are escaped in text."""
+        story.given("text containing C++ (special chars)")
+        story.when("linkifying")
         result = linkify("C++ Developer", None)
         assert result is not None
         assert "C++" in result
 
-    def test_complex_url(self) -> None:
+    def test_complex_url(self, story: Scenario) -> None:
         """Test with complex URL."""
+        story.given("a GitHub URL with underscore and hash")
+        story.when("linkifying")
         result = linkify(
             "GitHub Profile",
             "https://github.com/user_name/repo#readme",
@@ -165,8 +216,10 @@ class TestLinkify:
         assert result is not None
         assert r"\href{https://github.com/user\_name/repo\#readme}" in result
 
-    def test_both_text_and_link_none(self) -> None:
+    def test_both_text_and_link_none(self, story: Scenario) -> None:
         """Test with both text and link as None."""
+        story.given("both text and link as None")
+        story.when("linkifying")
         result = linkify(None, None)
         assert result is None
 
@@ -181,9 +234,15 @@ class TestLinkify:
         ],
     )
     def test_various_combinations(
-        self, text: str | None, link: str | None, expected_contains: str | None
+        self,
+        text: str | None,
+        link: str | None,
+        expected_contains: str | None,
+        story: Scenario,
     ) -> None:
         """Test various text and link combinations."""
+        story.given(f"text '{text}' and link '{link}'")
+        story.when("linkifying")
         result = linkify(text, link)
         if expected_contains is None:
             assert result is None

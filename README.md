@@ -100,26 +100,25 @@ uv run simple-resume generate --format pdf         # PDF
 uv run simple-resume generate --format html --open # HTML + open in browser
 ```
 
-Built-in templates: `resume_no_bars`, `resume_with_bars`, `demo.html` (see `src/simple_resume/shell/assets/templates/html/`). Static assets live under `.../assets/static/`.
+Built-in templates: `resume_no_bars`, `resume_with_bars`, `demo` (see `src/simple_resume/shell/assets/templates/html/`). Static assets live under `.../assets/static/`.
 
 ## Python API
 
 ```python
 from simple_resume import generate, preview
-from simple_resume.shell.generate import GenerateOptions
 
-options = GenerateOptions(formats=["pdf", "html"], template="resume_with_bars")
-results = generate("resume_private/input/my_resume.yaml", options)
+# Generate with format overrides
+results = generate("resume_private/input/my_resume.yaml", formats=["pdf", "html"])
 print(results["pdf"].output_path)
 
-# Browser preview
+# Browser preview with live reload
 preview("resume_private/input/my_resume.yaml")
 ```
 
 For batch operations:
 
 ```python
-from simple_resume.shell.session import ResumeSession
+from simple_resume import ResumeSession
 
 with ResumeSession(data_dir="resume_private") as session:
     session.generate_all(format="pdf")

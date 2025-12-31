@@ -259,31 +259,31 @@ class TestPlanHelpers:
         registry = get_palette_registry()
         config = plan.validate_resume_config_or_raise({}, registry=registry)
 
-        plan_config = plan.RenderPlanConfig(
-            name="Test",
-            mode=RenderMode.HTML,
-            config=config,
-            context=None,
-            base_path=tempfile.gettempdir(),
-            template_name="resume.html",
-        )
-        with pytest.raises(ValueError, match="context"):
-            plan.build_render_plan(plan_config)
+        # Validation now happens in RenderPlanConfig.__post_init__
+        with pytest.raises(ValueError, match="HTML mode requires context"):
+            plan.RenderPlanConfig(
+                name="Test",
+                mode=RenderMode.HTML,
+                config=config,
+                context=None,
+                base_path=tempfile.gettempdir(),
+                template_name="resume.html",
+            )
 
     def test_build_render_plan_html_requires_template(self) -> None:
         registry = get_palette_registry()
         config = plan.validate_resume_config_or_raise({}, registry=registry)
 
-        plan_config = plan.RenderPlanConfig(
-            name="Test",
-            mode=RenderMode.HTML,
-            config=config,
-            context={"key": "value"},
-            base_path=tempfile.gettempdir(),
-            template_name=None,
-        )
-        with pytest.raises(ValueError, match="template"):
-            plan.build_render_plan(plan_config)
+        # Validation now happens in RenderPlanConfig.__post_init__
+        with pytest.raises(ValueError, match="HTML mode requires template_name"):
+            plan.RenderPlanConfig(
+                name="Test",
+                mode=RenderMode.HTML,
+                config=config,
+                context={"key": "value"},
+                base_path=tempfile.gettempdir(),
+                template_name=None,
+            )
 
     def test_build_render_plan_html_success(self) -> None:
         registry = get_palette_registry()
