@@ -12,7 +12,12 @@ import pytest
 from simple_resume.core.constants import RenderMode
 from simple_resume.core.exceptions import ValidationError
 from simple_resume.core.models import ResumeConfig
-from simple_resume.core.palettes.exceptions import PaletteGenerationError
+from simple_resume.core.palettes.exceptions import (
+    PaletteError,
+    PaletteGenerationError,
+    PaletteLookupError,
+    PaletteRemoteError,
+)
 from simple_resume.core.palettes.registry import PaletteRegistry
 from simple_resume.core.render.plan import (
     RenderPlanConfig,
@@ -179,6 +184,39 @@ class TestValidateResumeConfig:
         assert any("Configuration error" in err for err in result.errors)
         assert any("NoneType" in err for err in result.errors)
 
+    @mock.patch("simple_resume.core.render.plan.normalize_config")
+    def test_palette_error_handling(self, mock_normalize) -> None:
+        """Test handling of PaletteError during validation."""
+        mock_normalize.side_effect = PaletteError("Palette lookup failed")
+        raw_config: dict[str, Any] = {}
+        registry = PaletteRegistry()
+        result = validate_resume_config(raw_config, registry=registry)
+        assert result.is_valid is False
+        assert any("Palette error" in err for err in result.errors)
+        assert any("Palette lookup failed" in err for err in result.errors)
+
+    @mock.patch("simple_resume.core.render.plan.normalize_config")
+    def test_palette_lookup_error_handling(self, mock_normalize) -> None:
+        """Test handling of PaletteLookupError during validation."""
+        mock_normalize.side_effect = PaletteLookupError("Unknown palette: 'foo'")
+        raw_config: dict[str, Any] = {}
+        registry = PaletteRegistry()
+        result = validate_resume_config(raw_config, registry=registry)
+        assert result.is_valid is False
+        assert any("Palette error" in err for err in result.errors)
+        assert any("Unknown palette" in err for err in result.errors)
+
+    @mock.patch("simple_resume.core.render.plan.normalize_config")
+    def test_palette_remote_error_handling(self, mock_normalize) -> None:
+        """Test handling of PaletteRemoteError during validation."""
+        mock_normalize.side_effect = PaletteRemoteError("Remote service unavailable")
+        raw_config: dict[str, Any] = {}
+        registry = PaletteRegistry()
+        result = validate_resume_config(raw_config, registry=registry)
+        assert result.is_valid is False
+        assert any("Palette error" in err for err in result.errors)
+        assert any("Remote service unavailable" in err for err in result.errors)
+
 
 class TestValidateResumeConfigOrRaise:
     """Tests for validate_resume_config_or_raise function."""
@@ -268,8 +306,73 @@ class TestNormalizeWithPaletteFallback:
 
         assert len(caplog.records) == 1
         assert caplog.records[0].levelname == "WARNING"
-        assert "Palette generation failed" in caplog.records[0].message
+        assert "Palette error" in caplog.records[0].message
         assert "my-custom-palette" in caplog.records[0].message
+
+    @mock.patch("simple_resume.core.render.plan.normalize_config")
+    def test_palette_lookup_error_fallback(
+        self, mock_normalize, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Test fallback when PaletteLookupError occurs."""
+        mock_normalize.side_effect = [
+            PaletteLookupError("Unknown palette: 'foo'"),
+            ({}, None),
+        ]
+        raw_config = {"palette": "foo", "theme_color": "#0395DE"}
+        registry = PaletteRegistry()
+
+        with caplog.at_level(logging.WARNING):
+            _, _, validation_config = normalize_with_palette_fallback(
+                raw_config, registry=registry
+            )
+
+        assert "palette" not in validation_config
+        assert len(caplog.records) == 1
+        assert "PaletteLookupError" in caplog.records[0].message
+
+    @mock.patch("simple_resume.core.render.plan.normalize_config")
+    def test_palette_remote_error_fallback(
+        self, mock_normalize, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Test fallback when PaletteRemoteError occurs."""
+        mock_normalize.side_effect = [
+            PaletteRemoteError("Remote service unavailable"),
+            ({}, None),
+        ]
+        raw_config = {"palette": "remote-palette", "theme_color": "#0395DE"}
+        registry = PaletteRegistry()
+
+        with caplog.at_level(logging.WARNING):
+            _, _, validation_config = normalize_with_palette_fallback(
+                raw_config, registry=registry
+            )
+
+        assert "palette" not in validation_config
+        assert len(caplog.records) == 1
+        assert "PaletteRemoteError" in caplog.records[0].message
+
+    @mock.patch("simple_resume.core.render.plan.normalize_config")
+    def test_fallback_normalization_failure_logs_error(
+        self, mock_normalize, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Test that error is logged when fallback normalization also fails."""
+        mock_normalize.side_effect = [
+            PaletteGenerationError("Initial palette failed"),
+            ValueError("Fallback also failed"),
+        ]
+        raw_config = {"palette": "bad-palette"}
+        registry = PaletteRegistry()
+
+        with caplog.at_level(logging.WARNING):
+            with pytest.raises(ValueError, match="Fallback also failed"):
+                normalize_with_palette_fallback(raw_config, registry=registry)
+
+        # Should have warning for initial failure and error for fallback failure
+        warning_records = [r for r in caplog.records if r.levelname == "WARNING"]
+        error_records = [r for r in caplog.records if r.levelname == "ERROR"]
+        assert len(warning_records) == 1
+        assert len(error_records) == 1
+        assert "Fallback normalization also failed" in error_records[0].message
 
 
 class TestTransformForMode:
@@ -345,6 +448,20 @@ class TestRenderPlanConfig:
         )
         assert plan_config.mode == RenderMode.HTML
         assert plan_config.context == {"key": "value"}
+        assert plan_config.template_name == "html/resume.html"
+
+    def test_html_mode_empty_context_is_valid(self) -> None:
+        """Test HTML mode accepts empty dict {} as context (not None)."""
+        config = ResumeConfig(output_mode="html")
+        plan_config = RenderPlanConfig(
+            name="Test",
+            mode=RenderMode.HTML,
+            config=config,
+            context={},  # Empty dict is valid, None is not
+            template_name="html/resume.html",
+        )
+        assert plan_config.mode == RenderMode.HTML
+        assert plan_config.context == {}
         assert plan_config.template_name == "html/resume.html"
 
     def test_palette_meta_accepts_dict(self) -> None:

@@ -14,7 +14,7 @@ from simple_resume.core.constants import RenderMode
 from simple_resume.core.exceptions import ValidationError
 from simple_resume.core.markdown import render_markdown_content
 from simple_resume.core.models import RenderPlan, ResumeConfig, ValidationResult
-from simple_resume.core.palettes.exceptions import PaletteGenerationError
+from simple_resume.core.palettes.exceptions import PaletteError
 from simple_resume.core.palettes.registry import PaletteRegistry
 
 logger = logging.getLogger(__name__)
@@ -194,6 +194,9 @@ def validate_resume_config(
     except (KeyError, TypeError, AttributeError) as exc:
         errors.append(f"Configuration error: {exc}")
         return ValidationResult(is_valid=False, errors=errors, warnings=warnings)
+    except PaletteError as exc:
+        errors.append(f"Palette error: {exc}")
+        return ValidationResult(is_valid=False, errors=errors, warnings=warnings)
 
 
 def validate_resume_config_or_raise(
@@ -247,10 +250,10 @@ def normalize_with_palette_fallback(
             raw_config, registry=registry
         )
         return normalized_config_dict, palette_meta, config_for_validation
-    except PaletteGenerationError:
+    except PaletteError as exc:
         logger.warning(
-            "Palette generation failed, using default palette. "
-            "Original palette config: %s",
+            "Palette error (%s), using default palette. Original palette config: %s",
+            type(exc).__name__,
             raw_config.get("palette"),
         )
         fallback_meta = None
@@ -259,7 +262,13 @@ def normalize_with_palette_fallback(
 
         cleaned_config = copy.deepcopy(raw_config)
         cleaned_config.pop("palette", None)
-        normalized_config_dict, _ = normalize_config(cleaned_config, registry=registry)
+        try:
+            normalized_config_dict, _ = normalize_config(
+                cleaned_config, registry=registry
+            )
+        except Exception as fallback_exc:
+            logger.error("Fallback normalization also failed: %s", fallback_exc)
+            raise
 
         return normalized_config_dict, fallback_meta, cleaned_config
 
