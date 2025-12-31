@@ -62,3 +62,66 @@ jobs:
 
     - name: Run architectural tests
       run: uv run pytest tests/architecture -v --tb=short --cov-fail-under=0
+
+  coverage-delta:
+    runs-on: ubuntu-latest
+    name: Modified File Coverage
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for git diff
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+      with:
+        version: "latest"
+
+    - name: Install dependencies
+      run: uv sync --extra utils --group dev
+
+    - name: Get modified Python files
+      id: changed-files
+      env:
+        BASE_REF: ${{ github.base_ref }}
+      run: |
+        # Get list of changed .py files in src/ (excluding tests)
+        CHANGED=$(git diff --name-only "origin/${BASE_REF}...HEAD" -- 'src/**/*.py' | tr '\n' ',' | sed 's/,$//')
+        echo "files=$CHANGED" >> "$GITHUB_OUTPUT"
+        if [ -z "$CHANGED" ]; then
+          echo "No Python source files modified"
+          echo "skip=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "Modified files: $CHANGED"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Run coverage on modified files
+      if: steps.changed-files.outputs.skip != 'true'
+      env:
+        CHANGED_FILES: ${{ steps.changed-files.outputs.files }}
+      run: |
+        # Convert comma-separated list to --cov arguments
+        COV_ARGS=""
+        IFS=',' read -ra FILES <<< "$CHANGED_FILES"
+        for file in "${FILES[@]}"; do
+          # Convert path to module for coverage
+          module=$(echo "$file" | sed 's|src/||' | sed 's|\.py$||' | tr '/' '.')
+          COV_ARGS="$COV_ARGS --cov=${module%.}"
+        done
+
+        echo "Running: uv run pytest $COV_ARGS --cov-report=term-missing --cov-fail-under=60"
+        uv run pytest $COV_ARGS --cov-report=term-missing --cov-fail-under=60 || {
+          echo "::warning::Modified file coverage below 60%. Consider adding tests for new code."
+          exit 0  # Don't fail the build, just warn
+        }
+
+    - name: Skip message
+      if: steps.changed-files.outputs.skip == 'true'
+      run: echo "No Python source files modified - skipping coverage check"

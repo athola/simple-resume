@@ -332,6 +332,15 @@
     <!-- CSS Custom Properties from YAML config - MUST be first for WeasyPrint -->
     <style>
       :root {
+        /* ================================================================
+         * CSS Custom Properties - Defensive Default Values
+         * ================================================================
+         * These .get() fallbacks intentionally match the values in
+         * apply_config_defaults() (src/simple_resume/core/config.py).
+         * This redundancy is defensive programming: if Python fails to
+         * provide a config value, the template degrades gracefully.
+         * ================================================================ */
+
         /* Colors */
         --sidebar-color: {{ resume_config.get("sidebar_color", "#F6F6F6") }};
         --sidebar-text-color: {{ resume_config.get("sidebar_text_color", "#000000") }};
