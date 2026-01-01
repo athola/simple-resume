@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import logging
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -243,10 +244,17 @@ def normalize_with_palette_fallback(
         )
         return normalized_config_dict, palette_meta, config_for_validation
     except PaletteError as exc:
+        palette_name = raw_config.get("palette", "unknown")
         logger.warning(
             "Palette error (%s), using default palette. Original palette config: %s",
             type(exc).__name__,
-            raw_config.get("palette"),
+            palette_name,
+        )
+        # User-visible warning (CLI users need to know about color fallback)
+        print(
+            f"Warning: Palette '{palette_name}' not found or invalid. "
+            "Using default colors. Check your palette name or file.",
+            file=sys.stderr,
         )
         fallback_meta = None
         if isinstance(palette_meta_source, dict):

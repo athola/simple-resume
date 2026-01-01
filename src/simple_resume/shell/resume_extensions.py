@@ -24,6 +24,7 @@ from simple_resume.core.exceptions import ConfigurationError, GenerationError
 from simple_resume.core.protocols import PdfGenerationStrategy
 from simple_resume.core.result import GenerationResult
 from simple_resume.shell.file_opener import open_file as shell_open_file
+from simple_resume.shell.render.latex import LatexCompilationError
 from simple_resume.shell.render.operations import generate_html_with_jinja
 from simple_resume.shell.services import DefaultPdfGenerationStrategy
 from simple_resume.shell.strategies import PdfGenerationRequest
@@ -401,10 +402,14 @@ def to_tex(
 
     Raises:
         ConfigurationError: If paths are not available.
+        ValidationError: If resume data fails validation.
         GenerationError: If LaTeX generation fails.
 
     """
     try:
+        # Validate data first (consistent with to_markdown)
+        resume.validate_or_raise()
+
         # Prepare render plan for LaTeX mode
         render_plan = resume.prepare_render_plan(preview=False)
 
@@ -441,24 +446,14 @@ def to_tex(
             else tex_content_raw
         )
 
-        # Create metadata for tex output
-        metadata = GenerationMetadata(
-            format_type="tex",
-            template_name=render_plan.template_name or "latex/basic.tex",
-            generation_time=0.0,
-            file_size=0,  # Will be updated after write
-            resume_name=resume.name,
-            palette_info=render_plan.palette_metadata,
-        )
-
         # Write .tex file (don't compile to PDF)
         resolved_path.parent.mkdir(parents=True, exist_ok=True)
         resolved_path.write_text(tex_content, encoding="utf-8")
 
-        # Update metadata with actual file size
+        # Create metadata with actual file size (after write)
         metadata = GenerationMetadata(
             format_type="tex",
-            template_name=metadata.template_name,
+            template_name=render_plan.template_name or "latex/basic.tex",
             generation_time=0.0,
             file_size=len(tex_content.encode("utf-8")),
             resume_name=resume.name,
@@ -660,13 +655,13 @@ def render_tex_file(
 
         return result
 
+    except LatexCompilationError as exc:
+        raise GenerationError(
+            f"LaTeX compilation failed: {exc}",
+            format_type="pdf",
+            output_path=output_path,
+        ) from exc
     except Exception as exc:
-        if "LatexCompilationError" in type(exc).__name__:
-            raise GenerationError(
-                f"LaTeX compilation failed: {exc}",
-                format_type="pdf",
-                output_path=output_path,
-            ) from exc
         raise GenerationError(
             f"Failed to render LaTeX to PDF: {exc}",
             format_type="pdf",

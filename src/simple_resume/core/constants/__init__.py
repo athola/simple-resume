@@ -90,8 +90,14 @@ class OutputFormat(str, Enum):
 
     @classmethod
     def values(cls) -> set[str]:
-        """Return a set of all format values."""
-        return {cls.PDF.value, cls.HTML.value, cls.MARKDOWN.value, cls.TEX.value}
+        """Return a set of all format values including aliases."""
+        return {
+            cls.PDF.value,
+            cls.HTML.value,
+            cls.MARKDOWN.value,
+            cls.TEX.value,
+            cls.LATEX.value,
+        }
 
     @classmethod
     def intermediate_formats(cls) -> set[OutputFormat]:
