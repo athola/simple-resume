@@ -47,8 +47,8 @@
 {%- else %}
   {%- for entry in ns.normalized %}
     {%- set text = entry %}
-    <p style="margin-left: 0.5mm; position: relative; padding-left: 2mm;">
-      <span style="position: absolute; left: 0; top: 0; color: {{ section_icon_color }}; opacity: 0.6;">•</span>
+    <p class="sidebar-entry-item">
+      <span class="sidebar-entry-bullet">•</span>
       {{ text }}
     </p>
   {%- endfor %}
@@ -111,21 +111,21 @@
 {%- endmacro %}
 
 {%- macro section_icon(section_name) -%}
-<div class="timeline-icon" style="background-color: {{ resume_config.get('sidebar_color', '#F6F6F6') }}; border: 2px solid {{ resume_config.get('sidebar_color', '#F6F6F6') }};">
-  <span class="icon" aria-hidden="true" style="color: {{ section_icon_color }}">
+<div class="timeline-icon">
+  <span class="icon" aria-hidden="true">
     {{ section_icon_svg(section_name) }}
   </span>
 </div>
 {%- endmacro %}
 
 {%- macro section_icon_inline(section_name) -%}
-<span class="icon-inline" aria-hidden="true" style="color: {{ section_icon_color }}">
+<span class="icon-inline" aria-hidden="true">
   {{ section_icon_svg(section_name) }}
 </span>
 {%- endmacro %}
 
 {% macro contact_icon(kind) -%}
-<span class="icon" aria-hidden="true" style="color: {{ section_icon_color }}; opacity: 0.8;">
+<span class="icon contact-icon" aria-hidden="true">
   {% if kind == "address" %}
     <svg viewBox="0 0 24 24" role="presentation" focusable="false" fill="{{ section_icon_color }}">
       <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>

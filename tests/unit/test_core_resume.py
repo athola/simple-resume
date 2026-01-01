@@ -256,6 +256,60 @@ class TestResumeConfigDataClass:
         assert config.theme_color == "#0395DE"
         assert config.sidebar_color == "#F6F6F6"
 
+    def test_resume_config_section_icon_defaults(self) -> None:
+        """Test section icon layout fields have correct float defaults."""
+        config = ResumeConfig()
+
+        # Section heading icon layout fields (all floats, no mm suffix)
+        assert config.section_icon_circle_size == 7.8
+        assert isinstance(config.section_icon_circle_size, float)
+
+        assert config.section_icon_circle_x_offset == 0
+        assert isinstance(config.section_icon_circle_x_offset, (int, float))
+
+        assert config.section_icon_design_size == 3.5
+        assert isinstance(config.section_icon_design_size, float)
+
+        assert config.section_icon_design_x_offset == 0
+        assert isinstance(config.section_icon_design_x_offset, (int, float))
+
+        assert config.section_icon_design_y_offset == 0
+        assert isinstance(config.section_icon_design_y_offset, (int, float))
+
+        assert config.section_heading_text_margin == -6
+        assert isinstance(config.section_heading_text_margin, (int, float))
+
+    def test_resume_config_contact_icon_defaults(self) -> None:
+        """Test contact icon layout fields have correct float defaults."""
+        config = ResumeConfig()
+
+        # Contact icon customization fields (all floats, no mm suffix)
+        assert config.contact_icon_size == 5
+        assert isinstance(config.contact_icon_size, (int, float))
+
+        assert config.contact_icon_margin_top == 0.5
+        assert isinstance(config.contact_icon_margin_top, float)
+
+        assert config.contact_icon_margin_right == 2
+        assert isinstance(config.contact_icon_margin_right, (int, float))
+
+        assert config.contact_icon_gap == 4
+        assert isinstance(config.contact_icon_gap, (int, float))
+
+    def test_resume_config_with_custom_icon_values(self) -> None:
+        """Test custom icon layout values are preserved in ResumeConfig."""
+        config = ResumeConfig(
+            section_icon_circle_size=10.5,
+            section_icon_design_size=5.0,
+            contact_icon_size=6.5,
+            contact_icon_margin_top=1.0,
+        )
+
+        assert config.section_icon_circle_size == 10.5
+        assert config.section_icon_design_size == 5.0
+        assert config.contact_icon_size == 6.5
+        assert config.contact_icon_margin_top == 1.0
+
 
 class TestRenderPlanDataClass:
     """Test RenderPlan dataclass functionality."""

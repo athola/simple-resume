@@ -33,18 +33,18 @@ class ResumeConfig:
     bold_color: str = "#585858"
 
     # Layout customization fields (section heading icons)
-    section_icon_circle_size: str = "7.8mm"
-    section_icon_circle_x_offset: str = "0mm"
-    section_icon_design_size: str = "3.5mm"
-    section_icon_design_x_offset: str = "0mm"
-    section_icon_design_y_offset: str = "0mm"
-    section_heading_text_margin: str = "-6mm"
+    section_icon_circle_size: float = 7.8
+    section_icon_circle_x_offset: float = 0
+    section_icon_design_size: float = 3.5
+    section_icon_design_x_offset: float = 0
+    section_icon_design_y_offset: float = 0
+    section_heading_text_margin: float = -6
 
     # Contact icon customization
-    contact_icon_size: str = "5mm"
-    contact_icon_margin_top: str = "0.5mm"
-    contact_icon_margin_right: str = "2mm"
-    contact_icon_gap: str = "4mm"
+    contact_icon_size: float = 5
+    contact_icon_margin_top: float = 0.5
+    contact_icon_margin_right: float = 2
+    contact_icon_gap: float = 4
 
 
 @dataclass(frozen=True)

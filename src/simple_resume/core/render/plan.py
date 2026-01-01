@@ -109,32 +109,24 @@ def _build_resume_config(normalized_config: dict[str, Any]) -> ResumeConfig:
         frame_color=normalized_config.get("frame_color", "#757575"),
         heading_icon_color=normalized_config.get("heading_icon_color", "#0395DE"),
         bold_color=normalized_config.get("bold_color", "#585858"),
-        section_icon_circle_size=normalized_config.get(
-            "section_icon_circle_size", "7.8mm"
-        ),
+        section_icon_circle_size=normalized_config.get("section_icon_circle_size", 7.8),
         section_icon_circle_x_offset=normalized_config.get(
-            "section_icon_circle_x_offset", "0mm"
+            "section_icon_circle_x_offset", 0
         ),
-        section_icon_design_size=normalized_config.get(
-            "section_icon_design_size", "3.5mm"
-        ),
+        section_icon_design_size=normalized_config.get("section_icon_design_size", 3.5),
         section_icon_design_x_offset=normalized_config.get(
-            "section_icon_design_x_offset", "0mm"
+            "section_icon_design_x_offset", 0
         ),
         section_icon_design_y_offset=normalized_config.get(
-            "section_icon_design_y_offset", "0mm"
+            "section_icon_design_y_offset", 0
         ),
         section_heading_text_margin=normalized_config.get(
-            "section_heading_text_margin", "-6mm"
+            "section_heading_text_margin", -6
         ),
-        contact_icon_size=normalized_config.get("contact_icon_size", "5mm"),
-        contact_icon_margin_top=normalized_config.get(
-            "contact_icon_margin_top", "0.5mm"
-        ),
-        contact_icon_margin_right=normalized_config.get(
-            "contact_icon_margin_right", "2mm"
-        ),
-        contact_icon_gap=normalized_config.get("contact_icon_gap", "4mm"),
+        contact_icon_size=normalized_config.get("contact_icon_size", 5),
+        contact_icon_margin_top=normalized_config.get("contact_icon_margin_top", 0.5),
+        contact_icon_margin_right=normalized_config.get("contact_icon_margin_right", 2),
+        contact_icon_gap=normalized_config.get("contact_icon_gap", 4),
     )
 
 
