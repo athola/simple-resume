@@ -38,7 +38,7 @@ from simple_resume.core.validation import (
     validate_template_name,
 )
 from simple_resume.shell import session as session_mod
-from simple_resume.shell.resume_extensions import to_html, to_pdf
+from simple_resume.shell.resume_extensions import to_html, to_markdown, to_pdf, to_tex
 
 _YAML_SUFFIXES = {".yaml", ".yml"}
 CommandResult = (
@@ -643,6 +643,8 @@ __all__ = [
     "generate_resume",
     "generate",
     "preview",
-    "to_pdf",
     "to_html",
+    "to_markdown",
+    "to_pdf",
+    "to_tex",
 ]

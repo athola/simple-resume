@@ -45,6 +45,7 @@ MAX_PALETTE_SIZE_MB: Final[int] = 1
 PDF_EXTENSION: Final[str] = ".pdf"
 HTML_EXTENSION: Final[str] = ".html"
 TEX_EXTENSION: Final[str] = ".tex"
+MARKDOWN_EXTENSION: Final[str] = ".md"
 
 # =============================================================================
 # Default Values
@@ -69,16 +70,38 @@ MAX_FILE_SIZE_MB: Final[int] = 50
 
 
 class OutputFormat(str, Enum):
-    """Define supported output formats for resume generation."""
+    """Define supported output formats for resume generation.
+
+    Final formats (require rendering):
+        PDF: Portable Document Format
+        HTML: HyperText Markup Language
+
+    Intermediate formats (editable before final render):
+        MARKDOWN: Markdown intermediate (for HTML path)
+        TEX: LaTeX intermediate (for PDF path)
+        LATEX: Alias for TEX (deprecated, use TEX)
+    """
 
     PDF = "pdf"
     HTML = "html"
-    LATEX = "latex"
+    MARKDOWN = "markdown"
+    TEX = "tex"
+    LATEX = "latex"  # Alias for TEX, kept for backwards compatibility
 
     @classmethod
     def values(cls) -> set[str]:
         """Return a set of all format values."""
-        return {cls.PDF.value, cls.HTML.value, cls.LATEX.value}
+        return {cls.PDF.value, cls.HTML.value, cls.MARKDOWN.value, cls.TEX.value}
+
+    @classmethod
+    def intermediate_formats(cls) -> set[OutputFormat]:
+        """Return the set of intermediate (non-final) output formats."""
+        return {cls.MARKDOWN, cls.TEX}
+
+    @classmethod
+    def is_intermediate(cls, fmt: OutputFormat) -> bool:
+        """Check if a format is an intermediate format."""
+        return fmt in cls.intermediate_formats()
 
     @classmethod
     def is_valid(cls, format_str: str) -> bool:
@@ -163,6 +186,7 @@ __all__ = [
     "PDF_EXTENSION",
     "HTML_EXTENSION",
     "TEX_EXTENSION",
+    "MARKDOWN_EXTENSION",
     # Defaults and configuration
     "DEFAULT_FORMAT",
     "DEFAULT_TEMPLATE",
