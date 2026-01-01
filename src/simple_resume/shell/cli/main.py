@@ -181,10 +181,10 @@ def create_parser() -> argparse.ArgumentParser:
         "Overrides the output_mode in config file.",
     )
     generate_parser.add_argument(
-        "--render",
+        "--no-render",
         action="store_true",
-        help="Fully render to PDF/HTML. Without this flag, only intermediate "
-        "files (markdown/tex) are generated.",
+        help="Only generate intermediate files (markdown/tex) without "
+        "rendering to final PDF/HTML output.",
     )
     generate_parser.add_argument(
         "--render-file",
@@ -440,11 +440,12 @@ def handle_validate_command(args: argparse.Namespace) -> int:
 def _resolve_cli_formats(args: argparse.Namespace) -> list[OutputFormat]:
     """Normalize format arguments to `OutputFormat` values with safe defaults.
 
-    When --render flag is set, intermediate formats (markdown/tex) are
-    upgraded to their final counterparts (html/pdf).
+    By default, intermediate formats (markdown/tex) are upgraded to their
+    final counterparts (html/pdf). When --no-render flag is set, intermediate
+    formats are preserved as-is.
     """
     raw_formats = getattr(args, "formats", None)
-    render_flag = getattr(args, "render", False)
+    no_render_flag = getattr(args, "no_render", False)
     candidates: Iterable[OutputFormat | str | None]
 
     if raw_formats:
@@ -455,8 +456,9 @@ def _resolve_cli_formats(args: argparse.Namespace) -> list[OutputFormat]:
     resolved: list[OutputFormat] = []
     for value in candidates:
         fmt = _coerce_output_format(value)
-        # When --render is set, upgrade intermediate formats to final formats
-        if render_flag:
+        # By default, upgrade intermediate formats to final formats
+        # Unless --no-render is set, which preserves intermediate formats
+        if not no_render_flag:
             if fmt is OutputFormat.MARKDOWN:
                 fmt = OutputFormat.HTML
             elif fmt in (OutputFormat.TEX, OutputFormat.LATEX):

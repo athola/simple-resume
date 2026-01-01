@@ -14,48 +14,48 @@ from simple_resume.shell.cli import main as cli
 from tests.bdd import Scenario
 
 
-class TestResolveCliFormatsWithRender:
-    """Test _resolve_cli_formats with --render flag."""
+class TestResolveCliFormatsWithNoRender:
+    """Test _resolve_cli_formats with --no-render flag."""
 
-    def test_render_upgrades_markdown_to_html(self, story: Scenario) -> None:
-        story.given("format is markdown with --render flag")
+    def test_default_upgrades_markdown_to_html(self, story: Scenario) -> None:
+        story.given("format is markdown without --no-render flag (default)")
         story.when("resolving CLI formats")
-        args = argparse.Namespace(formats=None, format="markdown", render=True)
+        args = argparse.Namespace(formats=None, format="markdown", no_render=False)
         result = cli._resolve_cli_formats(args)
         assert result == [OutputFormat.HTML]
 
-    def test_render_upgrades_tex_to_pdf(self, story: Scenario) -> None:
-        story.given("format is tex with --render flag")
+    def test_default_upgrades_tex_to_pdf(self, story: Scenario) -> None:
+        story.given("format is tex without --no-render flag (default)")
         story.when("resolving CLI formats")
-        args = argparse.Namespace(formats=None, format="tex", render=True)
+        args = argparse.Namespace(formats=None, format="tex", no_render=False)
         result = cli._resolve_cli_formats(args)
         assert result == [OutputFormat.PDF]
 
-    def test_render_keeps_pdf_as_pdf(self, story: Scenario) -> None:
-        story.given("format is already pdf with --render flag")
+    def test_default_keeps_pdf_as_pdf(self, story: Scenario) -> None:
+        story.given("format is already pdf without --no-render flag (default)")
         story.when("resolving CLI formats")
-        args = argparse.Namespace(formats=None, format="pdf", render=True)
+        args = argparse.Namespace(formats=None, format="pdf", no_render=False)
         result = cli._resolve_cli_formats(args)
         assert result == [OutputFormat.PDF]
 
-    def test_render_keeps_html_as_html(self, story: Scenario) -> None:
-        story.given("format is already html with --render flag")
+    def test_default_keeps_html_as_html(self, story: Scenario) -> None:
+        story.given("format is already html without --no-render flag (default)")
         story.when("resolving CLI formats")
-        args = argparse.Namespace(formats=None, format="html", render=True)
+        args = argparse.Namespace(formats=None, format="html", no_render=False)
         result = cli._resolve_cli_formats(args)
         assert result == [OutputFormat.HTML]
 
-    def test_without_render_keeps_markdown(self, story: Scenario) -> None:
-        story.given("format is markdown without --render flag")
+    def test_no_render_keeps_markdown(self, story: Scenario) -> None:
+        story.given("format is markdown with --no-render flag")
         story.when("resolving CLI formats")
-        args = argparse.Namespace(formats=None, format="markdown", render=False)
+        args = argparse.Namespace(formats=None, format="markdown", no_render=True)
         result = cli._resolve_cli_formats(args)
         assert result == [OutputFormat.MARKDOWN]
 
-    def test_without_render_keeps_tex(self, story: Scenario) -> None:
-        story.given("format is tex without --render flag")
+    def test_no_render_keeps_tex(self, story: Scenario) -> None:
+        story.given("format is tex with --no-render flag")
         story.when("resolving CLI formats")
-        args = argparse.Namespace(formats=None, format="tex", render=False)
+        args = argparse.Namespace(formats=None, format="tex", no_render=True)
         result = cli._resolve_cli_formats(args)
         assert result == [OutputFormat.TEX]
 
