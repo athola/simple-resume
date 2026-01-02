@@ -254,8 +254,23 @@ li:before {
 }
 
 .skill-spacer {
-  padding-top: 0.5mm;
+  padding-top: var(--sidebar-skill-spacer-padding, 0.5mm);
   clear: both;
+}
+
+/* Key skills item styling */
+.keyskills-item {
+  margin-bottom: var(--keyskills-item-margin-bottom, 0.5mm);
+  margin-left: 0.5mm;
+  position: relative;
+  padding-left: 2mm;
+}
+
+.keyskills-bullet {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0.6;
 }
 
 .contact-block {
@@ -269,6 +284,7 @@ li:before {
   flex-shrink: 0;
   width: var(--contact-icon-size, 5mm);
   height: var(--contact-icon-size, 5mm);
+  margin-right: 2mm;
 }
 
 .contact-block .icon svg {
@@ -286,7 +302,7 @@ li:before {
   min-width: 0;
   overflow-wrap: break-word;
   overflow: hidden; /* WeasyPrint: prevent text overflow issues */
-  padding-left: var(--contact-text-padding-left, 2mm);
+  padding-left: var(--contact-text-padding-left, 0);
 }
 
 .contact-text {

@@ -55,13 +55,11 @@ programming:
   - Terraform
   - Docker
 keyskills:
-- Service blueprints
-- Usability testing
-- Domain modeling
-- API design
-- Accessibility audits
-- Stakeholder facilitation
-- Experiment analysis
+  - Service blueprints
+  - Usability testing
+  - Accessibility audits
+  - Stakeholder facilitation
+  - Experiment analysis
 languages:
   English: 60
   Spanish: 35

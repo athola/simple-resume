@@ -393,7 +393,7 @@
         --section-icon-design-scale: {{ resume_config.get("section_icon_design_scale", 1) }};
 
         /* Section and entry spacing */
-        --section-heading-margin-top: {{ resume_config.get("section_heading_margin_top", 5) }}mm;
+        --section-heading-margin-top: {{ resume_config.get("section_heading_margin_top", 7) }}mm;
         --section-heading-margin-bottom: {{ resume_config.get("section_heading_margin_bottom", 1) }}mm;
         --entry-margin-bottom: {{ resume_config.get("entry_margin_bottom", 4) }}mm;
         --tech-stack-margin-bottom: {{ resume_config.get("tech_stack_margin_bottom", 2) }}mm;
@@ -402,6 +402,10 @@
         --contact-icon-size: {{ resume_config.get("contact_icon_size", 5) }}mm;
         --contact-icon-margin-top: {{ resume_config.get("contact_icon_margin_top", 0.5) }}mm;
         --contact-text-padding-left: {{ resume_config.get("contact_text_padding_left", 2) }}mm;
+
+        /* Sidebar item spacing */
+        --keyskills-item-margin-bottom: {{ resume_config.get("keyskills_item_margin_bottom", 0.5) }}mm;
+        --sidebar-skill-spacer-padding: {{ resume_config.get("sidebar_skill_spacer_padding", 0.5) }}mm;
       }
 
       /* Dynamic @page size for PDF rendering */
