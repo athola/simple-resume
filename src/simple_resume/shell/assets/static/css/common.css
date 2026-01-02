@@ -121,6 +121,21 @@ h5 {
   color: var(--sidebar-text-color);
 }
 
+/* Sidebar entry items (bulleted lists) */
+.sidebar-entry-item {
+  margin-left: 0.5mm;
+  position: relative;
+  padding-left: 2mm;
+}
+
+.sidebar-entry-bullet {
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--section-icon-color);
+  opacity: 0.6;
+}
+
 /* Links */
 a {
   color: inherit;
@@ -239,8 +254,23 @@ li:before {
 }
 
 .skill-spacer {
-  padding-top: 0.5mm;
+  padding-top: var(--sidebar-skill-spacer-padding, 0.5mm);
   clear: both;
+}
+
+/* Key skills item styling */
+.keyskills-item {
+  margin-bottom: var(--keyskills-item-margin-bottom, 0.5mm);
+  margin-left: 0.5mm;
+  position: relative;
+  padding-left: 2mm;
+}
+
+.keyskills-bullet {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0.6;
 }
 
 .contact-block {
@@ -254,6 +284,7 @@ li:before {
   flex-shrink: 0;
   width: var(--contact-icon-size, 5mm);
   height: var(--contact-icon-size, 5mm);
+  margin-right: 2mm;
 }
 
 .contact-block .icon svg {
@@ -271,7 +302,7 @@ li:before {
   min-width: 0;
   overflow-wrap: break-word;
   overflow: hidden; /* WeasyPrint: prevent text overflow issues */
-  padding-left: var(--contact-text-padding-left, 2mm);
+  padding-left: var(--contact-text-padding-left, 0);
 }
 
 .contact-text {
@@ -492,6 +523,13 @@ li:before {
   flex-shrink: 0;
   position: relative;
   transform: translate(var(--section-icon-design-x-offset), var(--section-icon-design-y-offset)) scale(var(--section-icon-design-scale, 1));
+  color: var(--section-icon-color);
+}
+
+/* Contact icons in sidebar */
+.contact-icon {
+  color: var(--section-icon-color);
+  opacity: 0.8;
 }
 
 .icon-inline svg {
@@ -529,11 +567,14 @@ li:before {
   align-items: center;
   justify-content: center;
   z-index: 10;
+  background-color: var(--sidebar-color);
+  border: 2px solid var(--sidebar-color);
 }
 
 .timeline-icon .icon {
   width: 5mm;
   height: 5mm;
+  color: var(--section-icon-color);
 }
 
 .timeline-icon .icon svg {

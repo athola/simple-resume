@@ -115,6 +115,72 @@ def generate_html(
     )
 
 
+def generate_markdown(
+    config: GenerationConfig,
+    **overrides: Any,
+) -> GenerationResult | BatchGenerationResult:
+    """Generate intermediate markdown output for one or more resumes."""
+
+    def _runner(
+        session: session_mod.ResumeSession,
+    ) -> GenerationResult | BatchGenerationResult:
+        if config.name:
+            resume = session.resume(config.name)
+            if overrides:
+                resume = resume.with_config(**overrides)
+            output_path = config.output_path if config.output_path is not None else None
+            return generate_core.to_markdown(
+                resume,
+                output_path=output_path,
+            )
+        return session.generate_all(
+            format=OutputFormat.MARKDOWN,
+            pattern=config.pattern,
+            open_after=False,  # Intermediate formats don't auto-open
+            **overrides,
+        )
+
+    return _run_with_session(
+        config,
+        overrides=overrides,
+        default_format=OutputFormat.MARKDOWN,
+        runner=_runner,
+    )
+
+
+def generate_tex(
+    config: GenerationConfig,
+    **overrides: Any,
+) -> GenerationResult | BatchGenerationResult:
+    """Generate intermediate LaTeX (.tex) output for one or more resumes."""
+
+    def _runner(
+        session: session_mod.ResumeSession,
+    ) -> GenerationResult | BatchGenerationResult:
+        if config.name:
+            resume = session.resume(config.name)
+            if overrides:
+                resume = resume.with_config(**overrides)
+            output_path = config.output_path if config.output_path is not None else None
+            return generate_core.to_tex(
+                resume,
+                output_path=output_path,
+            )
+        return session.generate_all(
+            format=OutputFormat.TEX,
+            pattern=config.pattern,
+            open_after=False,  # Intermediate formats don't auto-open
+            **overrides,
+        )
+
+    return _run_with_session(
+        config,
+        overrides=overrides,
+        default_format=OutputFormat.TEX,
+        runner=_runner,
+    )
+
+
 def generate_all(
     config: GenerationConfig,
     **overrides: Any,
@@ -147,6 +213,16 @@ def generate_all(
                         output_path=config.output_path,
                         open_after=config.open_after,
                         browser=config.browser,
+                    )
+                elif fmt is OutputFormat.MARKDOWN:
+                    results[fmt.value] = generate_core.to_markdown(
+                        resume,
+                        output_path=config.output_path,
+                    )
+                elif fmt is OutputFormat.TEX:
+                    results[fmt.value] = generate_core.to_tex(
+                        resume,
+                        output_path=config.output_path,
                     )
                 else:
                     raise ValueError(f"Unsupported format: {fmt}")
@@ -246,6 +322,10 @@ def generate(
             return {"pdf": generate_pdf(config, **overrides)}
         if fmt is OutputFormat.HTML:
             return {"html": generate_html(config, **overrides)}
+        if fmt is OutputFormat.MARKDOWN:
+            return {"markdown": generate_markdown(config, **overrides)}
+        if fmt is OutputFormat.TEX:
+            return {"tex": generate_tex(config, **overrides)}
         raise ValueError(f"Unsupported format: {fmt}")
 
     # Create new config with formats
@@ -398,6 +478,8 @@ def _normalize_format(value: OutputFormat | str) -> OutputFormat:
 _FORMAT_EXECUTORS: dict[OutputFormat, Callable[..., object]] = {
     OutputFormat.PDF: generate_pdf,
     OutputFormat.HTML: generate_html,
+    OutputFormat.MARKDOWN: generate_markdown,
+    OutputFormat.TEX: generate_tex,
 }
 
 
@@ -407,7 +489,9 @@ __all__ = [
     "generate",
     "generate_all",
     "generate_html",
+    "generate_markdown",
     "generate_pdf",
     "generate_resume",
+    "generate_tex",
     "preview",
 ]

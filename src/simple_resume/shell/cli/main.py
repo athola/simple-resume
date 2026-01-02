@@ -23,7 +23,14 @@ from simple_resume.core.generate.plan import (
 from simple_resume.core.result import BatchGenerationResult, GenerationResult
 from simple_resume.core.resume import Resume
 from simple_resume.shell.config import resolve_paths
-from simple_resume.shell.resume_extensions import to_html, to_pdf
+from simple_resume.shell.resume_extensions import (
+    render_markdown_file,
+    render_tex_file,
+    to_html,
+    to_markdown,
+    to_pdf,
+    to_tex,
+)
 from simple_resume.shell.runtime.generate import execute_generation_commands
 from simple_resume.shell.services import register_default_services
 from simple_resume.shell.session import ResumeSession, SessionConfig
@@ -155,15 +162,36 @@ def create_parser() -> argparse.ArgumentParser:
     generate_parser.add_argument(
         "--format",
         "-f",
-        choices=["pdf", "html"],
-        default="pdf",
-        help="Output format for single-format operations (default: pdf)",
+        choices=["pdf", "html", "markdown", "tex"],
+        default="markdown",
+        help="Output format (default: markdown). Use markdown/tex for intermediate "
+        "files that can be edited before final render.",
     )
     generate_parser.add_argument(
         "--formats",
         nargs="+",
-        choices=["pdf", "html"],
+        choices=["pdf", "html", "markdown", "tex"],
         help="Generate in multiple formats (only valid when name is supplied)",
+    )
+    generate_parser.add_argument(
+        "--output-mode",
+        "-m",
+        choices=["markdown", "tex"],
+        help="Intermediate format: markdown (for HTML) or tex (for PDF). "
+        "Overrides the output_mode in config file.",
+    )
+    generate_parser.add_argument(
+        "--no-render",
+        action="store_true",
+        help="Only generate intermediate files (markdown/tex) without "
+        "rendering to final PDF/HTML output.",
+    )
+    generate_parser.add_argument(
+        "--render-file",
+        type=Path,
+        metavar="FILE",
+        help="Render an existing .md or .tex file to PDF/HTML instead of "
+        "processing YAML input.",
     )
     generate_parser.add_argument(
         "--template",
@@ -253,6 +281,11 @@ def create_parser() -> argparse.ArgumentParser:
 
 def handle_generate_command(args: argparse.Namespace) -> int:
     """Handle the generate subcommand using generation helpers."""
+    # Handle --render-file separately (renders existing .md/.tex file)
+    render_file = getattr(args, "render_file", None)
+    if render_file is not None:
+        return _handle_render_file(args, render_file)
+
     overrides = _build_config_overrides(args)
     try:
         formats = _resolve_cli_formats(args)
@@ -267,6 +300,65 @@ def handle_generate_command(args: argparse.Namespace) -> int:
         return 1
     except Exception as exc:  # pragma: no cover - safety net
         return _handle_unexpected_error(exc, "resume generation")
+
+
+def _handle_render_file(args: argparse.Namespace, render_file: Path) -> int:  # noqa: PLR0911
+    """Render an existing .md or .tex file to PDF/HTML.
+
+    Args:
+        args: The parsed command-line arguments.
+        render_file: Path to the .md or .tex file to render.
+
+    Returns:
+        Exit code (0 for success, non-zero for failure).
+
+    """
+    if not render_file.exists():
+        print(f"Error: File not found: {render_file}")
+        return 1
+
+    suffix = render_file.suffix.lower()
+    output_value = _to_path_or_none(getattr(args, "output", None))
+    open_after = _bool_flag(getattr(args, "open", False))
+
+    try:
+        if suffix == ".md":
+            # Render markdown to HTML
+            output_path = output_value or render_file.with_suffix(".html")
+            result = render_markdown_file(
+                render_file,
+                output_path=output_path,
+                open_after=open_after,
+            )
+            if result.exists:
+                print(f"HTML generated: {result.output_path}")
+                return 0
+            print("Failed to generate HTML")
+            return 1
+
+        if suffix == ".tex":
+            # Render LaTeX to PDF
+            output_path = output_value or render_file.with_suffix(".pdf")
+            result = render_tex_file(
+                render_file,
+                output_path=output_path,
+                open_after=open_after,
+            )
+            if result.exists:
+                print(f"PDF generated: {result.output_path}")
+                return 0
+            print("Failed to generate PDF")
+            return 1
+
+        print(f"Error: Unsupported file type: {suffix}")
+        print("Use .md for markdown or .tex for LaTeX files")
+        return 1
+
+    except SimpleResumeError as exc:
+        print(f"Error: {exc}")
+        return 1
+    except Exception as exc:  # pragma: no cover - safety net
+        return _handle_unexpected_error(exc, "file rendering")
 
 
 def handle_session_command(args: argparse.Namespace) -> int:
@@ -346,17 +438,32 @@ def handle_validate_command(args: argparse.Namespace) -> int:
 
 
 def _resolve_cli_formats(args: argparse.Namespace) -> list[OutputFormat]:
-    """Normalize format arguments to `OutputFormat` values with safe defaults."""
+    """Normalize format arguments to `OutputFormat` values with safe defaults.
+
+    By default, intermediate formats (markdown/tex) are upgraded to their
+    final counterparts (html/pdf). When --no-render flag is set, intermediate
+    formats are preserved as-is.
+    """
     raw_formats = getattr(args, "formats", None)
+    no_render_flag = getattr(args, "no_render", False)
     candidates: Iterable[OutputFormat | str | None]
+
     if raw_formats:
         candidates = raw_formats
     else:
-        candidates = [getattr(args, "format", OutputFormat.PDF.value)]
+        candidates = [getattr(args, "format", OutputFormat.MARKDOWN.value)]
 
     resolved: list[OutputFormat] = []
     for value in candidates:
-        resolved.append(_coerce_output_format(value))
+        fmt = _coerce_output_format(value)
+        # By default, upgrade intermediate formats to final formats
+        # Unless --no-render is set, which preserves intermediate formats
+        if not no_render_flag:
+            if fmt is OutputFormat.MARKDOWN:
+                fmt = OutputFormat.HTML
+            elif fmt in (OutputFormat.TEX, OutputFormat.LATEX):
+                fmt = OutputFormat.PDF
+        resolved.append(fmt)
     return resolved
 
 
@@ -535,7 +642,13 @@ def _run_session_generation(
         format_type = command.format or OutputFormat.PDF
         output_path = command.config.output_path
         if output_path is None:
-            suffix = ".pdf" if format_type is OutputFormat.PDF else ".html"
+            suffix_map = {
+                OutputFormat.PDF: ".pdf",
+                OutputFormat.HTML: ".html",
+                OutputFormat.MARKDOWN: ".md",
+                OutputFormat.TEX: ".tex",
+            }
+            suffix = suffix_map.get(format_type, ".pdf")
             output_path = output_dir / f"{resume_label}{suffix}"
 
         try:
@@ -552,6 +665,16 @@ def _run_session_generation(
                     open_after=command.config.open_after,
                     browser=command.config.browser,
                 )
+            elif format_type is OutputFormat.MARKDOWN:
+                result = to_markdown(
+                    resume,
+                    output_path=output_path,
+                )
+            elif format_type is OutputFormat.TEX:
+                result = to_tex(
+                    resume,
+                    output_path=output_path,
+                )
             else:
                 print(f"Unsupported format: {format_type}")
                 continue
@@ -559,7 +682,14 @@ def _run_session_generation(
             print(f"Generation error for {resume_label}: {exc}")
             continue
 
-        label = format_type.value.upper()
+        # Friendly labels for output messages
+        label_map = {
+            OutputFormat.PDF: "PDF",
+            OutputFormat.HTML: "HTML",
+            OutputFormat.MARKDOWN: "Markdown",
+            OutputFormat.TEX: "LaTeX",
+        }
+        label = label_map.get(format_type, format_type.value.upper())
         if _did_generation_succeed(result):
             output_label = getattr(result, "output_path", output_path)
             print(f"{label} generated: {output_label}")
@@ -706,6 +836,10 @@ def _build_config_overrides(args: argparse.Namespace) -> dict[str, Any]:
     palette = getattr(args, "palette", None)
     page_width = getattr(args, "page_width", None)
     page_height = getattr(args, "page_height", None)
+    output_mode = getattr(args, "output_mode", None)
+
+    if isinstance(output_mode, str) and output_mode:
+        overrides["output_mode"] = output_mode
 
     if isinstance(theme_color, str) and theme_color:
         overrides["theme_color"] = theme_color

@@ -2,6 +2,19 @@
 
 This file documents all notable project changes. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7] - 2026-01-01
+
+### Changed
+
+-   Converted layout measurement fields from string (`"7.8mm"`) to numeric float types (#37)
+-   Updated `ResumeConfig` dataclass with float types for icon/section layout properties
+-   Simplified template rendering by handling `mm` suffix at presentation layer
+-   Enhanced CSS with sidebar entry styling improvements
+
+### Fixed
+
+-   Type consistency in `_build_resume_config()` for layout measurement defaults
+
 ## [0.1.6] - 2025-12-30
 
 ### Changed

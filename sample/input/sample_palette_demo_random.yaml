@@ -55,13 +55,11 @@ programming:
   - Terraform
   - Docker
 keyskills:
-- Service blueprints
-- Usability testing
-- Domain modeling
-- API design
-- Accessibility audits
-- Stakeholder facilitation
-- Experiment analysis
+  - Service blueprints
+  - Usability testing
+  - Accessibility audits
+  - Stakeholder facilitation
+  - Experiment analysis
 languages:
   English: 60
   Spanish: 35
@@ -226,15 +224,15 @@ config:
   frame_padding: 10
   frame_color: '#1A1A01'
   bold_color: '#141401'
-  section_icon_circle_size: 8.6mm
-  section_icon_circle_x_offset: -0.75mm
-  section_icon_design_size: 4mm
-  section_icon_design_x_offset: -1.5mm
-  section_icon_design_y_offset: -0.5mm
+  section_icon_circle_size: 8.6
+  section_icon_circle_x_offset: -0.75
+  section_icon_design_size: 4
+  section_icon_design_x_offset: -1.5
+  section_icon_design_y_offset: -0.5
   section_icon_design_scale: '0.8'
-  section_heading_text_margin: -6mm
-  contact_icon_size: 5mm
-  contact_icon_margin_top: 0.5mm
+  section_heading_text_margin: -6
+  contact_icon_size: 5
+  contact_icon_margin_top: 0.5
   contact_text_padding_left: 2mm
   output_mode: markdown
   theme_color: '#FFFFCC'

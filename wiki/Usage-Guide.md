@@ -135,16 +135,16 @@ For more information, see the [Color Schemes Guide](Color-Schemes.md).
 
 ### Layout
 
-The layout of template elements can be adjusted in the `config` section of the YAML file. Values are specified in CSS units (e.g., `mm`).
+The layout of template elements can be adjusted in the `config` section of the YAML file. Icon-related values are specified as numbers (unit: mm).
 
 ```yaml
 config:
-  section_icon_circle_size: "7.8mm"
-  section_icon_circle_x_offset: "-0.5mm"
-  section_icon_design_size: "4mm"
-  section_icon_design_x_offset: "-0.1mm"
-  section_icon_design_y_offset: "-0.4mm"
-  section_heading_text_margin: "-6mm"
+  section_icon_circle_size: 7.8
+  section_icon_circle_x_offset: -0.5
+  section_icon_design_size: 4
+  section_icon_design_x_offset: -0.1
+  section_icon_design_y_offset: -0.4
+  section_heading_text_margin: -6
 ```
 
 ## Validation

@@ -119,6 +119,59 @@ class TestBuildResumeConfig:
         assert config.template == "resume_no_bars"
         assert config.theme_color == "#0395DE"
 
+    def test_build_with_section_icon_fields(self) -> None:
+        """Test section icon float values are correctly assigned from config."""
+        normalized = {
+            "section_icon_circle_size": 8.6,
+            "section_icon_circle_x_offset": -0.75,
+            "section_icon_design_size": 4.0,
+            "section_icon_design_x_offset": -1.5,
+            "section_icon_design_y_offset": -0.5,
+            "section_heading_text_margin": -6,
+        }
+        config = _build_resume_config(normalized)
+
+        assert config.section_icon_circle_size == 8.6
+        assert config.section_icon_circle_x_offset == -0.75
+        assert config.section_icon_design_size == 4.0
+        assert config.section_icon_design_x_offset == -1.5
+        assert config.section_icon_design_y_offset == -0.5
+        assert config.section_heading_text_margin == -6
+
+    def test_build_with_contact_icon_fields(self) -> None:
+        """Test contact icon float values are correctly assigned from config."""
+        normalized = {
+            "contact_icon_size": 6.0,
+            "contact_icon_margin_top": 1.0,
+            "contact_icon_margin_right": 3.0,
+            "contact_icon_gap": 5.0,
+        }
+        config = _build_resume_config(normalized)
+
+        assert config.contact_icon_size == 6.0
+        assert config.contact_icon_margin_top == 1.0
+        assert config.contact_icon_margin_right == 3.0
+        assert config.contact_icon_gap == 5.0
+
+    def test_build_icon_fields_defaults(self) -> None:
+        """Test icon fields have correct float defaults (no mm suffix)."""
+        normalized: dict[str, Any] = {}
+        config = _build_resume_config(normalized)
+
+        # Section icon defaults
+        assert config.section_icon_circle_size == 7.8
+        assert config.section_icon_circle_x_offset == 0
+        assert config.section_icon_design_size == 3.5
+        assert config.section_icon_design_x_offset == 0
+        assert config.section_icon_design_y_offset == 0
+        assert config.section_heading_text_margin == -6
+
+        # Contact icon defaults
+        assert config.contact_icon_size == 5
+        assert config.contact_icon_margin_top == 0.5
+        assert config.contact_icon_margin_right == 2
+        assert config.contact_icon_gap == 4
+
 
 class TestValidateResumeConfig:
     """Tests for validate_resume_config function."""

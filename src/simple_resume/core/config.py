@@ -124,7 +124,7 @@ def apply_config_defaults(config: dict[str, Any]) -> None:
     # ==========================================================================
     # Section Layout
     # ==========================================================================
-    config.setdefault("section_heading_margin_top", 5)
+    config.setdefault("section_heading_margin_top", 7)
     config.setdefault("section_heading_margin_bottom", 1)
     config.setdefault("section_heading_text_margin", -6)
     config.setdefault("section_icon_design_scale", 1)

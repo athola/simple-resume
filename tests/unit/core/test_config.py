@@ -125,7 +125,7 @@ class TestApplyConfigDefaults:
         config: dict = {}
         apply_config_defaults(config)
 
-        assert config["section_heading_margin_top"] == 5
+        assert config["section_heading_margin_top"] == 7
         assert config["section_heading_margin_bottom"] == 1
         assert config["section_heading_text_margin"] == -6
         assert config["section_icon_design_scale"] == 1

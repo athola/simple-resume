@@ -63,8 +63,6 @@ programming:
 keyskills:
   - Service blueprints
   - Usability testing
-  - Domain modeling
-  - API design
   - Accessibility audits
   - Stakeholder facilitation
   - Experiment analysis
@@ -106,7 +104,7 @@ body:
       company: Personal Project
       description: |
         - Built theme variants that auto-adjust contrast from ambient light with a CLI + Figma plugin used by 500+ designers.
-        - **Tech Stack:** Python, FastAPI, TypeScript, WebGL, Figma Plugin API
+      tech_stack: Python, FastAPI, TypeScript, WebGL, Figma Plugin API
     -
       start: 2023
       end: 2023
@@ -115,7 +113,7 @@ body:
       company_link: https://github.com/caseypalette/voc-pipeline
       description: |
         - Created a text analytics pipeline processing 1.2M support tickets with topic modeling and sentiment scoring.
-        - **Tech Stack:** Python, spaCy, dbt, BigQuery, Looker.
+      tech_stack: Python, spaCy, dbt, BigQuery, Looker
   "Awards & Honors":
     -
       start: 2023
@@ -204,11 +202,11 @@ config:
   sidebar_padding_top: 5
   sidebar_padding_left: 8
   profile_image_padding_bottom: 6
-  pitch_padding_top: 4
-  pitch_padding_bottom: 4
+  pitch_padding_top: 2
+  pitch_padding_bottom: 2
   pitch_padding_left: 4
   h2_padding_left: 4
-  h3_padding_top: 5
+  h3_padding_top: 3
   date_container_width: 12
   date_container_padding_left: 6
   description_container_padding_left: 2
@@ -217,21 +215,26 @@ config:
   bold_color: "#585858"  # Darkened frame for bold text
 
   # Section heading icon layout customization
-  section_icon_circle_size: "8.6mm"          # Size of the circular icon background
-  section_icon_circle_x_offset: "-0.75mm"    # Horizontal position adjustment of circle
-  section_icon_design_size: "4mm"            # Size of the icon design (briefcase, cog, etc)
-  section_icon_design_x_offset: "-1.5mm"     # Horizontal position of icon within circle
-  section_icon_design_y_offset: "-0.5mm"     # Vertical position of icon within circle
-  section_icon_design_scale: "0.8"           # Scale factor for icon (0.8 = 80% size)
-  section_heading_text_margin: "-6mm"        # Left margin of heading text (Education, etc)
+  section_icon_circle_size: 8.6          # Size of the circular icon background
+  section_icon_circle_x_offset: -0.75    # Horizontal position adjustment of circle
+  section_icon_design_size: 4            # Size of the icon design (briefcase, cog, etc)
+  section_icon_design_x_offset: -1.5     # Horizontal position of icon within circle
+  section_icon_design_y_offset: -0.5     # Vertical position of icon within circle
+  section_icon_design_scale: 0.8           # Scale factor for icon (0.8 = 80% size)
+  section_heading_text_margin: -6        # Left margin of heading text (Education, etc)
 
   # Section and entry spacing
-  section_heading_margin_top: "5mm"          # Space above section headings (Experience, Education, etc)
-  section_heading_margin_bottom: "1mm"       # Space below section headings
-  entry_margin_bottom: "4mm"                 # Space between entries within a section
-  tech_stack_margin_bottom: "2mm"            # Space below tech stack before next entry
+  section_heading_margin_top: 1.5            # Space above section headings (Experience, Education, etc)
+  section_heading_margin_bottom: 0           # Space below section headings
+  entry_margin_bottom: 1                     # Space between entries within a section
+  tech_stack_margin_bottom: 0.5              # Space below tech stack before next entry
 
   # Contact icon layout customization
-  contact_icon_size: "5mm"                   # Size of contact icons (HEAD default)
-  contact_icon_margin_top: "0.5mm"           # Top margin of contact icons
-  contact_text_padding_left: "2mm"           # Padding between icon and contact text
+  contact_icon_size: 5                   # Size of contact icons (HEAD default)
+  contact_icon_margin_top: 0.5           # Top margin of contact icons
+  contact_text_padding_left: 2           # Padding between icon and contact text
+
+  # Sidebar item spacing (tighter for more content)
+  keyskills_item_margin_bottom: 0.3      # Space between key skills items (default 0.5mm)
+  sidebar_skill_spacer_padding: 0.3      # Space between sidebar sections (default 0.5mm)
+  skill_container_padding_top: 2         # Padding at top of skill containers (default 3mm)

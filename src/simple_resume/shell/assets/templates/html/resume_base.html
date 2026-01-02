@@ -47,8 +47,8 @@
 {%- else %}
   {%- for entry in ns.normalized %}
     {%- set text = entry %}
-    <p style="margin-left: 0.5mm; position: relative; padding-left: 2mm;">
-      <span style="position: absolute; left: 0; top: 0; color: {{ section_icon_color }}; opacity: 0.6;">•</span>
+    <p class="sidebar-entry-item">
+      <span class="sidebar-entry-bullet">•</span>
       {{ text }}
     </p>
   {%- endfor %}
@@ -111,21 +111,21 @@
 {%- endmacro %}
 
 {%- macro section_icon(section_name) -%}
-<div class="timeline-icon" style="background-color: {{ resume_config.get('sidebar_color', '#F6F6F6') }}; border: 2px solid {{ resume_config.get('sidebar_color', '#F6F6F6') }};">
-  <span class="icon" aria-hidden="true" style="color: {{ section_icon_color }}">
+<div class="timeline-icon">
+  <span class="icon" aria-hidden="true">
     {{ section_icon_svg(section_name) }}
   </span>
 </div>
 {%- endmacro %}
 
 {%- macro section_icon_inline(section_name) -%}
-<span class="icon-inline" aria-hidden="true" style="color: {{ section_icon_color }}">
+<span class="icon-inline" aria-hidden="true">
   {{ section_icon_svg(section_name) }}
 </span>
 {%- endmacro %}
 
 {% macro contact_icon(kind) -%}
-<span class="icon" aria-hidden="true" style="color: {{ section_icon_color }}; opacity: 0.8;">
+<span class="icon contact-icon" aria-hidden="true">
   {% if kind == "address" %}
     <svg viewBox="0 0 24 24" role="presentation" focusable="false" fill="{{ section_icon_color }}">
       <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
@@ -393,7 +393,7 @@
         --section-icon-design-scale: {{ resume_config.get("section_icon_design_scale", 1) }};
 
         /* Section and entry spacing */
-        --section-heading-margin-top: {{ resume_config.get("section_heading_margin_top", 5) }}mm;
+        --section-heading-margin-top: {{ resume_config.get("section_heading_margin_top", 7) }}mm;
         --section-heading-margin-bottom: {{ resume_config.get("section_heading_margin_bottom", 1) }}mm;
         --entry-margin-bottom: {{ resume_config.get("entry_margin_bottom", 4) }}mm;
         --tech-stack-margin-bottom: {{ resume_config.get("tech_stack_margin_bottom", 2) }}mm;
@@ -402,6 +402,10 @@
         --contact-icon-size: {{ resume_config.get("contact_icon_size", 5) }}mm;
         --contact-icon-margin-top: {{ resume_config.get("contact_icon_margin_top", 0.5) }}mm;
         --contact-text-padding-left: {{ resume_config.get("contact_text_padding_left", 2) }}mm;
+
+        /* Sidebar item spacing */
+        --keyskills-item-margin-bottom: {{ resume_config.get("keyskills_item_margin_bottom", 0.5) }}mm;
+        --sidebar-skill-spacer-padding: {{ resume_config.get("sidebar_skill_spacer_padding", 0.5) }}mm;
       }
 
       /* Dynamic @page size for PDF rendering */

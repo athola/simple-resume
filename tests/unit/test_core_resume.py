@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import FrozenInstanceError
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -31,7 +31,7 @@ from simple_resume.core.resume import Resume
 from simple_resume.shell.palettes.loader import get_palette_registry
 from simple_resume.shell.render.latex import LatexCompilationError
 from simple_resume.shell.resume_extensions import generate as shell_generate
-from simple_resume.shell.resume_extensions import to_html, to_pdf
+from simple_resume.shell.resume_extensions import to_html, to_markdown, to_pdf, to_tex
 from tests.bdd import Scenario
 
 
@@ -255,6 +255,60 @@ class TestResumeConfigDataClass:
         assert config.template == "resume_no_bars"
         assert config.theme_color == "#0395DE"
         assert config.sidebar_color == "#F6F6F6"
+
+    def test_resume_config_section_icon_defaults(self) -> None:
+        """Test section icon layout fields have correct float defaults."""
+        config = ResumeConfig()
+
+        # Section heading icon layout fields (all floats, no mm suffix)
+        assert config.section_icon_circle_size == 7.8
+        assert isinstance(config.section_icon_circle_size, float)
+
+        assert config.section_icon_circle_x_offset == 0
+        assert isinstance(config.section_icon_circle_x_offset, (int, float))
+
+        assert config.section_icon_design_size == 3.5
+        assert isinstance(config.section_icon_design_size, float)
+
+        assert config.section_icon_design_x_offset == 0
+        assert isinstance(config.section_icon_design_x_offset, (int, float))
+
+        assert config.section_icon_design_y_offset == 0
+        assert isinstance(config.section_icon_design_y_offset, (int, float))
+
+        assert config.section_heading_text_margin == -6
+        assert isinstance(config.section_heading_text_margin, (int, float))
+
+    def test_resume_config_contact_icon_defaults(self) -> None:
+        """Test contact icon layout fields have correct float defaults."""
+        config = ResumeConfig()
+
+        # Contact icon customization fields (all floats, no mm suffix)
+        assert config.contact_icon_size == 5
+        assert isinstance(config.contact_icon_size, (int, float))
+
+        assert config.contact_icon_margin_top == 0.5
+        assert isinstance(config.contact_icon_margin_top, float)
+
+        assert config.contact_icon_margin_right == 2
+        assert isinstance(config.contact_icon_margin_right, (int, float))
+
+        assert config.contact_icon_gap == 4
+        assert isinstance(config.contact_icon_gap, (int, float))
+
+    def test_resume_config_with_custom_icon_values(self) -> None:
+        """Test custom icon layout values are preserved in ResumeConfig."""
+        config = ResumeConfig(
+            section_icon_circle_size=10.5,
+            section_icon_design_size=5.0,
+            contact_icon_size=6.5,
+            contact_icon_margin_top=1.0,
+        )
+
+        assert config.section_icon_circle_size == 10.5
+        assert config.section_icon_design_size == 5.0
+        assert config.contact_icon_size == 6.5
+        assert config.contact_icon_margin_top == 1.0
 
 
 class TestRenderPlanDataClass:
@@ -1148,3 +1202,268 @@ class TestResumeIOBehaviour:
         story.when("shell generate is called with invalid format")
         with pytest.raises(ValueError, match="Unsupported format"):
             shell_generate(resume, "docx", output_path=tmp_path / "test.docx")
+
+
+class TestIntermediateFormatGeneration:
+    """Tests for intermediate format generation: to_markdown() and to_tex().
+
+    These tests verify the new public API functions work correctly
+    without mocks, testing actual file generation and content.
+    """
+
+    def test_to_markdown_generates_valid_file(
+        self, story: Scenario, tmp_path: Path
+    ) -> None:
+        """Test to_markdown generates a valid markdown file."""
+        story.given("a complete resume with contact and experience data")
+        resume_data = {
+            "full_name": "Emily Chen",
+            "email": "emily.chen@example.com",
+            "phone": "+1 (555) 123-4567",
+            "description": "Software engineer with Python expertise",
+            "config": {
+                "template": "resume_no_bars",
+                "page_width": 210,
+                "page_height": 297,
+                "theme_color": "#2E4057",
+            },
+            "body": {
+                "experience": [
+                    {
+                        "company": "TechCorp Inc",
+                        "position": "Senior Developer",
+                        "start_date": "2020-01",
+                        "end_date": "2024-01",
+                        "description": "Led backend development team",
+                    }
+                ],
+            },
+        }
+        resume = Resume.from_data(resume_data)
+        output_path = tmp_path / "emily_resume.md"
+
+        story.when("to_markdown is called with explicit output path")
+        result = to_markdown(resume, output_path=output_path)
+
+        story.then("a markdown file is created with proper structure and content")
+        assert result.output_path == output_path
+        assert output_path.exists()
+        assert result.format_type == "markdown"
+        assert result.metadata is not None
+        assert result.metadata.format_type == "markdown"
+        assert result.metadata.resume_name == "Emily Chen"
+        assert result.metadata.file_size > 0
+
+        # Verify content structure
+        content = output_path.read_text(encoding="utf-8")
+        assert "# Emily Chen" in content
+        assert "emily.chen@example.com" in content
+        assert "+1 (555) 123-4567" in content
+
+    def test_to_markdown_with_paths_object(
+        self, story: Scenario, tmp_path: Path
+    ) -> None:
+        """Test to_markdown uses paths.output when no explicit path given."""
+        story.given("a resume with paths configuration")
+        paths = _make_paths(tmp_path)
+        resume = Resume.from_data(
+            {
+                "full_name": "Alex Johnson",
+                "config": {"template": "resume_no_bars"},
+            },
+            paths=paths,
+            name="Alex Johnson",
+        )
+
+        story.when("to_markdown is called without explicit output path")
+        result = to_markdown(resume)
+
+        story.then("markdown file is created in paths.output directory")
+        expected_path = paths.output / "Alex Johnson.md"
+        assert result.output_path == expected_path
+        assert expected_path.exists()
+
+    def test_to_markdown_without_paths_raises_error(self, story: Scenario) -> None:
+        """Test to_markdown raises ConfigurationError when no paths available."""
+        story.given("a resume without paths and no explicit output path")
+        resume = Resume.from_data(
+            {
+                "full_name": "No Path User",
+                "config": {"template": "resume_no_bars"},
+            }
+        )
+
+        story.when("to_markdown is called without output_path")
+        story.then("ConfigurationError is raised")
+        with pytest.raises(ConfigurationError, match="No paths available"):
+            to_markdown(resume)
+
+    @patch("simple_resume.shell.render.latex.render_resume_latex_from_data")
+    def test_to_tex_generates_valid_file(
+        self, mock_render: MagicMock, story: Scenario, tmp_path: Path
+    ) -> None:
+        """Test to_tex generates a valid LaTeX file."""
+        story.given("a resume configured for LaTeX output")
+        paths = _make_paths(tmp_path)
+        resume_data = {
+            "full_name": "Marcus Williams",
+            "email": "marcus@university.edu",
+            "config": {
+                "output_mode": "latex",
+                "template": "resume_no_bars",
+                "page_width": 210,
+                "page_height": 297,
+                "theme_color": "#1f4e79",
+            },
+            "body": {
+                "experience": [
+                    {
+                        "company": "Research Lab",
+                        "position": "Research Scientist",
+                        "start_date": "2019-06",
+                        "end_date": "2024-01",
+                        "description": "Published 15 papers in ML",
+                    }
+                ],
+            },
+        }
+        resume = Resume.from_data(resume_data, paths=paths, name="Marcus Williams")
+        output_path = tmp_path / "marcus_resume.tex"
+
+        # Mock the LaTeX renderer to return valid content
+        mock_render.return_value = (
+            "\\documentclass{article}\n\\begin{document}\n"
+            "Marcus Williams\n\\end{document}"
+        )
+
+        story.when("to_tex is called with explicit output path")
+        result = to_tex(resume, output_path=output_path)
+
+        story.then("a LaTeX file is created with proper structure")
+        assert result.output_path == output_path
+        assert output_path.exists()
+        assert result.format_type == "tex"
+        assert result.metadata is not None
+        assert result.metadata.format_type == "tex"
+        assert result.metadata.resume_name == "Marcus Williams"
+        assert result.metadata.file_size > 0
+
+        # Verify LaTeX content structure
+        content = output_path.read_text(encoding="utf-8")
+        assert "\\documentclass" in content or "Marcus Williams" in content
+
+    @patch("simple_resume.shell.render.latex.render_resume_latex_from_data")
+    def test_to_tex_with_paths_object(
+        self, mock_render: MagicMock, story: Scenario, tmp_path: Path
+    ) -> None:
+        """Test to_tex uses paths.output when no explicit path given."""
+        story.given("a resume with paths configuration for LaTeX")
+        paths = _make_paths(tmp_path)
+        resume = Resume.from_data(
+            {
+                "full_name": "Sarah Lee",
+                "config": {"output_mode": "latex", "template": "resume_no_bars"},
+            },
+            paths=paths,
+            name="Sarah Lee",
+        )
+
+        # Mock the LaTeX renderer
+        mock_render.return_value = (
+            "\\documentclass{article}\n\\begin{document}\nSarah Lee\n\\end{document}"
+        )
+
+        story.when("to_tex is called without explicit output path")
+        result = to_tex(resume)
+
+        story.then("tex file is created in paths.output directory")
+        expected_path = paths.output / "Sarah Lee.tex"
+        assert result.output_path == expected_path
+        assert expected_path.exists()
+
+    def test_to_tex_without_paths_raises_error(self, story: Scenario) -> None:
+        """Test to_tex raises ConfigurationError when no paths available."""
+        story.given("a resume without paths and no explicit output path")
+        resume = Resume.from_data(
+            {
+                "full_name": "No Path User",
+                "config": {"output_mode": "latex", "template": "resume_no_bars"},
+            }
+        )
+
+        story.when("to_tex is called without output_path")
+        story.then("ConfigurationError is raised")
+        with pytest.raises(ConfigurationError, match="No paths available"):
+            to_tex(resume)
+
+    def test_to_markdown_metadata_includes_palette_info(
+        self, story: Scenario, tmp_path: Path
+    ) -> None:
+        """Test to_markdown preserves palette metadata in result."""
+        story.given("a resume with palette configuration")
+        resume_data = {
+            "full_name": "Palette User",
+            "config": {
+                "template": "resume_no_bars",
+                "color_scheme": "ocean",
+            },
+        }
+        resume = Resume.from_data(resume_data)
+        output_path = tmp_path / "palette_test.md"
+
+        story.when("to_markdown generates the file")
+        result = to_markdown(resume, output_path=output_path)
+
+        story.then("metadata is created with proper fields")
+        assert result.metadata is not None
+        assert result.metadata.template_name is not None
+
+    def test_generate_routes_to_markdown_format(
+        self, story: Scenario, tmp_path: Path
+    ) -> None:
+        """Test shell generate function routes 'markdown' to to_markdown."""
+        story.given("a resume requesting markdown format via generate()")
+        resume = Resume.from_data(
+            {
+                "full_name": "Route Test User",
+                "config": {"template": "resume_no_bars"},
+            }
+        )
+        output_path = tmp_path / "route_test.md"
+
+        story.when("shell generate is called with format='markdown'")
+        result = shell_generate(resume, "markdown", output_path=output_path)
+
+        story.then("it correctly generates markdown output")
+        assert result.format_type == "markdown"
+        assert output_path.exists()
+
+    @patch("simple_resume.shell.render.latex.render_resume_latex_from_data")
+    def test_generate_routes_to_tex_format(
+        self, mock_render: MagicMock, story: Scenario, tmp_path: Path
+    ) -> None:
+        """Test shell generate function routes 'tex' to to_tex."""
+        story.given("a resume requesting tex format via generate()")
+        paths = _make_paths(tmp_path)
+        resume = Resume.from_data(
+            {
+                "full_name": "TeX Route User",
+                "config": {"output_mode": "latex", "template": "resume_no_bars"},
+            },
+            paths=paths,
+            name="TeX Route User",
+        )
+        output_path = tmp_path / "route_test.tex"
+
+        # Mock the LaTeX renderer
+        mock_render.return_value = (
+            "\\documentclass{article}\n\\begin{document}\n"
+            "TeX Route User\n\\end{document}"
+        )
+
+        story.when("shell generate is called with format='tex'")
+        result = shell_generate(resume, "tex", output_path=output_path)
+
+        story.then("it correctly generates tex output")
+        assert result.format_type == "tex"
+        assert output_path.exists()
