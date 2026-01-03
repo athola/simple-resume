@@ -1,0 +1,233 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://athola.github.io/simple-resume/schema.json",
+  "title": "simple-resume YAML schema",
+  "description": "JSON Schema for simple-resume YAML/JSON inputs. Use this schema in YAML editors (e.g., VS Code YAML extension) for autocomplete and validation.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["full_name", "email", "config"],
+  "properties": {
+    "template": {
+      "description": "Template to render with. Known templates are provided, but custom templates are allowed.",
+      "anyOf": [
+        {"enum": ["resume_no_bars", "resume_with_bars", "demo"]},
+        {"type": "string", "pattern": "^[A-Za-z0-9_-]+$"}
+      ],
+      "default": "resume_no_bars"
+    },
+    "theme": {
+      "description": "Optional named theme. Theme config is merged into config as defaults.",
+      "type": "string",
+      "enum": ["classic", "bold", "minimal", "modern", "executive"]
+    },
+    "full_name": {"type": "string"},
+    "email": {"type": "string", "format": "email"},
+    "job_title": {"type": "string"},
+    "phone": {"type": "string"},
+    "web": {"type": "string"},
+    "linkedin": {"type": "string"},
+    "github": {"type": "string"},
+    "image_uri": {"type": "string"},
+    "image_link": {"type": "string"},
+    "headline": {"type": "string"},
+    "description": {"type": "string", "description": "Markdown-supported pitch/summary."},
+    "address": {"type": "array", "items": {"type": "string"}},
+
+    "titles": {
+      "type": "object",
+      "description": "Optional label overrides used by templates.",
+      "additionalProperties": {"type": "string"}
+    },
+
+    "expertise": {"type": "array", "items": {"type": "string"}},
+    "certification": {"type": "array", "items": {"type": "string"}},
+    "keyskills": {"type": "array", "items": {"type": "string"}},
+
+    "skills": {
+      "description": "Sidebar skills with proficiency values (0-100).",
+      "type": "object",
+      "additionalProperties": {"type": "number"}
+    },
+
+    "languages": {
+      "description": "Sidebar languages with proficiency values (0-100).",
+      "type": "object",
+      "additionalProperties": {"type": "number"}
+    },
+
+    "body": {
+      "description": "Main resume sections. Each key is a section heading, mapped to a list of entries.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {"$ref": "#/$defs/bodyEntry"}
+      }
+    },
+
+    "config": {"$ref": "#/$defs/config"},
+
+    "meta": {
+      "type": "object",
+      "description": "Internal metadata (e.g., palette metadata).",
+      "additionalProperties": true
+    }
+  },
+
+  "$defs": {
+    "hexColor": {
+      "type": "string",
+      "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$",
+      "examples": ["#0395DE", "#FFF"]
+    },
+
+    "dimension": {
+      "description": "A numeric value (number/int) or a string with optional units (e.g., '8.6mm').",
+      "anyOf": [
+        {"type": "number"},
+        {"type": "integer"},
+        {"type": "string", "pattern": "^-?\\d+(?:\\.\\d+)?(?:mm|pt|px)?$"}
+      ]
+    },
+
+    "bodyEntry": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "start": {"type": ["string", "number"]},
+        "end": {"type": ["string", "number"]},
+        "title": {"type": "string"},
+        "title_link": {"type": "string"},
+        "company": {"type": "string"},
+        "company_link": {"type": "string"},
+        "description": {"type": "string"},
+        "tech_stack": {
+          "description": "Optional list of technologies.",
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
+
+    "palette": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "source": {"type": "string", "description": "Palette source (e.g., 'registry', 'generator', 'remote', or direct colors)."},
+        "name": {"type": "string"},
+        "type": {"type": "string", "description": "Generator type (e.g., 'hcl')."},
+        "colors": {"type": "array", "items": {"$ref": "#/$defs/hexColor"}},
+        "size": {"type": "integer", "minimum": 1},
+        "seed": {"type": "integer"},
+        "hue_range": {
+          "type": "array",
+          "items": {"type": "number"},
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "luminance_range": {
+          "type": "array",
+          "items": {"type": "number"},
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "chroma": {"type": "number"},
+        "keywords": {"type": "array", "items": {"type": "string"}},
+        "num_results": {"type": "integer", "minimum": 1},
+        "order_by": {"type": "string"}
+      }
+    },
+
+    "config": {
+      "type": "object",
+      "description": "Rendering configuration. Most fields are optional; defaults are applied by simple-resume.",
+      "additionalProperties": true,
+      "properties": {
+        "template": {
+          "description": "Template override (used by core planning); usually matches top-level template.",
+          "anyOf": [
+            {"enum": ["resume_no_bars", "resume_with_bars", "demo"]},
+            {"type": "string", "pattern": "^[A-Za-z0-9_-]+$"}
+          ],
+          "default": "resume_no_bars"
+        },
+        "output_mode": {
+          "type": "string",
+          "enum": ["markdown", "latex"],
+          "default": "markdown"
+        },
+        "color_scheme": {
+          "type": "string",
+          "description": "Palette name (e.g., 'Professional Blue') or 'generator ...' shorthand.",
+          "default": "default"
+        },
+        "theme": {
+          "description": "Theme name (alternative location to top-level theme).",
+          "type": "string",
+          "enum": ["classic", "bold", "minimal", "modern", "executive"]
+        },
+
+        "palette": {"$ref": "#/$defs/palette"},
+
+        "page_width": {"$ref": "#/$defs/dimension", "default": 210},
+        "page_height": {"$ref": "#/$defs/dimension", "default": 297},
+        "sidebar_width": {"$ref": "#/$defs/dimension", "default": 65},
+
+        "padding": {"$ref": "#/$defs/dimension", "default": 12},
+        "sidebar_padding_left": {"$ref": "#/$defs/dimension", "default": 10},
+        "sidebar_padding_right": {"$ref": "#/$defs/dimension", "default": 10},
+        "sidebar_padding_top": {"$ref": "#/$defs/dimension", "default": 0},
+        "sidebar_padding_bottom": {"$ref": "#/$defs/dimension", "default": 12},
+
+        "pitch_padding_top": {"$ref": "#/$defs/dimension", "default": 10},
+        "pitch_padding_bottom": {"$ref": "#/$defs/dimension", "default": 8},
+        "pitch_padding_left": {"$ref": "#/$defs/dimension", "default": 6},
+
+        "h2_padding_left": {"$ref": "#/$defs/dimension", "default": 6},
+        "h2_padding_top": {"$ref": "#/$defs/dimension", "default": 8},
+        "h3_padding_top": {"$ref": "#/$defs/dimension", "default": 7},
+
+        "section_heading_margin_top": {"$ref": "#/$defs/dimension", "default": 7},
+        "section_heading_margin_bottom": {"$ref": "#/$defs/dimension", "default": 1},
+        "section_heading_text_margin": {"$ref": "#/$defs/dimension", "default": -6},
+        "section_icon_design_scale": {"$ref": "#/$defs/dimension", "default": 1},
+        "entry_margin_bottom": {"$ref": "#/$defs/dimension", "default": 4},
+        "tech_stack_margin_bottom": {"$ref": "#/$defs/dimension", "default": 2},
+
+        "section_icon_circle_size": {"$ref": "#/$defs/dimension", "default": 7.8},
+        "section_icon_circle_x_offset": {"$ref": "#/$defs/dimension", "default": 0},
+        "section_icon_design_size": {"$ref": "#/$defs/dimension", "default": 3.5},
+        "section_icon_design_x_offset": {"$ref": "#/$defs/dimension", "default": 0},
+        "section_icon_design_y_offset": {"$ref": "#/$defs/dimension", "default": 0},
+
+        "date_container_width": {"$ref": "#/$defs/dimension", "default": 15},
+        "date_container_padding_left": {"$ref": "#/$defs/dimension"},
+        "description_container_padding_left": {"$ref": "#/$defs/dimension", "default": 4},
+        "skill_container_padding_top": {"$ref": "#/$defs/dimension", "default": 3},
+        "skill_spacer_padding_top": {"$ref": "#/$defs/dimension", "default": 3},
+        "profile_image_padding_bottom": {"$ref": "#/$defs/dimension", "default": 8},
+
+        "frame_padding": {"$ref": "#/$defs/dimension", "default": 15},
+
+        "cover_padding_top": {"$ref": "#/$defs/dimension", "default": 15},
+        "cover_padding_bottom": {"$ref": "#/$defs/dimension", "default": 15},
+        "cover_padding_h": {"$ref": "#/$defs/dimension", "default": 20},
+
+        "contact_icon_size": {"$ref": "#/$defs/dimension", "default": 5},
+        "contact_icon_margin_top": {"$ref": "#/$defs/dimension", "default": 0.5},
+        "contact_text_padding_left": {"$ref": "#/$defs/dimension", "default": 2},
+
+        "bold_font_weight": {"type": "integer", "default": 600},
+
+        "theme_color": {"$ref": "#/$defs/hexColor", "default": "#0395DE"},
+        "sidebar_color": {"$ref": "#/$defs/hexColor", "default": "#F6F6F6"},
+        "sidebar_text_color": {"$ref": "#/$defs/hexColor", "default": "#000000"},
+        "bar_background_color": {"$ref": "#/$defs/hexColor", "default": "#DFDFDF"},
+        "date2_color": {"$ref": "#/$defs/hexColor", "default": "#616161"},
+        "frame_color": {"$ref": "#/$defs/hexColor", "default": "#757575"},
+        "heading_icon_color": {"$ref": "#/$defs/hexColor", "default": "#0395DE"},
+        "bold_color": {"$ref": "#/$defs/hexColor", "default": "#585858"},
+        "sidebar_bold_color": {"$ref": "#/$defs/hexColor"}
+      }
+    }
+  }
+}

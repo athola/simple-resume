@@ -287,6 +287,64 @@ view-sample: generate-pdf-sample ## Generate and view sample PDF output
 	fi
 
 # =============================================================================
+# DOCUMENTATION TARGETS
+# =============================================================================
+
+API_DOCS := wiki/API-Reference.md wiki/API-Stability-Policy.md wiki/Shell-Layer-APIs.md
+
+docs-api: ## View API documentation (opens API Reference)
+	@echo "$(BLUE)Opening API documentation...$(RESET)"
+	$(call open_file,wiki/API-Reference.md)
+
+docs-api-all: ## View all API documentation files
+	@echo "$(BOLD)API Documentation Files:$(RESET)"
+	@echo ""
+	@for doc in $(API_DOCS); do \
+		echo "  $$(basename $$doc)"; \
+	done
+	@echo ""
+	@echo "$(BLUE)Opening API Reference...$(RESET)"
+	$(call open_file,wiki/API-Reference.md)
+
+demo-api: ## Demonstrate public API usage with Python examples
+	@echo "$(BLUE)Running API demonstration...$(RESET)"
+	@echo "$(BOLD)Example 1: Load and validate a Resume$(RESET)"
+	$(UV_CMD) run python -c "from simple_resume import Resume; r = Resume.read_yaml('$(SAMPLE_DIR)/input/sample_1.yaml'); print(f'  Loaded: {r.full_name}'); print(f'  Template: {r.template}'); print(f'  Valid: {r.validate_or_raise().is_valid}')"
+	@echo ""
+	@echo "$(BOLD)Example 2: Generate PDF with public API$(RESET)"
+	@$(MAKE) --silent generate-pdf-sample
+	@echo ""
+	@echo "$(GREEN)[OK] API demonstration complete$(RESET)"
+	@echo "$(BLUE)See wiki/API-Reference.md for more examples$(RESET)"
+
+validate-api-docs: ## Verify API documentation matches code
+	@echo "$(BLUE)Validating API documentation...$(RESET)"
+	@echo "$(YELLOW)[1/3] Checking version consistency...$(RESET)"
+	@$(eval VERSION_FROM_INIT := $(shell grep '^__version__' $(SRC_DIR)/$(PROJECT_MODULE)/__init__.py | cut -d'"' -f2))
+	@$(eval VERSION_FROM_TOML := $(shell grep '^version = ' pyproject.toml | cut -d'"' -f2))
+	@if [ "$(VERSION_FROM_INIT)" != "$(VERSION_FROM_TOML)" ]; then \
+		echo "$(RED)Version mismatch: __init__.py has $(VERSION_FROM_INIT), pyproject.toml has $(VERSION_FROM_TOML)$(RESET)"; \
+		exit 1; \
+	fi
+	@echo "  [OK] Version $(VERSION_FROM_INIT) consistent"
+	@echo ""
+	@echo "$(YELLOW)[2/3] Checking export count...$(RESET)"
+	@$(eval EXPORT_COUNT := $(shell grep -A 40 '^__all__' $(SRC_DIR)/$(PROJECT_MODULE)/__init__.py | grep -c '  "'))
+	@echo "  [OK] $(EXPORT_COUNT) stable exports documented"
+	@echo ""
+	@echo "$(YELLOW)[3/3] Verifying documentation files exist...$(RESET)"
+	@for doc in $(API_DOCS); do \
+		if [ -f "$$doc" ]; then \
+			echo "  [OK] $$doc"; \
+		else \
+			echo "$(RED)  [MISSING] $$doc$(RESET)"; \
+			exit 1; \
+		fi; \
+	done
+	@echo ""
+	@echo "$(GREEN)[OK] API documentation validation passed$(RESET)"
+
+# =============================================================================
 # PREVIEW AND VALIDATION
 # =============================================================================
 

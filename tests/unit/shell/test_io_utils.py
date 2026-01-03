@@ -32,9 +32,19 @@ class TestCandidateYamlPath:
         assert result == Path("resume.yml")
 
     def test_no_yaml_extension_returns_none(self) -> None:
-        """Test that non-YAML files return None."""
+        """Test that unsupported files return None."""
         result = candidate_yaml_path("resume.txt")
         assert result is None
+
+    def test_json_without_path_returns_none(self) -> None:
+        """Bare .json is treated as a resume name, not a direct path."""
+        result = candidate_yaml_path("resume.json")
+        assert result is None
+
+    def test_json_with_path_returns_path(self) -> None:
+        """.json is treated as a path when it includes directory components."""
+        result = candidate_yaml_path("input/resume.json")
+        assert result == Path("input/resume.json")
 
 
 class TestResolvePathsForRead:
@@ -98,6 +108,11 @@ class TestNormalizeResumeName:
         result = normalize_resume_name("jane_doe.yml")
         assert result == "jane_doe"
 
+    def test_strips_json_extension(self) -> None:
+        """Test stripping .json extension."""
+        result = normalize_resume_name("john_doe.json")
+        assert result == "john_doe"
+
     def test_handles_empty_string(self) -> None:
         """Test handling empty string returns default."""
         result = normalize_resume_name("")
@@ -139,6 +154,16 @@ class TestFindResumeFile:
         input_dir.mkdir()
         resume_file = input_dir / "jane.yml"
         resume_file.write_text("config: {}")
+
+        result = find_resume_file("jane", input_dir)
+        assert result == resume_file
+
+    def test_finds_json_file(self, tmp_path: Path) -> None:
+        """Test finding .json file."""
+        input_dir = tmp_path / "input"
+        input_dir.mkdir()
+        resume_file = input_dir / "jane.json"
+        resume_file.write_text("{}")
 
         result = find_resume_file("jane", input_dir)
         assert result == resume_file

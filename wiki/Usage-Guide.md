@@ -38,6 +38,42 @@ The `--data-dir` argument processes all YAML files within a specified directory.
 uv run simple-resume generate --data-dir my_resumes --format html
 ```
 
+### JSON Resume Import
+
+simple-resume supports importing JSON Resume files (`.json` from jsonresume.org). Drop a JSON Resume file into your input directory and `simple-resume` will automatically convert it at load time.
+
+**Schema reference**: v1.0.x JSON Resume schema is supported.
+
+```bash
+# Place your JSON Resume in the input folder
+cp my-resume.json resume_private/input/
+
+# Generate - automatic conversion happens at load time
+uv run simple-resume generate --format pdf
+```
+
+The importer performs a pragmatic conversion that:
+
+- Preserves key content (basics, work, education, projects)
+- Converts JSON Resume highlights to markdown bullet points
+- Adds required simple-resume structure (template, config)
+- Maps JSON Resume fields to simple-resume equivalents
+
+**Field mapping** (partial):
+
+| JSON Resume | simple-resume |
+|-------------|---------------|
+| `basics.name` | `full_name` |
+| `basics.email` | `email` |
+| `basics.phone` | `phone` |
+| `basics.url` | `web` |
+| `work[]` | `body.Experience` |
+| `education[]` | `body.Education` |
+| `projects[]` | `body.Projects` |
+| `skills[]` | `body.Skills` |
+
+The conversion is not 1:1 — some JSON Resume fields may not map directly. Review the converted output and adjust as needed.
+
 ## Python API
 
 Import the `generate` and `preview` functions for programmatic use.

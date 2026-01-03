@@ -24,6 +24,18 @@ To get started, copy one of the sample files to the `resume_private/input` direc
 cp sample/input/sample_1.yaml resume_private/input/my_resume.yaml
 ```
 
+**Alternatively**, import from JSON Resume format:
+
+```bash
+# Copy a JSON Resume file (from jsonresume.org)
+cp my-resume.json resume_private/input/
+
+# Generate - automatic conversion happens at load time
+uv run simple-resume generate --format pdf
+```
+
+See [Usage Guide](Usage-Guide.md#json-resume-import) for complete JSON Resume documentation.
+
 ### Edit the Content
 
 Open `resume_private/input/my_resume.yaml` in a text editor and replace the placeholder content with your own information.

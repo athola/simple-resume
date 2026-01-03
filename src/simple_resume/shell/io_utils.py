@@ -20,11 +20,23 @@ from simple_resume.shell.config import FILE_DEFAULT, resolve_paths
 
 
 def candidate_yaml_path(name: str | os.PathLike[str]) -> Path | None:
-    """Return a Path if ``name`` resembles a YAML file, otherwise ``None``."""
+    """Return a Path if ``name`` resembles a supported resume file, else ``None``.
+
+    Notes:
+        We treat ``.json`` specially: a bare "resume.json" is often meant as a resume
+        *name* (looked up under the data-dir input folder). To avoid surprising
+        "file not found" errors, we only treat ``.json`` as a direct path when it
+        looks like a real path (has directory components or is absolute).
+
+    """
     if isinstance(name, (str, os.PathLike)):
         maybe_path = Path(name)
-        if maybe_path.suffix.lower() in {".yaml", ".yml"}:
+        suffix = maybe_path.suffix.lower()
+        if suffix in {".yaml", ".yml"}:
             return maybe_path
+        if suffix == ".json":
+            if maybe_path.is_absolute() or len(maybe_path.parts) > 1:
+                return maybe_path
     return None
 
 
@@ -74,7 +86,7 @@ def normalize_resume_name(name: str | os.PathLike[str]) -> str:
     if isinstance(name, (str, os.PathLike)):
         candidate = Path(name)
         suffix = candidate.suffix.lower()
-        if suffix in {".yaml", ".yml"}:
+        if suffix in {".yaml", ".yml", ".json"}:
             return candidate.stem
         return candidate.name or str(name)
     return str(name)
@@ -95,7 +107,7 @@ def find_resume_file(
 
     """
     candidates: list[Path] = []
-    extensions = ["yaml", "yml"]
+    extensions = ["yaml", "yml", "json"]
 
     # Search for files with both lowercase and uppercase extensions
     for ext in extensions:

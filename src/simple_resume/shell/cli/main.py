@@ -617,6 +617,7 @@ def _iter_yaml_files(session: ResumeSession) -> Iterable[Path]:
 
     yield from session.paths.input.glob("*.yaml")
     yield from session.paths.input.glob("*.yml")
+    yield from session.paths.input.glob("*.json")
 
 
 def _print_session_help() -> None:

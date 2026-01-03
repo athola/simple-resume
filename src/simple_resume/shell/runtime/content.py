@@ -10,6 +10,10 @@ from typing import Any
 from simple_resume.core.config import normalize_config
 from simple_resume.core.exceptions import FileSystemError
 from simple_resume.core.hydration import hydrate_resume_structure
+from simple_resume.core.importers.json_resume import (
+    json_resume_to_simple_resume,
+    looks_like_json_resume,
+)
 from simple_resume.core.markdown import render_markdown_content
 from simple_resume.core.paths import Paths
 from simple_resume.shell.io_utils import (
@@ -87,6 +91,9 @@ def hydrate_resume_data(
     # Resolve theme references before hydration
     resolved_data = resolve_theme_in_data(source_yaml)
 
+    if looks_like_json_resume(resolved_data):
+        resolved_data = json_resume_to_simple_resume(resolved_data)
+
     return hydrate_resume_structure(
         resolved_data,
         filename=filename,
@@ -110,6 +117,9 @@ def get_content(
 
     # Resolve theme references before hydration
     resolved_data = resolve_theme_in_data(raw_data)
+
+    if looks_like_json_resume(resolved_data):
+        resolved_data = json_resume_to_simple_resume(resolved_data)
 
     return hydrate_resume_structure(
         resolved_data,

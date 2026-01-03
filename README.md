@@ -12,7 +12,7 @@ _Generate polished PDF and HTML resumes from a single YAML file._
 
 # simple-resume
 
-`simple-resume` is a Python 3.10+ CLI and library for converting structured YAML into production-ready resumes (PDF, HTML, or LaTeX). Templates and static assets ship with the package such that users can render without needing to create additional content.
+`simple-resume` is a Python 3.10+ CLI and library for converting structured YAML (or JSON Resume) into production-ready resumes (PDF, HTML, or LaTeX). Templates and static assets ship with the package such that users can render without needing to create additional content.
 
 ## Supported platforms
 
@@ -41,7 +41,7 @@ pip install simple-resume
 | Feature | simple-resume | JSON Resume | HackMyResume | Resume.io |
 |---------|---------------|-------------|---------------|-----------|
 | **Open Source** | ✓ | ✓ | ✓ | ✗ |
-| **Data Format** | YAML | JSON | JSON/FRESH | Proprietary |
+| **Data Format** | YAML + JSON Resume | JSON | JSON/FRESH | Proprietary |
 | **Version Control** | ✓ Git-friendly | ✓ Git-friendly | ✓ Git-friendly | ✗ Cloud-only |
 | **Local Processing** | ✓ 100% private | ✓ 100% private | ✓ 100% private | ✗ Cloud storage |
 | **Template System** | HTML + Jinja2 | JSON themes | Multiple formats | Web builder |
@@ -77,6 +77,12 @@ uv sync --dev --extra utils   # or: pip install -e .[dev,utils]
 ## Quick start (CLI)
 
 Create a minimal YAML in `resume_private/input/my_resume.yaml`:
+
+> Note: JSON Resume (`*.json` from https://jsonresume.org) is also supported —
+> drop it into your `input/` folder and `simple-resume` will auto-convert it at load time.
+>
+> Tip: Editor autocomplete is available via JSON Schema at
+> `src/simple_resume/shell/assets/static/schema.json` (VS Code YAML extension supports schema association).
 
 ```yaml
 template: resume_no_bars
@@ -146,6 +152,7 @@ The workflow builds the package, generates a changelog from commit history, and 
 ## Workflows & docs
 
 - **Guides**: [Getting Started](wiki/Getting-Started.md), [Usage](wiki/Usage-Guide.md), [Workflows](wiki/Workflows.md), [Path Handling](wiki/Path-Handling-Guide.md).
+- **API Docs**: [API Reference](wiki/API-Reference.md), [API Stability Policy](wiki/API-Stability-Policy.md), [Shell Layer APIs](wiki/Shell-Layer-APIs.md).
 - **Architecture**: [Architecture Guide](wiki/Architecture-Guide.md) and `wiki/architecture/`.
 - **Migration**: [Migration Guide](wiki/Migration-Guide.md) plus [Generate module migration](wiki/Migration-Guide-Generate-Module.md).
 - **Development**: [Development Guide](wiki/Development-Guide.md), [Contributing](wiki/Contributing.md), [PDF renderer evaluation](wiki/PDF-Renderer-Evaluation.md).
