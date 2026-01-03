@@ -16,39 +16,36 @@ The shell layer (`simple_resume.shell.*`) contains I/O operations, side effects,
 
 ## Architecture Diagram
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     Public API Layer                        │
-│                  (simple_resume.__init__)                   │
-│                                                               │
-│  Stable exports: generate_pdf, to_pdf, ResumeSession, etc.  │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-                         │ Re-exports stable functions
-                         │
-┌────────────────────────▼─────────────────────────────────────┐
-│                   Shell Layer (Internal)                     │
-│                  (simple_resume.shell.*)                      │
-│                                                               │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │ generate/    │  │ session/     │  │ render/      │     │
-│  │ Lazy loading │  │ Batch ops    │  │ Jinja/LaTeX  │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
-│                                                               │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │ strategies/  │  │ palettes/    │  │ themes/      │     │
-│  │ PDF gen strat │  │ Color mgmt   │  │ Template load│     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-                         │ Calls pure functions
-                         │
-┌────────────────────────▼─────────────────────────────────────┐
-│                    Core Layer (Stable)                        │
-│                   (simple_resume.core.*)                      │
-│                                                               │
-│  Pure functions: Resume, colors, validation, models         │
-└───────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph PUBLIC["Public API Layer<br/>(simple_resume.__init__)"]
+        EXPORTS["Stable exports:<br/>generate_pdf, to_pdf, ResumeSession, etc."]
+    end
+
+    subgraph SHELL["Shell Layer (Internal)<br/>(simple_resume.shell.*)"]
+        direction TB
+        subgraph ROW1[" "]
+            GEN["generate/<br/>Lazy loading"]
+            SESS["session/<br/>Batch ops"]
+            REND["render/<br/>Jinja/LaTeX"]
+        end
+        subgraph ROW2[" "]
+            STRAT["strategies/<br/>PDF gen strat"]
+            PAL["palettes/<br/>Color mgmt"]
+            THEME["themes/<br/>Template load"]
+        end
+    end
+
+    subgraph CORE["Core Layer (Stable)<br/>(simple_resume.core.*)"]
+        PURE["Pure functions:<br/>Resume, colors, validation, models"]
+    end
+
+    PUBLIC -->|"Re-exports stable functions"| SHELL
+    SHELL -->|"Calls pure functions"| CORE
+
+    style PUBLIC fill:#e1f5fe,stroke:#01579b
+    style SHELL fill:#fff3e0,stroke:#e65100
+    style CORE fill:#e8f5e9,stroke:#1b5e20
 ```
 
 ---
