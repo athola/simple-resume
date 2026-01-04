@@ -1,10 +1,10 @@
 # Usage Guide
 
-This guide provides instructions for using the command-line interface (CLI) and Python API.
+This guide covers the command-line interface (CLI) and Python API.
 
 ## Command-Line Interface
 
-The `simple-resume` CLI is our primary tool for generating resumes.
+The `simple-resume` CLI is the primary tool for generating resumes.
 
 ### Generating Resumes
 
@@ -128,14 +128,14 @@ When this setting is enabled, the `generate` command will produce a `.tex` file 
 
 #### LaTeX Requirements
 
-A LaTeX distribution must be installed on your system. We recommend the following:
+Install a LaTeX distribution:
 - **TeX Live** (cross-platform)
 - **MiKTeX** (Windows)
 - **MacTeX** (macOS)
 
 #### Compilation
 
-Once generated, compile the `.tex` file with a LaTeX engine.
+Compile the generated `.tex` file with a LaTeX engine.
 
 ```bash
 # 1. Generate the LaTeX source file.

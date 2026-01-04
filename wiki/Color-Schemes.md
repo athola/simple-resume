@@ -8,7 +8,7 @@ The following color properties can be set in the `config` section of the YAML fi
 
 -   `theme_color`: The primary color for headings and accents.
 -   `sidebar_color`: The background color of the sidebar.
--   `sidebar_text_color`: The text color for the sidebar. If not provided, the application automatically calculates a high-contrast color (either black or white) based on the `sidebar_color` to ensure readability.
+-   `sidebar_text_color`: The text color for the sidebar. If not provided, the application calculates a high-contrast color (black or white) based on the `sidebar_color` for readability.
 -   `bar_background_color`: The background color of skill bars.
 -   `date2_color`: The color for secondary date text.
 -   `frame_color`: The color of the preview frame in the web preview.
@@ -29,14 +29,14 @@ config:
 
 ### Preset Schemes
 
-To use a built-in color scheme, set the `color_scheme` property in the `config` section of your YAML file.
+Use a built-in color scheme by setting the `color_scheme` property in the `config` section of your YAML file.
 
 ```yaml
 config:
   color_scheme: "Professional Blue"
 ```
 
-The following presets are available:
+Available presets:
 
 -   **Professional Blue** (default): A high-contrast blue for screen and print.
 -   **Creative Purple**: A saturated purple for screen viewing.

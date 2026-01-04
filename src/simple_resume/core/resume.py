@@ -502,9 +502,9 @@ class Resume:
     def validate(self) -> ValidationResult:
         """Validate this resume's data (inspection tier - never raises).
 
-        This method returns a `ValidationResult` object containing validation
-        status, errors, and warnings. It never raises exceptions, allowing
-        inspection of validation issues without interrupting execution.
+        Return a `ValidationResult` object containing validation status,
+        errors, and warnings. Never raise exceptions, allowing inspection
+        of validation issues without interrupting execution.
 
         Use this to:
         - Check validation status without stopping execution.
@@ -536,7 +536,7 @@ class Resume:
     def validate_or_raise(self) -> ValidationResult:
         """Validate resume data and raise `ValidationError` on failure.
 
-        This method validates the resume and raises a `ValidationError` if validation
+        Validate the resume and raise a `ValidationError` if validation
         fails. Use before operations requiring valid data.
 
         Use this for:

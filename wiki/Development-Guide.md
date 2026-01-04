@@ -1,6 +1,6 @@
 # Development Guide
 
-This guide explains how to set up a local development environment for `simple-resume`.
+Set up a local development environment for `simple-resume`.
 
 First, fork and clone the repository. This project uses `uv` for dependency management. To install all development and optional dependencies, run the following command:
 
@@ -10,11 +10,11 @@ uv sync --dev --extra utils
 
 ## Running Code Quality Checks
 
-The `Makefile` provides commands for running common development tasks.
+The `Makefile` includes commands for common development tasks.
 
 ### Running Tests
 
-To run the full test suite, including unit and integration tests, use the following command:
+To run the full test suite, including unit and integration tests:
 
 ```bash
 make test
@@ -22,7 +22,7 @@ make test
 
 ### Linting and Formatting
 
-The `ruff` tool is used for linting and code formatting. To run all checks, including linting, formatting, type-checking, and security scans, use the following command:
+`ruff` handles linting and code formatting. To run all checks (linting, formatting, type-checking, security scans):
 
 ```bash
 make check-all
@@ -99,5 +99,5 @@ Please read the [Contributing Guide](Contributing.md) for information on the dev
 
 1.  Create a feature branch from `main`.
 2.  Make your changes and add tests.
-3.  Run `make check-all` and `make validate` to ensure that all automated checks pass.
+3.  Run `make check-all` and `make validate` to verify that all automated checks pass.
 4.  Submit a pull request with a clear description of your changes.

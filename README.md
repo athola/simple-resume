@@ -40,18 +40,18 @@ pip install simple-resume
 
 | Feature | simple-resume | JSON Resume | HackMyResume | Resume.io |
 |---------|---------------|-------------|---------------|-----------|
-| **Open Source** | ✓ | ✓ | ✓ | ✗ |
+| **Open Source** | Yes | Yes | Yes | No |
 | **Data Format** | YAML + JSON Resume | JSON | JSON/FRESH | Proprietary |
-| **Version Control** | ✓ Git-friendly | ✓ Git-friendly | ✓ Git-friendly | ✗ Cloud-only |
-| **Local Processing** | ✓ 100% private | ✓ 100% private | ✓ 100% private | ✗ Cloud storage |
+| **Version Control** | Yes (Git-friendly) | Yes (Git-friendly) | Yes (Git-friendly) | No (Cloud-only) |
+| **Local Processing** | Yes (100% private) | Yes (100% private) | Yes (100% private) | No (Cloud storage) |
 | **Template System** | HTML + Jinja2 | JSON themes | Multiple formats | Web builder |
-| **LaTeX Support** | ✓ Professional | ✗ | ✗ | ✗ |
-| **Python API** | ✓ Native | ✗ | ✗ | ✗ |
-| **CLI Tools** | ✓ | ✓ | ✓ | ✗ |
-| **Real-time Preview** | ✓ HTML + auto-reload | ✗ | ✗ | ✓ |
-| **Custom Themes** | ✓ Unlimited | ~ Limited | ~ Limited | ~ Paid only |
-| **Color Palettes** | ✓ Professional | ✗ | ~ Basic | ~ Limited |
-| **Privacy** | ✓ | ✓ | ✓ | ✗ Data stored on servers |
+| **LaTeX Support** | Yes (Professional) | No | No | No |
+| **Python API** | Yes (Native) | No | No | No |
+| **CLI Tools** | Yes | Yes | Yes | No |
+| **Real-time Preview** | Yes (HTML + auto-reload) | No | No | Yes |
+| **Custom Themes** | Yes (Unlimited) | Limited | Limited | Limited (Paid only) |
+| **Color Palettes** | Yes (Professional) | No | Limited (Basic) | Limited |
+| **Privacy** | Yes | Yes | Yes | No (Data stored on servers) |
 | **Setup Time** | 5 min | 10 min | 15 min | 2 min |
 | **Learning Curve** | Moderate | Easy | Easy | Easiest |
 
@@ -61,8 +61,6 @@ pip install simple-resume
 **Best for Privacy**: 100% local processing with no data exposure
 **Most Flexible**: HTML templates + unlimited customization
 **Professional Output**: LaTeX typesetting for academic/technical resumes
-
-**Legend: ✓ = Supported, ✗ = Not Supported, ~ = Limited**
 
 *See [Detailed Comparison](wiki/Comparison.md) for full analysis and use case recommendations.*
 
@@ -106,7 +104,7 @@ uv run simple-resume generate --format pdf         # PDF
 uv run simple-resume generate --format html --open # HTML + open in browser
 ```
 
-Built-in templates: `resume_no_bars`, `resume_with_bars`, `demo` (see `src/simple_resume/shell/assets/templates/html/`). Static assets live under `.../assets/static/`.
+Built-in templates: `resume_no_bars`, `resume_with_bars`, `demo` (see `src/simple_resume/shell/assets/templates/html/`). Static assets are stored in `.../assets/static/`.
 
 ## Python API
 

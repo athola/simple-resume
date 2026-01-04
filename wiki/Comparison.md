@@ -7,34 +7,32 @@ This table compares **simple-resume** with other popular resume building tools a
 
 | Feature | simple-resume | JSON Resume | HackMyResume | Reactive Resume | Resume.io |
 |---------|---------------|------------|--------------|-----------------|-----------|
-| **Open Source** | ✓ | ✓ | ✓ | ✓ | ✗ |
+| **Open Source** | Yes | Yes | Yes | Yes | No |
 | **Data Format** | YAML | JSON | JSON/FRESH | JSON | Proprietary |
-| **Version Control** | ✓ Text-based | ✓ Text-based | ✓ Text-based | ✓ Text-based | ✗ |
+| **Version Control** | Yes (Text-based) | Yes (Text-based) | Yes (Text-based) | Yes (Text-based) | No |
 | **Template System** | HTML + Jinja2 | JSON + themes | Multiple formats | React components | Web builder |
-| **PDF Output** | ✓ | ✓ | ✓ | ✓ | ✓ |
-| **HTML Output** | ✓ | ✓ | ✓ | ✓ | ✗ |
-| **LaTeX Support** | ✓ | ✗ | ✗ | ✗ | ✗ |
-| **Command Line** | ✓ | ✓ | ✓ | ✗ | ✗ |
-| **Python Integration** | ✓ | ✗ | ✗ | ✗ | ✗ |
-| **Local Processing** | ✓ | ✓ | ✓ | ✓ (self-hosted) | ✗ |
-| **Privacy** | ✓ 100% local | ✓ 100% local | ✓ 100% local | ✓ (self-hosted) | ✗ Cloud-only |
-| **Real-time Preview** | ✓ | ✓ | ✗ | ✓ | ✓ |
-| **Theme System** | ✓ CSS + YAML | ✓ JSON themes | ✓ Multiple | ✓ React themes | ✓ Web builder |
-| **Font System** | ✓ Google Fonts | ✗ | ✓ | ✓ | ✓ |
-| **Color Schemes** | ✓ Palette system | ✗ | ✓ | ✓ | ✓ |
-| **Import/Export** | ✓ | ✓ | ✓ | ✓ | ✓ |
-| **Backup/Sync** | ✓ Git | ✓ Git | ✗ | ✗ | ✗ |
-| **Mobile Support** | ✓ | ✓ | ✗ | ✓ | ✓ |
-| **Accessibility** | ✓ | ✗ | ✗ | ✓ | ✗ |
-| **Internationalization** | ✓ | ✗ | ✗ | ✗ | ✓ |
-| **Spell Check** | ✓ (system) | ✗ | ✗ | ✗ | ✓ |
-| **ATS Optimization** | ✓ | ✓ | ✓ | ✓ | ✓ |
-| **Print Optimization** | ✓ | ✓ | ✓ | ✗ | ✓ |
+| **PDF Output** | Yes | Yes | Yes | Yes | Yes |
+| **HTML Output** | Yes | Yes | Yes | Yes | No |
+| **LaTeX Support** | Yes | No | No | No | No |
+| **Command Line** | Yes | Yes | Yes | No | No |
+| **Python Integration** | Yes | No | No | No | No |
+| **Local Processing** | Yes | Yes | Yes | Yes (self-hosted) | No |
+| **Privacy** | Yes (100% local) | Yes (100% local) | Yes (100% local) | Yes (self-hosted) | No (Cloud-only) |
+| **Real-time Preview** | Yes | Yes | No | Yes | Yes |
+| **Theme System** | Yes (CSS + YAML) | Yes (JSON themes) | Yes (Multiple) | Yes (React themes) | Yes (Web builder) |
+| **Font System** | Yes (Google Fonts) | No | Yes | Yes | Yes |
+| **Color Schemes** | Yes (Palette system) | No | Yes | Yes | Yes |
+| **Import/Export** | Yes | Yes | Yes | Yes | Yes |
+| **Backup/Sync** | Yes (Git) | Yes (Git) | No | No | No |
+| **Mobile Support** | Yes | Yes | No | Yes | Yes |
+| **Accessibility** | Yes | No | No | Yes | No |
+| **Internationalization** | Yes | No | No | No | Yes |
+| **Spell Check** | Yes (system) | No | No | No | Yes |
+| **ATS Optimization** | Yes | Yes | Yes | Yes | Yes |
+| **Print Optimization** | Yes | Yes | Yes | No | Yes |
 | **Developer Experience** | Excellent | Good | Fair | Good | Poor |
 | **Learning Curve** | Excellent | Good | Fair | Good | Excellent |
 | **Customization** | Great | Fair | Good | Great | Fair |
-
-**Legend: ✓ = Supported, ✗ = Not Supported, ~ = Limited**
 
 ## Detailed Analysis
 
@@ -133,23 +131,21 @@ This table compares **simple-resume** with other popular resume building tools a
 
 | Tool | Setup Time | Customization | Automation | Git Integration |
 |------|------------|---------------|-------------|------------------|
-| simple-resume | 5 min | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
-| JSON Resume | 10 min | ⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ |
-| HackMyResume | 15 min | ⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐ |
-| Reactive Resume | 30 min | ⭐⭐⭐⭐ | ⭐ | ⭐⭐ |
-| Resume.io | 2 min | ⭐⭐ | ✗ | ✗ |
+| simple-resume | 5 min | Very Good | Excellent | Excellent |
+| JSON Resume | 10 min | Fair | Good | Very Good |
+| HackMyResume | 15 min | Good | Fair | Good |
+| Reactive Resume | 30 min | Very Good | Poor | Fair |
+| Resume.io | 2 min | Fair | None | None |
 
 ## Privacy & Security
 
 | Tool | Data Location | Open Source | Auditable | Export Control |
 |------|---------------|-------------|-----------|-----------------|
-| simple-resume | Local | ✓ | ✓ | ✓ |
-| JSON Resume | Local | ✓ | ✓ | ✓ |
-| HackMyResume | Local | ✓ | ✓ | ✓ |
-| Reactive Resume | Self-hosted | ✓ | ✓ | ✓ |
-| Resume.io | Cloud | ✗ | ✗ | ⭐⭐ |
-
-**Winner for Privacy**: All open-source tools with local processing. Resume.io stores data on cloud servers with limited control.
+| simple-resume | Local | Yes | Yes | Yes |
+| JSON Resume | Local | Yes | Yes | Yes |
+| HackMyResume | Local | Yes | Yes | Yes |
+| Reactive Resume | Self-hosted | Yes | Yes | Yes |
+| Resume.io | Cloud | No | No | Limited |
 
 ## Conclusion
 

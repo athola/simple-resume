@@ -186,7 +186,7 @@ config:
 
 ## Tips for Great Themes
 
-1. **Contrast matters** - Ensure text is readable on sidebar backgrounds
+1. **Contrast matters** - Verify text readability on sidebar backgrounds
 2. **Consistency** - Keep padding values proportional (e.g., all multiples of 5)
 3. **Test with real content** - Long names and descriptions reveal layout issues
 4. **Print preview** - Colors look different on screen vs paper
