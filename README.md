@@ -12,7 +12,7 @@ _Generate polished PDF and HTML resumes from a single YAML file._
 
 # simple-resume
 
-`simple-resume` is a Python 3.10+ CLI and library for converting structured YAML into production-ready resumes (PDF, HTML, or LaTeX). Templates and static assets ship with the package such that users can render without needing to create additional content.
+`simple-resume` is a Python 3.10+ CLI and library for converting structured YAML (or JSON Resume) into production-ready resumes (PDF, HTML, or LaTeX). Templates and static assets ship with the package such that users can render without needing to create additional content.
 
 ## Supported platforms
 
@@ -40,18 +40,18 @@ pip install simple-resume
 
 | Feature | simple-resume | JSON Resume | HackMyResume | Resume.io |
 |---------|---------------|-------------|---------------|-----------|
-| **Open Source** | ✓ | ✓ | ✓ | ✗ |
-| **Data Format** | YAML | JSON | JSON/FRESH | Proprietary |
-| **Version Control** | ✓ Git-friendly | ✓ Git-friendly | ✓ Git-friendly | ✗ Cloud-only |
-| **Local Processing** | ✓ 100% private | ✓ 100% private | ✓ 100% private | ✗ Cloud storage |
+| **Open Source** | Yes | Yes | Yes | No |
+| **Data Format** | YAML + JSON Resume | JSON | JSON/FRESH | Proprietary |
+| **Version Control** | Yes (Git-friendly) | Yes (Git-friendly) | Yes (Git-friendly) | No (Cloud-only) |
+| **Local Processing** | Yes (100% private) | Yes (100% private) | Yes (100% private) | No (Cloud storage) |
 | **Template System** | HTML + Jinja2 | JSON themes | Multiple formats | Web builder |
-| **LaTeX Support** | ✓ Professional | ✗ | ✗ | ✗ |
-| **Python API** | ✓ Native | ✗ | ✗ | ✗ |
-| **CLI Tools** | ✓ | ✓ | ✓ | ✗ |
-| **Real-time Preview** | ✓ HTML + auto-reload | ✗ | ✗ | ✓ |
-| **Custom Themes** | ✓ Unlimited | ~ Limited | ~ Limited | ~ Paid only |
-| **Color Palettes** | ✓ Professional | ✗ | ~ Basic | ~ Limited |
-| **Privacy** | ✓ | ✓ | ✓ | ✗ Data stored on servers |
+| **LaTeX Support** | Yes (Professional) | No | No | No |
+| **Python API** | Yes (Native) | No | No | No |
+| **CLI Tools** | Yes | Yes | Yes | No |
+| **Real-time Preview** | Yes (HTML + auto-reload) | No | No | Yes |
+| **Custom Themes** | Yes (Unlimited) | Limited | Limited | Limited (Paid only) |
+| **Color Palettes** | Yes (Professional) | No | Limited (Basic) | Limited |
+| **Privacy** | Yes | Yes | Yes | No (Data stored on servers) |
 | **Setup Time** | 5 min | 10 min | 15 min | 2 min |
 | **Learning Curve** | Moderate | Easy | Easy | Easiest |
 
@@ -61,8 +61,6 @@ pip install simple-resume
 **Best for Privacy**: 100% local processing with no data exposure
 **Most Flexible**: HTML templates + unlimited customization
 **Professional Output**: LaTeX typesetting for academic/technical resumes
-
-**Legend: ✓ = Supported, ✗ = Not Supported, ~ = Limited**
 
 *See [Detailed Comparison](wiki/Comparison.md) for full analysis and use case recommendations.*
 
@@ -77,6 +75,12 @@ uv sync --dev --extra utils   # or: pip install -e .[dev,utils]
 ## Quick start (CLI)
 
 Create a minimal YAML in `resume_private/input/my_resume.yaml`:
+
+> Note: JSON Resume (`*.json` from https://jsonresume.org) is also supported —
+> drop it into your `input/` folder and `simple-resume` will auto-convert it at load time.
+>
+> Tip: Editor autocomplete is available via JSON Schema at
+> `src/simple_resume/shell/assets/static/schema.json` (VS Code YAML extension supports schema association).
 
 ```yaml
 template: resume_no_bars
@@ -100,7 +104,7 @@ uv run simple-resume generate --format pdf         # PDF
 uv run simple-resume generate --format html --open # HTML + open in browser
 ```
 
-Built-in templates: `resume_no_bars`, `resume_with_bars`, `demo` (see `src/simple_resume/shell/assets/templates/html/`). Static assets live under `.../assets/static/`.
+Built-in templates: `resume_no_bars`, `resume_with_bars`, `demo` (see `src/simple_resume/shell/assets/templates/html/`). Static assets are stored in `.../assets/static/`.
 
 ## Python API
 
@@ -146,6 +150,7 @@ The workflow builds the package, generates a changelog from commit history, and 
 ## Workflows & docs
 
 - **Guides**: [Getting Started](wiki/Getting-Started.md), [Usage](wiki/Usage-Guide.md), [Workflows](wiki/Workflows.md), [Path Handling](wiki/Path-Handling-Guide.md).
+- **API Docs**: [API Reference](wiki/API-Reference.md), [API Stability Policy](wiki/API-Stability-Policy.md), [Shell Layer APIs](wiki/Shell-Layer-APIs.md).
 - **Architecture**: [Architecture Guide](wiki/Architecture-Guide.md) and `wiki/architecture/`.
 - **Migration**: [Migration Guide](wiki/Migration-Guide.md) plus [Generate module migration](wiki/Migration-Guide-Generate-Module.md).
 - **Development**: [Development Guide](wiki/Development-Guide.md), [Contributing](wiki/Contributing.md), [PDF renderer evaluation](wiki/PDF-Renderer-Evaluation.md).

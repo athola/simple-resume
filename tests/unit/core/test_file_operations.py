@@ -16,18 +16,20 @@ class TestFindYamlFiles:
     """Tests for find_yaml_files function."""
 
     def test_finds_yaml_and_yml_files(self, tmp_path: Path, story: Scenario) -> None:
-        """Test finding both .yaml and .yml files."""
-        story.given("a directory with .yaml, .yml, and other files")
-        story.when("finding yaml files")
+        """Test finding .yaml/.yml/.json resume inputs."""
+        story.given("a directory with .yaml, .yml, .json, and other files")
+        story.when("finding resume files")
         (tmp_path / "resume1.yaml").write_text("config: {}")
         (tmp_path / "resume2.yml").write_text("config: {}")
-        (tmp_path / "readme.txt").write_text("not yaml")
+        (tmp_path / "resume3.json").write_text("{}")
+        (tmp_path / "readme.txt").write_text("ignore")
 
         result = find_yaml_files(tmp_path)
 
-        assert len(result) == 2
+        assert len(result) == 3
         assert any(f.name == "resume1.yaml" for f in result)
         assert any(f.name == "resume2.yml" for f in result)
+        assert any(f.name == "resume3.json" for f in result)
 
     def test_returns_empty_list_for_nonexistent_dir(self, story: Scenario) -> None:
         """Test returns empty list when directory doesn't exist."""

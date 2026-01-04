@@ -1,23 +1,23 @@
 # Contributing Guide
 
-This guide explains how to contribute to the `simple-resume` project. We welcome bug reports, feature suggestions, and code improvements.
+Contribute to the `simple-resume` project by reporting bugs, suggesting features, or submitting code improvements.
 
 ## Reporting Bugs and Suggesting Features
 
-Bugs and feature suggestions should be reported by opening a GitHub issue.
+Report bugs and feature suggestions by opening a GitHub issue.
 
 -   **[Report a bug](https://github.com/athola/simple-resume/issues)**: Provide a detailed description of the bug and steps to reproduce it.
 -   **[Suggest a feature](https://github.com/athola/simple-resume/issues/new?template=feature_request.md)**: Describe your idea and explain why it would be a good addition to the project.
 
 ## Contributing Code
 
-To contribute code, please follow these steps:
+To contribute code:
 
 1.  Fork the repository and clone it to your local machine.
 2.  Create a new branch for your changes.
 3.  Set up your development environment by following the [Development Guide](Development-Guide.md).
 4.  Make your changes, and add tests and documentation as needed.
-5.  Run all code quality checks to ensure the changes adhere to the project's style and pass all tests.
+5.  Run code quality checks to verify the changes adhere to the project's style and pass all tests.
 
     ```bash
     make check-all

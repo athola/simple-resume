@@ -2,6 +2,27 @@
 
 This file documents all notable project changes. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2026-01-03
+
+### Added
+
+-   JSON Resume import support via `from_json_resume()` converter (#39)
+-   Embedded JSON Schema for resume validation at `shell/assets/static/schema.json`
+-   New `core/importers` subpackage for external format converters
+-   Comprehensive API documentation: `wiki/API-Reference.md`, `wiki/Shell-Layer-APIs.md`
+-   API Stability Policy documentation at `wiki/API-Stability-Policy.md`
+-   `get_schema_path()` helper for accessing bundled schema
+
+### Changed
+
+-   Extended `io_utils.candidate_yaml_path()` to recognize `.json` resume files
+-   Updated `normalize_resume_name()` to handle JSON file extensions
+-   Enhanced Getting Started and Usage Guide documentation
+
+### Fixed
+
+-   Path handling for JSON files now distinguishes between resume names and file paths
+
 ## [0.1.7] - 2026-01-01
 
 ### Changed

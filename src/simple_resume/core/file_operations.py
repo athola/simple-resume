@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 def find_yaml_files(input_dir: Path, pattern: str = "*") -> list[Path]:
-    """Find YAML files matching the given pattern.
+    """Find resume input files matching the given pattern.
 
     Args:
         input_dir: Directory to search for YAML files.
@@ -23,13 +23,11 @@ def find_yaml_files(input_dir: Path, pattern: str = "*") -> list[Path]:
 
     yaml_files = []
 
-    # Find files matching pattern with .yaml/.yml extension
-    for file_path in input_dir.glob(f"{pattern}.yaml"):
-        if file_path.is_file():
-            yaml_files.append(file_path)
-    for file_path in input_dir.glob(f"{pattern}.yml"):
-        if file_path.is_file():
-            yaml_files.append(file_path)
+    # Find files matching pattern with .yaml/.yml/.json extension
+    for ext in ("yaml", "yml", "json"):
+        for file_path in input_dir.glob(f"{pattern}.{ext}"):
+            if file_path.is_file():
+                yaml_files.append(file_path)
 
     return sorted(yaml_files)
 

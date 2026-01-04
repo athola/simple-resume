@@ -598,19 +598,19 @@ class TestResumeSessionFindYamlFiles:
         assert len(yaml_files) == 2
         session.close()
 
-    def test_find_yaml_files_ignores_non_yaml_files(self, tmp_path: Path) -> None:
-        """_find_yaml_files() ignores non-YAML files."""
+    def test_find_yaml_files_ignores_unrelated_extensions(self, tmp_path: Path) -> None:
+        """_find_yaml_files() ignores unrelated extensions."""
         input_dir = tmp_path / "input"
         input_dir.mkdir()
         (input_dir / "resume.yaml").write_text("test")
+        (input_dir / "resume.json").write_text("{}")
         (input_dir / "readme.txt").write_text("test")
-        (input_dir / "config.json").write_text("test")
 
         session = ResumeSession(data_dir=str(tmp_path))
         yaml_files = session._find_yaml_files()
 
-        assert len(yaml_files) == 1
-        assert yaml_files[0].suffix == ".yaml"
+        assert len(yaml_files) == 2
+        assert {p.suffix for p in yaml_files} == {".yaml", ".json"}
         session.close()
 
     def test_find_yaml_files_ignores_directories(self, tmp_path: Path) -> None:

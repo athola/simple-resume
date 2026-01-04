@@ -1,6 +1,6 @@
 # PDF Renderer Evaluation
 
-This document evaluates alternatives to WeasyPrint for PDF generation. WeasyPrint, the current renderer, has rendering issues requiring CSS workarounds. This evaluation explores other options to determine migration benefits.
+This document evaluates alternatives to WeasyPrint for PDF generation. WeasyPrint requires CSS workarounds due to rendering issues. This evaluation compares alternatives to determine migration benefits.
 
 ## Current State: WeasyPrint
 
@@ -84,7 +84,7 @@ We evaluated each alternative based on these criteria:
 
 ### Short-term (0–12 months)
 
-**Stay with WeasyPrint.** Current implementation is stable, workarounds documented. This strategy prioritizes new features over infrastructure changes.
+**Stay with WeasyPrint.** Current implementation is stable, workarounds documented.
 
 ### Long-term (12+ months)
 

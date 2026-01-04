@@ -1,12 +1,12 @@
 # Getting Started
 
-This guide provides a walkthrough for installing `simple-resume`, creating a resume from a YAML file, and generating it as a PDF or HTML document.
+This guide explains how to install `simple-resume`, create a resume from a YAML file, and generate it as a PDF or HTML document.
 
 ## 1. Installation and Setup
 
-This guide is for setting up a local development environment. For standard user installation, see the [README.md](../README.md).
+This guide covers setting up a local development environment. For standard user installation, see the [README.md](../README.md).
 
-First, ensure you have Python 3.9+ and `uv` installed. Then, clone the repository and install the required dependencies:
+First, verify you have Python 3.9+ and `uv` installed. Then, clone the repository and install the required dependencies:
 
 ```bash
 git clone https://github.com/athola/simple-resume.git
@@ -18,11 +18,23 @@ uv sync
 
 ### Start with a Sample
 
-To get started, copy one of the sample files to the `resume_private/input` directory.
+Copy one of the sample files to the `resume_private/input` directory.
 
 ```bash
 cp sample/input/sample_1.yaml resume_private/input/my_resume.yaml
 ```
+
+**Alternatively**, import from JSON Resume format:
+
+```bash
+# Copy a JSON Resume file (from jsonresume.org)
+cp my-resume.json resume_private/input/
+
+# Generate - automatic conversion happens at load time
+uv run simple-resume generate --format pdf
+```
+
+See [Usage Guide](Usage-Guide.md#json-resume-import) for complete JSON Resume documentation.
 
 ### Edit the Content
 
@@ -51,7 +63,7 @@ To generate multiple resumes at once, use the `--data-dir` argument to specify a
 
 ## 3. Customize Your Resume
 
-The appearance of your resume can be customized by editing the YAML file.
+Customize the resume's appearance by editing the YAML file.
 
 ### Change the Template
 
@@ -106,8 +118,8 @@ The `sample/` directory contains the following examples:
 
 ## Troubleshooting
 
--   **PDF Generation Fails**: PDF generation depends on WeasyPrint or LaTeX. Ensure that their dependencies are installed correctly.
+-   **PDF Generation Fails**: PDF generation depends on WeasyPrint or LaTeX. Verify dependencies are installed correctly.
 -   **YAML Syntax Errors**: YAML is sensitive to indentation. Use a YAML linter to check for syntax errors.
--   **Template Not Found**: Ensure that the `template` name in your YAML file matches an available template (e.g., `resume_base`, `resume_no_bars`).
+-   **Template Not Found**: Verify the `template` name in your YAML file matches an available template (e.g., `resume_base`, `resume_no_bars`).
 
-For other issues, please open an issue on [GitHub](https://github.com/athola/simple-resume/issues).
+Report other issues on [GitHub](https://github.com/athola/simple-resume/issues).

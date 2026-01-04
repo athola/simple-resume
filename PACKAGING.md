@@ -1,6 +1,6 @@
 # Packaging for PyPI
 
-This guide outlines the process for preparing, building, and publishing `simple-resume` releases to PyPI.
+Process for preparing, building, and publishing `simple-resume` releases to PyPI.
 
 ## Prerequisites
 
@@ -11,7 +11,7 @@ This guide outlines the process for preparing, building, and publishing `simple-
 
 ## Versioning
 
-This project uses [Semantic Versioning](https://semver.org/). Before creating a release, update the version in `pyproject.toml` and `CHANGELOG.md`.
+This project uses [Semantic Versioning](https://semver.org/). Update the version in `pyproject.toml` and `CHANGELOG.md` before creating a release.
 
 ## Release Checklist
 
@@ -68,7 +68,7 @@ The GitHub Actions workflow is configured to automatically build and publish a r
 
 ### Manual Publishing
 
-To publish the package manually, use `uv`.
+Publish manually using `uv`.
 
 ```bash
 # Publish to PyPI

@@ -1,10 +1,10 @@
 # Usage Guide
 
-This guide provides instructions for using the command-line interface (CLI) and Python API.
+This guide covers the command-line interface (CLI) and Python API.
 
 ## Command-Line Interface
 
-The `simple-resume` CLI is our primary tool for generating resumes.
+The `simple-resume` CLI is the primary tool for generating resumes.
 
 ### Generating Resumes
 
@@ -37,6 +37,42 @@ The `--data-dir` argument processes all YAML files within a specified directory.
 ```bash
 uv run simple-resume generate --data-dir my_resumes --format html
 ```
+
+### JSON Resume Import
+
+simple-resume supports importing JSON Resume files (`.json` from jsonresume.org). Drop a JSON Resume file into your input directory and `simple-resume` will automatically convert it at load time.
+
+**Schema reference**: v1.0.x JSON Resume schema is supported.
+
+```bash
+# Place your JSON Resume in the input folder
+cp my-resume.json resume_private/input/
+
+# Generate - automatic conversion happens at load time
+uv run simple-resume generate --format pdf
+```
+
+The importer performs a pragmatic conversion that:
+
+- Preserves key content (basics, work, education, projects)
+- Converts JSON Resume highlights to markdown bullet points
+- Adds required simple-resume structure (template, config)
+- Maps JSON Resume fields to simple-resume equivalents
+
+**Field mapping** (partial):
+
+| JSON Resume | simple-resume |
+|-------------|---------------|
+| `basics.name` | `full_name` |
+| `basics.email` | `email` |
+| `basics.phone` | `phone` |
+| `basics.url` | `web` |
+| `work[]` | `body.Experience` |
+| `education[]` | `body.Education` |
+| `projects[]` | `body.Projects` |
+| `skills[]` | `body.Skills` |
+
+The conversion is not 1:1 — some JSON Resume fields may not map directly. Review the converted output and adjust as needed.
 
 ## Python API
 
@@ -92,14 +128,14 @@ When this setting is enabled, the `generate` command will produce a `.tex` file 
 
 #### LaTeX Requirements
 
-A LaTeX distribution must be installed on your system. We recommend the following:
+Install a LaTeX distribution:
 - **TeX Live** (cross-platform)
 - **MiKTeX** (Windows)
 - **MacTeX** (macOS)
 
 #### Compilation
 
-Once generated, compile the `.tex` file with a LaTeX engine.
+Compile the generated `.tex` file with a LaTeX engine.
 
 ```bash
 # 1. Generate the LaTeX source file.
