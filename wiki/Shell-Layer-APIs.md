@@ -18,29 +18,29 @@ The shell layer (`simple_resume.shell.*`) contains I/O operations, side effects,
 
 ```mermaid
 flowchart TB
-    subgraph PUBLIC["Public API Layer<br/>(simple_resume.__init__)"]
-        EXPORTS["Stable exports:<br/>generate_pdf, to_pdf, ResumeSession, etc."]
+    subgraph PUBLIC["Public API Layer (simple_resume.__init__)"]
+        EXPORTS["generate_pdf, to_pdf, ResumeSession"]
     end
 
-    subgraph SHELL["Shell Layer (Internal)<br/>(simple_resume.shell.*)"]
+    subgraph SHELL["Shell Layer (simple_resume.shell.*)"]
         direction TB
         subgraph ROW1[" "]
-            GEN["generate/<br/>Lazy loading"]
-            SESS["session/<br/>Batch ops"]
-            REND["render/<br/>Jinja/LaTeX"]
+            GEN["generate/"]
+            SESS["session/"]
+            REND["render/"]
         end
         subgraph ROW2[" "]
-            STRAT["strategies/<br/>PDF gen strat"]
-            PAL["palettes/<br/>Color mgmt"]
-            THEME["themes/<br/>Template load"]
+            STRAT["strategies/"]
+            PAL["palettes/"]
+            THEME["themes/"]
         end
     end
 
-    subgraph CORE["Core Layer (Stable)<br/>(simple_resume.core.*)"]
-        PURE["Pure functions:<br/>Resume, colors, validation, models"]
+    subgraph CORE["Core Layer (simple_resume.core.*)"]
+        PURE["Resume, colors, validation, models"]
     end
 
-    PUBLIC -->|"Re-exports stable functions"| SHELL
+    PUBLIC -->|"Re-exports"| SHELL
     SHELL -->|"Calls pure functions"| CORE
 
     style PUBLIC fill:#e1f5fe,stroke:#01579b
