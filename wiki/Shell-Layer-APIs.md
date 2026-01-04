@@ -22,7 +22,7 @@ flowchart TB
         EXPORTS["generate_pdf, to_pdf, ResumeSession"]
     end
 
-    subgraph SHELL["<b>Shell Layer</b><br/>(simple_resume.shell.*)"]
+    subgraph SHELL["Shell Layer"]
         direction TB
         GEN["generate/"]
         SESS["session/"]
