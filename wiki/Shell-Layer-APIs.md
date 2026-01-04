@@ -24,24 +24,28 @@ flowchart TB
 
     subgraph SHELL["Shell Layer (simple_resume.shell.*)"]
         direction TB
-        subgraph ROW1[" "]
-            GEN["generate/"]
-            SESS["session/"]
-            REND["render/"]
-        end
-        subgraph ROW2[" "]
-            STRAT["strategies/"]
-            PAL["palettes/"]
-            THEME["themes/"]
-        end
+        GEN["generate/"]
+        SESS["session/"]
+        REND["render/"]
+        STRAT["strategies/"]
+        PAL["palettes/"]
+        THEME["themes/"]
     end
 
     subgraph CORE["Core Layer (simple_resume.core.*)"]
         PURE["Resume, colors, validation, models"]
     end
 
-    PUBLIC -->|"Re-exports"| SHELL
-    SHELL -->|"Calls pure functions"| CORE
+    EXPORTS -->|"Re-exports"| GEN
+    EXPORTS -->|"Re-exports"| SESS
+    EXPORTS -->|"Re-exports"| REND
+
+    GEN -->|"Calls pure functions"| PURE
+    SESS -->|"Calls pure functions"| PURE
+    REND -->|"Calls pure functions"| PURE
+    STRAT -->|"Uses"| PURE
+    PAL -->|"Uses"| PURE
+    THEME -->|"Uses"| PURE
 
     style PUBLIC fill:#e1f5fe,stroke:#01579b
     style SHELL fill:#fff3e0,stroke:#e65100
