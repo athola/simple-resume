@@ -217,6 +217,9 @@
         "contact_text_padding_left": {"$ref": "#/$defs/dimension", "default": 2},
 
         "bold_font_weight": {"type": "integer", "default": 600},
+        "description_font_size": {"$ref": "#/$defs/dimension", "default": 8.5},
+        "date_font_size": {"$ref": "#/$defs/dimension", "default": 9},
+        "sidebar_font_size": {"$ref": "#/$defs/dimension", "default": 8.5},
 
         "theme_color": {"$ref": "#/$defs/hexColor", "default": "#0395DE"},
         "sidebar_color": {"$ref": "#/$defs/hexColor", "default": "#F6F6F6"},

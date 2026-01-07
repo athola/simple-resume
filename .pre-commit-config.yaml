@@ -84,3 +84,32 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+
+      - id: wheel-install-test
+        name: wheel-installation-and-execution-test
+        entry: >
+          bash -lc '
+          set -euo pipefail;
+          mkdir -p dist;
+          rm -f dist/simple_resume-*.whl;
+          UV_CACHE_DIR=.uv-cache uv build --wheel --quiet;
+          WHEEL=$(ls -t dist/simple_resume-*.whl | head -n1);
+          if [[ -z "$WHEEL" ]]; then
+            echo "ERROR: wheel build failed - no wheel file found";
+            exit 1;
+          fi;
+          VENV_DIR=$(mktemp -d);
+          trap "rm -rf $VENV_DIR" EXIT;
+          python3 -m venv "$VENV_DIR";
+          source "$VENV_DIR/bin/activate";
+          pip install -q "$WHEEL";
+          if ! simple-resume --version >/dev/null 2>&1; then
+            echo "ERROR: simple-resume command failed after installation";
+            exit 1;
+          fi;
+          VERSION=$(simple-resume --version 2>&1 | grep -oE "[0-9]+\.[0-9]+\.[0-9]+");
+          echo "Package installs and executes correctly (v$VERSION)"
+          '
+        language: system
+        pass_filenames: false
+        always_run: true

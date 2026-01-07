@@ -30,7 +30,7 @@ markers = [
 
 [project]
 name = "simple-resume"
-version = "0.1.8"
+version = "0.1.9"
 description = "Generate PDF resumes from YAML data using HTML templates"
 authors = [
     {name = "Alex Thola", email = "alexthola@gmail.com"}
@@ -70,20 +70,16 @@ palette-snapshot = "simple_resume.shell.cli.palette:snapshot"
 palette-list = "simple_resume.shell.cli.palette:palette_list"
 generate-random-palette-demo = "simple_resume.shell.cli.random_palette_demo:main"
 
-[tool.hatch.build]
+[tool.hatch.build.targets.sdist]
+include = ["src"]  # Only include content from src
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/simple_resume"]
 include = [
+  "src/simple_resume/**/*.py",
   "src/simple_resume/shell/assets/templates/**",
   "src/simple_resume/shell/assets/static/**",
 ]
-
-[tool.hatch.build.targets.sdist]
-include = ["src"]  # Only include content from src
-sources = ["src"]  # Map src/ to the root of the package
-
-[tool.hatch.build.targets.wheel]
-# wheel builder applies gitignore without the src/ prefix
-ignore-vcs = true
-packages = ["src/simple_resume"]
 
 [dependency-groups]
 dev = [

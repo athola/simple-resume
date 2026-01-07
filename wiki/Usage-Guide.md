@@ -183,6 +183,18 @@ config:
   section_heading_text_margin: -6
 ```
 
+### Typography
+
+Font sizes can be customized in the `config` section. Values are specified in points (pt).
+
+```yaml
+config:
+  description_font_size: 8.5   # Body text in experience/education entries
+  date_font_size: 9            # Primary date labels
+  sidebar_font_size: 8.5       # Sidebar content
+  bold_font_weight: 600        # Weight for bold text
+```
+
 ## Validation
 
 The tool validates the following fields:
