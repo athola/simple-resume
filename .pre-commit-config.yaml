@@ -92,13 +92,17 @@ repos:
           set -euo pipefail;
           mkdir -p dist;
           rm -f dist/simple_resume-*.whl;
-          UV_CACHE_DIR=.uv-cache uv build --wheel >/dev/null 2>&1;
+          UV_CACHE_DIR=.uv-cache uv build --wheel --quiet;
           WHEEL=$(ls -t dist/simple_resume-*.whl | head -n1);
+          if [[ -z "$WHEEL" ]]; then
+            echo "ERROR: wheel build failed - no wheel file found";
+            exit 1;
+          fi;
           VENV_DIR=$(mktemp -d);
           trap "rm -rf $VENV_DIR" EXIT;
-          python3 -m venv "$VENV_DIR" >/dev/null 2>&1;
+          python3 -m venv "$VENV_DIR";
           source "$VENV_DIR/bin/activate";
-          pip install -q "$WHEEL" 2>&1 | grep -v "^Installing" || true;
+          pip install -q "$WHEEL";
           if ! simple-resume --version >/dev/null 2>&1; then
             echo "ERROR: simple-resume command failed after installation";
             exit 1;

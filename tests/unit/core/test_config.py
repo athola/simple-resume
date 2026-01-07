@@ -212,6 +212,9 @@ class TestApplyConfigDefaults:
             "padding": 10,
             "section_heading_margin_top": 8,
             "frame_padding": 20,
+            "description_font_size": 10,
+            "date_font_size": 11,
+            "sidebar_font_size": 9,
         }
         apply_config_defaults(config)
 
@@ -222,6 +225,11 @@ class TestApplyConfigDefaults:
         assert config["padding"] == 10
         assert config["section_heading_margin_top"] == 8
         assert config["frame_padding"] == 20
+
+        # Font size values should be preserved
+        assert config["description_font_size"] == 10
+        assert config["date_font_size"] == 11
+        assert config["sidebar_font_size"] == 9
 
         # Derived values should use the custom padding
         assert config["sidebar_padding_left"] == 8  # 10 - 2

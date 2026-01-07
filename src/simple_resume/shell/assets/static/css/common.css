@@ -216,6 +216,7 @@ li:before {
   padding-right: var(--sidebar-padding-right);
   color: var(--sidebar-text-color);
   background-color: var(--sidebar-color);
+  font-size: var(--sidebar-font-size, 8.5pt);
   overflow: visible;
   position: relative;
   z-index: 10;
@@ -306,7 +307,7 @@ li:before {
 }
 
 .contact-text {
-  font-size: 8.5pt;
+  font-size: var(--sidebar-font-size, 8.5pt);
   word-break: break-word;
   overflow-wrap: break-word;
   hyphens: auto;
