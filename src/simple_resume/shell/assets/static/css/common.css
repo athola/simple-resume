@@ -175,7 +175,7 @@ li:before {
 .page {
   width: var(--page-width);
   min-height: var(--page-height);
-  font-size: 8.5pt;
+  font-size: var(--description-font-size, 8.5pt);
   line-height: 1;
   font-family: 'Avenir 35', 'Helvetica Neue', Arial, sans-serif;
   background: linear-gradient(
@@ -370,11 +370,11 @@ li:before {
 }
 
 .date1 {
-  font-size: 9pt;
+  font-size: var(--date-font-size, 9pt);
 }
 
 .date2 {
-  font-size: 8pt;
+  font-size: calc(var(--date-font-size, 9pt) - 1pt);
   color: var(--date2-color);
 }
 

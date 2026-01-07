@@ -197,6 +197,9 @@ class TestApplyConfigDefaults:
         apply_config_defaults(config)
 
         assert config["bold_font_weight"] == 600
+        assert config["description_font_size"] == 8.5
+        assert config["date_font_size"] == 9
+        assert config["sidebar_font_size"] == 8.5
 
     def test_existing_values_not_overwritten(self, story: Scenario) -> None:
         """Verify that existing config values are not overwritten."""
@@ -283,6 +286,9 @@ class TestNormalizationCompleteness:
 
     EXPECTED_FONT_KEYS = {
         "bold_font_weight",
+        "description_font_size",
+        "date_font_size",
+        "sidebar_font_size",
     }
 
     @pytest.fixture

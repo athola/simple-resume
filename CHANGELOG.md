@@ -2,6 +2,18 @@
 
 This file documents all notable project changes. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.9] - 2026-01-07
+
+### Fixed
+
+-   Package wheel now includes all Python source files, fixing installation failure (#40)
+-   Updated `pyproject.toml` build configuration to properly package source code in wheels
+
+### Added
+
+-   Pre-commit hook `wheel-install-test` to verify package installation and execution
+-   Configurable font sizes: `description_font_size`, `date_font_size`, `sidebar_font_size`
+
 ## [0.1.8] - 2026-01-03
 
 ### Added

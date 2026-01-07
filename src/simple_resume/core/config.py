@@ -172,6 +172,9 @@ def apply_config_defaults(config: dict[str, Any]) -> None:
     # Font Settings
     # ==========================================================================
     config.setdefault("bold_font_weight", 600)
+    config.setdefault("description_font_size", 8.5)
+    config.setdefault("date_font_size", 9)
+    config.setdefault("sidebar_font_size", 8.5)
 
 
 def validate_dimensions(config: dict[str, Any], filename_prefix: str) -> None:
