@@ -6,7 +6,7 @@ Verifies that font size configuration flows correctly from:
 3. Jinja template (resume_base.html)
 4. Rendered CSS variables
 
-This is the three-layer defense that ensures font sizes are consistent
+This is the four-layer defense that ensures font sizes are consistent
 throughout the resume generation pipeline.
 """
 
@@ -82,16 +82,22 @@ def render_resume_html(name: str, paths: Paths, *, preview: bool = False) -> str
     with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False) as tmp:
         tmp_path = Path(tmp.name)
 
-    template_locator = DefaultTemplateLocator()
-    factory = create_html_generator_factory(default_template_locator=template_locator)
-    prepare_html_func = factory.create_prepare_html_function()
-    html, _, _ = prepare_html_func(
-        render_plan,
-        tmp_path,
-        resume_name=name,
-        template_locator=template_locator,
-    )
-    return html
+    try:
+        template_locator = DefaultTemplateLocator()
+        factory = create_html_generator_factory(
+            default_template_locator=template_locator
+        )
+        prepare_html_func = factory.create_prepare_html_function()
+        html, _, _ = prepare_html_func(
+            render_plan,
+            tmp_path,
+            resume_name=name,
+            template_locator=template_locator,
+        )
+        return html
+    finally:
+        # Clean up the temp file to avoid resource leak
+        tmp_path.unlink(missing_ok=True)
 
 
 def test_font_size_css_variable_chain_custom_values() -> None:
@@ -152,10 +158,10 @@ def test_font_size_css_variable_chain_default_fallbacks() -> None:
         template="resume_no_bars",
         full_name="Default Font Size User",
     )
-    # Ensure font sizes are NOT in the config
-    resume_data.pop("sidebar_font_size", None)
-    resume_data.pop("description_font_size", None)
-    resume_data.pop("date_font_size", None)
+    # Ensure font sizes are NOT in the config (they live under resume_data["config"])
+    resume_data["config"].pop("sidebar_font_size", None)
+    resume_data["config"].pop("description_font_size", None)
+    resume_data["config"].pop("date_font_size", None)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         temp_dir = Path(tmpdir)
