@@ -2,6 +2,12 @@
 
 This file documents all notable project changes. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.10] - 2026-01-20
+
+### Changed
+
+-   TBD (update with actual changes before release)
+
 ## [0.1.9] - 2026-01-07
 
 ### Fixed

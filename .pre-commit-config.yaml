@@ -87,28 +87,49 @@ repos:
 
       - id: wheel-install-test
         name: wheel-installation-and-execution-test
-        entry: >
+        # Tests that the wheel builds, installs, and executes correctly.
+        # Set DEBUG_HOOK=1 for verbose output during troubleshooting.
+        entry: |
           bash -lc '
-          set -euo pipefail;
-          mkdir -p dist;
-          rm -f dist/simple_resume-*.whl;
-          UV_CACHE_DIR=.uv-cache uv build --wheel --quiet;
-          WHEEL=$(ls -t dist/simple_resume-*.whl | head -n1);
-          if [[ -z "$WHEEL" ]]; then
-            echo "ERROR: wheel build failed - no wheel file found";
-            exit 1;
-          fi;
-          VENV_DIR=$(mktemp -d);
-          trap "rm -rf $VENV_DIR" EXIT;
-          python3 -m venv "$VENV_DIR";
-          source "$VENV_DIR/bin/activate";
-          pip install -q "$WHEEL";
-          if ! simple-resume --version >/dev/null 2>&1; then
-            echo "ERROR: simple-resume command failed after installation";
-            exit 1;
-          fi;
-          VERSION=$(simple-resume --version 2>&1 | grep -oE "[0-9]+\.[0-9]+\.[0-9]+");
-          echo "Package installs and executes correctly (v$VERSION)"
+            set -euo pipefail
+
+            # Prepare build directory
+            mkdir -p dist
+            rm -f dist/simple_resume-*.whl
+
+            # Configure verbosity based on DEBUG_HOOK
+            if [[ -n "${DEBUG_HOOK:-}" ]]; then
+              UV_QUIET=""
+              PIP_QUIET=""
+              echo "DEBUG: Verbose mode enabled (set DEBUG_HOOK=1)"
+            else
+              UV_QUIET="--quiet"
+              PIP_QUIET="-q"
+            fi
+
+            # Build the wheel
+            UV_CACHE_DIR=.uv-cache uv build --wheel $UV_QUIET
+            WHEEL=$(ls -t dist/simple_resume-*.whl | head -n1)
+            if [[ -z "$WHEEL" ]]; then
+              echo "ERROR: wheel build failed - no wheel file found"
+              exit 1
+            fi
+
+            # Create isolated venv and install
+            VENV_DIR=$(mktemp -d)
+            trap "rm -rf $VENV_DIR" EXIT
+            python3 -m venv "$VENV_DIR"
+            source "$VENV_DIR/bin/activate"
+            pip install $PIP_QUIET "$WHEEL"
+
+            # Verify installation
+            if ! simple-resume --version >/dev/null 2>&1; then
+              echo "ERROR: simple-resume command failed after installation"
+              exit 1
+            fi
+
+            VERSION=$(simple-resume --version 2>&1 | grep -oE "[0-9]+\.[0-9]+\.[0-9]+")
+            echo "Package installs and executes correctly (v$VERSION)"
           '
         language: system
         pass_filenames: false
