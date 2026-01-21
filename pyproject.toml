@@ -30,7 +30,7 @@ markers = [
 
 [project]
 name = "simple-resume"
-version = "0.1.10"
+version = "0.2.0"
 description = "Generate PDF resumes from YAML data using HTML templates"
 authors = [
     {name = "Alex Thola", email = "alexthola@gmail.com"}
@@ -48,6 +48,7 @@ dependencies = [
     "weasyprint>=62.1,<63.0",
     "palettable>=3.3.3,<4.0",
     "jinja2>=3.0,<4.0",
+    "scikit-learn>=1.5,<2.0",
 ]
 
 [project.optional-dependencies]
@@ -97,6 +98,7 @@ dev = [
     "types-markdown>=3.7.2,<4.0",
     "types-pyyaml>=6.0.12.20250915",
     "twine>=6.2.0",
+    "hypothesis>=6.115.0,<7.0",
 ]
 
 [tool.ruff]
@@ -193,6 +195,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["oyaml"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["sklearn", "sklearn.*"]
 ignore_missing_imports = true
 
 

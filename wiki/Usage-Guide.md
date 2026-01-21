@@ -74,6 +74,39 @@ The importer performs a pragmatic conversion that:
 
 The conversion is not 1:1 — some JSON Resume fields may not map directly. Review the converted output and adjust as needed.
 
+### ATS Resume Screening
+
+The `screen` command scores a resume against a job description using multiple NLP algorithms.
+
+```bash
+# Basic screening with text output
+uv run simple-resume screen my_resume.yaml job_description.txt
+
+# Generate a YAML report
+uv run simple-resume screen my_resume.yaml job.txt --format yaml --output report.yaml
+
+# Use specific scorer only
+uv run simple-resume screen resume.yaml job.txt --scorers tfidf
+
+# Verbose output with detailed breakdown
+uv run simple-resume screen resume.yaml job.txt --verbose
+```
+
+**Output formats:**
+- `text` (default): Human-readable text report
+- `yaml`: Structured YAML report for automation
+- `json`: Machine-readable JSON report
+
+**Scorer options:**
+- `all` (default): Uses TF-IDF, Jaccard, and Keyword scorers combined
+- `tfidf`: Statistical term frequency analysis only
+- `jaccard`: N-gram phrase overlap only
+- `keyword`: Exact keyword matching only
+
+**Exit codes:**
+- `0`: Score >= 50% (passing)
+- `1`: Score < 50% or error occurred
+
 ## Python API
 
 Import the `generate` and `preview` functions for programmatic use.

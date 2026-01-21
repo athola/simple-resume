@@ -1,7 +1,7 @@
 # API Reference
 
-**Version:** 0.1.7
-**Last Updated:** 2025-01-03
+**Version:** 0.2.0
+**Last Updated:** 2025-01-20
 **Stability:** Public API exports follow semantic versioning guarantees
 
 ---
@@ -12,6 +12,7 @@
 - [Core Models](#core-models)
 - [Exceptions](#exceptions)
 - [Generation Functions](#generation-functions)
+- [ATS Scoring](#ats-scoring) ⭐ NEW
 - [Session Management](#session-management)
 - [Result Types](#result-types)
 - [Shell I/O Functions](#shell-io-functions)
@@ -257,6 +258,225 @@ result = preview("resume.yaml", open_after=False)
 ```
 
 **Returns:** `GenerationResult`
+
+---
+
+## ATS Scoring
+
+Score resumes against job descriptions using multiple NLP algorithms in a tournament-style approach.
+
+### `score_resume`
+
+Convenience function to score a resume against a job description using the default tournament.
+
+```python
+from simple_resume import score_resume
+
+result = score_resume(
+    resume_text="Senior Python Developer with 5 years experience...",
+    job_description="We are looking for a Senior Engineer..."
+)
+
+print(f"Match score: {result.overall_score * 100:.1f}%")
+print(f"Algorithms used: {result.metadata['scorer_names']}")
+```
+
+**Parameters:**
+- `resume_text: str` - Full resume text
+- `job_description: str` - Full job description text
+- `custom_scorers: list[BaseScorer] | None` - Optional custom scoring algorithms
+
+**Returns:** `TournamentResult`
+
+### `ATSTournament`
+
+Multi-algorithm tournament runner for comprehensive resume-job matching.
+
+```python
+from simple_resume import ATSTournament, TFIDFScorer, JaccardScorer
+
+# Custom tournament with specific weights
+tournament = ATSTournament(scorers=[
+    TFIDFScorer(weight=0.5),
+    JaccardScorer(weight=0.5),
+])
+
+result = tournament.score(resume_text, job_description)
+```
+
+**Parameters:**
+- `scorers: list[BaseScorer] | None` - List of scoring algorithms (defaults to TF-IDF, Jaccard, Keyword)
+
+**Methods:**
+- `score(resume_text, job_description, **kwargs) -> TournamentResult` - Score resume against job
+- `get_top_matches(resumes, job_description, top_n=10) -> list` - Rank multiple resumes
+
+### `TFIDFScorer`
+
+TF-IDF + Cosine Similarity scorer for statistical keyword analysis.
+
+```python
+from simple_resume import TFIDFScorer
+
+scorer = TFIDFScorer(
+    weight=1.0,
+    max_features=1000,
+    ngram_range=(1, 2)  # Unigrams + bigrams
+)
+result = scorer.score(resume_text, job_description)
+```
+
+**Pros:** Fast, interpretable, good for exact keyword matching
+**Cons:** Misses semantic meaning, no context understanding
+
+### `JaccardScorer`
+
+Jaccard similarity + N-gram overlap scorer for phrase matching.
+
+```python
+from simple_resume import JaccardScorer
+
+scorer = JaccardScorer(
+    weight=1.0,
+    ngram_range=(1, 3),  # Unigrams to trigrams
+    case_sensitive=False
+)
+result = scorer.score(resume_text, job_description)
+```
+
+**Pros:** Simple, interpretable, good for exact phrase matching
+**Cons:** Limited to surface-level matching, misses semantic variations
+
+### `KeywordScorer`
+
+Exact keyword match scorer with fuzzy tolerance.
+
+```python
+from simple_resume import KeywordScorer
+
+scorer = KeywordScorer(
+    weight=1.0,
+    fuzzy_threshold=0.85,
+    extract_keywords=True
+)
+result = scorer.score(resume_text, job_description)
+```
+
+**Pros:** Fast, simple, good for hard requirements
+**Cons:** Misses semantic variations, vulnerable to keyword stuffing
+
+### `BaseScorer`
+
+Abstract base class for implementing custom scoring algorithms.
+
+```python
+from simple_resume import BaseScorer, ScorerResult
+
+class CustomScorer(BaseScorer):
+    def score(self, resume_text, job_description, **kwargs):
+        # Your scoring logic here
+        score = 0.75  # Example score
+        return ScorerResult(
+            name="custom",
+            score=score,
+            weight=self.weight,
+            details={"custom_metric": 123}
+        )
+```
+
+### `TournamentResult`
+
+Result from running multiple scoring algorithms.
+
+```python
+from simple_resume import TournamentResult
+
+result.overall_score  # Final weighted average (0-1)
+result.algorithm_results  # List of individual ScorerResult
+result.component_breakdown  # Scores by rubric component
+result.metadata  # Tournament metadata
+result.to_dict()  # Convert to dictionary
+```
+
+### `ScorerResult`
+
+Result from an individual scoring algorithm.
+
+```python
+from simple_resume import ScorerResult
+
+result.name  # Algorithm name
+result.score  # Raw score (0-1)
+result.weighted_score  # Score × weight
+result.details  # Algorithm-specific details
+result.component_scores  # Component breakdown
+result.to_dict()  # Convert to dictionary
+```
+
+### `ExtractedEntities`
+
+Structured entities extracted from resume or job description.
+
+```python
+from simple_resume import EntityExtractor
+
+extractor = EntityExtractor(
+    extract_keywords=True,
+    custom_skills=["Golang", "Rust"]
+)
+entities = extractor.extract(text)
+
+entities.skills  # List of skills
+entities.experience_years  # Total years
+entities.degrees  # List of degrees
+entities.certifications  # List of certifications
+entities.keywords  # TF-IDF keywords (word, score)
+entities.to_dict()  # Convert to dictionary
+```
+
+### `EntityExtractor`
+
+Extract structured entities from unstructured text.
+
+```python
+from simple_resume import EntityExtractor, extract_entities
+
+# Class-based usage
+extractor = EntityExtractor(extract_keywords=True)
+entities = extractor.extract(resume_text)
+
+# Function-based usage
+entities = extract_entities(resume_text, custom_skills=["Kubernetes"])
+```
+
+### `ATSReportGenerator`
+
+Generate human-readable reports from tournament results.
+
+```python
+from simple_resume import ATSReportGenerator
+from pathlib import Path
+
+report_gen = ATSReportGenerator(
+    result=tournament_result,
+    resume_file="my_resume.yaml",
+    job_file="job_description.txt",
+    job_url="https://company.com/jobs/123"
+)
+
+# Generate report content
+yaml_report = report_gen.generate_yaml()
+json_report = report_gen.generate_json(indent=2)
+
+# Save to file (shell layer responsibility)
+Path("output/ats_report.yaml").write_text(yaml_report)
+```
+
+**Output includes:**
+- Overall score with status label
+- Algorithm breakdown with individual scores
+- Component scores (experience, skills, semantic, keywords)
+- Recommendations for improvement
 
 ---
 
@@ -526,7 +746,7 @@ pip install simple-resume
 ```python
 import simple_resume
 
-print(simple_resume.__version__)  # "0.1.7"
+print(simple_resume.__version__)  # "0.2.0"
 ```
 
 ---

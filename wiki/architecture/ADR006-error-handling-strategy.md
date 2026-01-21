@@ -169,18 +169,26 @@ except Exception as exc:
     raise GenerationError(f"Failed to generate {error_label}: {exc}", format_type=format_type) from exc
 ```
 
-### Palette Errors (Separate Hierarchy)
+### Palette Errors (Unified Hierarchy)
 ```python
-# palettes/exceptions.py - Not integrated with main hierarchy
-class PaletteError(RuntimeError):
-    """Base class for palette-related errors."""
+# core/exceptions.py - Integrated with main hierarchy
+class PaletteError(SimpleResumeError):
+    """Base class for palette-related errors (inherits from SimpleResumeError)."""
 
 class PaletteLookupError(PaletteError):
     """Raised when a palette cannot be found."""
 
 class PaletteGenerationError(PaletteError):
     """Raised when palette generation fails."""
+
+class PaletteRemoteDisabled(PaletteError):
+    """Raised when remote palette access is disabled by configuration."""
+
+class PaletteRemoteError(PaletteError):
+    """Raised when a remote palette provider returns an error."""
 ```
+
+**Note**: As of v0.2.0, the palette exception hierarchy has been integrated with the main `SimpleResumeError` base class. The old `core/palettes/exceptions.py` module is deprecated and now re-exports from `core/exceptions.py` with a deprecation warning.
 
 ## CLI Error Handling Strategy
 
@@ -295,8 +303,10 @@ def test_file_system_error_context(self):
 
 ## Future Improvements
 
+### Completed (v0.2.0)
+1. ~~**Integrate Palette Hierarchy**: Unify palette exceptions with the main SimpleResumeError base.~~ ✅ **COMPLETED**
+
 ### High Priority (6 months)
-1. **Integrate Palette Hierarchy**: Unify palette exceptions with the main SimpleResumeError base.
 2. **Enhanced Error Context**: Ensure all exceptions capture relevant context.
 3. **Consistent Exception Chaining**: Standardize `from exc` usage across all modules.
 

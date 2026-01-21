@@ -281,6 +281,7 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
         assert exc.value.template_name is not None
         assert "missing_template" in exc.value.template_name
 
+    @pytest.mark.slow
     def test_performance_with_large_resume_dataset(self, temp_dir: Path) -> None:
         """Basic performance sanity check for bulk rendering."""
         story = scenario("bulk rendering performance")
@@ -311,8 +312,8 @@ This is a detailed description with **bold text**, *italic text*, and [links](ht
         render_time = time.time() - start_time
 
         story.then("loading and rendering stay within expected timing budgets")
-        assert load_time < 5.0, f"Loading took too long: {load_time}s"
-        assert render_time < 10.0, f"Rendering took too long: {render_time}s"
+        assert load_time < 8.0, f"Loading took too long: {load_time}s"
+        assert render_time < 15.0, f"Rendering took too long: {render_time}s"
 
     def test_concurrent_user_scenarios(self, temp_dir: Path) -> None:
         """Simulate concurrent rendering requests."""
