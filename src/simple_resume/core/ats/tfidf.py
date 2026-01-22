@@ -11,6 +11,7 @@ but misses semantic meaning (e.g., "k8s" vs "Kubernetes").
 
 from __future__ import annotations
 
+import logging
 import re
 from typing import Any
 
@@ -18,6 +19,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from simple_resume.core.ats.base import BaseScorer, ScorerResult
+
+logger = logging.getLogger(__name__)
 
 
 class TFIDFScorer(BaseScorer):
@@ -141,8 +144,14 @@ class TFIDFScorer(BaseScorer):
         try:
             corpus = [resume_clean, job_clean]
             tfidf_matrix = self.vectorizer.fit_transform(corpus)
-        except ValueError:
+        except ValueError as e:
             # Handle sklearn edge case (e.g., "no terms remain after pruning")
+            # Log the specific error for debugging before falling back
+            logger.warning(
+                "TF-IDF vectorization failed with primary settings: %s. "
+                "Falling back to permissive vectorizer.",
+                str(e),
+            )
             # Fallback to more permissive vectorizer
             fallback_vectorizer = TfidfVectorizer(
                 max_features=self.max_features,
@@ -156,9 +165,14 @@ class TFIDFScorer(BaseScorer):
             try:
                 tfidf_matrix = fallback_vectorizer.fit_transform(corpus)
                 self.vectorizer = fallback_vectorizer  # Update for feature access
-            except ValueError:
+            except ValueError as fallback_error:
                 # Even fallback failed - return zero similarity
                 # This happens when text is empty or only contains non-word characters
+                logger.warning(
+                    "TF-IDF fallback vectorizer also failed: %s. "
+                    "Returning zero similarity.",
+                    str(fallback_error),
+                )
                 return ScorerResult(
                     name="tfidf_cosine",
                     score=0.0,
@@ -168,7 +182,7 @@ class TFIDFScorer(BaseScorer):
                         "top_job_keywords": [],
                         "top_resume_keywords": [],
                         "shared_keywords": [],
-                        "error": "No valid terms found in either document",
+                        "error": f"No valid terms found: {fallback_error}",
                     },
                 )
 
@@ -230,14 +244,14 @@ class TFIDFScorer(BaseScorer):
         self,
         resume_tfidf: list[float],
         job_tfidf: list[float],
-        feature_names: list[str],
+        feature_names: list[str],  # noqa: ARG002
     ) -> dict[str, float]:
         """Calculate component scores based on TF-IDF analysis.
 
-        Maps to refined rubric components:
-        - experience_relevance: Keyword overlap in experience section
-        - keyword_density: Overall keyword coverage
-        - skill_match: Skills present in resume vs. job requirements
+        Returns component scores derived from TF-IDF vectors:
+        - jaccard_similarity: Set intersection / union of non-zero term indices
+        - keyword_density: Proportion of job keywords found in resume
+        - experience_relevance: Weighted sum of shared TF-IDF scores, normalized
         """
         # Get non-zero indices for both documents
         resume_indices = {i for i, score in enumerate(resume_tfidf) if score > 0}

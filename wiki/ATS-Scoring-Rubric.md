@@ -151,10 +151,10 @@ BOOSTER_MULTIPLIER = 1.2  # Top 10% get 20% bonus
 
 | Algorithm | Weight | Description | Status |
 |-----------|--------|-------------|--------|
-| TF-IDF + Cosine | 1.0 | Statistical term frequency analysis | Implemented |
-| Jaccard + N-gram | 0.20 | Set intersection and phrase overlap | Implemented |
-| Exact Keyword | 0.20 | Direct keyword matching with fuzzy tolerance | Implemented |
-| BERT Semantic | 0.35 | Contextual embeddings for semantic understanding | Planned (#54) |
+| TF-IDF + Cosine | 0.40 | Statistical term frequency analysis | Implemented |
+| Jaccard + N-gram | 0.30 | Set intersection and phrase overlap | Implemented |
+| Exact Keyword | 0.30 | Direct keyword matching with fuzzy tolerance | Implemented |
+| BERT Semantic | TBD | Contextual embeddings for semantic understanding | Planned (#54) |
 
 ---
 

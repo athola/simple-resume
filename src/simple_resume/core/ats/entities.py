@@ -12,6 +12,7 @@ for NLP-based extraction (spaCy, transformers).
 
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -21,6 +22,8 @@ if TYPE_CHECKING:
     from re import Pattern
 
 from simple_resume.core.ats.base import ExtractedEntities
+
+logger = logging.getLogger(__name__)
 
 # Common technical skills patterns (extensible)
 TECH_SKILLS_PATTERNS = [
@@ -463,6 +466,10 @@ class EntityExtractor:
         try:
             from sklearn.feature_extraction.text import TfidfVectorizer  # noqa: PLC0415
         except ImportError:
+            logger.warning(
+                "sklearn not available for keyword extraction. "
+                "Install with: pip install scikit-learn"
+            )
             return []
 
         # Simple TF-IDF for single document (returns raw term frequencies)
@@ -488,8 +495,12 @@ class EntityExtractor:
             keywords.sort(key=lambda x: x[1], reverse=True)
             return keywords[:20]  # Top 20 keywords
 
-        except ValueError:
+        except ValueError as e:
             # Sklearn error (e.g., empty after stopword filtering)
+            logger.warning(
+                "TF-IDF keyword extraction failed: %s. Returning empty keywords.",
+                str(e),
+            )
             return []
 
 
