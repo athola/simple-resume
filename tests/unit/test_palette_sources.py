@@ -12,8 +12,8 @@ from urllib.parse import urlencode
 
 import pytest
 
+from simple_resume.core.exceptions import PaletteRemoteError
 from simple_resume.core.palettes.common import Palette
-from simple_resume.core.palettes.exceptions import PaletteRemoteError
 from simple_resume.core.palettes.sources import (
     PalettableRecord,
     _cache_path,

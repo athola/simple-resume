@@ -6,11 +6,8 @@ from unittest import mock
 
 import pytest
 
+from simple_resume.core.exceptions import PaletteError, PaletteLookupError
 from simple_resume.core.palettes.common import Palette, PaletteSource
-from simple_resume.core.palettes.exceptions import (
-    PaletteError,
-    PaletteLookupError,
-)
 from simple_resume.core.palettes.registry import PaletteRegistry
 from simple_resume.core.palettes.resolution import resolve_palette_config
 from tests.bdd import Scenario

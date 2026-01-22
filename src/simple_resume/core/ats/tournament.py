@@ -14,6 +14,10 @@ from simple_resume.core.ats.jaccard import JaccardScorer
 from simple_resume.core.ats.keyword import KeywordScorer
 from simple_resume.core.ats.tfidf import TFIDFScorer
 
+# Default preview length for resume text snippets in batch screening results.
+# Configurable via `preview_length` parameter in `get_top_matches()`.
+DEFAULT_PREVIEW_LENGTH = 100
+
 
 @dataclass
 class TournamentResult:
@@ -191,6 +195,7 @@ class ATSTournament:
         resumes: list[str],
         job_description: str,
         top_n: int = 10,
+        preview_length: int = DEFAULT_PREVIEW_LENGTH,
         **kwargs: Any,
     ) -> list[tuple[int, float, str]]:
         """Rank multiple resumes against a single job description.
@@ -201,6 +206,7 @@ class ATSTournament:
             resumes: List of resume texts
             job_description: Job description to match against
             top_n: Number of top results to return
+            preview_length: Length of resume preview text (default: 100 chars)
             **kwargs: Additional parameters passed to scorers
 
         Returns:
@@ -211,8 +217,7 @@ class ATSTournament:
 
         for idx, resume_text in enumerate(resumes):
             tournament_result = self.score(resume_text, job_description, **kwargs)
-            # Create preview (first 100 chars)
-            preview = resume_text[:100].replace("\n", " ").strip()
+            preview = resume_text[:preview_length].replace("\n", " ").strip()
             results.append((idx, tournament_result.overall_score, preview))
 
         # Sort by score descending

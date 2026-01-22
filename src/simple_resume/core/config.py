@@ -22,11 +22,8 @@ from simple_resume.core.constants.colors import (
     DEFAULT_BOLD_COLOR,
     DEFAULT_COLOR_SCHEME,
 )
+from simple_resume.core.exceptions import PaletteError, PaletteLookupError
 from simple_resume.core.palettes import resolve_palette_config
-from simple_resume.core.palettes.exceptions import (
-    PaletteError,
-    PaletteLookupError,
-)
 from simple_resume.core.palettes.fetch_types import PaletteFetchRequest
 from simple_resume.core.palettes.registry import PaletteRegistry
 

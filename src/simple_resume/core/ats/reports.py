@@ -13,6 +13,7 @@ from typing import Any
 
 from oyaml import dump as yaml_dump
 
+from simple_resume.core.ats.base import ScorerName
 from simple_resume.core.ats.tournament import TournamentResult
 
 # Score threshold constants for classification
@@ -212,7 +213,7 @@ class ATSReportGenerator:
 
         # Analyze algorithm results for specific recommendations
         for result in self.result.algorithm_results:
-            if result.name == "keyword_exact":
+            if result.name == ScorerName.KEYWORD_EXACT:
                 missing = result.details.get("missing_keywords", [])
                 if missing and len(missing) <= _MAX_MISSING_KEYWORDS:
                     keyword_list = ", ".join(missing[:5])
@@ -224,7 +225,7 @@ class ATSReportGenerator:
                         }
                     )
 
-            if result.name == "jaccard_ngram":
+            if result.name == ScorerName.JACCARD_NGRAM:
                 if result.score < _JACCARD_THRESHOLD:
                     top_improvements.append(
                         {

@@ -22,6 +22,17 @@ from simple_resume.core.ats.base import BaseScorer, ScorerResult
 
 logger = logging.getLogger(__name__)
 
+# --- Constants ---
+# Maximum number of top keywords to extract from each document.
+# Limits output size while capturing the most significant terms.
+TOP_KEYWORDS_LIMIT = 20
+
+# Normalization divisor for experience relevance score.
+# Empirically, shared TF-IDF products rarely exceed 10.0 even for long documents.
+# This provides a conservative cap that prevents saturation while allowing
+# meaningful differentiation between candidates.
+EXPERIENCE_RELEVANCE_NORMALIZER = 10.0
+
 
 class TFIDFScorer(BaseScorer):
     """TF-IDF + Cosine Similarity scorer for resume-job matching.
@@ -205,7 +216,7 @@ class TFIDFScorer(BaseScorer):
             for i in sorted(
                 job_keyword_indices, key=lambda x: job_tfidf[x], reverse=True
             )
-        ][:20]
+        ][:TOP_KEYWORDS_LIMIT]
 
         # Get top keywords from resume (what they offer)
         resume_keyword_indices = {
@@ -216,7 +227,7 @@ class TFIDFScorer(BaseScorer):
             for i in sorted(
                 resume_keyword_indices, key=lambda x: resume_tfidf[x], reverse=True
             )
-        ][:20]
+        ][:TOP_KEYWORDS_LIMIT]
 
         # Calculate component scores for the refined rubric
         component_scores = self._calculate_component_scores(
@@ -266,12 +277,11 @@ class TFIDFScorer(BaseScorer):
         keyword_density = len(intersection) / len(job_indices) if job_indices else 0.0
 
         # Experience relevance: weighted by TF-IDF scores of shared terms
-        # Heuristic: Divide by 10.0 to normalize to [0, 1]
-        # Rationale: Empirically, shared TF-IDF products rarely exceed 10.0
-        # even for long documents. This provides a conservative cap that prevents
-        # saturation while allowing meaningful differentiation.
+        # See EXPERIENCE_RELEVANCE_NORMALIZER constant for rationale
         shared_tfidf_sum = sum(resume_tfidf[i] * job_tfidf[i] for i in intersection)
-        experience_relevance = min(1.0, shared_tfidf_sum / 10.0)  # Normalize to [0, 1]
+        experience_relevance = min(
+            1.0, shared_tfidf_sum / EXPERIENCE_RELEVANCE_NORMALIZER
+        )
 
         return {
             "jaccard_similarity": jaccard_score,
@@ -298,4 +308,4 @@ class TFIDFScorer(BaseScorer):
 
         # Sort by combined TF-IDF score
         shared.sort(key=lambda x: x[1] * x[2], reverse=True)
-        return shared[:20]  # Top 20 shared keywords
+        return shared[:TOP_KEYWORDS_LIMIT]

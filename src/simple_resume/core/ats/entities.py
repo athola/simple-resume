@@ -21,6 +21,8 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from re import Pattern
 
+from sklearn.feature_extraction.text import TfidfVectorizer
+
 from simple_resume.core.ats.base import ExtractedEntities
 
 logger = logging.getLogger(__name__)
@@ -463,15 +465,6 @@ class EntityExtractor:
             List of (keyword, tfidf_score) tuples
 
         """
-        try:
-            from sklearn.feature_extraction.text import TfidfVectorizer  # noqa: PLC0415
-        except ImportError:
-            logger.warning(
-                "sklearn not available for keyword extraction. "
-                "Install with: pip install scikit-learn"
-            )
-            return []
-
         # Simple TF-IDF for single document (returns raw term frequencies)
         try:
             vectorizer = TfidfVectorizer(

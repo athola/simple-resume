@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from simple_resume.core.exceptions import PaletteLookupError
 from simple_resume.core.palettes import PaletteFetchRequest
-from simple_resume.core.palettes.exceptions import PaletteLookupError
 from simple_resume.shell.palettes.fetch import execute_palette_fetch
 
 

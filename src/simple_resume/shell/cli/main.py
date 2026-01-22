@@ -18,6 +18,7 @@ from simple_resume.core.ats import (
     ATSTournament,
     JaccardScorer,
     KeywordScorer,
+    ScorerSelection,
     TFIDFScorer,
     TournamentResult,
 )
@@ -520,13 +521,13 @@ def handle_screen_command(args: argparse.Namespace) -> int:  # noqa: PLR0912
             return 1
 
         # Configure scorers based on selection
-        if scorers_selection == "all":
+        if scorers_selection == ScorerSelection.ALL:
             tournament = ATSTournament()  # Uses default scorers
-        elif scorers_selection == "tfidf":
+        elif scorers_selection == ScorerSelection.TFIDF:
             tournament = ATSTournament(scorers=[TFIDFScorer(weight=1.0)])
-        elif scorers_selection == "jaccard":
+        elif scorers_selection == ScorerSelection.JACCARD:
             tournament = ATSTournament(scorers=[JaccardScorer(weight=1.0)])
-        elif scorers_selection == "keyword":
+        elif scorers_selection == ScorerSelection.KEYWORD:
             tournament = ATSTournament(scorers=[KeywordScorer(weight=1.0)])
         else:
             tournament = ATSTournament()

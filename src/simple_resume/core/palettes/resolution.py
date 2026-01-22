@@ -7,12 +7,12 @@ into either colors or fetch requests, without performing any I/O operations.
 from typing import Any
 
 from simple_resume.core.constants.colors import CONFIG_COLOR_FIELDS
-from simple_resume.core.palettes.common import PaletteSource
-from simple_resume.core.palettes.exceptions import (
+from simple_resume.core.exceptions import (
     PaletteError,
     PaletteGenerationError,
     PaletteLookupError,
 )
+from simple_resume.core.palettes.common import PaletteSource
 from simple_resume.core.palettes.fetch_types import (
     PaletteFetchRequest,
     PaletteResolution,

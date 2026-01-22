@@ -7,7 +7,31 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any
+
+
+class ScorerName(str, Enum):
+    """Enumeration of ATS scorer algorithm names.
+
+    These match the `name` field returned in ScorerResult.
+    """
+
+    TFIDF_COSINE = "tfidf_cosine"
+    JACCARD_NGRAM = "jaccard_ngram"
+    KEYWORD_EXACT = "keyword_exact"
+
+
+class ScorerSelection(str, Enum):
+    """CLI selection options for which scorer(s) to use.
+
+    Used in the `screen` command's --scorers argument.
+    """
+
+    ALL = "all"
+    TFIDF = "tfidf"
+    JACCARD = "jaccard"
+    KEYWORD = "keyword"
 
 
 @dataclass
