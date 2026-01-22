@@ -8,16 +8,16 @@ The ATS (Applicant Tracking System) scoring system uses a **tournament-style app
 
 ### Experience-First, Balanced Approach
 
-The refined rubric prioritizes **experience relevance** over simple keyword matching, based on the insight that:
-1. **Skills are teachable** - strong engineers can learn new technologies quickly
-2. **Experience patterns repeat** - successful projects demonstrate transferable abilities
-3. **Context matters** - "deployed microservices at scale" > "knows Kubernetes"
+The rubric prioritizes **experience relevance** over keyword matching:
+1. **Skills are teachable** - strong engineers can learn new technologies quickly.
+2. **Experience patterns repeat** - successful projects demonstrate transferable abilities.
+3. **Context matters** - "deployed microservices at scale" > "knows Kubernetes".
 
 ### Gates + Boosters
 
 The system uses both filtering ("gates") and ranking ("boosters"):
-- **Gates**: Filter out candidates lacking critical requirements
-- **Boosters**: Reward candidates exceeding expectations with bonus points
+- **Gates**: Filter out candidates lacking critical requirements.
+- **Boosters**: Reward candidates exceeding expectations with bonus points.
 
 ---
 
@@ -75,17 +75,15 @@ TOTAL_SCORE = (
 
 ---
 
-### 3. Semantic Similarity (15 points) - INCREASED
+### 3. Semantic Similarity (15 points)
 
-- **Algorithm**: TF-IDF cosine similarity (current) → BERT embeddings (future)
+- **Algorithm**: TF-IDF cosine similarity.
 - **Score**: `cosine_similarity * 15`
 - **Range**: 0-15 points
 
-**Why Increased**: Semantic understanding captures experience relevance better than exact keywords.
-
 ---
 
-### 4. Keyword Density (10 points) - DECREASED
+### 4. Keyword Density (10 points)
 
 | Criterion | Points | Description |
 |-----------|--------|-------------|
@@ -96,7 +94,7 @@ TOTAL_SCORE = (
 
 ---
 
-### 5. Education Score (10 points) - DECREASED
+### 5. Education Score (10 points)
 
 | Criterion | Points | Description |
 |-----------|--------|-------------|
@@ -149,21 +147,14 @@ BOOSTER_MULTIPLIER = 1.2  # Top 10% get 20% bonus
 
 ---
 
-## Tournament Scoring Algorithms
+## Scoring Algorithms
 
-### Current (PoC)
-
-| Algorithm | Weight | Description |
-|-----------|--------|-------------|
-| TF-IDF + Cosine | 1.0 | Statistical term frequency analysis |
-
-### Future (Planned)
-
-| Algorithm | Weight | Description | Issue |
-|-----------|--------|-------------|-------|
-| BERT Semantic | 0.35 | Contextual embeddings for semantic understanding | #54 |
-| Jaccard + N-gram | 0.20 | Set intersection and phrase overlap | TBD |
-| Exact Keyword | 0.20 | Direct keyword matching with fuzzy tolerance | TBD |
+| Algorithm | Weight | Description | Status |
+|-----------|--------|-------------|--------|
+| TF-IDF + Cosine | 1.0 | Statistical term frequency analysis | Implemented |
+| Jaccard + N-gram | 0.20 | Set intersection and phrase overlap | Implemented |
+| Exact Keyword | 0.20 | Direct keyword matching with fuzzy tolerance | Implemented |
+| BERT Semantic | 0.35 | Contextual embeddings for semantic understanding | Planned (#54) |
 
 ---
 

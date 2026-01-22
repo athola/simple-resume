@@ -4,7 +4,7 @@ This guide covers the command-line interface (CLI) and Python API.
 
 ## Command-Line Interface
 
-The `simple-resume` CLI is the primary tool for generating resumes.
+The `simple-resume` CLI generates resumes.
 
 ### Generating Resumes
 
@@ -52,12 +52,12 @@ cp my-resume.json resume_private/input/
 uv run simple-resume generate --format pdf
 ```
 
-The importer performs a pragmatic conversion that:
+The importer converts:
 
-- Preserves key content (basics, work, education, projects)
-- Converts JSON Resume highlights to markdown bullet points
-- Adds required simple-resume structure (template, config)
-- Maps JSON Resume fields to simple-resume equivalents
+- Key content (basics, work, education, projects)
+- JSON Resume highlights to markdown bullet points
+- Required simple-resume structure (template, config)
+- JSON Resume fields to simple-resume equivalents
 
 **Field mapping** (partial):
 
@@ -116,7 +116,7 @@ Import the `generate` and `preview` functions for programmatic use.
 All symbols exported from `simple_resume` and `simple_resume.api.*` modules are covered by semantic versioning guarantees:
 
 - **Stable**: No breaking changes within a major version
-- **Documented**: All public APIs include comprehensive docstrings
+- **Documented**: Public APIs include docstrings
 - **Typed**: Full type annotations for IDE support
 
 Internal modules (`simple_resume.core.*`, `simple_resume.shell.*`) are implementation details and may change without notice.
@@ -150,7 +150,7 @@ preview("resume_private/input/my_resume.yaml", open_after=True)
 
 ### LaTeX Output
 
-To generate a `.tex` file for use with a LaTeX engine, set `output_mode: latex` in the `config` section of your YAML file. This provides full control over typesetting, custom fonts, and mathematical equations, making it ideal for academic and research applications.
+Set `output_mode: latex` in the `config` section of your YAML file to generate a `.tex` file. This allows for typesetting, custom fonts, and mathematical equations, often used for academic and research applications.
 
 ```yaml
 config:
@@ -200,7 +200,7 @@ config:
 uv run simple-resume generate --palette resume_private/palettes/my-theme.yaml
 ```
 
-For more information, see the [Color Schemes Guide](Color-Schemes.md).
+See the [Color Schemes Guide](Color-Schemes.md).
 
 ### Layout
 
