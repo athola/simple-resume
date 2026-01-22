@@ -17,6 +17,9 @@ High-level categories include:
 * **Generation helpers** – ``generate_pdf/html/all/resume`` plus new
   convenience wrappers `:func:generate` and `:func:preview` for one-liner
   workflows, similar to ``requests`` verb helpers.
+* **ATS scoring** – `:func:score_resume`, `:class:ATSTournament`, and
+  scorer classes (`:class:TFIDFScorer`, `:class:JaccardScorer`, etc.)
+  for resume-job matching using NLP algorithms.
 * **FCIS Architecture** – Functional core in `:mod:simple_resume.core`
   (e.g., `:mod:simple_resume.core.colors`) provides pure functions,
   while shell layer handles I/O and side effects.
@@ -26,6 +29,19 @@ for the API map and stability notes.
 """
 
 from __future__ import annotations
+
+# ATS scoring module (new in v0.2.0)
+from simple_resume.core.ats.base import BaseScorer, ExtractedEntities, ScorerResult
+from simple_resume.core.ats.entities import EntityExtractor, extract_entities
+from simple_resume.core.ats.jaccard import JaccardScorer
+from simple_resume.core.ats.keyword import KeywordScorer
+from simple_resume.core.ats.reports import ATSReportGenerator
+from simple_resume.core.ats.tfidf import TFIDFScorer
+from simple_resume.core.ats.tournament import (
+    ATSTournament,
+    TournamentResult,
+    score_resume,
+)
 
 # Exception hierarchy
 from simple_resume.core.exceptions import (
@@ -90,7 +106,7 @@ from simple_resume.shell.runtime.lazy_import import (
 )
 
 # Version
-__version__ = "0.1.9"
+__version__ = "0.2.0"
 
 # Public API exports - organized by functionality
 __all__ = [
@@ -129,4 +145,17 @@ __all__ = [
     # Convenience helpers
     "generate",
     "preview",
+    # ATS scoring (v0.2.0)
+    "BaseScorer",
+    "ScorerResult",
+    "ExtractedEntities",
+    "EntityExtractor",
+    "extract_entities",
+    "TFIDFScorer",
+    "JaccardScorer",
+    "KeywordScorer",
+    "ATSTournament",
+    "TournamentResult",
+    "score_resume",
+    "ATSReportGenerator",
 ]

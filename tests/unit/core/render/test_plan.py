@@ -10,14 +10,14 @@ from unittest import mock
 import pytest
 
 from simple_resume.core.constants import RenderMode
-from simple_resume.core.exceptions import ValidationError
-from simple_resume.core.models import ResumeConfig
-from simple_resume.core.palettes.exceptions import (
+from simple_resume.core.exceptions import (
     PaletteError,
     PaletteGenerationError,
     PaletteLookupError,
     PaletteRemoteError,
+    ValidationError,
 )
+from simple_resume.core.models import ResumeConfig
 from simple_resume.core.palettes.registry import PaletteRegistry
 from simple_resume.core.render.plan import (
     RenderPlanConfig,

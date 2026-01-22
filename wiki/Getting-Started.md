@@ -1,6 +1,6 @@
 # Getting Started
 
-This guide explains how to install `simple-resume`, create a resume from a YAML file, and generate it as a PDF or HTML document.
+This guide explains how to install `simple-resume`, create a resume from a YAML file, and generate PDF or HTML output.
 
 ## 1. Installation and Setup
 
@@ -24,7 +24,7 @@ Copy one of the sample files to the `resume_private/input` directory.
 cp sample/input/sample_1.yaml resume_private/input/my_resume.yaml
 ```
 
-**Alternatively**, import from JSON Resume format:
+### Import from JSON Resume
 
 ```bash
 # Copy a JSON Resume file (from jsonresume.org)
@@ -98,7 +98,7 @@ config:
   color_scheme: "Professional Blue"
 ```
 
-For more information on color schemes, see the [Color Schemes guide](Color-Schemes.md).
+See the [Color Schemes guide](Color-Schemes.md).
 
 ## Next Steps
 
@@ -107,14 +107,12 @@ For more information on color schemes, see the [Color Schemes guide](Color-Schem
 
 ## Sample Files
 
-The `sample/` directory contains the following examples:
-
 -   **`sample_1.yaml`** and **`sample_2.yaml`**: Basic resume examples.
--   **`sample_multipage_demo.yaml`**: A multi-page resume with proper pagination.
--   **`sample_palette_demo.yaml`**: A demonstration of various color schemes.
--   **`sample_dark_sidebar.yaml`**: A dark theme with a sidebar layout.
--   **`sample_latex.yaml`**: Examples of LaTeX-specific formatting.
--   **`sample_contrast_demo.yaml`**: Examples of color contrast accessibility.
+-   **`sample_multipage_demo.yaml`**: Multi-page resume with pagination.
+-   **`sample_palette_demo.yaml`**: Demonstrates various color schemes.
+-   **`sample_dark_sidebar.yaml`**: Dark theme with a sidebar layout.
+-   **`sample_latex.yaml`**: LaTeX-specific formatting.
+-   **`sample_contrast_demo.yaml`**: Color contrast accessibility.
 
 ## Troubleshooting
 

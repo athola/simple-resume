@@ -104,6 +104,8 @@ endef
 .PHONY: test test-coverage validate validate-readme-preview update-preview-image
 .PHONY: demo-% demo-palette-random demo-latex demo-themes demo-theme-% clean-cache
 .PHONY: check-deps install-deps run-lint run-format run-typecheck run-security
+.PHONY: check-preview-prereqs demo-palette demo-multipage demo-api docs-api docs-api-all
+.PHONY: show-config validate-api-docs
 
 # =============================================================================
 # HELP AND INFORMATION
@@ -204,6 +206,10 @@ generate-pdf-sample: ## Generate PDF for all Resume files in sample directory
 # =============================================================================
 # DEMO TARGETS (USING PATTERN RULES)
 # =============================================================================
+# Note: The explicit demo-palette and demo-multipage targets below duplicate
+# the generic demo-% pattern rule intentionally. This provides user-friendly
+# shortcuts (e.g., "make demo-palette" vs "make demo-sample_palette_demo")
+# and serves as documentation of the most commonly used demos.
 
 # Generic demo pattern
 demo-%: ## Generate and preview demo resume (pattern: demo-<name>)
@@ -347,6 +353,15 @@ validate-api-docs: ## Verify API documentation matches code
 # =============================================================================
 # PREVIEW AND VALIDATION
 # =============================================================================
+# Platform Requirements for Preview Image Generation:
+# - Required: pdftoppm (poppler-utils) - PDF to image conversion
+#   Ubuntu/Debian: sudo apt-get install poppler-utils
+#   macOS: brew install poppler
+# - Optional: ImageMagick (convert) - Image optimization
+#   Ubuntu/Debian: sudo apt-get install imagemagick
+#   macOS: brew install imagemagick
+# Note: These tools are only needed for README preview image updates,
+# not for normal resume generation functionality.
 
 check-preview-prereqs:
 	@echo "$(BLUE)Checking prerequisites...$(RESET)"

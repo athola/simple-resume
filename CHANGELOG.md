@@ -2,6 +2,32 @@
 
 This file documents all notable project changes. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-01-21
+
+### Added
+
+- ATS (Applicant Tracking System) resume scoring with tournament-style NLP algorithms
+  - `TFIDFScorer` for statistical term frequency and cosine similarity analysis
+  - `JaccardScorer` for n-gram phrase overlap detection
+  - `KeywordScorer` for exact keyword matching with fuzzy tolerance
+  - `ATSTournament` for combining multiple scoring algorithms with weighted averages
+  - `score_resume()` convenience function for quick resume-job matching
+  - `ATSReportGenerator` for YAML/JSON/text report generation
+  - `EntityExtractor` for structured data extraction from unstructured text
+  - `screen` CLI command for terminal-based resume screening against job descriptions
+  - Comprehensive API documentation in `wiki/API-Reference.md`
+  - Scoring methodology documented in `wiki/ATS-Scoring-Rubric.md`
+
+### Changed
+
+- Version bump to 0.2.0 for new ATS scoring feature (minor version per semver)
+- Expanded public API with 13 new exports for ATS functionality
+- Enhanced error handling with new ATS-specific exceptions
+
+### Fixed
+
+- Linting issues in test files (moved imports to module level, fixed long lines)
+
 ## [0.1.10] - 2026-01-20
 
 ### Changed

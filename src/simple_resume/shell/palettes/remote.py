@@ -12,11 +12,8 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 
+from simple_resume.core.exceptions import PaletteRemoteDisabled, PaletteRemoteError
 from simple_resume.core.palettes.common import Palette, get_cache_dir
-from simple_resume.core.palettes.exceptions import (
-    PaletteRemoteDisabled,
-    PaletteRemoteError,
-)
 
 COLOURLOVERS_FLAG = "SIMPLE_RESUME_ENABLE_REMOTE_PALETTES"
 COLOURLOVERS_CACHE_TTL_SECONDS = 60 * 60 * 12  # 12 hours

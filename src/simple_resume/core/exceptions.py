@@ -148,6 +148,78 @@ class PaletteError(SimpleResumeError):
         self.color_values = color_values
 
 
+class PaletteLookupError(PaletteError):
+    """Raise when a named palette cannot be located."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        palette_name: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the exception.
+
+        Args:
+            message: The error message.
+            palette_name: The name of the palette that could not be found.
+            **kwargs: Additional context.
+
+        """
+        super().__init__(message, palette_name=palette_name, **kwargs)
+
+
+class PaletteGenerationError(PaletteError):
+    """Raise when a palette generator cannot produce the requested swatches."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        generator_name: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the exception.
+
+        Args:
+            message: The error message.
+            generator_name: The name of the generator that failed.
+            **kwargs: Additional context.
+
+        """
+        super().__init__(message, **kwargs)
+        self.generator_name = generator_name
+
+
+class PaletteRemoteDisabled(PaletteError):
+    """Raise when remote palette access is disabled by configuration."""
+
+
+class PaletteRemoteError(PaletteError):
+    """Raise when a remote palette provider returns an error."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        url: str | None = None,
+        status_code: int | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the exception.
+
+        Args:
+            message: The error message.
+            url: The URL that failed.
+            status_code: HTTP status code if applicable.
+            **kwargs: Additional context.
+
+        """
+        super().__init__(message, **kwargs)
+        self.url = url
+        self.status_code = status_code
+
+
 class FileSystemError(SimpleResumeError):
     """Raise when file system operations fail."""
 
@@ -255,6 +327,11 @@ __all__ = [
     "FileSystemError",
     "GenerationError",
     "PaletteError",
+    # Palette-specific exceptions (now part of main hierarchy)
+    "PaletteLookupError",
+    "PaletteGenerationError",
+    "PaletteRemoteDisabled",
+    "PaletteRemoteError",
     "SessionError",
     "TemplateError",
     "ValidationError",

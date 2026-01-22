@@ -12,10 +12,9 @@ from typing import Any
 from simple_resume.core.colors import is_valid_color
 from simple_resume.core.config import normalize_config
 from simple_resume.core.constants import RenderMode
-from simple_resume.core.exceptions import ValidationError
+from simple_resume.core.exceptions import PaletteError, ValidationError
 from simple_resume.core.markdown import render_markdown_content
 from simple_resume.core.models import RenderPlan, ResumeConfig, ValidationResult
-from simple_resume.core.palettes.exceptions import PaletteError
 from simple_resume.core.palettes.registry import PaletteRegistry
 
 logger = logging.getLogger(__name__)

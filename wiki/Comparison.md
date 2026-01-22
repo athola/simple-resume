@@ -1,7 +1,7 @@
 # Resume Tool Feature Comparison Matrix
 
 ## Overview
-This table compares **simple-resume** with other popular resume building tools across key features that matter to developers and professionals.
+This table compares **simple-resume** with other popular resume building tools.
 
 ## Feature Matrix
 
@@ -30,112 +30,92 @@ This table compares **simple-resume** with other popular resume building tools a
 | **Spell Check** | Yes (system) | No | No | No | Yes |
 | **ATS Optimization** | Yes | Yes | Yes | Yes | Yes |
 | **Print Optimization** | Yes | Yes | Yes | No | Yes |
-| **Developer Experience** | Excellent | Good | Fair | Good | Poor |
-| **Learning Curve** | Excellent | Good | Fair | Good | Excellent |
 | **Customization** | Great | Fair | Good | Great | Fair |
 
 ## Detailed Analysis
 
 ### simple-resume
 **Strengths:**
-- **YAML-native**: Human-readable, commentable format
-- **Python ecosystem**: Rich library support, integration with dev tools
-- **Template flexibility**: HTML + Jinja2 allows unlimited customization
-- **Version control friendly**: Text-based format with Git integration
-- **Local processing**: No data privacy concerns
-- **LaTeX support**: Professional typesetting capabilities
-- **Developer-centric**: CLI tools, Python API, scriptable workflows
+- **YAML-native**: Format supports comments.
+- **Python ecosystem**: Integrates with standard Python tools.
+- **Template flexibility**: Uses standard HTML/Jinja2.
+- **Version control friendly**: Text-based format.
+- **Local processing**: No data leaves your machine.
+- **LaTeX support**: Typesetting via LaTeX.
 
-**Weaknesses:**
-- Requires Python environment
-- Steeper learning curve than web builders
-- Template creation requires HTML/CSS knowledge
+**Trade-offs:**
+- Requires Python environment.
+- Steeper learning curve than GUI builders.
+- Template creation requires HTML/CSS knowledge.
 
 ### JSON Resume
 **Strengths:**
-- **Standardized format**: Well-established JSON schema
-- **Multiple tools**: Large ecosystem of compatible applications
-- **Cross-platform**: Works across different programming languages
-- **Version control**: Text-based, Git-friendly
+- **Standardized format**: Established JSON schema.
+- **Multiple tools**: Large ecosystem of compatible applications.
+- **Cross-platform**: Language agnostic.
 
-**Weaknesses:**
-- **Verbose**: JSON syntax is more cumbersome than YAML
-- **Limited templating**: Theme system less flexible than HTML
-- **Python integration**: Not native to Python ecosystem
+**Trade-offs:**
+- **Verbose**: JSON syntax does not support comments.
+- **Limited templating**: Theme system varies by implementation.
 
 ### HackMyResume
 **Strengths:**
-- **Multiple formats**: Supports FRESH, JSON Resume, Markdown
-- **Cross-platform**: Works on Windows, Mac, Linux
-- **Mature project**: Established with good documentation
+- **Multiple formats**: Supports FRESH, JSON Resume, Markdown.
+- **Cross-platform**: Works on Windows, Mac, Linux.
+- **Mature project**: Long history of development.
 
-**Weaknesses:**
-- **JavaScript-centric**: Node.js dependency
-- **Limited customization**: Theme system less flexible than HTML templates
-- **No real-time preview**: Requires regeneration for changes
+**Trade-offs:**
+- **JavaScript-centric**: Requires Node.js.
+- **No real-time preview**: Must regenerate to see changes.
 
 ### Reactive Resume
 **Strengths:**
-- **Modern web interface**: Real-time editing and preview
-- **React-based**: Modern JavaScript framework
-- **Self-hostable**: Can run on your own infrastructure
+- **Modern web interface**: Real-time editing and preview.
+- **React-based**: Uses modern JavaScript stack.
+- **Self-hostable**: Can run on own infrastructure.
 
-**Weaknesses:**
-- **Complex setup**: Requires JavaScript build tools
-- **Browser-based**: Less convenient for developer workflows
-- **Limited automation**: No CLI tools
+**Trade-offs:**
+- **Complex setup**: Requires JavaScript build tools.
+- **Browser-based**: Less convenient for terminal workflows.
+- **No CLI**: UI-only interaction.
 
 ### Resume.io
 **Strengths:**
-- **User-friendly**: Web-based drag-and-drop interface
-- **Professional templates**: High-quality pre-designed themes
-- **ATS optimization**: Built-in compatibility checks
+- **User-friendly**: Drag-and-drop interface.
+- **Professional templates**: Pre-designed themes.
+- **ATS optimization**: Built-in compatibility checks.
 
-**Weaknesses:**
-- **Closed source**: No control over the software
-- **Privacy concerns**: Cloud-only, data stored on servers
-- **Subscription costs**: Recurring fees for premium features
-- **No version control**: Cannot track changes with Git
-- **No local processing**: Requires internet connection
+**Trade-offs:**
+- **Closed source**: Proprietary software.
+- **Privacy concerns**: Data stored on servers.
+- **Subscription costs**: Paid service.
+- **No version control**: Cannot track changes with Git.
 
 ## Use Case Recommendations
 
-### For Developers & Technical Users: simple-resume
-- Best for those comfortable with YAML and Python
-- Ideal for version-controlled workflows
-- Perfect for automation and CI/CD integration
-- Great for LaTeX users needing professional typesetting
+### Developers & Technical Users: simple-resume
+- Recommended for users comfortable with YAML and Python.
+- Supports version-controlled workflows.
+- Supports automation and CI/CD integration.
+- Supports LaTeX users needing professional typesetting.
 
-### For Cross-Platform Teams: JSON Resume
-- Good for mixed-language development teams
-- Works across different programming environments
-- Standardized format for tool compatibility
+### Cross-Platform Teams: JSON Resume
+- Recommended for mixed-language development teams.
+- Works across different programming environments.
+- Standardized format for tool compatibility.
 
-### For Quick Setup: HackMyResume
-- Good for non-Python environments
-- Supports multiple resume formats
-- Mature, stable project
+### Quick Setup: HackMyResume
+- Recommended for non-Python environments.
+- Supports multiple resume formats.
 
-### For Web-First Workflows: Reactive Resume
-- Best for real-time web editing
-- Good for self-hosted web applications
-- Modern JavaScript ecosystem
+### Web-First Workflows: Reactive Resume
+- Recommended for real-time web editing.
+- Suitable for self-hosted web applications.
 
-### For Non-Technical Users: Resume.io
-- Easiest learning curve
-- No technical setup required
-- Professional templates out of the box
-- Good for occasional resume updates
-
-## Developer Experience Comparison
-
-| Tool | Setup Time | Customization | Automation | Git Integration |
-|------|------------|---------------|-------------|------------------|
-| simple-resume | 5 min | Very Good | Excellent | Excellent |
-| JSON Resume | 10 min | Fair | Good | Very Good |
-| HackMyResume | 15 min | Good | Fair | Good |
-| Reactive Resume | 30 min | Very Good | Poor | Fair |
-| Resume.io | 2 min | Fair | None | None |
+### Non-Technical Users: Resume.io
+- Recommended for easiest learning curve.
+- No technical setup required.
+- Professional templates out of the box.
 
 ## Privacy & Security
 
@@ -149,16 +129,14 @@ This table compares **simple-resume** with other popular resume building tools a
 
 ## Conclusion
 
-**simple-resume** excels for:
-- Developers who want full control over their resume
-- Teams using version control and automated workflows
-- Users who need LaTeX support or extensive customization
-- Privacy-conscious individuals who want local processing
+**Use simple-resume if you need:**
+- Full control over your resume.
+- Version control and automated workflows.
+- LaTeX support or extensive customization.
+- Local processing.
 
 **Consider alternatives if you:**
-- Need web-based real-time editing (Reactive Resume)
-- Work with non-technical team members (Resume.io)
-- Require cross-platform JavaScript compatibility (JSON Resume)
-- Want the easiest possible setup (Resume.io)
-
-Choose the tool that matches your technical comfort level, workflow preferences, and privacy requirements.
+- Need web-based real-time editing (Reactive Resume).
+- Work with non-technical team members (Resume.io).
+- Require cross-platform JavaScript compatibility (JSON Resume).
+- Want the easiest possible setup (Resume.io).

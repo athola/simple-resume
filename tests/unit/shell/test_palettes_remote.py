@@ -10,10 +10,7 @@ from urllib.error import HTTPError, URLError
 
 import pytest
 
-from simple_resume.core.palettes.exceptions import (
-    PaletteRemoteDisabled,
-    PaletteRemoteError,
-)
+from simple_resume.core.exceptions import PaletteRemoteDisabled, PaletteRemoteError
 from simple_resume.shell.palettes.remote import (
     ColourLoversClient,
     _create_safe_request,

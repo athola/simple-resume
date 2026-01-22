@@ -7,8 +7,8 @@ to the shell layer.
 
 from typing import Any
 
+from simple_resume.core.exceptions import PaletteLookupError
 from simple_resume.core.palettes import PaletteFetchRequest
-from simple_resume.core.palettes.exceptions import PaletteLookupError
 from simple_resume.shell.palettes.remote import ColourLoversClient
 
 

@@ -23,7 +23,7 @@ import simple_resume
 
 # All exports in __all__ are stable
 stable_exports = simple_resume.__all__
-# 32 stable exports as of v0.1.7
+# 44 stable exports as of v0.2.0 (32 + 12 ATS scoring APIs)
 ```
 
 **Guarantees:**
@@ -96,9 +96,9 @@ We follow [Semantic Versioning 2.0.0](https://semver.org/):
 
 ## Public API Surface
 
-### Stable Exports (v0.1.7)
+### Stable Exports (v0.2.0)
 
-All 29 symbols in `simple_resume.__all__`:
+All 44 symbols in `simple_resume.__all__`:
 
 ```python
 # Core models (data only)
@@ -122,6 +122,13 @@ All 29 symbols in `simple_resume.__all__`:
 
 # Convenience helpers
 "generate", "preview"  # 2 exports
+
+# ⭐ NEW in v0.2.0: ATS scoring
+"BaseScorer", "ScorerResult", "ExtractedEntities",  # 3 exports
+"EntityExtractor", "extract_entities",  # 2 exports
+"TFIDFScorer", "JaccardScorer", "KeywordScorer",  # 3 exports
+"ATSTournament", "TournamentResult", "score_resume",  # 3 exports
+"ATSReportGenerator"  # 1 export
 ```
 
 ### Verifying API Membership
@@ -236,9 +243,22 @@ If you encounter a breaking change not documented in the changelog:
 
 ## Future Stability Guarantees
 
-### Planned Stable Additions (v0.2.0)
+### ✅ Completed (v0.2.0)
 
-We are considering promoting these to stable status:
+The following APIs were promoted to stable status in v0.2.0:
+
+- **ATS Scoring Module** - 12 new stable exports:
+  - `BaseScorer`, `ScorerResult`, `ExtractedEntities`
+  - `EntityExtractor`, `extract_entities`
+  - `TFIDFScorer`, `JaccardScorer`, `KeywordScorer`
+  - `ATSTournament`, `TournamentResult`, `score_resume`
+  - `ATSReportGenerator`
+
+See [ATS Scoring Rubric](ATS-Scoring-Rubric.md) for complete documentation.
+
+### Planned Stable Additions (Future)
+
+We are considering promoting these to stable status in future versions:
 
 - `simple_resume.core.colors` - Color utilities (WCAG calculations)
 - `simple_resume.core.importers` - Data importers
@@ -278,6 +298,17 @@ Our policy aligns with established Python libraries while being simpler for our 
 ---
 
 ## Changelog
+
+### v0.2.0 (2025-01-20)
+- ✅ **ATS Scoring Module promoted to stable API**
+  - Added 12 new stable exports for resume-job matching
+  - `score_resume()`, `ATSTournament`, individual scorers (TF-IDF, Jaccard, Keyword)
+  - Entity extraction (`EntityExtractor`, `extract_entities`)
+  - Report generation (`ATSReportGenerator`)
+  - Complete documentation in API Reference and README
+- ✅ Updated `__version__` to 0.2.0 across all files
+- ✅ API Reference updated with ATS scoring section
+- ✅ README updated with ATS scoring examples
 
 ### v0.1.7 (2025-01-03)
 - ✅ Added API Stability Policy

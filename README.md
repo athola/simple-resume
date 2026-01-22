@@ -12,7 +12,7 @@ _Generate polished PDF and HTML resumes from a single YAML file._
 
 # simple-resume
 
-`simple-resume` is a Python 3.10+ CLI and library for converting structured YAML (or JSON Resume) into production-ready resumes (PDF, HTML, or LaTeX). Templates and static assets ship with the package such that users can render without needing to create additional content.
+`simple-resume` is a Python 3.10+ CLI and library for converting structured YAML (or JSON Resume) into PDF, HTML, or LaTeX. Templates and static assets ship with the package so users can render without creating additional content.
 
 ## Supported platforms
 
@@ -45,22 +45,15 @@ pip install simple-resume
 | **Version Control** | Yes (Git-friendly) | Yes (Git-friendly) | Yes (Git-friendly) | No (Cloud-only) |
 | **Local Processing** | Yes (100% private) | Yes (100% private) | Yes (100% private) | No (Cloud storage) |
 | **Template System** | HTML + Jinja2 | JSON themes | Multiple formats | Web builder |
-| **LaTeX Support** | Yes (Professional) | No | No | No |
+| **LaTeX Support** | Yes | No | No | No |
 | **Python API** | Yes (Native) | No | No | No |
 | **CLI Tools** | Yes | Yes | Yes | No |
 | **Real-time Preview** | Yes (HTML + auto-reload) | No | No | Yes |
 | **Custom Themes** | Yes (Unlimited) | Limited | Limited | Limited (Paid only) |
-| **Color Palettes** | Yes (Professional) | No | Limited (Basic) | Limited |
+| **Color Palettes** | Yes | No | Limited (Basic) | Limited |
 | **Privacy** | Yes | Yes | Yes | No (Data stored on servers) |
 | **Setup Time** | 5 min | 10 min | 15 min | 2 min |
 | **Learning Curve** | Moderate | Easy | Easy | Easiest |
-
-### Key Advantages
-
-**Best for Developers**: Version control, automation, Python integration, privacy
-**Best for Privacy**: 100% local processing with no data exposure
-**Most Flexible**: HTML templates + unlimited customization
-**Professional Output**: LaTeX typesetting for academic/technical resumes
 
 *See [Detailed Comparison](wiki/Comparison.md) for full analysis and use case recommendations.*
 
@@ -128,6 +121,44 @@ with ResumeSession(data_dir="resume_private") as session:
     session.generate_all(format="pdf")
 ```
 
+## ATS Resume Scoring
+
+Score resumes against job descriptions using multiple NLP algorithms:
+
+```python
+from simple_resume import score_resume
+
+# Score a resume against a job description
+result = score_resume(
+    resume_text="Senior Python Developer with 5 years experience...",
+    job_description="We are looking for a Senior Python Engineer with 5 years of experience..."
+)
+
+print(f"Match score: {result.overall_score * 100:.1f}%")
+print(f"Status: {result.metadata['scorer_names']}")
+
+# Generate a detailed report
+from simple_resume import ATSReportGenerator
+from pathlib import Path
+
+report_gen = ATSReportGenerator(
+    result=result,
+    resume_file="my_resume.yaml",
+    job_file="job_description.txt"
+)
+yaml_report = report_gen.generate_yaml()
+# Save to file (shell layer responsibility)
+Path("ats_report.yaml").write_text(yaml_report)
+```
+
+**Available scoring algorithms:**
+
+- **TF-IDF + Cosine Similarity** (`TFIDFScorer`): Statistical term frequency analysis
+- **Jaccard + N-gram** (`JaccardScorer`): Set intersection and phrase overlap
+- **Exact Keyword** (`KeywordScorer`): Direct keyword matching with fuzzy tolerance
+
+The tournament system combines multiple algorithms using weighted averages to produce detailed scores. See [ATS Scoring Rubric](wiki/ATS-Scoring-Rubric.md) for complete methodology.
+
 ## Customization
 
 - **Palettes**: `--palette "Professional Blue"` or `--palette path/to/palette.yaml`.
@@ -152,7 +183,7 @@ The workflow builds the package, generates a changelog from commit history, and 
 - **Guides**: [Getting Started](wiki/Getting-Started.md), [Usage](wiki/Usage-Guide.md), [Workflows](wiki/Workflows.md), [Path Handling](wiki/Path-Handling-Guide.md).
 - **API Docs**: [API Reference](wiki/API-Reference.md), [API Stability Policy](wiki/API-Stability-Policy.md), [Shell Layer APIs](wiki/Shell-Layer-APIs.md).
 - **Architecture**: [Architecture Guide](wiki/Architecture-Guide.md) and `wiki/architecture/`.
-- **Migration**: [Migration Guide](wiki/Migration-Guide.md) plus [Generate module migration](wiki/Migration-Guide-Generate-Module.md).
+- **Migration**: [Migration Guide](wiki/Migration-Guide.md) (includes generate module reorganization notes).
 - **Development**: [Development Guide](wiki/Development-Guide.md), [Contributing](wiki/Contributing.md), [PDF renderer evaluation](wiki/PDF-Renderer-Evaluation.md).
 - **Samples**: `sample/` directory; `sample_dark_sidebar.html` preview.
 

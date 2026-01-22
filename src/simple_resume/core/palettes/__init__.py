@@ -3,7 +3,9 @@
 
 from __future__ import annotations
 
-from simple_resume.core.palettes.exceptions import (
+# Re-export palette exceptions from main exceptions module
+# (now unified with SimpleResumeError hierarchy per ADR-006)
+from simple_resume.core.exceptions import (
     PaletteError,
     PaletteGenerationError,
     PaletteLookupError,

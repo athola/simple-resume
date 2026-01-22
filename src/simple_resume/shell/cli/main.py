@@ -11,6 +11,17 @@ from pathlib import Path
 from typing import Any, Protocol, cast
 
 from simple_resume import __version__
+
+# ATS scoring imports
+from simple_resume.core.ats import (
+    ATSReportGenerator,
+    ATSTournament,
+    JaccardScorer,
+    KeywordScorer,
+    ScorerSelection,
+    TFIDFScorer,
+    TournamentResult,
+)
 from simple_resume.core.constants import OutputFormat
 from simple_resume.core.exceptions import SimpleResumeError, ValidationError
 from simple_resume.core.generate.exceptions import GenerationError
@@ -34,6 +45,13 @@ from simple_resume.shell.resume_extensions import (
 from simple_resume.shell.runtime.generate import execute_generation_commands
 from simple_resume.shell.services import register_default_services
 from simple_resume.shell.session import ResumeSession, SessionConfig
+
+# Score threshold constants
+_EXCELLENT_THRESHOLD = 80
+_GOOD_THRESHOLD = 65
+_FAIR_THRESHOLD = 50
+_POOR_THRESHOLD = 35
+_PASSING_THRESHOLD = 0.5
 
 
 class GenerationResultProtocol(Protocol):
@@ -115,6 +133,7 @@ def main() -> int:
         "generate": handle_generate_command,
         "session": handle_session_command,
         "validate": handle_validate_command,
+        "screen": handle_screen_command,
     }
 
     try:
@@ -276,6 +295,47 @@ def create_parser() -> argparse.ArgumentParser:
         help="Directory containing resume input files",
     )
 
+    # screen subcommand
+    screen_parser = subparsers.add_parser(
+        "screen",
+        help="Screen resume against job description using ATS scoring",
+    )
+    screen_parser.add_argument(
+        "resume",
+        type=Path,
+        help="Path to resume file (PDF, HTML, YAML, or text)",
+    )
+    screen_parser.add_argument(
+        "job",
+        type=Path,
+        help="Path to job description file (YAML, text, or URL)",
+    )
+    screen_parser.add_argument(
+        "--output",
+        "-o",
+        type=Path,
+        help="Output path for scoring report (default: stdout)",
+    )
+    screen_parser.add_argument(
+        "--format",
+        "-f",
+        choices=["yaml", "json", "text"],
+        default="text",
+        help="Report format (default: text for human-readable output)",
+    )
+    screen_parser.add_argument(
+        "--scorers",
+        choices=["all", "tfidf", "jaccard", "keyword"],
+        default="all",
+        help="Which scorers to use (default: all)",
+    )
+    screen_parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Show detailed breakdown of scores",
+    )
+
     return parser
 
 
@@ -435,6 +495,179 @@ def handle_validate_command(args: argparse.Namespace) -> int:
         return 1
     except Exception as exc:  # pragma: no cover - safety net
         return _handle_unexpected_error(exc, "resume validation")
+
+
+def handle_screen_command(args: argparse.Namespace) -> int:  # noqa: PLR0912
+    """Screen resume against job description using ATS scoring."""
+    resume_path: Path = args.resume
+    job_path: Path = args.job
+    output_path: Path | None = getattr(args, "output", None)
+    report_format: str = getattr(args, "format", "text")
+    scorers_selection: str = getattr(args, "scorers", "all")
+    verbose: bool = getattr(args, "verbose", False)
+
+    try:
+        # Read resume text
+        resume_text = _read_file_text(resume_path)
+        if not resume_text.strip():
+            print(f"Error: Resume file is empty or could not be read: {resume_path}")
+            return 1
+
+        # Read job description
+        job_text = _read_file_text(job_path)
+        if not job_text.strip():
+            msg = f"Error: Job description file is empty: {job_path}"
+            print(msg)
+            return 1
+
+        # Configure scorers based on selection
+        if scorers_selection == ScorerSelection.ALL:
+            tournament = ATSTournament()  # Uses default scorers
+        elif scorers_selection == ScorerSelection.TFIDF:
+            tournament = ATSTournament(scorers=[TFIDFScorer(weight=1.0)])
+        elif scorers_selection == ScorerSelection.JACCARD:
+            tournament = ATSTournament(scorers=[JaccardScorer(weight=1.0)])
+        elif scorers_selection == ScorerSelection.KEYWORD:
+            tournament = ATSTournament(scorers=[KeywordScorer(weight=1.0)])
+        else:
+            tournament = ATSTournament()
+
+        # Run tournament
+        result = tournament.score(resume_text, job_text)
+
+        # Generate report
+        generator = ATSReportGenerator(
+            result,
+            resume_file=str(resume_path),
+            job_file=str(job_path),
+        )
+
+        # Output based on format
+        if report_format == "yaml":
+            report_content = generator.generate_yaml()
+        elif report_format == "json":
+            report_content = generator.generate_json()
+        else:  # text format
+            report_content = _format_text_report(result, verbose)
+
+        # Save or print
+        if output_path:
+            output_path = Path(output_path)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(report_content)
+            print(f"Report saved to: {output_path}")
+        else:
+            print(report_content)
+
+        # Return exit code based on score
+        # Score 50+/100 is considered passing
+        return 0 if result.overall_score >= _PASSING_THRESHOLD else 1
+
+    except SimpleResumeError as exc:
+        print(f"Screening error: {exc}")
+        return 1
+    except Exception as exc:  # pragma: no cover - safety net
+        return _handle_unexpected_error(exc, "ATS screening")
+
+
+def _read_file_text(file_path: Path) -> str:
+    """Read text content from a file, handling various formats."""
+    file_path = Path(file_path)
+
+    if not file_path.exists():
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    suffix = file_path.suffix.lower()
+
+    # For PDF/HTML, we'd need special handling
+    # For now, assume text-based formats (YAML, TXT, MD)
+    if suffix in [".pdf", ".html"]:
+        # TODO: Implement PDF/HTML text extraction
+        raise NotImplementedError(
+            f"Reading from {suffix} files is not yet supported. "
+            f"Please use text-based formats (.txt, .md, .yaml, .json)"
+        )
+
+    # Read text content
+    try:
+        return file_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        # Try with different encoding
+        return file_path.read_text(encoding="latin-1")
+
+
+def _format_text_report(result: TournamentResult, verbose: bool = False) -> str:
+    """Format tournament result as human-readable text."""
+    score_100 = result.overall_score * 100
+
+    lines = [
+        "=" * 60,
+        "ATS SCORING REPORT",
+        "=" * 60,
+        "",
+        f"Overall Score: {score_100:.1f}/100",
+        f"Normalized:   {result.overall_score:.4f}",
+        "",
+        f"Status: {_get_status_label(score_100)}",
+        "",
+        "-" * 60,
+        "ALGORITHM BREAKDOWN",
+        "-" * 60,
+    ]
+
+    for alg_result in result.algorithm_results:
+        lines.extend(
+            [
+                "",
+                f"{alg_result.name}:",
+                f"  Score:    {alg_result.score * 100:.1f}/100",
+                f"  Weight:   {alg_result.weight}",
+                f"  Weighted: {alg_result.weighted_score * 100:.1f}/100",
+            ]
+        )
+
+        if verbose and "cosine_similarity" in alg_result.details:
+            lines.append(f"  Cosine:   {alg_result.details['cosine_similarity']:.4f}")
+
+        if verbose and "shared_keywords" in alg_result.details:
+            shared = alg_result.details["shared_keywords"]
+            if shared:
+                lines.append(f"  Shared:   {len(shared)} keywords/phrases")
+
+    if verbose and result.component_breakdown:
+        lines.extend(
+            [
+                "",
+                "-" * 60,
+                "COMPONENT SCORES",
+                "-" * 60,
+            ]
+        )
+        for component, score in result.component_breakdown.items():
+            lines.append(f"{component}: {score:.4f}")
+
+    lines.extend(
+        [
+            "",
+            "=" * 60,
+        ]
+    )
+
+    return "\n".join(lines)
+
+
+def _get_status_label(score: float) -> str:
+    """Get status label based on score (0-100 scale)."""
+    if score >= _EXCELLENT_THRESHOLD:
+        return "Excellent - Strong match!"
+    elif score >= _GOOD_THRESHOLD:
+        return "Good - Competitive candidate."
+    elif score >= _FAIR_THRESHOLD:
+        return "Fair - Consider improvements."
+    elif score >= _POOR_THRESHOLD:
+        return "Poor - Significant gaps."
+    else:
+        return "Very Poor - Not a match."
 
 
 def _resolve_cli_formats(args: argparse.Namespace) -> list[OutputFormat]:

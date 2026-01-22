@@ -41,6 +41,19 @@ EXPECTED_PUBLIC_SYMBOLS = {
     # Convenience helpers
     "generate",
     "preview",
+    # ATS scoring (v0.2.0)
+    "BaseScorer",
+    "ScorerResult",
+    "ExtractedEntities",
+    "EntityExtractor",
+    "extract_entities",
+    "TFIDFScorer",
+    "JaccardScorer",
+    "KeywordScorer",
+    "ATSTournament",
+    "TournamentResult",
+    "score_resume",
+    "ATSReportGenerator",
 }
 
 
