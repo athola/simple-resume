@@ -99,7 +99,7 @@ class ATSReportGenerator:
         # Convert overall score to 0-100 scale
         score_100 = self.result.overall_score * 100
 
-        return {
+        report = {
             "ats_scoring_report": {
                 "metadata": self._generate_metadata(),
                 "overall_score": {
@@ -112,6 +112,13 @@ class ATSReportGenerator:
                 "recommendations": self._generate_recommendations(),
             }
         }
+
+        # Add warnings section if any issues occurred (Issue #58)
+        warnings = self._generate_warnings()
+        if warnings:
+            report["ats_scoring_report"]["warnings"] = warnings
+
+        return report
 
     def _generate_metadata(self) -> dict[str, Any]:
         """Generate metadata section."""
@@ -279,3 +286,37 @@ class ATSReportGenerator:
             return "Weak match. Significant improvements recommended before applying."
         else:
             return "Poor match. Resume does not align well with requirements."
+
+    def _generate_warnings(self) -> list[dict[str, str]]:
+        """Generate warnings section from scorer errors and failed scorers.
+
+        Extracts error messages from ScorerResult.details and failed_scorers
+        to surface non-fatal issues to users.
+
+        Returns:
+            List of warning dictionaries with source and message keys
+
+        """
+        warnings: list[dict[str, str]] = []
+
+        # Collect errors from algorithm results
+        for alg_result in self.result.algorithm_results:
+            error = alg_result.details.get("error")
+            if error:
+                warnings.append({"source": alg_result.name, "message": str(error)})
+
+        # Collect failed scorer information
+        if self.result.failed_scorers:
+            for scorer_name, error_msg in self.result.failed_scorers:
+                warnings.append({"source": scorer_name, "message": str(error_msg)})
+
+        # Tournament-level errors
+        if "error" in self.result.metadata:
+            warnings.append(
+                {
+                    "source": "tournament",
+                    "message": str(self.result.metadata["error"]),
+                }
+            )
+
+        return warnings

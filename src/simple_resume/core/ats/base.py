@@ -99,7 +99,11 @@ class BaseScorer(ABC):
         Args:
             weight: Weight of this scorer in tournament (0-1). Default: 1.0
 
+        Raises:
+            ValueError: If weight is outside [0, 1]
+
         """
+        validate_weight(weight, "weight")
         self.weight = weight
 
     @abstractmethod
@@ -145,25 +149,95 @@ class BaseScorer(ABC):
         return max(0.0, min(1.0, normalized))
 
 
+class DegreeType(str, Enum):
+    """Enumeration of recognized educational degree types.
+
+    Using str mixin allows direct comparison with strings and JSON serialization.
+    See GitHub Issue #75 for design rationale.
+    """
+
+    ASSOCIATE = "Associate"
+    BACHELOR = "Bachelor"
+    MASTER = "Master"
+    PHD = "PhD"
+    CERTIFICATE = "Certificate"
+    DIPLOMA = "Diploma"
+    OTHER = "Other"  # Fallback for unrecognized degree types
+
+    @classmethod
+    def from_string(cls, value: str) -> DegreeType:
+        """Convert a string to DegreeType, with fallback to OTHER.
+
+        Args:
+            value: String representation of degree type
+
+        Returns:
+            Matching DegreeType or OTHER if not recognized
+
+        """
+        # Normalize input
+        normalized = value.strip().title()
+
+        # Try direct match first
+        for member in cls:
+            if member.value == normalized:
+                return member
+
+        # Handle common aliases
+        aliases = {
+            "Phd": cls.PHD,
+            "Doctorate": cls.PHD,
+            "Doctor": cls.PHD,
+            "Bs": cls.BACHELOR,
+            "Ba": cls.BACHELOR,
+            "Ms": cls.MASTER,
+            "Ma": cls.MASTER,
+            "Mba": cls.MASTER,
+            "Aa": cls.ASSOCIATE,
+            "As": cls.ASSOCIATE,
+            "Cert": cls.CERTIFICATE,
+        }
+        return aliases.get(normalized, cls.OTHER)
+
+
 @dataclass
 class Degree:
     """Structured representation of an educational degree.
 
     Attributes:
-        type: Type of degree (e.g., "Bachelor", "Master", "PhD")
+        type: Type of degree (DegreeType enum or string for backwards compatibility)
         school: Name of the educational institution
         field: Field of study (e.g., "Computer Science"), optional
 
+    Note:
+        The type field accepts both DegreeType enum values and strings.
+        Strings are automatically converted to DegreeType via from_string().
+
     """
 
-    type: str
+    type: str | DegreeType
     school: str = "Unknown"
     field: str = ""
+
+    def __post_init__(self) -> None:
+        """Validate and normalize degree type."""
+        if isinstance(self.type, str):
+            # Convert string to DegreeType for validation/normalization
+            self.type = DegreeType.from_string(self.type)
+        if not self.type:
+            raise ValueError("Degree type cannot be empty")
+
+    @property
+    def type_value(self) -> str:
+        """Return the string value of the degree type."""
+        if isinstance(self.type, DegreeType):
+            return self.type.value
+        return str(self.type)
 
     def to_dict(self) -> dict[str, str]:
         """Convert to dictionary for serialization."""
         return {
-            "type": self.type,
+            "type": self.type_value,
             "school": self.school,
             "field": self.field,
         }

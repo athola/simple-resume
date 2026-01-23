@@ -76,9 +76,22 @@ def _check_sentence_transformers_available() -> bool:
     return importlib.util.find_spec("sentence_transformers") is not None
 
 
+# Cache up to 4 different models to support different use cases:
+# - Default lightweight model (all-MiniLM-L6-v2): ~80MB, fast
+# - High-accuracy model (all-mpnet-base-v2): ~420MB, more accurate
+# - Multilingual model (paraphrase-multilingual-MiniLM-L12-v2): ~470MB
+# - User-specified custom model via SIMPLE_RESUME_BERT_MODEL env var
+#
+# Memory footprint: ~100-500MB per model, max ~2GB with full cache.
+# Models are lazily loaded on first use and cached for subsequent calls.
+# See GitHub Issue #74 for rationale.
 @lru_cache(maxsize=4)
 def _load_model(model_name: str) -> Any:
     """Load and cache a sentence-transformers model.
+
+    Models are cached using LRU eviction with maxsize=4 to support
+    switching between different models (lightweight/accurate/multilingual)
+    without reloading. Typical memory usage is 100-500MB per model.
 
     Args:
         model_name: HuggingFace model name or path

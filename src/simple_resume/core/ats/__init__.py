@@ -7,6 +7,7 @@ multiple NLP algorithms in a tournament-style scoring system.
 from simple_resume.core.ats.base import (
     BaseScorer,
     Degree,
+    DegreeType,
     ExtractedEntities,
     ScorerName,
     ScorerResult,
@@ -37,6 +38,7 @@ except ImportError:
 __all__ = [
     "BaseScorer",
     "Degree",
+    "DegreeType",
     "ScorerName",
     "ScorerResult",
     "ScorerSelection",
