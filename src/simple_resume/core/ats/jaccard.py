@@ -26,6 +26,12 @@ import re
 from typing import Any
 
 from simple_resume.core.ats.base import BaseScorer, ScorerResult
+from simple_resume.core.ats.constants import (
+    MAX_SHARED_NGRAMS,
+    PHRASE_MATCH_BONUS_THRESHOLD,
+    validate_ngram_range,
+    validate_weight,
+)
 
 
 class JaccardScorer(BaseScorer):
@@ -49,11 +55,16 @@ class JaccardScorer(BaseScorer):
         """Initialize Jaccard scorer.
 
         Args:
-            weight: Weight in tournament (default: 1.0)
-            ngram_range: Range of n-grams to generate (min_n, max_n)
+            weight: Weight in tournament (default: 1.0, must be in [0, 1])
+            ngram_range: Range of n-grams to generate (min_n, max_n), both >= 1
             case_sensitive: Whether to preserve case (default: False)
 
+        Raises:
+            ValueError: If weight is outside [0, 1] or ngram_range is invalid
+
         """
+        validate_weight(weight, "weight")
+        validate_ngram_range(ngram_range, "ngram_range")
         super().__init__(weight=weight)
         self.ngram_range = ngram_range
         self.case_sensitive = case_sensitive
@@ -200,8 +211,8 @@ class JaccardScorer(BaseScorer):
 
         # Sort shared n-grams by length (longer phrases first)
         all_shared_ngrams.sort(key=lambda x: x[0], reverse=True)
-        # Limit to top 50 shared n-grams
-        top_shared = all_shared_ngrams[:50]
+        # Limit to top shared n-grams
+        top_shared = all_shared_ngrams[:MAX_SHARED_NGRAMS]
 
         # Calculate component scores
         component_scores = self._calculate_component_scores(resume_clean, job_clean)
@@ -249,5 +260,6 @@ class JaccardScorer(BaseScorer):
         return {
             "word_jaccard": word_jaccard,
             "job_keyword_coverage": coverage,
-            "phrase_match_bonus": max(0.0, word_jaccard - 0.5) * 2,  # noqa: PLR2004
+            "phrase_match_bonus": max(0.0, word_jaccard - PHRASE_MATCH_BONUS_THRESHOLD)
+            * 2,
         }

@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+from simple_resume.core.ats.constants import validate_score, validate_weight
+
 
 class ScorerName(str, Enum):
     """Enumeration of ATS scorer algorithm names.
@@ -20,6 +22,7 @@ class ScorerName(str, Enum):
     TFIDF_COSINE = "tfidf_cosine"
     JACCARD_NGRAM = "jaccard_ngram"
     KEYWORD_EXACT = "keyword_exact"
+    BERT_SEMANTIC = "bert_semantic"
 
 
 class ScorerSelection(str, Enum):
@@ -32,6 +35,7 @@ class ScorerSelection(str, Enum):
     TFIDF = "tfidf"
     JACCARD = "jaccard"
     KEYWORD = "keyword"
+    BERT = "bert"
 
 
 @dataclass
@@ -40,10 +44,13 @@ class ScorerResult:
 
     Attributes:
         name: Name of the scoring algorithm
-        score: Raw score (typically 0-1 normalized)
-        weight: Weight of this algorithm in tournament (0-1)
+        score: Raw score (must be in [0, 1])
+        weight: Weight of this algorithm in tournament (must be in [0, 1])
         details: Additional algorithm-specific details
-        component_scores: Breakdown of scores by component (optional)
+        component_scores: Breakdown of scores by component (all values in [0, 1])
+
+    Raises:
+        ValueError: If score, weight, or component_scores values are outside [0, 1]
 
     """
 
@@ -52,6 +59,15 @@ class ScorerResult:
     weight: float = 1.0
     details: dict[str, Any] = field(default_factory=dict)
     component_scores: dict[str, float] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        """Validate score and weight are in valid ranges."""
+        validate_score(self.score, "score")
+        validate_weight(self.weight, "weight")
+
+        # Validate all component scores
+        for key, value in self.component_scores.items():
+            validate_score(value, f"component_scores[{key!r}]")
 
     @property
     def weighted_score(self) -> float:
@@ -130,13 +146,37 @@ class BaseScorer(ABC):
 
 
 @dataclass
+class Degree:
+    """Structured representation of an educational degree.
+
+    Attributes:
+        type: Type of degree (e.g., "Bachelor", "Master", "PhD")
+        school: Name of the educational institution
+        field: Field of study (e.g., "Computer Science"), optional
+
+    """
+
+    type: str
+    school: str = "Unknown"
+    field: str = ""
+
+    def to_dict(self) -> dict[str, str]:
+        """Convert to dictionary for serialization."""
+        return {
+            "type": self.type,
+            "school": self.school,
+            "field": self.field,
+        }
+
+
+@dataclass
 class ExtractedEntities:
     """Structured entities extracted from resume or job description.
 
     Attributes:
         skills: List of extracted skills
         experience_years: Total years of experience
-        degrees: List of degree information
+        degrees: List of Degree objects
         certifications: List of certifications
         keywords: Important keywords (TF-IDF ranked)
 
@@ -144,7 +184,7 @@ class ExtractedEntities:
 
     skills: list[str] = field(default_factory=list)
     experience_years: float = 0.0
-    degrees: list[dict[str, str]] = field(default_factory=list)
+    degrees: list[Degree] = field(default_factory=list)
     certifications: list[str] = field(default_factory=list)
     keywords: list[tuple[str, float]] = field(default_factory=list)  # (word, tfidf)
 
@@ -153,7 +193,7 @@ class ExtractedEntities:
         return {
             "skills": self.skills,
             "experience_years": self.experience_years,
-            "degrees": self.degrees,
+            "degrees": [d.to_dict() for d in self.degrees],
             "certifications": self.certifications,
             "keywords": [(k, v) for k, v in self.keywords],
         }

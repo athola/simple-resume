@@ -13,25 +13,24 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
 from sklearn.metrics.pairwise import cosine_similarity
 
 from simple_resume.core.ats.base import BaseScorer, ScorerResult
+from simple_resume.core.ats.constants import (
+    EXPERIENCE_RELEVANCE_NORMALIZER,
+    TOP_KEYWORDS_LIMIT,
+    validate_ngram_range,
+    validate_weight,
+)
 
 logger = logging.getLogger(__name__)
-
-# --- Constants ---
-# Maximum number of top keywords to extract from each document.
-# Limits output size while capturing the most significant terms.
-TOP_KEYWORDS_LIMIT = 20
-
-# Normalization divisor for experience relevance score.
-# Empirically, shared TF-IDF products rarely exceed 10.0 even for long documents.
-# This provides a conservative cap that prevents saturation while allowing
-# meaningful differentiation between candidates.
-EXPERIENCE_RELEVANCE_NORMALIZER = 10.0
 
 
 class TFIDFScorer(BaseScorer):
@@ -63,13 +62,18 @@ class TFIDFScorer(BaseScorer):
         """Initialize TF-IDF scorer.
 
         Args:
-            weight: Weight in tournament (default: 1.0)
+            weight: Weight in tournament (default: 1.0, must be in [0, 1])
             max_features: Maximum number of features (vocabulary size)
             ngram_range: Range of n-grams to consider (1, 2) = unigrams + bigrams
             min_df: Minimum document frequency for a term
             max_df: Maximum document frequency (ignore overly common terms)
 
+        Raises:
+            ValueError: If weight is outside [0, 1] or ngram_range is invalid
+
         """
+        validate_weight(weight, "weight")
+        validate_ngram_range(ngram_range, "ngram_range")
         super().__init__(weight=weight)
         self.max_features = max_features
         self.ngram_range = ngram_range
@@ -152,9 +156,13 @@ class TFIDFScorer(BaseScorer):
             )
 
         # Create TF-IDF vectors with error handling
+        # Use local vectorizer variable to avoid mutating instance state
+        # This preserves functional purity of the score() method
+        vectorizer = self.vectorizer
+        used_fallback = False
         try:
             corpus = [resume_clean, job_clean]
-            tfidf_matrix = self.vectorizer.fit_transform(corpus)
+            tfidf_matrix = vectorizer.fit_transform(corpus)
         except ValueError as e:
             # Handle sklearn edge case (e.g., "no terms remain after pruning")
             # Log the specific error for debugging before falling back
@@ -163,8 +171,9 @@ class TFIDFScorer(BaseScorer):
                 "Falling back to permissive vectorizer.",
                 str(e),
             )
-            # Fallback to more permissive vectorizer
-            fallback_vectorizer = TfidfVectorizer(
+            # Fallback to more permissive vectorizer (local, not stored on self)
+            used_fallback = True
+            vectorizer = TfidfVectorizer(
                 max_features=self.max_features,
                 ngram_range=(1, 1),  # Use unigrams only
                 min_df=1,
@@ -174,8 +183,7 @@ class TFIDFScorer(BaseScorer):
             )
             corpus = [resume_clean, job_clean]
             try:
-                tfidf_matrix = fallback_vectorizer.fit_transform(corpus)
-                self.vectorizer = fallback_vectorizer  # Update for feature access
+                tfidf_matrix = vectorizer.fit_transform(corpus)
             except ValueError as fallback_error:
                 # Even fallback failed - return zero similarity
                 # This happens when text is empty or only contains non-word characters
@@ -205,7 +213,7 @@ class TFIDFScorer(BaseScorer):
         similarity_score = max(0.0, min(1.0, similarity_score))
 
         # Extract feature names and scores for interpretability
-        feature_names = self.vectorizer.get_feature_names_out()
+        feature_names = vectorizer.get_feature_names_out()
         resume_tfidf = tfidf_matrix[0].toarray()[0]
         job_tfidf = tfidf_matrix[1].toarray()[0]
 
@@ -245,24 +253,32 @@ class TFIDFScorer(BaseScorer):
                 "shared_keywords": self._get_shared_keywords(
                     resume_tfidf, job_tfidf, feature_names
                 ),
-                "ngram_range": self.ngram_range,
+                "ngram_range": (1, 1) if used_fallback else self.ngram_range,
                 "max_features": self.max_features,
+                "used_fallback_vectorizer": used_fallback,
             },
             component_scores=component_scores,
         )
 
     def _calculate_component_scores(
         self,
-        resume_tfidf: list[float],
-        job_tfidf: list[float],
-        feature_names: list[str],  # noqa: ARG002
+        resume_tfidf: NDArray[np.floating[Any]],
+        job_tfidf: NDArray[np.floating[Any]],
+        feature_names: NDArray[np.str_],  # noqa: ARG002
     ) -> dict[str, float]:
         """Calculate component scores based on TF-IDF analysis.
 
-        Returns component scores derived from TF-IDF vectors:
-        - jaccard_similarity: Set intersection / union of non-zero term indices
-        - keyword_density: Proportion of job keywords found in resume
-        - experience_relevance: Weighted sum of shared TF-IDF scores, normalized
+        Args:
+            resume_tfidf: TF-IDF vector for resume (numpy array)
+            job_tfidf: TF-IDF vector for job description (numpy array)
+            feature_names: Feature names from vectorizer (unused, for API consistency)
+
+        Returns:
+            Dictionary of component scores derived from TF-IDF vectors:
+            - jaccard_similarity: Set intersection / union of non-zero term indices
+            - keyword_density: Proportion of job keywords found in resume
+            - experience_relevance: Weighted sum of shared TF-IDF scores, normalized
+
         """
         # Get non-zero indices for both documents
         resume_indices = {i for i, score in enumerate(resume_tfidf) if score > 0}
@@ -291,14 +307,21 @@ class TFIDFScorer(BaseScorer):
 
     def _get_shared_keywords(
         self,
-        resume_tfidf: list[float],
-        job_tfidf: list[float],
-        feature_names: list[str],
+        resume_tfidf: NDArray[np.floating[Any]],
+        job_tfidf: NDArray[np.floating[Any]],
+        feature_names: NDArray[np.str_],
     ) -> list[tuple[str, float, float]]:
         """Get keywords that appear in both documents with their scores.
 
+        Args:
+            resume_tfidf: TF-IDF vector for resume (numpy array)
+            job_tfidf: TF-IDF vector for job description (numpy array)
+            feature_names: Feature names from vectorizer (numpy array)
+
         Returns:
-            List of (keyword, resume_score, job_score) tuples
+            List of (keyword, resume_score, job_score) tuples sorted by
+            combined TF-IDF score (resume_score * job_score), limited to
+            TOP_KEYWORDS_LIMIT entries.
 
         """
         shared = []

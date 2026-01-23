@@ -4,6 +4,8 @@ Tests the TF-IDF + Cosine similarity scorer with various inputs
 including edge cases and expected behaviors.
 """
 
+import logging
+
 import pytest
 
 from simple_resume.core.ats.base import ScorerResult
@@ -298,3 +300,212 @@ class TestTFIDFScorer:
         assert min_score <= result.score <= max_score, (
             f"Score {result.score} not in expected range [{min_score}, {max_score}]"
         )
+
+
+class TestTFIDFScorerValidation:
+    """Tests for TFIDFScorer input validation."""
+
+    def test_invalid_weight_negative(self):
+        """Test that negative weight raises ValueError."""
+        with pytest.raises(ValueError, match="weight must be in"):
+            TFIDFScorer(weight=-0.5)
+
+    def test_invalid_weight_above_one(self):
+        """Test that weight > 1 raises ValueError."""
+        with pytest.raises(ValueError, match="weight must be in"):
+            TFIDFScorer(weight=1.5)
+
+    def test_invalid_ngram_range_min_zero(self):
+        """Test that ngram_range with min=0 raises ValueError."""
+        with pytest.raises(ValueError, match="ngram_range min must be >= 1"):
+            TFIDFScorer(ngram_range=(0, 2))
+
+    def test_invalid_ngram_range_min_greater_than_max(self):
+        """Test that ngram_range with min > max raises ValueError."""
+        with pytest.raises(ValueError, match="ngram_range min.*must be <= max"):
+            TFIDFScorer(ngram_range=(3, 1))
+
+    def test_valid_weight_boundary(self):
+        """Test that boundary weights are accepted."""
+        # Zero weight
+        scorer = TFIDFScorer(weight=0.0)
+        assert scorer.weight == 0.0
+
+        # Max weight
+        scorer = TFIDFScorer(weight=1.0)
+        assert scorer.weight == 1.0
+
+
+class TestTFIDFScorerFunctionalPurity:
+    """Tests for TFIDFScorer functional purity (no instance state mutation)."""
+
+    def test_score_does_not_mutate_vectorizer(self):
+        """Test that score() does not mutate self.vectorizer.
+
+        Regression test for issue #65 - the original code would reassign
+        self.vectorizer when falling back to permissive settings.
+        """
+        scorer = TFIDFScorer(weight=1.0, ngram_range=(1, 2))
+
+        # Store reference to original vectorizer
+        original_vectorizer = scorer.vectorizer
+        original_ngram_range = scorer.ngram_range
+
+        # Normal scoring should not change vectorizer
+        scorer.score(
+            "Python developer with AWS cloud infrastructure",
+            "Looking for Python developer with cloud experience",
+        )
+        assert scorer.vectorizer is original_vectorizer
+        assert scorer.ngram_range == original_ngram_range
+
+    def test_fallback_does_not_mutate_instance(self):
+        """Test that fallback vectorizer does not mutate instance state.
+
+        The scorer uses a fallback when primary vectorization fails.
+        This should use local variables, not mutate self.vectorizer.
+        """
+        # Create scorer with strict settings that may require fallback
+        scorer = TFIDFScorer(
+            weight=1.0,
+            ngram_range=(2, 3),  # Only bigrams and trigrams (strict)
+            min_df=2,  # Require terms to appear in both docs
+        )
+
+        # Store original state
+        original_vectorizer = scorer.vectorizer
+        original_ngram_range = scorer.ngram_range
+        original_min_df = scorer.min_df
+
+        # Score with text that may trigger fallback
+        scorer.score("a", "b")  # Very short text likely to trigger fallback
+
+        # Verify instance state was not mutated
+        assert scorer.vectorizer is original_vectorizer
+        assert scorer.ngram_range == original_ngram_range
+        assert scorer.min_df == original_min_df
+
+    def test_multiple_calls_consistent_behavior(self):
+        """Test that multiple score() calls produce consistent behavior.
+
+        Without the fix, the first call that triggers fallback would
+        permanently change the scorer's behavior for subsequent calls.
+        """
+        scorer = TFIDFScorer(weight=1.0, ngram_range=(1, 2))
+
+        resume = "Python developer with AWS cloud infrastructure experience"
+        job = "Looking for Python developer with cloud infrastructure skills"
+
+        # First call
+        result1 = scorer.score(resume, job)
+
+        # Second call should produce identical results
+        result2 = scorer.score(resume, job)
+
+        assert result1.score == result2.score
+        assert result1.details == result2.details
+
+
+# ============================================================================
+# Issue #69: Edge Case Tests for TF-IDF Scorer
+# ============================================================================
+
+
+class TestTFIDFScorerEdgeCases:
+    """Test suite for TF-IDF scorer edge cases."""
+
+    def test_fallback_vectorizer_triggered(self, caplog):
+        """Test that fallback vectorizer is used when primary fails."""
+        caplog.set_level(logging.WARNING)
+
+        # Use settings that might cause primary vectorizer to fail
+        # Very restrictive settings with short text
+        scorer = TFIDFScorer(
+            min_df=5,  # High min doc frequency
+            max_df=0.1,  # Very low max doc frequency
+            ngram_range=(3, 3),  # Only trigrams
+        )
+
+        # Short texts might not generate valid TF-IDF with these settings
+        result = scorer.score("hi", "hello")
+
+        # Should complete without error, possibly using fallback
+        assert result.score >= 0.0
+
+    def test_stopwords_only_text(self):
+        """Test handling of text containing only stopwords."""
+        scorer = TFIDFScorer()
+        result = scorer.score("the a an and or but", "is are was were be been")
+
+        # Should return 0 or error since stopwords are filtered
+        assert result.score >= 0.0
+
+    def test_very_short_text(self):
+        """Test handling of very short texts."""
+        scorer = TFIDFScorer()
+        result = scorer.score("hi", "hi")
+
+        # Should complete without error
+        assert result.score >= 0.0
+
+    def test_very_long_text(self):
+        """Test handling of very long texts."""
+        # Create texts with 10000+ tokens
+        long_resume = " ".join(["Python developer AWS Docker"] * 500)
+        long_job = " ".join(["Looking for Python engineer cloud"] * 500)
+
+        scorer = TFIDFScorer()
+        result = scorer.score(long_resume, long_job)
+
+        # Should complete without error
+        assert result.score >= 0.0
+        assert result.score <= 1.0
+
+    def test_unicode_text_handling(self):
+        """Test TF-IDF handles unicode text gracefully."""
+        scorer = TFIDFScorer()
+        result = scorer.score(
+            "Python développeur avec expérience AWS et Docker",
+            "Recherche développeur Python avec compétences cloud AWS",
+        )
+
+        # Should extract and match common terms
+        assert result.score >= 0.0
+
+    def test_mixed_language_text(self):
+        """Test TF-IDF with mixed language text."""
+        scorer = TFIDFScorer()
+        result = scorer.score(
+            "软件工程师 Python AWS Docker experience",
+            "Looking for Python 开发者 with AWS skills",
+        )
+
+        # Should extract common English terms
+        assert result.score >= 0.0
+
+    def test_numeric_only_text(self):
+        """Test handling of text with only numbers."""
+        scorer = TFIDFScorer()
+        result = scorer.score("12345 67890 11111", "99999 88888 77777")
+
+        # Should complete without error
+        assert result.score >= 0.0
+
+    def test_special_characters_only_text(self):
+        """Test handling of text with only special characters."""
+        scorer = TFIDFScorer()
+        result = scorer.score("!@#$%^&*()_+-=[]{}|;':\",./<>?", "~`!@#$%^&*()_+")
+
+        # Should return 0 or handle gracefully
+        assert result.score >= 0.0
+
+    def test_component_scores_always_valid(self):
+        """Test that component scores are always in valid range."""
+        scorer = TFIDFScorer()
+        result = scorer.score(
+            "Python AWS Docker Kubernetes", "Looking for Python developer"
+        )
+
+        # All component scores should be in [0, 1]
+        for name, score in result.component_scores.items():
+            assert 0.0 <= score <= 1.0, f"{name} score {score} out of range"

@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+from unittest.mock import MagicMock
+
+import pytest
+
 from simple_resume.core.ats import EntityExtractor, extract_entities
 
 # Private functions being tested
@@ -96,7 +101,7 @@ class TestEntityExtractor:
         entities = extractor.extract(text)
 
         assert len(entities.degrees) > 0
-        assert entities.degrees[0]["type"] == "Bachelor"
+        assert entities.degrees[0].type == "Bachelor"
 
     def test_extract_education_master(self) -> None:
         """Test extraction of Master's degree."""
@@ -108,7 +113,7 @@ class TestEntityExtractor:
         entities = extractor.extract(text)
 
         assert len(entities.degrees) > 0
-        assert entities.degrees[0]["type"] == "Master"
+        assert entities.degrees[0].type == "Master"
 
     def test_extract_education_phd(self) -> None:
         """Test extraction of PhD degree."""
@@ -120,7 +125,7 @@ class TestEntityExtractor:
         entities = extractor.extract(text)
 
         assert len(entities.degrees) > 0
-        assert entities.degrees[0]["type"] == "PhD"
+        assert entities.degrees[0].type == "PhD"
 
     def test_extract_certifications_aws(self) -> None:
         """Test extraction of AWS certification."""
@@ -264,8 +269,174 @@ class TestDurationCalculation:
         result = _calculate_duration_years((2020, 1), (2021, 7))
         assert result == 1.5
 
-    def test_duration_to_present(self) -> None:
+    def test_duration_to_present(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test duration calculation when end date is None (present)."""
+        # Mock datetime.now() to return a fixed date for deterministic testing
+        mock_datetime = MagicMock()
+        mock_datetime.now.return_value = datetime(2025, 1, 15)
+        monkeypatch.setattr("simple_resume.core.ats.entities.datetime", mock_datetime)
+
         result = _calculate_duration_years((2020, 1), None)
-        # Should be approximately the number of years from 2020 to now
-        assert result > 3
+        # With mocked date: Jan 2025 - Jan 2020 = 5.0 years
+        assert result == 5.0
+
+
+# ============================================================================
+# Issue #69: Unicode/International Character Tests
+# ============================================================================
+
+
+class TestEntityExtractorUnicode:
+    """Test suite for unicode and international character handling."""
+
+    def test_extract_skills_with_accented_characters(self) -> None:
+        """Test extraction works with accented characters in text."""
+        text = """
+        Senior Développeur with experience in résumé parsing.
+        Skills: Python, naïve Bayes, café culture
+        """
+        extractor = EntityExtractor()
+        entities = extractor.extract(text)
+
+        # Should still extract standard skills from accented text
+        assert "Python" in entities.skills
+
+    def test_extract_skills_with_chinese_text(self) -> None:
+        """Test extraction handles Chinese characters gracefully."""
+        text = """
+        软件工程师 (Software Engineer)
+        Skills: Python, JavaScript, AWS, Docker
+        技能: 云计算, 机器学习
+        """
+        extractor = EntityExtractor()
+        entities = extractor.extract(text)
+
+        # Should extract English technical skills
+        assert "Python" in entities.skills
+        assert "JavaScript" in entities.skills
+
+    def test_extract_skills_with_arabic_text(self) -> None:
+        """Test extraction handles Arabic characters gracefully."""
+        text = """
+        مهندس برمجيات (Software Engineer)
+        Skills: Python, React, MongoDB
+        """
+        extractor = EntityExtractor()
+        entities = extractor.extract(text)
+
+        # Should extract English technical skills
+        assert "Python" in entities.skills
+        assert "React" in entities.skills
+
+    def test_extract_skills_with_hebrew_text(self) -> None:
+        """Test extraction handles Hebrew characters gracefully."""
+        text = """
+        מהנדס תוכנה (Software Engineer)
+        Skills: TypeScript, Docker, Kubernetes
+        """
+        extractor = EntityExtractor()
+        entities = extractor.extract(text)
+
+        # Should extract English technical skills
+        assert "TypeScript" in entities.skills
+        assert "Docker" in entities.skills
+
+    def test_extract_from_mixed_language_text(self) -> None:
+        """Test extraction from text with multiple languages."""
+        text = """
+        Senior 开发者 Developer at 株式会社 (Company)
+        • Python programming (5 years)
+        • AWS cloud infrastructure
+        • 日本語 N1 certification
+        """
+        extractor = EntityExtractor()
+        entities = extractor.extract(text)
+
+        # Should extract English skills regardless of surrounding text
+        assert "Python" in entities.skills
+        assert "AWS" in entities.skills
+
+    def test_extract_with_special_characters_in_skills(self) -> None:
+        """Test extraction handles special characters in skill names."""
+        text = """
+        Skills: C++, C#, .NET, Node.js, Express.js, Vue.js
+        """
+        extractor = EntityExtractor()
+        entities = extractor.extract(text)
+
+        # Should handle language names with special characters
+        assert "C++" in entities.skills or "C#" in entities.skills
+
+
+# ============================================================================
+# Issue #69: Error Path Tests for EntityExtractor
+# ============================================================================
+
+
+class TestEntityExtractorErrorPaths:
+    """Test suite for EntityExtractor error handling."""
+
+    def test_extract_empty_text(self) -> None:
+        """Test extraction with empty text returns empty entities."""
+        extractor = EntityExtractor()
+        entities = extractor.extract("")
+
+        assert entities.skills == []
+        assert entities.experience_years == 0.0
+        assert entities.degrees == []
+
+    def test_extract_whitespace_only_text(self) -> None:
+        """Test extraction with whitespace-only text."""
+        extractor = EntityExtractor()
+        entities = extractor.extract("   \n\t\r\n   ")
+
+        assert entities.skills == []
+        assert entities.experience_years == 0.0
+
+    def test_extract_nonsense_text(self) -> None:
+        """Test extraction with text containing no recognizable entities."""
+        extractor = EntityExtractor()
+        entities = extractor.extract("asdfghjkl qwertyuiop zxcvbnm")
+
+        assert entities.skills == []
+        assert entities.experience_years == 0.0
+        assert entities.degrees == []
+
+    def test_extract_very_long_text(self) -> None:
+        """Test extraction handles very long text without crashing."""
+        # Create a very long text (10000+ characters)
+        long_text = "Python developer experience. " * 500
+        extractor = EntityExtractor()
+        entities = extractor.extract(long_text)
+
+        # Should complete without error and find Python
+        assert "Python" in entities.skills
+
+    def test_extract_text_with_only_numbers(self) -> None:
+        """Test extraction with text containing only numbers."""
+        extractor = EntityExtractor()
+        entities = extractor.extract("12345 67890 00000")
+
+        assert entities.skills == []
+
+
+# ============================================================================
+# Issue #69: Convenience Function Tests
+# ============================================================================
+
+
+class TestExtractEntitiesConvenience:
+    """Test suite for extract_entities convenience function."""
+
+    def test_convenience_function_basic(self) -> None:
+        """Test extract_entities convenience function works."""
+        text = "Python developer with AWS experience"
+        entities = extract_entities(text)
+
+        assert "Python" in entities.skills
+        assert "AWS" in entities.skills
+
+    def test_convenience_function_empty_text(self) -> None:
+        """Test extract_entities with empty text."""
+        entities = extract_entities("")
+        assert entities.skills == []

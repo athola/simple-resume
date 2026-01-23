@@ -2,8 +2,8 @@
 
 This scorer performs direct keyword matching between resume and job description:
 - Exact word/phrase matching
-- Fuzzy matching for spelling variations
-- Synonym expansion for common variations
+- Fuzzy matching for spelling variations (using SequenceMatcher)
+- Configurable keyword extraction from job descriptions
 
 This is the most traditional ATS approach, simulating how older
 systems filter resumes based on keyword presence.
@@ -26,6 +26,12 @@ from difflib import SequenceMatcher
 from typing import Any
 
 from simple_resume.core.ats.base import BaseScorer, ScorerResult
+from simple_resume.core.ats.constants import (
+    CRITICAL_KEYWORDS_THRESHOLD,
+    MIN_KEYWORD_LENGTH,
+    validate_threshold,
+    validate_weight,
+)
 
 
 class KeywordScorer(BaseScorer):
@@ -47,13 +53,18 @@ class KeywordScorer(BaseScorer):
         """Initialize keyword scorer.
 
         Args:
-            weight: Weight in tournament (default: 1.0)
-            fuzzy_threshold: Minimum similarity for fuzzy match (0-1)
+            weight: Weight in tournament (default: 1.0, must be in [0, 1])
+            fuzzy_threshold: Minimum similarity for fuzzy match (must be in [0, 1])
             case_sensitive: Whether to preserve case (default: False)
             extract_keywords: Whether to auto-extract keywords (default: True)
             max_keywords: Maximum keywords to extract from job description
 
+        Raises:
+            ValueError: If weight or fuzzy_threshold are outside [0, 1]
+
         """
+        validate_weight(weight, "weight")
+        validate_threshold(fuzzy_threshold, "fuzzy_threshold")
         super().__init__(weight=weight)
         self.fuzzy_threshold = fuzzy_threshold
         self.case_sensitive = case_sensitive
@@ -113,7 +124,6 @@ class KeywordScorer(BaseScorer):
         keywords.extend(skill_matches)
 
         # Remove duplicates while preserving order
-        MIN_KEYWORD_LENGTH = 2
         seen = set()
         unique_keywords = []
         for kw in keywords:
@@ -258,7 +268,6 @@ class KeywordScorer(BaseScorer):
         overall_score = min(1.0, overall_score)  # Cap at 1.0
 
         # Calculate component scores
-        CRITICAL_KEYWORDS_THRESHOLD = 0.5
         component_scores = {
             "exact_match_rate": exact_score,
             "fuzzy_match_rate": (

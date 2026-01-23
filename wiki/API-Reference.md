@@ -1,7 +1,7 @@
 # API Reference
 
-**Version:** 0.2.0
-**Last Updated:** 2025-01-20
+**Version:** 0.2.1
+**Last Updated:** 2026-01-22
 **Stability:** Public API exports follow semantic versioning guarantees
 
 ---
@@ -365,6 +365,51 @@ result = scorer.score(resume_text, job_description)
 **Pros:** Fast, simple, good for hard requirements
 **Cons:** Misses semantic variations, vulnerable to keyword stuffing
 
+### `BERTScorer` (Optional)
+
+Semantic similarity scorer using sentence-transformers. Requires the `bert` extra.
+
+```bash
+# Install with bert extra
+uv add simple-resume[bert]
+pip install simple-resume[bert]
+```
+
+```python
+from simple_resume import BERTScorer
+
+# BERTScorer is None if sentence-transformers not installed
+if BERTScorer is not None:
+    scorer = BERTScorer(
+        weight=1.0,
+        model_name="all-MiniLM-L6-v2"  # Default model
+    )
+    result = scorer.score(resume_text, job_description)
+```
+
+**Pros:** Understands semantic meaning, handles synonyms and paraphrasing
+**Cons:** Slower than statistical methods, requires GPU for best performance
+
+### `ScorerName` and `ScorerSelection`
+
+Enumerations for algorithm identification.
+
+```python
+from simple_resume import ScorerName, ScorerSelection
+
+# Algorithm names (internal identifiers)
+ScorerName.TFIDF_COSINE      # "tfidf_cosine"
+ScorerName.JACCARD_NGRAM     # "jaccard_ngram"
+ScorerName.KEYWORD_EXACT     # "keyword_exact"
+ScorerName.BERT_SEMANTIC     # "bert_semantic"
+
+# Selection shortcuts (user-facing)
+ScorerSelection.TFIDF        # "tfidf"
+ScorerSelection.JACCARD      # "jaccard"
+ScorerSelection.KEYWORD      # "keyword"
+ScorerSelection.BERT         # "bert"
+```
+
 ### `BaseScorer`
 
 Abstract base class for implementing custom scoring algorithms.
@@ -434,16 +479,60 @@ entities.keywords  # TF-IDF keywords (word, score)
 entities.to_dict()  # Convert to dictionary
 ```
 
-### `EntityExtractor`
+### `ParsedDocument`
 
-Extract structured entities from unstructured text.
+Lazy-evaluated parsed document for efficient entity extraction. Implements the parse-once architecture.
 
 ```python
-from simple_resume import EntityExtractor, extract_entities
+from simple_resume import parse, ParsedDocument
 
-# Class-based usage
+# Create via parse() function (recommended)
+doc = parse("  Resume text   here...  ")
+
+# Lazy properties (computed once on first access)
+doc.raw_text         # Original input
+doc.normalized_text  # Whitespace-normalized
+doc.lowercase_text   # Lowercase for case-insensitive matching
+doc.lines            # Non-empty lines
+doc.sentences        # Sentence-split text
+doc.word_tokens      # Alphabetic tokens
+
+# Section finding helper
+skills_section = doc.find_section(r"Skills|Technologies")
+```
+
+**Properties:** Each property is computed once and cached via `@cached_property`.
+
+### `Degree`
+
+Structured representation of an educational degree.
+
+```python
+from simple_resume import Degree
+
+degree = Degree(
+    type="Bachelor",
+    school="MIT",
+    field="Computer Science"
+)
+
+degree.to_dict()  # {"type": "Bachelor", "school": "MIT", "field": "Computer Science"}
+```
+
+### `EntityExtractor`
+
+Extract structured entities from unstructured text. Accepts both raw strings and `ParsedDocument` objects.
+
+```python
+from simple_resume import EntityExtractor, extract_entities, parse
+
+# Class-based usage with string
 extractor = EntityExtractor(extract_keywords=True)
 entities = extractor.extract(resume_text)
+
+# Class-based with ParsedDocument (efficient for multiple extractions)
+doc = parse(resume_text)
+entities = extractor.extract(doc)
 
 # Function-based usage
 entities = extract_entities(resume_text, custom_skills=["Kubernetes"])
@@ -746,7 +835,7 @@ pip install simple-resume
 ```python
 import simple_resume
 
-print(simple_resume.__version__)  # "0.2.0"
+print(simple_resume.__version__)  # "0.2.1"
 ```
 
 ---
