@@ -25,6 +25,26 @@ from simple_resume.core.ats.constants import validate_weight
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
+
+def _import_sentence_transformer() -> Any:
+    """Import SentenceTransformer class from sentence-transformers package.
+
+    This is a module-level helper to centralize the lazy import of the
+    heavy sentence-transformers dependency, avoiding scattered in-function
+    imports throughout the codebase.
+
+    Returns:
+        The SentenceTransformer class (typed as Any since it's an optional dep)
+
+    Raises:
+        ImportError: If sentence-transformers is not installed
+
+    """
+    from sentence_transformers import SentenceTransformer  # ty: ignore
+
+    return SentenceTransformer
+
+
 logger = logging.getLogger(__name__)
 
 # Default model - lightweight, fast, good quality
@@ -46,13 +66,14 @@ class BERTModelUnavailableError(Exception):
 
 
 def _check_sentence_transformers_available() -> bool:
-    """Check if sentence-transformers is installed."""
-    try:
-        import sentence_transformers  # noqa: F401, PLC0415  # ty: ignore[unresolved-import]
+    """Check if sentence-transformers is installed.
 
-        return True
-    except ImportError:
-        return False
+    Uses importlib.util.find_spec to check package availability without
+    actually importing it (avoids loading heavy ML dependencies).
+    """
+    import importlib.util
+
+    return importlib.util.find_spec("sentence_transformers") is not None
 
 
 @lru_cache(maxsize=4)
@@ -70,10 +91,9 @@ def _load_model(model_name: str) -> Any:
 
     """
     try:
-        from sentence_transformers import SentenceTransformer  # noqa: I001, PLC0415  # ty: ignore[unresolved-import]
-
+        sentence_transformer_cls = _import_sentence_transformer()
         logger.info("Loading BERT model: %s", model_name)
-        model = SentenceTransformer(model_name)
+        model = sentence_transformer_cls(model_name)
         logger.info("BERT model loaded successfully")
         return model
     except ImportError as e:

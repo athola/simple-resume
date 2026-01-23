@@ -417,11 +417,16 @@ class TestSentenceTransformersAvailable:
     """Test the sentence-transformers availability check."""
 
     def test_returns_true_when_available(self):
-        """Returns True when sentence-transformers can be imported."""
-        mock_st = MagicMock()
-
-        with patch.dict("sys.modules", {"sentence_transformers": mock_st}):
-            # We need to test the actual function behavior
-            # Since import already happened, the result depends on current state
+        """Returns True when sentence-transformers can be found by importlib."""
+        # Mock importlib.util.find_spec to return a spec (meaning package exists)
+        mock_spec = MagicMock()
+        with patch("importlib.util.find_spec", return_value=mock_spec):
             result = _check_sentence_transformers_available()
-            assert isinstance(result, bool)
+            assert result is True
+
+    def test_returns_false_when_unavailable(self):
+        """Returns False when sentence-transformers cannot be found."""
+        # Mock importlib.util.find_spec to return None (package not found)
+        with patch("importlib.util.find_spec", return_value=None):
+            result = _check_sentence_transformers_available()
+            assert result is False

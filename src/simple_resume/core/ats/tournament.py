@@ -29,6 +29,25 @@ from simple_resume.core.ats.tfidf import TFIDFScorer
 logger = logging.getLogger(__name__)
 
 
+def _import_bert_scorer() -> Any:
+    """Import BERTScorer class from the bert module.
+
+    This is a module-level helper to centralize the lazy import of the
+    BERTScorer class, which has heavy dependencies (sentence-transformers).
+    Keeps the import at module level while still being lazy-evaluated.
+
+    Returns:
+        The BERTScorer class (typed as Any since it's lazily imported)
+
+    Raises:
+        ImportError: If the bert module or its dependencies are unavailable
+
+    """
+    from simple_resume.core.ats.bert import BERTScorer
+
+    return BERTScorer
+
+
 @dataclass
 class TournamentResult:
     """Result from running multiple scoring algorithms.
@@ -116,9 +135,8 @@ class ATSTournament:
         bert_available = False
         if include_bert:
             try:
-                from simple_resume.core.ats.bert import BERTScorer  # noqa: PLC0415
-
-                bert_scorer = BERTScorer(weight=DEFAULT_BERT_WEIGHT)
+                bert_scorer_cls = _import_bert_scorer()
+                bert_scorer = bert_scorer_cls(weight=DEFAULT_BERT_WEIGHT)
                 if bert_scorer.available:
                     scorers.append(bert_scorer)
                     bert_available = True
