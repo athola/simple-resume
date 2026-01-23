@@ -2,6 +2,27 @@
 
 This file documents all notable project changes. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-01-22
+
+### Added
+
+- Parse-once architecture with `ParsedDocument` class for efficient entity extraction
+  - Lazy-evaluated properties via `@cached_property` reduce redundant text processing
+  - `parse()` function as main entry point for the new architecture
+  - Section finding helper `find_section()` for pattern-based extraction
+- `Degree` dataclass replacing dictionary representation for education data
+- `BERTScorer` for semantic similarity using sentence-transformers (optional dependency)
+  - Install with `uv add simple-resume[bert]` or `pip install simple-resume[bert]`
+  - Adds `ScorerName.BERT_SEMANTIC` and `ScorerSelection.BERT` enums
+- Score and weight validation in `ScorerResult` via `constants.py` helpers
+- Comprehensive test coverage for new components
+
+### Changed
+
+- `EntityExtractor.extract()` now accepts both `str` and `ParsedDocument` inputs
+- `ExtractedEntities.degrees` changed from `list[dict[str, str]]` to `list[Degree]`
+- Internal extraction methods use `ParsedDocument` for cached preprocessing
+
 ## [0.2.0] - 2026-01-21
 
 ### Added

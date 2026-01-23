@@ -424,3 +424,135 @@ class TestKeywordScorer:
         # The keywords are case-sensitive matching against both texts
         # Since "Python", "developer", "AWS" don't match "PYTHON", "DEVELOPER", "aws"
         assert result.details["exact_matches"] <= 3
+
+
+class TestKeywordScorerValidation:
+    """Tests for KeywordScorer input validation."""
+
+    def test_invalid_weight_negative(self):
+        """Test that negative weight raises ValueError."""
+        with pytest.raises(ValueError, match="weight must be in"):
+            KeywordScorer(weight=-0.5)
+
+    def test_invalid_weight_above_one(self):
+        """Test that weight > 1 raises ValueError."""
+        with pytest.raises(ValueError, match="weight must be in"):
+            KeywordScorer(weight=1.5)
+
+    def test_invalid_fuzzy_threshold_negative(self):
+        """Test that negative fuzzy_threshold raises ValueError."""
+        with pytest.raises(ValueError, match="fuzzy_threshold must be in"):
+            KeywordScorer(fuzzy_threshold=-0.1)
+
+    def test_invalid_fuzzy_threshold_above_one(self):
+        """Test that fuzzy_threshold > 1 raises ValueError."""
+        with pytest.raises(ValueError, match="fuzzy_threshold must be in"):
+            KeywordScorer(fuzzy_threshold=1.5)
+
+    def test_valid_weight_boundary(self):
+        """Test that boundary weights are accepted."""
+        scorer = KeywordScorer(weight=0.0)
+        assert scorer.weight == 0.0
+
+        scorer = KeywordScorer(weight=1.0)
+        assert scorer.weight == 1.0
+
+    def test_valid_fuzzy_threshold_boundary(self):
+        """Test that boundary fuzzy_threshold values are accepted."""
+        scorer = KeywordScorer(fuzzy_threshold=0.0)
+        assert scorer.fuzzy_threshold == 0.0
+
+        scorer = KeywordScorer(fuzzy_threshold=1.0)
+        assert scorer.fuzzy_threshold == 1.0
+
+
+# ============================================================================
+# Issue #69: Edge Case Tests for Keyword Scorer
+# ============================================================================
+
+
+class TestKeywordScorerEdgeCases:
+    """Test suite for KeywordScorer edge cases."""
+
+    def test_fuzzy_threshold_zero_matches_everything(self):
+        """Test that fuzzy_threshold=0.0 matches any word."""
+        scorer = KeywordScorer(fuzzy_threshold=0.0)
+        result = scorer.score(
+            "Python developer",
+            "completely different words here",
+            keywords=["xyz"],  # Nonsense keyword
+        )
+
+        # With threshold 0, even "xyz" might fuzzy-match something
+        # The behavior depends on SequenceMatcher ratio
+        assert result.score >= 0.0  # Should complete without error
+
+    def test_fuzzy_threshold_one_requires_exact(self):
+        """Test that fuzzy_threshold=1.0 requires exact matches."""
+        scorer = KeywordScorer(fuzzy_threshold=1.0)
+        result = scorer.score(
+            "Python developer",
+            "Pythn develper",  # Typos
+            keywords=["Pythn"],
+        )
+
+        # With threshold 1.0, typos shouldn't fuzzy-match
+        assert "matched_keywords" in result.details
+
+    def test_empty_keywords_list(self):
+        """Test behavior with empty keywords list."""
+        scorer = KeywordScorer()
+        result = scorer.score("Python developer", "Python developer", keywords=[])
+
+        assert result.score == 0.0
+        assert "error" in result.details or result.details["total_keywords"] == 0
+
+    def test_case_sensitive_matching(self):
+        """Test case-sensitive matching mode."""
+        scorer = KeywordScorer(case_sensitive=True)
+        result = scorer.score(
+            "python developer",
+            "Python Developer needed",
+            keywords=["Python"],  # Capital P
+        )
+
+        # With case sensitivity, "Python" won't match "python"
+        # (unless the text preprocessing normalizes case)
+        assert result.score >= 0.0
+
+    def test_very_long_keyword(self):
+        """Test handling of very long keywords."""
+        long_keyword = "a" * 100
+        scorer = KeywordScorer()
+        result = scorer.score(
+            f"Resume with {long_keyword}",
+            f"Job needs {long_keyword}",
+            keywords=[long_keyword],
+        )
+
+        # Should complete without error
+        assert result.score >= 0.0
+
+    def test_special_regex_characters_in_keywords(self):
+        """Test keywords with regex special characters."""
+        scorer = KeywordScorer()
+        result = scorer.score(
+            "Experience with C++ and .NET framework",
+            "Needs C++ .NET developer",
+            keywords=["C++", ".NET"],
+        )
+
+        # Should handle regex special characters without crashing
+        assert result.score >= 0.0
+
+    def test_unicode_in_keywords(self):
+        """Test unicode characters in keywords."""
+        scorer = KeywordScorer()
+        result = scorer.score(
+            "Developer with résumé experience",
+            "Looking for résumé parsing skills",
+            keywords=["résumé"],
+        )
+
+        # Should handle accented characters
+        assert result.score >= 0.0

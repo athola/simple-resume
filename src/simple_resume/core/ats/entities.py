@@ -8,6 +8,14 @@ Extracts structured information from unstructured text:
 
 Uses pattern-based extraction for PoC, designed to be extensible
 for NLP-based extraction (spaCy, transformers).
+
+Architecture: Parse-once with lazy evaluation
+------------------------------------------------
+The ParsedDocument class caches common preprocessing (whitespace normalization,
+sentence splitting) while allowing specialized patterns per extraction method.
+This reduces redundant I/O and text processing when multiple extractors are used.
+
+See GitHub Issue #60 for design rationale.
 """
 
 from __future__ import annotations
@@ -16,6 +24,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
+from functools import cached_property
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -23,7 +32,8 @@ if TYPE_CHECKING:
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from simple_resume.core.ats.base import ExtractedEntities
+from simple_resume.core.ats.base import Degree, ExtractedEntities
+from simple_resume.core.ats.constants import MIN_CERTIFICATION_LENGTH, MIN_SKILL_LENGTH
 
 logger = logging.getLogger(__name__)
 
@@ -161,13 +171,152 @@ def _calculate_duration_years(
     return years + (months / 12.0)
 
 
+class ParsedDocument:
+    r"""Lazy-evaluated parsed document for efficient entity extraction.
+
+    This class implements the parse-once architecture: common preprocessing
+    is done once when first accessed, then cached for subsequent extractions.
+
+    Each property is lazily evaluated using @cached_property, meaning:
+    - `normalized_text` is computed once on first access
+    - `sentences` uses `normalized_text` (only computed if needed)
+    - `lines` uses `normalized_text` (only computed if needed)
+
+    This allows specialized extractors to share preprocessing work while
+    still using their own patterns for extraction.
+
+    Attributes:
+        raw_text: Original input text (immutable)
+
+    Example:
+        >>> doc = ParsedDocument("  Hello   World  \n\n  Test  ")
+        >>> doc.normalized_text  # Computed on first access
+        'Hello World\nTest'
+        >>> doc.normalized_text  # Returns cached value
+
+    """
+
+    def __init__(self, text: str) -> None:
+        """Initialize with raw text.
+
+        Args:
+            text: Raw input text to parse
+
+        """
+        self._raw_text = text
+
+    @property
+    def raw_text(self) -> str:
+        """Return the original unmodified text."""
+        return self._raw_text
+
+    @cached_property
+    def normalized_text(self) -> str:
+        r"""Return whitespace-normalized text.
+
+        Normalizes multiple spaces to single space, strips leading/trailing
+        whitespace, and normalizes line endings to \n.
+        """
+        # Normalize line endings
+        text = self._raw_text.replace("\r\n", "\n").replace("\r", "\n")
+        # Collapse multiple spaces (but preserve newlines)
+        text = re.sub(r"[^\S\n]+", " ", text)
+        # Remove leading/trailing whitespace from each line
+        lines = [line.strip() for line in text.split("\n")]
+        # Collapse multiple blank lines
+        result_lines = []
+        prev_blank = False
+        for line in lines:
+            is_blank = not line
+            if is_blank and prev_blank:
+                continue
+            result_lines.append(line)
+            prev_blank = is_blank
+        return "\n".join(result_lines).strip()
+
+    @cached_property
+    def lowercase_text(self) -> str:
+        """Return lowercase normalized text for case-insensitive matching."""
+        return self.normalized_text.lower()
+
+    @cached_property
+    def lines(self) -> list[str]:
+        """Return non-empty lines from normalized text."""
+        return [line for line in self.normalized_text.split("\n") if line]
+
+    @cached_property
+    def sentences(self) -> list[str]:
+        """Return sentences split from normalized text.
+
+        Uses simple sentence boundary detection (period followed by space/newline).
+        """
+        # Split on sentence boundaries (. followed by space or newline)
+        raw_sentences = re.split(r"(?<=[.!?])\s+", self.normalized_text)
+        return [s.strip() for s in raw_sentences if s.strip()]
+
+    @cached_property
+    def word_tokens(self) -> list[str]:
+        """Return word tokens (alphabetic strings) from normalized text."""
+        return re.findall(r"\b[A-Za-z]+\b", self.normalized_text)
+
+    def find_section(self, header_pattern: str) -> str | None:
+        """Find and return content of a section by header pattern.
+
+        Args:
+            header_pattern: Regex pattern to match section header
+
+        Returns:
+            Section content (text after header until next section), or None
+
+        """
+        pattern = rf"(?:{header_pattern})[\s:\n]+(.*?)(?=\n\n|\n[A-Z][a-z]+\s*:|\Z)"
+        match = re.search(pattern, self.normalized_text, re.IGNORECASE | re.DOTALL)
+        if match:
+            return match.group(1).strip()
+        return None
+
+
+def parse(text: str) -> ParsedDocument:
+    """Parse text into a lazy-evaluated document.
+
+    This is the main entry point for the parse-once architecture.
+    Use this to create a ParsedDocument, then pass it to extractors.
+
+    Args:
+        text: Raw text to parse
+
+    Returns:
+        ParsedDocument with lazy-evaluated properties
+
+    Example:
+        >>> doc = parse("  Resume text here...  ")
+        >>> doc.normalized_text  # Preprocessing done once
+        >>> doc.lines  # Uses cached normalized_text
+
+    """
+    return ParsedDocument(text)
+
+
 @dataclass
 class EntityExtractor:
     """Extract structured entities from resume or job description text.
 
+    Supports both raw strings and pre-parsed ParsedDocument objects.
+    Using ParsedDocument enables the parse-once architecture for efficiency
+    when extracting multiple entity types from the same text.
+
     Attributes:
         extract_keywords: Whether to extract TF-IDF keywords (requires sklearn)
         custom_skills: Optional custom skill patterns to add
+
+    Example:
+        # Option 1: Direct string (simple usage)
+        extractor = EntityExtractor()
+        entities = extractor.extract("Resume text here...")
+
+        # Option 2: ParsedDocument (efficient for multiple extractions)
+        doc = parse("Resume text here...")
+        entities = extractor.extract(doc)
 
     """
 
@@ -184,52 +333,72 @@ class EntityExtractor:
         else:
             self.custom_pattern = None
 
+    def _ensure_parsed(self, text_or_doc: str | ParsedDocument) -> ParsedDocument:
+        """Ensure input is a ParsedDocument.
+
+        Args:
+            text_or_doc: Either raw text string or ParsedDocument
+
+        Returns:
+            ParsedDocument (either passed through or newly created)
+
+        """
+        if isinstance(text_or_doc, ParsedDocument):
+            return text_or_doc
+        return ParsedDocument(text_or_doc)
+
     def extract(
         self,
-        text: str,
-        **kwargs: Any,
+        text: str | ParsedDocument,
+        **kwargs: Any,  # noqa: ARG002
     ) -> ExtractedEntities:
         """Extract all entities from text.
 
         Args:
-            text: Resume or job description text
-            **kwargs: Additional parameters
+            text: Resume/job description text (str) or pre-parsed ParsedDocument
+            **kwargs: Additional parameters (reserved for future use)
 
         Returns:
             ExtractedEntities with all extracted information
 
+        Note:
+            Pass a ParsedDocument when extracting from the same text multiple
+            times to benefit from cached preprocessing (parse-once architecture).
+
         """
+        doc = self._ensure_parsed(text)
         entities = ExtractedEntities()
 
-        # Extract skills
-        entities.skills = self._extract_skills(text)
+        # Extract skills (uses normalized text for pattern matching)
+        entities.skills = self._extract_skills(doc)
 
-        # Calculate experience years
-        entities.experience_years = self._calculate_experience(text)
+        # Calculate experience years (uses raw text for date patterns)
+        entities.experience_years = self._calculate_experience(doc)
 
-        # Extract education
-        entities.degrees = self._extract_education(text)
+        # Extract education (uses section finding)
+        entities.degrees = self._extract_education(doc)
 
-        # Extract certifications
-        entities.certifications = self._extract_certifications(text)
+        # Extract certifications (uses both patterns and sections)
+        entities.certifications = self._extract_certifications(doc)
 
-        # Extract keywords if requested
+        # Extract keywords if requested (uses normalized text)
         if self.extract_keywords:
-            entities.keywords = self._extract_keywords(text)
+            entities.keywords = self._extract_keywords(doc)
 
         return entities
 
-    def _extract_skills(self, text: str) -> list[str]:
-        """Extract technical skills from text.
+    def _extract_skills(self, doc: ParsedDocument) -> list[str]:
+        """Extract technical skills from parsed document.
 
         Args:
-            text: Resume or job description text
+            doc: ParsedDocument with cached normalized text
 
         Returns:
             List of unique skills found
 
         """
         skills_found = set()
+        text = doc.normalized_text  # Use cached normalized text
 
         # Extract from predefined patterns
         for match in TECH_SKILLS_PATTERN.finditer(text):
@@ -240,18 +409,13 @@ class EntityExtractor:
             for match in self.custom_pattern.finditer(text):
                 skills_found.add(match.group(0))
 
-        # Extract from common skill section patterns
-        # Look for "Skills:" sections and extract items
-        skills_pattern = (
-            r"(?:Skills|Technologies|Tech Stack|Core Competencies)[:\s]+"
-            r"(.*?)(?=\n\n|\n[A-Z]|\Z)"
+        # Extract from skills section using ParsedDocument helper
+        skills_section = doc.find_section(
+            r"Skills|Technologies|Tech Stack|Core Competencies"
         )
-        skills_section = re.search(skills_pattern, text, re.IGNORECASE | re.DOTALL)
         if skills_section:
-            section_text = skills_section.group(1)
             # Extract comma-separated, bullet, or dash-separated items
-            items = re.split(r"[,\n•\-\*]", section_text)
-            MIN_SKILL_LENGTH = 2
+            items = re.split(r"[,\n•\-\*]", skills_section)
             for raw_item in items:
                 item = raw_item.strip()
                 # Only include if it looks like a skill (2+ chars, contains letters)
@@ -260,17 +424,19 @@ class EntityExtractor:
 
         return sorted(skills_found, key=str.lower)
 
-    def _calculate_experience(self, text: str) -> float:
+    def _calculate_experience(self, doc: ParsedDocument) -> float:
         """Calculate total years of experience from date ranges.
 
         Args:
-            text: Resume or job description text
+            doc: ParsedDocument with cached text
 
         Returns:
             Total years of experience
 
         """
         total_years = 0.0
+        # Use raw text for date patterns (preserves original formatting)
+        text = doc.raw_text
 
         # Look for date range patterns like "Jan 2020 - Present" or "2020-01 - 2022-12"
         # This handles various formats
@@ -349,28 +515,22 @@ class EntityExtractor:
 
         return round(total_years, 1)
 
-    def _extract_education(self, text: str) -> list[dict[str, str]]:
+    def _extract_education(self, doc: ParsedDocument) -> list[Degree]:
         """Extract education information (degrees, schools).
 
         Args:
-            text: Resume or job description text
+            doc: ParsedDocument with section finding capability
 
         Returns:
-            List of degree dictionaries
+            List of Degree objects
 
         """
-        degrees = []
+        degrees: list[Degree] = []
 
-        # Look for education section
-        education_section = re.search(
-            r"(?:Education|Academic|Degree)[\s:\n]+(.*?)(?=\n\n|\n[A-Z][a-z]+\s*:|\Z)",
-            text,
-            re.IGNORECASE | re.DOTALL,
-        )
+        # Use ParsedDocument's section finding (cached normalized text)
+        section_text = doc.find_section(r"Education|Academic|Degree")
 
-        if education_section:
-            section_text = education_section.group(1)
-
+        if section_text:
             # Find degree mentions
             for pattern, degree_type in DEGREE_PATTERNS:
                 matches = re.finditer(pattern, section_text, re.IGNORECASE)
@@ -397,26 +557,27 @@ class EntityExtractor:
                         school = "Unknown"
 
                     degrees.append(
-                        {
-                            "type": degree_type,
-                            "school": school,
-                            "field": field or "",
-                        }
+                        Degree(
+                            type=degree_type,
+                            school=school,
+                            field=field or "",
+                        )
                     )
 
         return degrees
 
-    def _extract_certifications(self, text: str) -> list[str]:
-        """Extract certifications from text.
+    def _extract_certifications(self, doc: ParsedDocument) -> list[str]:
+        """Extract certifications from parsed document.
 
         Args:
-            text: Resume or job description text
+            doc: ParsedDocument with cached normalized text
 
         Returns:
             List of certification names
 
         """
         certifications = []
+        text = doc.normalized_text  # Use cached normalized text
 
         # Common certification patterns
         cert_patterns = [
@@ -438,33 +599,28 @@ class EntityExtractor:
         for match in cert_regex.finditer(text):
             certifications.append(match.group(0).strip())
 
-        # Also look for explicit "Certification:" sections
-        cert_section = re.search(
-            r"(?:Certifications?|Certificates?|Credentials?)[\s:\n]+(.*?)(?=\n\n|\n[A-Z][a-z]+\s*:|\Z)",
-            text,
-            re.IGNORECASE | re.DOTALL,
-        )
+        # Also look for explicit "Certification:" sections using ParsedDocument
+        cert_section = doc.find_section(r"Certifications?|Certificates?|Credentials?")
         if cert_section:
-            section_text = cert_section.group(1)
             # Extract line-by-line
-            MIN_CERT_LENGTH = 3
-            for raw_line in section_text.split("\n"):
+            for raw_line in cert_section.split("\n"):
                 line = raw_line.strip()
-                if line and len(line) > MIN_CERT_LENGTH:
+                if line and len(line) > MIN_CERTIFICATION_LENGTH:
                     certifications.append(line)
 
         return list(set(certifications))  # Deduplicate
 
-    def _extract_keywords(self, text: str) -> list[tuple[str, float]]:
+    def _extract_keywords(self, doc: ParsedDocument) -> list[tuple[str, float]]:
         """Extract important keywords using TF-IDF.
 
         Args:
-            text: Resume or job description text
+            doc: ParsedDocument with cached normalized text
 
         Returns:
             List of (keyword, tfidf_score) tuples
 
         """
+        text = doc.normalized_text  # Use cached normalized text
         # Simple TF-IDF for single document (returns raw term frequencies)
         try:
             vectorizer = TfidfVectorizer(
@@ -498,17 +654,25 @@ class EntityExtractor:
 
 
 def extract_entities(
-    text: str,
+    text: str | ParsedDocument,
     **kwargs: Any,
 ) -> ExtractedEntities:
-    """Extract entities from text.
+    """Extract entities from text or parsed document.
 
     Args:
-        text: Resume or job description text
+        text: Resume/job description text (str) or pre-parsed ParsedDocument
         **kwargs: Additional parameters for EntityExtractor
 
     Returns:
         ExtractedEntities with all extracted information
+
+    Example:
+        # Simple usage with string
+        entities = extract_entities("Resume text here...")
+
+        # Efficient usage with ParsedDocument
+        doc = parse("Resume text here...")
+        entities = extract_entities(doc)
 
     """
     extractor = EntityExtractor(**kwargs)

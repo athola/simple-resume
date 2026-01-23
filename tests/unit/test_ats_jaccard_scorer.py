@@ -327,3 +327,119 @@ class TestJaccardScorer:
         # Union: {Python, developer} = 2
         # Jaccard = 2/2 = 1.0 for unigrams, but ngrams reduce the score
         assert result.score > 0.2  # Lowered expectation due to ngram scoring
+
+
+class TestJaccardScorerValidation:
+    """Tests for JaccardScorer input validation."""
+
+    def test_invalid_weight_negative(self):
+        """Test that negative weight raises ValueError."""
+        with pytest.raises(ValueError, match="weight must be in"):
+            JaccardScorer(weight=-0.5)
+
+    def test_invalid_weight_above_one(self):
+        """Test that weight > 1 raises ValueError."""
+        with pytest.raises(ValueError, match="weight must be in"):
+            JaccardScorer(weight=1.5)
+
+    def test_invalid_ngram_range_min_zero(self):
+        """Test that ngram_range with min=0 raises ValueError."""
+        with pytest.raises(ValueError, match="ngram_range min must be >= 1"):
+            JaccardScorer(ngram_range=(0, 3))
+
+    def test_invalid_ngram_range_min_greater_than_max(self):
+        """Test that ngram_range with min > max raises ValueError."""
+        with pytest.raises(ValueError, match="ngram_range min.*must be <= max"):
+            JaccardScorer(ngram_range=(5, 2))
+
+    def test_valid_weight_boundary(self):
+        """Test that boundary weights are accepted."""
+        scorer = JaccardScorer(weight=0.0)
+        assert scorer.weight == 0.0
+
+        scorer = JaccardScorer(weight=1.0)
+        assert scorer.weight == 1.0
+
+    def test_valid_ngram_range_single(self):
+        """Test that single n-gram range (e.g., (2, 2)) is accepted."""
+        scorer = JaccardScorer(ngram_range=(2, 2))
+        assert scorer.ngram_range == (2, 2)
+
+
+# ============================================================================
+# Issue #69: Edge Case Tests for Jaccard Scorer
+# ============================================================================
+
+
+class TestJaccardScorerEdgeCases:
+    """Test suite for Jaccard scorer edge cases."""
+
+    def test_empty_resume_returns_zero(self):
+        """Test that empty resume text returns zero score."""
+        scorer = JaccardScorer()
+        result = scorer.score("", "Python developer needed")
+
+        assert result.score == 0.0
+        assert "error" in result.details
+
+    def test_empty_job_description_returns_zero(self):
+        """Test that empty job description returns zero score."""
+        scorer = JaccardScorer()
+        result = scorer.score("Python developer", "")
+
+        assert result.score == 0.0
+        assert "error" in result.details
+
+    def test_both_empty_returns_zero(self):
+        """Test that both empty texts return zero score (not 1.0)."""
+        scorer = JaccardScorer()
+        result = scorer.score("", "")
+
+        # Documented behavior: empty inputs return 0.0 with error message
+        # Not 1.0 (which would be mathematically correct for 0/0 = undefined)
+        assert result.score == 0.0
+
+    def test_identical_texts_returns_one(self):
+        """Test that identical texts return perfect score."""
+        text = "Python developer with AWS experience"
+        scorer = JaccardScorer()
+        result = scorer.score(text, text)
+
+        assert result.score == 1.0
+
+    def test_completely_different_texts(self):
+        """Test texts with no overlap return low score."""
+        scorer = JaccardScorer()
+        result = scorer.score(
+            "I enjoy gardening and cooking", "Quantum physics research methodology"
+        )
+
+        # Should be very low but not necessarily 0 due to stopwords
+        assert result.score < 0.3
+
+    def test_whitespace_only_resume(self):
+        """Test whitespace-only resume returns zero."""
+        scorer = JaccardScorer()
+        result = scorer.score("   \n\t   ", "Python developer")
+
+        assert result.score == 0.0
+
+    def test_single_word_overlap(self):
+        """Test single word overlap calculation."""
+        scorer = JaccardScorer(ngram_range=(1, 1))
+        result = scorer.score("Python", "Python developer")
+
+        # "Python" appears in both, "developer" only in job
+        assert result.score > 0.0
+        assert result.score < 1.0
+
+    def test_unicode_text_handling(self):
+        """Test Jaccard scorer handles unicode gracefully."""
+        scorer = JaccardScorer()
+        result = scorer.score(
+            "Python développeur avec expérience AWS",
+            "Python developer with AWS experience",
+        )
+
+        # Should extract common terms (Python, AWS)
+        assert result.score > 0.0

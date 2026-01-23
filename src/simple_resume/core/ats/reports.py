@@ -14,17 +14,23 @@ from typing import Any
 from oyaml import dump as yaml_dump
 
 from simple_resume.core.ats.base import ScorerName
+from simple_resume.core.ats.constants import (
+    COMPONENT_WEIGHT_EDUCATION,
+    COMPONENT_WEIGHT_EXPERIENCE,
+    COMPONENT_WEIGHT_FORMAT,
+    COMPONENT_WEIGHT_KEYWORDS,
+    COMPONENT_WEIGHT_SEMANTIC,
+    COMPONENT_WEIGHT_SKILLS,
+    JACCARD_RECOMMENDATION_THRESHOLD,
+    MAX_MISSING_KEYWORDS,
+    PRIORITY_LOW_THRESHOLD,
+    PRIORITY_MEDIUM_THRESHOLD,
+    SCORE_EXCELLENT_THRESHOLD,
+    SCORE_FAIR_THRESHOLD,
+    SCORE_GOOD_THRESHOLD,
+    SCORE_POOR_THRESHOLD,
+)
 from simple_resume.core.ats.tournament import TournamentResult
-
-# Score threshold constants for classification
-_MAX_MISSING_KEYWORDS = 10
-_JACCARD_THRESHOLD = 0.5
-_EXCELLENT_THRESHOLD = 80
-_GOOD_THRESHOLD = 65
-_FAIR_THRESHOLD = 50
-_POOR_THRESHOLD = 35
-_LOW_PRIORITY_THRESHOLD = 70
-_MEDIUM_PRIORITY_THRESHOLD = 50
 
 
 class ATSReportGenerator:
@@ -190,12 +196,12 @@ class ATSReportGenerator:
 
         # Overall component breakdown
         components_100["_weights"] = {
-            "experience": 0.35,
-            "skills": 0.25,
-            "semantic": 0.15,
-            "keywords": 0.10,
-            "education": 0.10,
-            "format": 0.05,
+            "experience": COMPONENT_WEIGHT_EXPERIENCE,
+            "skills": COMPONENT_WEIGHT_SKILLS,
+            "semantic": COMPONENT_WEIGHT_SEMANTIC,
+            "keywords": COMPONENT_WEIGHT_KEYWORDS,
+            "education": COMPONENT_WEIGHT_EDUCATION,
+            "format": COMPONENT_WEIGHT_FORMAT,
         }
 
         return components_100
@@ -215,7 +221,7 @@ class ATSReportGenerator:
         for result in self.result.algorithm_results:
             if result.name == ScorerName.KEYWORD_EXACT:
                 missing = result.details.get("missing_keywords", [])
-                if missing and len(missing) <= _MAX_MISSING_KEYWORDS:
+                if missing and len(missing) <= MAX_MISSING_KEYWORDS:
                     keyword_list = ", ".join(missing[:5])
                     top_improvements.append(
                         {
@@ -226,7 +232,7 @@ class ATSReportGenerator:
                     )
 
             if result.name == ScorerName.JACCARD_NGRAM:
-                if result.score < _JACCARD_THRESHOLD:
+                if result.score < JACCARD_RECOMMENDATION_THRESHOLD:
                     top_improvements.append(
                         {
                             "category": "phrasing",
@@ -241,35 +247,35 @@ class ATSReportGenerator:
 
     def _get_status_label(self, score: float) -> str:
         """Get status label based on score."""
-        if score >= _EXCELLENT_THRESHOLD:
+        if score >= SCORE_EXCELLENT_THRESHOLD:
             return "Excellent"
-        elif score >= _GOOD_THRESHOLD:
+        elif score >= SCORE_GOOD_THRESHOLD:
             return "Good"
-        elif score >= _FAIR_THRESHOLD:
+        elif score >= SCORE_FAIR_THRESHOLD:
             return "Fair"
-        elif score >= _POOR_THRESHOLD:
+        elif score >= SCORE_POOR_THRESHOLD:
             return "Poor"
         else:
             return "Very Poor"
 
     def _get_priority_level(self, score: float) -> str:
         """Get priority level for improvements."""
-        if score >= _LOW_PRIORITY_THRESHOLD:
+        if score >= PRIORITY_LOW_THRESHOLD:
             return "LOW"
-        elif score >= _MEDIUM_PRIORITY_THRESHOLD:
+        elif score >= PRIORITY_MEDIUM_THRESHOLD:
             return "MEDIUM"
         else:
             return "HIGH"
 
     def _get_assessment(self, score: float) -> str:
         """Get overall assessment text."""
-        if score >= _EXCELLENT_THRESHOLD:
+        if score >= SCORE_EXCELLENT_THRESHOLD:
             return "Strong match for this position. Consider applying with confidence."
-        elif score >= _GOOD_THRESHOLD:
+        elif score >= SCORE_GOOD_THRESHOLD:
             return "Good match. Minor improvements could strengthen candidacy."
-        elif score >= _FAIR_THRESHOLD:
+        elif score >= SCORE_FAIR_THRESHOLD:
             return "Moderate match. Consider tailoring resume more specifically."
-        elif score >= _POOR_THRESHOLD:
+        elif score >= SCORE_POOR_THRESHOLD:
             return "Weak match. Significant improvements recommended before applying."
         else:
             return "Poor match. Resume does not align well with requirements."

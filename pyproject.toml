@@ -30,7 +30,7 @@ markers = [
 
 [project]
 name = "simple-resume"
-version = "0.2.0"
+version = "0.2.1"
 description = "Generate PDF resumes from YAML data using HTML templates"
 authors = [
     {name = "Alex Thola", email = "alexthola@gmail.com"}
@@ -61,6 +61,10 @@ utils = [
     "pytest>=8.3.3,<9.0",
     "pytest-cov>=5.0.0,<6.0",
     "pytest-mock>=3.14.0,<4.0",
+]
+bert = [
+    "sentence-transformers>=3.0,<4.0",
+    "torch>=2.5,<3.0",
 ]
 
 [project.scripts]
@@ -199,6 +203,14 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["sklearn", "sklearn.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["numpy", "numpy.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["sentence_transformers", "sentence_transformers.*", "torch", "torch.*"]
 ignore_missing_imports = true
 
 

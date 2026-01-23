@@ -250,17 +250,20 @@ class TestTournamentProperties:
 
     @given(
         weight1=st.floats(
-            min_value=0.0, max_value=2.0, allow_nan=False, allow_infinity=False
+            min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False
         ),
         weight2=st.floats(
-            min_value=0.0, max_value=2.0, allow_nan=False, allow_infinity=False
+            min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False
         ),
         resume=text(min_size=10, max_size=500).filter(lambda x: x.strip()),
         job=text(min_size=10, max_size=500).filter(lambda x: x.strip()),
     )
     @settings(max_examples=50, deadline=None)
     def test_custom_weights_produce_valid_scores(self, weight1, weight2, resume, job):
-        """Test that custom weights produce valid scores."""
+        """Test that custom weights produce valid scores.
+
+        Weights must be in [0, 1] range per ScorerResult validation.
+        """
         assume(weight1 + weight2 > 0)  # Avoid zero total weight
 
         tournament = ATSTournament(

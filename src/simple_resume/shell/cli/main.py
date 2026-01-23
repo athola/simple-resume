@@ -579,13 +579,18 @@ def _read_file_text(file_path: Path) -> str:
 
     suffix = file_path.suffix.lower()
 
-    # For PDF/HTML, we'd need special handling
-    # For now, assume text-based formats (YAML, TXT, MD)
-    if suffix in [".pdf", ".html"]:
-        # TODO: Implement PDF/HTML text extraction
-        raise NotImplementedError(
-            f"Reading from {suffix} files is not yet supported. "
-            f"Please use text-based formats (.txt, .md, .yaml, .json)"
+    # PDF/HTML file formats are not yet supported for job descriptions
+    # Provide user-friendly error with guidance on supported formats
+    if suffix in [".pdf", ".html", ".htm"]:
+        raise ValidationError(
+            f"Job description file format '{suffix}' is not yet supported",
+            errors=[
+                f"Cannot read '{file_path.name}' - "
+                "PDF/HTML parsing is planned for a future release",
+                "Supported formats: .txt, .md, .yaml, .json",
+            ],
+            context={"file_path": str(file_path), "format": suffix},
+            filename=str(file_path),
         )
 
     # Read text content
@@ -594,6 +599,34 @@ def _read_file_text(file_path: Path) -> str:
     except UnicodeDecodeError:
         # Try with different encoding
         return file_path.read_text(encoding="latin-1")
+
+
+def _collect_ats_warnings(result: TournamentResult) -> list[str]:
+    """Collect warning messages from ATS scoring results.
+
+    Extracts 'error' keys from ScorerResult.details that indicate
+    non-fatal issues like sklearn fallbacks or empty input handling.
+
+    Args:
+        result: Tournament result containing algorithm results
+
+    Returns:
+        List of warning messages to display to users
+
+    """
+    warnings = []
+
+    # Check each algorithm result for error details
+    for alg_result in result.algorithm_results:
+        error = alg_result.details.get("error")
+        if error:
+            warnings.append(f"{alg_result.name}: {error}")
+
+    # Check tournament-level metadata for errors
+    if "error" in result.metadata:
+        warnings.append(f"Tournament: {result.metadata['error']}")
+
+    return warnings
 
 
 def _format_text_report(result: TournamentResult, verbose: bool = False) -> str:
@@ -645,6 +678,36 @@ def _format_text_report(result: TournamentResult, verbose: bool = False) -> str:
         )
         for component, score in result.component_breakdown.items():
             lines.append(f"{component}: {score:.4f}")
+
+    # Collect warnings from algorithm results (issue #58)
+    warnings = _collect_ats_warnings(result)
+    if warnings:
+        lines.extend(
+            [
+                "",
+                "-" * 60,
+                "WARNINGS",
+                "-" * 60,
+            ]
+        )
+        for warning in warnings:
+            lines.append(f"  * {warning}")
+
+    # Show failed scorers if any
+    if result.failed_scorers:
+        lines.extend(
+            [
+                "",
+                "-" * 60,
+                "FAILED SCORERS",
+                "-" * 60,
+            ]
+        )
+        for scorer_name, error_msg in result.failed_scorers:
+            if verbose:
+                lines.append(f"  * {scorer_name}: {error_msg}")
+            else:
+                lines.append(f"  * {scorer_name} (use --verbose for details)")
 
     lines.extend(
         [

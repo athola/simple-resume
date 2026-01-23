@@ -156,6 +156,12 @@ Path("ats_report.yaml").write_text(yaml_report)
 - **TF-IDF + Cosine Similarity** (`TFIDFScorer`): Statistical term frequency analysis
 - **Jaccard + N-gram** (`JaccardScorer`): Set intersection and phrase overlap
 - **Exact Keyword** (`KeywordScorer`): Direct keyword matching with fuzzy tolerance
+- **BERT Semantic** (`BERTScorer`): Contextual embeddings via sentence-transformers (optional)
+
+```bash
+# Install with BERT support (optional)
+uv add simple-resume[bert]
+```
 
 The tournament system combines multiple algorithms using weighted averages to produce detailed scores. See [ATS Scoring Rubric](wiki/ATS-Scoring-Rubric.md) for complete methodology.
 

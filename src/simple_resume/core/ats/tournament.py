@@ -6,17 +6,27 @@ using weighted averages to produce a comprehensive resume-job match score.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import Any
 
 from simple_resume.core.ats.base import BaseScorer, ScorerResult
+from simple_resume.core.ats.constants import (
+    DEFAULT_BERT_WEIGHT,
+    DEFAULT_JACCARD_WEIGHT,
+    DEFAULT_KEYWORD_WEIGHT,
+    DEFAULT_PREVIEW_LENGTH,
+    DEFAULT_TFIDF_WEIGHT,
+    FALLBACK_JACCARD_WEIGHT,
+    FALLBACK_KEYWORD_WEIGHT,
+    FALLBACK_TFIDF_WEIGHT,
+    validate_score,
+)
 from simple_resume.core.ats.jaccard import JaccardScorer
 from simple_resume.core.ats.keyword import KeywordScorer
 from simple_resume.core.ats.tfidf import TFIDFScorer
 
-# Default preview length for resume text snippets in batch screening results.
-# Configurable via `preview_length` parameter in `get_top_matches()`.
-DEFAULT_PREVIEW_LENGTH = 100
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -24,10 +34,14 @@ class TournamentResult:
     """Result from running multiple scoring algorithms.
 
     Attributes:
-        overall_score: Final weighted average score (0-1)
+        overall_score: Final weighted average score (must be in [0, 1])
         algorithm_results: Results from each individual algorithm
-        component_breakdown: Scores by rubric component
+        component_breakdown: Scores by rubric component (all values in [0, 1])
         metadata: Additional tournament metadata
+        failed_scorers: List of (scorer_name, error_message) for scorers that failed
+
+    Raises:
+        ValueError: If overall_score or component_breakdown values are outside [0, 1]
 
     """
 
@@ -35,6 +49,15 @@ class TournamentResult:
     algorithm_results: list[ScorerResult] = field(default_factory=list)
     component_breakdown: dict[str, float] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
+    failed_scorers: list[tuple[str, str]] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        """Validate overall_score and component_breakdown are in valid ranges."""
+        validate_score(self.overall_score, "overall_score")
+
+        # Validate all component scores
+        for key, value in self.component_breakdown.items():
+            validate_score(value, f"component_breakdown[{key!r}]")
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -43,6 +66,7 @@ class TournamentResult:
             "algorithm_results": [r.to_dict() for r in self.algorithm_results],
             "component_breakdown": self.component_breakdown,
             "metadata": self.metadata,
+            "failed_scorers": self.failed_scorers,
         }
 
 
@@ -57,22 +81,79 @@ class ATSTournament:
     def __init__(
         self,
         scorers: list[BaseScorer] | None = None,
+        include_bert: bool = True,
     ) -> None:
         """Initialize the tournament with a list of scorers.
 
         Args:
             scorers: List of scoring algorithms to use. If None, uses default set.
+            include_bert: Whether to include BERT scorer if available (default: True).
+                         Set to False to skip BERT even when sentence-transformers
+                         is installed (useful for faster scoring or testing).
 
         """
         if scorers is None:
-            # Default scorers with weights from refined rubric
-            self.scorers = [
-                TFIDFScorer(weight=0.40),  # Primary scorer
-                JaccardScorer(weight=0.30),  # Phrase matching
-                KeywordScorer(weight=0.30),  # Exact keywords
-            ]
+            self.scorers = self._create_default_scorers(include_bert=include_bert)
         else:
             self.scorers = scorers
+
+    def _create_default_scorers(self, include_bert: bool = True) -> list[BaseScorer]:
+        """Create default scorers with appropriate weights.
+
+        If BERT is available and enabled, uses semantic-aware weights.
+        If BERT is unavailable, uses fallback statistical-only weights.
+
+        Args:
+            include_bert: Whether to try including BERT scorer
+
+        Returns:
+            List of configured scorers
+
+        """
+        scorers: list[BaseScorer] = []
+
+        # Try to include BERT scorer if enabled
+        bert_available = False
+        if include_bert:
+            try:
+                from simple_resume.core.ats.bert import BERTScorer  # noqa: PLC0415
+
+                bert_scorer = BERTScorer(weight=DEFAULT_BERT_WEIGHT)
+                if bert_scorer.available:
+                    scorers.append(bert_scorer)
+                    bert_available = True
+                    logger.info(
+                        "BERT scorer enabled with weight %.2f", DEFAULT_BERT_WEIGHT
+                    )
+                else:
+                    logger.info(
+                        "BERT scorer not available "
+                        "(sentence-transformers not installed)"
+                    )
+            except ImportError:
+                logger.info("BERT module not available")
+
+        # Add statistical scorers with appropriate weights
+        if bert_available:
+            # Use reduced weights when BERT is present
+            scorers.extend(
+                [
+                    TFIDFScorer(weight=DEFAULT_TFIDF_WEIGHT),
+                    JaccardScorer(weight=DEFAULT_JACCARD_WEIGHT),
+                    KeywordScorer(weight=DEFAULT_KEYWORD_WEIGHT),
+                ]
+            )
+        else:
+            # Use fallback weights (sum to 1.0) when BERT unavailable
+            scorers.extend(
+                [
+                    TFIDFScorer(weight=FALLBACK_TFIDF_WEIGHT),
+                    JaccardScorer(weight=FALLBACK_JACCARD_WEIGHT),
+                    KeywordScorer(weight=FALLBACK_KEYWORD_WEIGHT),
+                ]
+            )
+
+        return scorers
 
     def score(
         self,
@@ -109,13 +190,42 @@ class ATSTournament:
             )
 
         algorithm_results = []
+        failed_scorers: list[tuple[str, str]] = []
 
-        # Run each scorer
+        # Run each scorer with graceful failure handling
         for scorer in self.scorers:
-            result = scorer.score(resume_text, job_description, **kwargs)
-            algorithm_results.append(result)
+            scorer_name = scorer.__class__.__name__
+            try:
+                result = scorer.score(resume_text, job_description, **kwargs)
+                algorithm_results.append(result)
+            except Exception as e:
+                # Log the failure and continue with remaining scorers
+                logger.warning(
+                    "Scorer %s failed during tournament: %s. "
+                    "Continuing with remaining scorers.",
+                    scorer_name,
+                    str(e),
+                )
+                failed_scorers.append((scorer_name, str(e)))
 
-        # Calculate weighted overall score
+        # If all scorers failed, return zero score with error metadata
+        if not algorithm_results:
+            logger.error(
+                "All %d scorers failed during tournament. No score available.",
+                len(self.scorers),
+            )
+            return TournamentResult(
+                overall_score=0.0,
+                algorithm_results=[],
+                component_breakdown={},
+                metadata={
+                    "error": "All scorers failed",
+                    "num_algorithms": len(self.scorers),
+                },
+                failed_scorers=failed_scorers,
+            )
+
+        # Calculate weighted overall score (from successful scorers only)
         overall_score = self._calculate_weighted_score(algorithm_results)
 
         # Aggregate component scores across algorithms
@@ -124,6 +234,8 @@ class ATSTournament:
         # Extract metadata
         metadata = {
             "num_algorithms": len(self.scorers),
+            "num_successful": len(algorithm_results),
+            "num_failed": len(failed_scorers),
             "scorer_names": [r.name for r in algorithm_results],
             "individual_scores": [r.score for r in algorithm_results],
         }
@@ -133,6 +245,7 @@ class ATSTournament:
             algorithm_results=algorithm_results,
             component_breakdown=component_breakdown,
             metadata=metadata,
+            failed_scorers=failed_scorers,
         )
 
     def _calculate_weighted_score(
