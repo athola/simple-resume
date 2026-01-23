@@ -144,7 +144,8 @@ class BERTScorer(BaseScorer):
                 try:
                     self._ensure_model_loaded()
                     self._available = True
-                except BERTModelUnavailableError:
+                except BERTModelUnavailableError as e:
+                    logger.debug("BERT model unavailable: %s", e)
                     self._available = False
         return self._available
 
@@ -231,6 +232,11 @@ class BERTScorer(BaseScorer):
 
         # Handle empty inputs
         if not resume_text.strip() or not job_description.strip():
+            logger.debug(
+                "BERT scorer received empty input - resume: %d chars, job: %d chars",
+                len(resume_text),
+                len(job_description),
+            )
             return ScorerResult(
                 name="bert_semantic",
                 score=0.0,
@@ -307,7 +313,20 @@ class BERTScorer(BaseScorer):
         try:
             job_embeddings = [self._get_embedding(s) for s in job_sections]
             resume_embeddings = [self._get_embedding(s) for s in resume_sections]
-        except Exception:
+        except (ValueError, RuntimeError) as e:
+            logger.warning(
+                "Failed to generate embeddings for section-level scoring: %s. "
+                "Returning component scores from overall similarity only.",
+                e,
+            )
+            return {}
+        except Exception as e:
+            logger.error(
+                "Unexpected error generating section embeddings: %s. "
+                "Returning component scores from overall similarity only.",
+                e,
+                exc_info=True,
+            )
             return {}
 
         # Calculate best match for each job section

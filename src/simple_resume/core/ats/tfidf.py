@@ -159,6 +159,7 @@ class TFIDFScorer(BaseScorer):
         # Use local vectorizer variable to avoid mutating instance state
         # This preserves functional purity of the score() method
         vectorizer = self.vectorizer
+        used_fallback = False
         try:
             corpus = [resume_clean, job_clean]
             tfidf_matrix = vectorizer.fit_transform(corpus)
@@ -171,6 +172,7 @@ class TFIDFScorer(BaseScorer):
                 str(e),
             )
             # Fallback to more permissive vectorizer (local, not stored on self)
+            used_fallback = True
             vectorizer = TfidfVectorizer(
                 max_features=self.max_features,
                 ngram_range=(1, 1),  # Use unigrams only
@@ -251,8 +253,9 @@ class TFIDFScorer(BaseScorer):
                 "shared_keywords": self._get_shared_keywords(
                     resume_tfidf, job_tfidf, feature_names
                 ),
-                "ngram_range": self.ngram_range,
+                "ngram_range": (1, 1) if used_fallback else self.ngram_range,
                 "max_features": self.max_features,
+                "used_fallback_vectorizer": used_fallback,
             },
             component_scores=component_scores,
         )

@@ -1,6 +1,6 @@
 """Tournament runner for multi-algorithm ATS scoring.
 
-Runs multiple scoring algorithms in parallel and aggregates results
+Runs multiple scoring algorithms sequentially and aggregates results
 using weighted averages to produce a comprehensive resume-job match score.
 """
 
@@ -198,8 +198,8 @@ class ATSTournament:
             try:
                 result = scorer.score(resume_text, job_description, **kwargs)
                 algorithm_results.append(result)
-            except Exception as e:
-                # Log the failure and continue with remaining scorers
+            except (ValueError, RuntimeError) as e:
+                # Expected scorer errors - log and continue
                 logger.warning(
                     "Scorer %s failed during tournament: %s. "
                     "Continuing with remaining scorers.",
@@ -207,6 +207,16 @@ class ATSTournament:
                     str(e),
                 )
                 failed_scorers.append((scorer_name, str(e)))
+            except Exception as e:
+                # Unexpected errors - log with full traceback and continue
+                logger.error(
+                    "Unexpected error in scorer %s during tournament: %s. "
+                    "Continuing with remaining scorers.",
+                    scorer_name,
+                    str(e),
+                    exc_info=True,
+                )
+                failed_scorers.append((scorer_name, f"Unexpected error: {e}"))
 
         # If all scorers failed, return zero score with error metadata
         if not algorithm_results:
