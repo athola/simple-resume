@@ -171,14 +171,26 @@ class DegreeType(str, Enum):
     def from_string(cls, value: str) -> DegreeType:
         """Convert a string to DegreeType, with fallback to OTHER.
 
+        Input is normalized by stripping whitespace and converting to title case
+        before matching. Common abbreviations (BS, BA, MS, MBA, PhD, etc.) are
+        recognized via an alias mapping.
+
         Args:
-            value: String representation of degree type
+            value: String representation of degree type (case-insensitive)
 
         Returns:
             Matching DegreeType or OTHER if not recognized
 
+        Examples:
+            >>> DegreeType.from_string("bachelor")
+            <DegreeType.BACHELOR: 'Bachelor'>
+            >>> DegreeType.from_string("  BS  ")
+            <DegreeType.BACHELOR: 'Bachelor'>
+            >>> DegreeType.from_string("Unknown")
+            <DegreeType.OTHER: 'Other'>
+
         """
-        # Normalize input
+        # Normalize input: strip whitespace, convert to title case
         normalized = value.strip().title()
 
         # Try direct match first
@@ -186,24 +198,45 @@ class DegreeType(str, Enum):
             if member.value == normalized:
                 return member
 
-        # Handle common aliases
-        aliases = {
-            "Phd": cls.PHD,
-            "Doctorate": cls.PHD,
-            "Doctor": cls.PHD,
-            "Bs": cls.BACHELOR,
-            "Ba": cls.BACHELOR,
-            "Ms": cls.MASTER,
-            "Ma": cls.MASTER,
-            "Mba": cls.MASTER,
-            "Aa": cls.ASSOCIATE,
-            "As": cls.ASSOCIATE,
-            "Cert": cls.CERTIFICATE,
-        }
-        result = aliases.get(normalized, cls.OTHER)
+        # Check aliases (module-level constant for performance)
+        result = _DEGREE_TYPE_ALIASES.get(normalized, cls.OTHER)
         if result == cls.OTHER and normalized:
             logger.debug("Unrecognized degree type '%s', using OTHER", value)
         return result
+
+    @classmethod
+    def is_recognized(cls, value: str) -> bool:
+        """Check if a string value maps to a recognized degree type (not OTHER).
+
+        Useful for validation scenarios where you want to warn about
+        unrecognized degree types without converting them.
+
+        Args:
+            value: String representation of degree type
+
+        Returns:
+            True if value maps to a specific degree type, False if it would
+            fall back to OTHER
+
+        """
+        return cls.from_string(value) != cls.OTHER
+
+
+# Common degree abbreviations mapped to canonical DegreeType values.
+# Defined at module level for performance (avoids dict creation per call).
+_DEGREE_TYPE_ALIASES: dict[str, DegreeType] = {
+    "Phd": DegreeType.PHD,
+    "Doctorate": DegreeType.PHD,
+    "Doctor": DegreeType.PHD,
+    "Bs": DegreeType.BACHELOR,
+    "Ba": DegreeType.BACHELOR,
+    "Ms": DegreeType.MASTER,
+    "Ma": DegreeType.MASTER,
+    "Mba": DegreeType.MASTER,
+    "Aa": DegreeType.ASSOCIATE,
+    "As": DegreeType.ASSOCIATE,
+    "Cert": DegreeType.CERTIFICATE,
+}
 
 
 @dataclass

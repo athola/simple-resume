@@ -210,6 +210,20 @@ class TestDegreeType:
         assert DegreeType.BACHELOR == "Bachelor"
         assert DegreeType.PHD == "PhD"
 
+    def test_is_recognized_known_types(self):
+        """Test is_recognized returns True for known degree types."""
+        assert DegreeType.is_recognized("Bachelor") is True
+        assert DegreeType.is_recognized("master") is True
+        assert DegreeType.is_recognized("PhD") is True
+        assert DegreeType.is_recognized("BS") is True
+        assert DegreeType.is_recognized("MBA") is True
+
+    def test_is_recognized_unknown_types(self):
+        """Test is_recognized returns False for unknown degree types."""
+        assert DegreeType.is_recognized("Unknown Degree") is False
+        assert DegreeType.is_recognized("Foo") is False
+        assert DegreeType.is_recognized("") is False
+
 
 class TestDegree:
     """Tests for Degree dataclass."""
