@@ -106,6 +106,31 @@ MONTH_MAP = {
     "december": 12,
 }
 
+# Date range pattern for experience extraction - compiled once at module level
+# Matches patterns like "Jan 2020 - Present", "2020-01 - 2022-12", "2020 to 2022"
+# See GitHub Issue #73 for rationale on module-level compilation.
+DATE_RANGE_PATTERN: Pattern[str] = re.compile(
+    r"""
+    (?:^|[\n\*•\-\s]+)            # Line start or bullet
+    [^\n]*?                       # Position title (non-greedy)
+    (?:
+        (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+(\d{4}) |
+        (\d{4})-(\d{2}) |
+        (\d{4})
+    )
+    \s*                          # Whitespace
+    (?:to|–|-|\u2014|through)     # Separator variations
+    \s*                          # Whitespace
+    (?:
+        (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+(\d{4}) |
+        (\d{4})-(\d{2}) |
+        (\d{4}) |
+        (Present|Current|Now)
+    )
+    """,
+    re.IGNORECASE | re.VERBOSE | re.MULTILINE,
+)
+
 
 def _parse_date(date_str: str) -> tuple[int, int] | None:
     """Parse a date string into (year, month) tuple.
@@ -438,31 +463,8 @@ class EntityExtractor:
         # Use raw text for date patterns (preserves original formatting)
         text = doc.raw_text
 
-        # Look for date range patterns like "Jan 2020 - Present" or "2020-01 - 2022-12"
-        # This handles various formats
-        date_range_pattern = re.compile(
-            r"""
-            (?:^|[\n\*•\-\s]+)            # Line start or bullet
-            [^\n]*?                       # Position title (non-greedy)
-            (?:
-                (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+(\d{4}) |
-                (\d{4})-(\d{2}) |
-                (\d{4})
-            )
-            \s*                          # Whitespace
-            (?:to|–|-|\u2014|through)     # Separator variations
-            \s*                          # Whitespace
-            (?:
-                (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+(\d{4}) |
-                (\d{4})-(\d{2}) |
-                (\d{4}) |
-                (Present|Current|Now)
-            )
-            """,
-            re.IGNORECASE | re.VERBOSE | re.MULTILINE,
-        )
-
-        for match in date_range_pattern.finditer(text):
+        # Use module-level compiled pattern for performance
+        for match in DATE_RANGE_PATTERN.finditer(text):
             groups = match.groups()
 
             # Groups structure:

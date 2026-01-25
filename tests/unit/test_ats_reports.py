@@ -418,3 +418,161 @@ class TestReportGeneratorThresholdBoundaries:
 
         assert "significant" in assessment_at_35.lower()
         assert "does not align" in assessment_at_34.lower()
+
+
+# ============================================================================
+# Issue #58: Warnings Section in YAML/JSON Reports
+# ============================================================================
+
+
+class TestReportGeneratorWarnings:
+    """Test suite for warnings surfacing in reports (Issue #58)."""
+
+    def test_no_warnings_when_no_errors(self) -> None:
+        """Test that warnings section is absent when no errors occur."""
+        result = TournamentResult(
+            overall_score=0.75,
+            algorithm_results=[
+                ScorerResult(name="test", score=0.75, weight=1.0, details={})
+            ],
+            component_breakdown={},
+            metadata={"scorer_names": ["test"]},
+        )
+        generator = ATSReportGenerator(result=result)
+        report_dict = generator._generate_report_dict()
+
+        # Warnings section should be absent (not empty list)
+        assert "warnings" not in report_dict["ats_scoring_report"]
+
+    def test_warnings_from_algorithm_error_details(self) -> None:
+        """Test that error details from algorithms are surfaced as warnings."""
+        result = TournamentResult(
+            overall_score=0.5,
+            algorithm_results=[
+                ScorerResult(
+                    name="tfidf_cosine",
+                    score=0.5,
+                    weight=1.0,
+                    details={
+                        "error": "TF-IDF vectorization fell back to permissive settings"
+                    },
+                )
+            ],
+            component_breakdown={},
+            metadata={"scorer_names": ["tfidf_cosine"]},
+        )
+        generator = ATSReportGenerator(result=result)
+        warnings = generator._generate_warnings()
+
+        assert len(warnings) == 1
+        assert warnings[0]["source"] == "tfidf_cosine"
+        assert "fell back" in warnings[0]["message"].lower()
+
+    def test_warnings_from_failed_scorers(self) -> None:
+        """Test that failed scorers are surfaced as warnings."""
+        result = TournamentResult(
+            overall_score=0.5,
+            algorithm_results=[],
+            failed_scorers=[
+                ("BERTScorer", "ImportError: sentence-transformers not installed")
+            ],
+            component_breakdown={},
+            metadata={"scorer_names": []},
+        )
+        generator = ATSReportGenerator(result=result)
+        warnings = generator._generate_warnings()
+
+        assert len(warnings) == 1
+        assert warnings[0]["source"] == "BERTScorer"
+        assert "ImportError" in warnings[0]["message"]
+
+    def test_warnings_from_tournament_metadata(self) -> None:
+        """Test that tournament-level errors are surfaced as warnings."""
+        result = TournamentResult(
+            overall_score=0.0,
+            algorithm_results=[],
+            component_breakdown={},
+            metadata={"scorer_names": [], "error": "All scorers failed"},
+        )
+        generator = ATSReportGenerator(result=result)
+        warnings = generator._generate_warnings()
+
+        assert len(warnings) == 1
+        assert warnings[0]["source"] == "tournament"
+        assert "All scorers failed" in warnings[0]["message"]
+
+    def test_warnings_included_in_yaml_report(self) -> None:
+        """Test that warnings appear in YAML report output."""
+        result = TournamentResult(
+            overall_score=0.5,
+            algorithm_results=[
+                ScorerResult(
+                    name="keyword_exact",
+                    score=0.5,
+                    weight=1.0,
+                    details={"error": "No keywords to match"},
+                )
+            ],
+            component_breakdown={},
+            metadata={"scorer_names": ["keyword_exact"]},
+        )
+        generator = ATSReportGenerator(result=result)
+        yaml_report = generator.generate_yaml()
+
+        assert "warnings:" in yaml_report
+        assert "keyword_exact" in yaml_report
+        assert "No keywords to match" in yaml_report
+
+    def test_warnings_included_in_json_report(self) -> None:
+        """Test that warnings appear in JSON report output."""
+        result = TournamentResult(
+            overall_score=0.5,
+            algorithm_results=[
+                ScorerResult(
+                    name="jaccard_ngram",
+                    score=0.5,
+                    weight=1.0,
+                    details={"error": "Empty resume text"},
+                )
+            ],
+            component_breakdown={},
+            metadata={"scorer_names": ["jaccard_ngram"]},
+        )
+        generator = ATSReportGenerator(result=result)
+        json_report = generator.generate_json()
+        parsed = json.loads(json_report)
+
+        assert "warnings" in parsed["ats_scoring_report"]
+        warnings = parsed["ats_scoring_report"]["warnings"]
+        assert len(warnings) == 1
+        assert warnings[0]["source"] == "jaccard_ngram"
+        assert "Empty resume text" in warnings[0]["message"]
+
+    def test_multiple_warnings_combined(self) -> None:
+        """Test that multiple warning sources are combined."""
+        result = TournamentResult(
+            overall_score=0.3,
+            algorithm_results=[
+                ScorerResult(
+                    name="tfidf_cosine",
+                    score=0.3,
+                    weight=0.5,
+                    details={"error": "Vectorizer fallback"},
+                ),
+                ScorerResult(
+                    name="keyword_exact",
+                    score=0.3,
+                    weight=0.5,
+                    details={"error": "Empty keyword list"},
+                ),
+            ],
+            failed_scorers=[("BERTScorer", "Not installed")],
+            component_breakdown={},
+            metadata={"scorer_names": ["tfidf_cosine", "keyword_exact"]},
+        )
+        generator = ATSReportGenerator(result=result)
+        warnings = generator._generate_warnings()
+
+        assert len(warnings) == 3
+        sources = {w["source"] for w in warnings}
+        assert sources == {"tfidf_cosine", "keyword_exact", "BERTScorer"}

@@ -2,6 +2,32 @@
 
 This file documents all notable project changes. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-01-25
+
+### Added
+
+- `DegreeType` enum with `from_string()` method for type-safe degree handling
+  - Supports common aliases: BS/BA→Bachelor, MS/MA/MBA→Master, PhD/Doctorate→PhD
+  - Case-insensitive matching with whitespace trimming
+  - `is_recognized()` helper for validation scenarios
+- Report warnings surfaced from scorer errors and failed scorers via `_generate_warnings()`
+- Debug logging when `DegreeType.from_string()` falls back to OTHER
+
+### Changed
+
+- `DATE_RANGE_PATTERN` extracted to module level for performance (compiled once at import)
+- Degree aliases dict moved to module-level constant `_DEGREE_TYPE_ALIASES`
+- `Degree.__post_init__` validates empty strings before type conversion
+
+### Fixed
+
+- Unreachable validation code in `Degree.__post_init__` (moved before conversion)
+
+### Documentation
+
+- LRU cache rationale documented in `bert.py` explaining `maxsize=4` for model variants
+- `from_string()` docstring updated to document whitespace/case normalization
+
 ## [0.2.1] - 2026-01-22
 
 ### Added
