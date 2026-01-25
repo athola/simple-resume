@@ -1,6 +1,6 @@
 # API Reference
 
-**Version:** 0.2.1
+**Version:** 0.2.2
 **Last Updated:** 2026-01-22
 **Stability:** Public API exports follow semantic versioning guarantees
 
@@ -835,7 +835,7 @@ pip install simple-resume
 ```python
 import simple_resume
 
-print(simple_resume.__version__)  # "0.2.1"
+print(simple_resume.__version__)  # "0.2.2"
 ```
 
 ---
