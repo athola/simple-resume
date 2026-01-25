@@ -200,6 +200,11 @@ class TestDegreeType:
         """Test from_string strips whitespace."""
         assert DegreeType.from_string("  Bachelor  ") == DegreeType.BACHELOR
 
+    def test_from_string_empty_returns_other(self):
+        """Test from_string returns OTHER for empty string."""
+        assert DegreeType.from_string("") == DegreeType.OTHER
+        assert DegreeType.from_string("   ") == DegreeType.OTHER
+
     def test_str_enum_comparison(self):
         """Test DegreeType can be compared as string."""
         assert DegreeType.BACHELOR == "Bachelor"
@@ -249,6 +254,16 @@ class TestDegree:
         assert d["type"] == "Master"
         assert d["school"] == "Harvard"
         assert d["field"] == "MBA"
+
+    def test_empty_string_type_raises_error(self):
+        """Test that empty string type raises ValueError."""
+        with pytest.raises(ValueError, match="Degree type cannot be empty"):
+            Degree(type="", school="MIT")
+
+    def test_whitespace_only_type_raises_error(self):
+        """Test that whitespace-only string type raises ValueError."""
+        with pytest.raises(ValueError, match="Degree type cannot be empty"):
+            Degree(type="   ", school="MIT")
 
 
 class TestExtractedEntities:

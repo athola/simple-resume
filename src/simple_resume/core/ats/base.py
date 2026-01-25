@@ -5,12 +5,15 @@ All scorers must inherit from BaseScorer and implement the score() method.
 
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
 from simple_resume.core.ats.constants import validate_score, validate_weight
+
+logger = logging.getLogger(__name__)
 
 
 class ScorerName(str, Enum):
@@ -197,7 +200,10 @@ class DegreeType(str, Enum):
             "As": cls.ASSOCIATE,
             "Cert": cls.CERTIFICATE,
         }
-        return aliases.get(normalized, cls.OTHER)
+        result = aliases.get(normalized, cls.OTHER)
+        if result == cls.OTHER and normalized:
+            logger.debug("Unrecognized degree type '%s', using OTHER", value)
+        return result
 
 
 @dataclass
@@ -222,10 +228,10 @@ class Degree:
     def __post_init__(self) -> None:
         """Validate and normalize degree type."""
         if isinstance(self.type, str):
+            if not self.type.strip():
+                raise ValueError("Degree type cannot be empty")
             # Convert string to DegreeType for validation/normalization
             self.type = DegreeType.from_string(self.type)
-        if not self.type:
-            raise ValueError("Degree type cannot be empty")
 
     @property
     def type_value(self) -> str:

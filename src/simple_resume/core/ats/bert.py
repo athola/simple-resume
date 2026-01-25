@@ -134,7 +134,7 @@ class BERTScorer(BaseScorer):
     Cons:
     - Requires GPU for fast inference (CPU is 5-10x slower)
     - Larger memory footprint than TF-IDF
-    - Model download required on first use (~100MB)
+    - Model download required on first use (~80MB for default model)
 
     Attributes:
         model_name: Name of the sentence-transformers model to use
