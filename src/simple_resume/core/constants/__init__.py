@@ -139,15 +139,16 @@ class OutputFormat(str, Enum):
 
 
 class TemplateType(str, Enum):
-    """Define available resume templates."""
+    """Define available resume and cover letter templates."""
 
     NO_BARS = "resume_no_bars"
     WITH_BARS = "resume_with_bars"
+    COVER = "cover"
 
     @classmethod
     def values(cls) -> set[str]:
         """Return a set of all template values."""
-        return {cls.NO_BARS.value, cls.WITH_BARS.value}
+        return {cls.NO_BARS.value, cls.WITH_BARS.value, cls.COVER.value}
 
     @classmethod
     def is_valid(cls, template_str: str) -> bool:
