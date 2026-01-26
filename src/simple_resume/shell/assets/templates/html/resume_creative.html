@@ -1,0 +1,281 @@
+{%- extends "html/resume_base.html" -%}
+
+{% block styles %}
+<style>
+  /* Creative bold template */
+  html, body, p, ul, li {
+    margin: 0;
+    padding: 0;
+    font-size: 10pt;
+    line-height: 1.7;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #2d3436;
+  }
+
+  .page-wrapper {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 40px 30px;
+    width: 32%;
+    min-width: 220px;
+  }
+
+  .main-content {
+    flex: 1;
+    padding: 40px 45px;
+    background: #f8f9fa;
+  }
+
+  .sidebar h1 {
+    font-size: 22pt;
+    font-weight: 700;
+    margin-bottom: 5px;
+    line-height: 1.2;
+  }
+
+  .sidebar-description {
+    font-size: 9.5pt;
+    opacity: 0.9;
+    margin-bottom: 30px;
+    line-height: 1.4;
+  }
+
+  .sidebar-section {
+    margin-bottom: 30px;
+  }
+
+  .sidebar-section h3 {
+    font-size: 10pt;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 15px;
+    opacity: 0.8;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+    padding-bottom: 5px;
+  }
+
+  .contact-item {
+    margin-bottom: 12px;
+    font-size: 9pt;
+    line-height: 1.4;
+  }
+
+  .contact-item a {
+    color: white;
+    text-decoration: none;
+    opacity: 0.9;
+  }
+
+  .contact-item a:hover {
+    opacity: 1;
+  }
+
+  .skill-group {
+    margin-bottom: 20px;
+  }
+
+  .skill-group-title {
+    font-weight: 600;
+    font-size: 9.5pt;
+    margin-bottom: 8px;
+    opacity: 0.95;
+  }
+
+  .skill-list {
+    font-size: 9pt;
+    line-height: 1.5;
+    opacity: 0.9;
+  }
+
+  .main-content h2 {
+    font-size: 14pt;
+    color: #667eea;
+    margin: 0 0 20px 0;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #667eea;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .main-content .section:first-of-type h2 {
+    margin-top: 0;
+  }
+
+  .entry {
+    background: white;
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  .entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 8px;
+    gap: 15px;
+  }
+
+  .entry-title {
+    font-size: 11.5pt;
+    font-weight: 700;
+    color: #2d3436;
+  }
+
+  .entry-date {
+    font-size: 9pt;
+    color: #636e72;
+    white-space: nowrap;
+  }
+
+  .entry-subtitle {
+    font-size: 10pt;
+    color: #667eea;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  .entry-description {
+    font-size: 9.5pt;
+    line-height: 1.6;
+    color: #636e72;
+  }
+
+  .entry-description ul {
+    margin-top: 10px;
+    padding-left: 20px;
+  }
+
+  .entry-description li {
+    margin-bottom: 5px;
+  }
+
+  @media print {
+    .page-wrapper {
+      display: block;
+    }
+    .sidebar {
+      width: 100%;
+      padding: 30px;
+    }
+    .main-content {
+      padding: 30px;
+    }
+    .entry {
+      box-shadow: none;
+      border: 1px solid #ddd;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <div class="sidebar">
+    <h1>{{ full_name }}</h1>
+    {% if description %}
+    <div class="sidebar-description">
+      {{ description }}
+    </div>
+    {% endif %}
+
+    <div class="sidebar-section">
+      <h3>Contact</h3>
+      {% if email %}
+      <div class="contact-item">{{ email }}</div>
+      {% endif %}
+      {% if phone %}
+      <div class="contact-item">{{ phone }}</div>
+      {% endif %}
+      {% if address %}
+      <div class="contact-item">{{ address | join(', ') }}</div>
+      {% endif %}
+      {% if web %}
+      <div class="contact-item"><a href="{{ web }}">{{ web }}</a></div>
+      {% endif %}
+      {% if linkedin %}
+      <div class="contact-item"><a href="https://www.linkedin.com/{{ linkedin }}">LinkedIn</a></div>
+      {% endif %}
+      {% if github %}
+      <div class="contact-item"><a href="https://github.com/{{ github }}">GitHub</a></div>
+      {% endif %}
+    </div>
+
+    {% if expertise or keyskills %}
+    <div class="sidebar-section">
+      <h3>Expertise</h3>
+      {% if expertise %}
+      <div class="skill-group">
+        <div class="skill-group-title">Core Areas</div>
+        <div class="skill-list">
+          {% for exp in expertise %}
+          <div>{{ exp }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% if keyskills %}
+      <div class="skill-group">
+        <div class="skill-group-title">Skills</div>
+        <div class="skill-list">
+          {% for skill in keyskills %}
+          <div>{{ skill }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="main-content">
+    {% for section_title, entries in body.items() %}
+    <div class="section">
+      <h2>{{ section_title }}</h2>
+
+      {% for entry in entries %}
+      <div class="entry">
+        {% if entry.title %}
+        <div class="entry-header">
+          <div class="entry-title">{{ entry.title }}</div>
+          {% if entry.start or entry.end %}
+          <div class="entry-date">
+            {% if entry.start %}{{ entry.start }}{% endif %}
+            {% if entry.start and entry.end %} — {% endif %}
+            {% if entry.end %}{{ entry.end }}{% endif %}
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if entry.company or entry.school %}
+        <div class="entry-subtitle">
+          {% if entry.company %}{{ entry.company }}{% endif %}
+          {% if entry.company and entry.title_link %} | {% endif %}
+          {% if entry.title_link %}<a href="{{ entry.title_link }}" style="color: inherit;">{{ entry.title_link }}</a>{% endif %}
+          {% if entry.school %}{{ entry.school }}{% endif %}
+          {% if entry.field %}— {{ entry.field }}{% endif %}
+        </div>
+        {% endif %}
+
+        {% if entry.description %}
+        <div class="entry-description">
+          {% autoescape false %}
+          {{ entry.description }}
+          {% endautoescape %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

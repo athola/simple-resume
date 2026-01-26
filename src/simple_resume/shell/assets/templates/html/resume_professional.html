@@ -1,0 +1,217 @@
+{%- extends "html/resume_base.html" -%}
+
+{% block styles %}
+<style>
+  /* Professional corporate template */
+  html, body, p, ul, li {
+    margin: 0;
+    padding: 0;
+    font-size: 10pt;
+    line-height: 1.5;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    color: #333;
+  }
+
+  .page-container {
+    max-width: 750px;
+    margin: 0 auto;
+    padding: 50px 60px;
+  }
+
+  .header {
+    text-align: center;
+    border-bottom: 3px double #1a1a1a;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+  }
+
+  h1 {
+    font-size: 26pt;
+    font-family: 'Georgia', serif;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+  }
+
+  .header-description {
+    font-size: 11pt;
+    font-style: italic;
+    color: #666;
+    margin-bottom: 15px;
+  }
+
+  .contact-line {
+    text-align: center;
+    font-size: 9.5pt;
+    color: #555;
+  }
+
+  .contact-line span {
+    margin: 0 8px;
+  }
+
+  .contact-line a {
+    color: #1a1a1a;
+    text-decoration: none;
+    border-bottom: 1px dotted #999;
+  }
+
+  h2 {
+    font-size: 12pt;
+    font-family: 'Arial', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 25px 0 15px 0;
+    color: #1a1a1a;
+    font-weight: 700;
+    border-bottom: 1px solid #ccc;
+  }
+
+  .section:first-of-type h2 {
+    margin-top: 0;
+  }
+
+  .entry {
+    margin-bottom: 18px;
+  }
+
+  .entry-title {
+    font-size: 11pt;
+    font-weight: 700;
+    font-family: 'Arial', sans-serif;
+    color: #1a1a1a;
+  }
+
+  .entry-meta {
+    font-size: 10pt;
+    color: #666;
+    font-style: italic;
+    margin: 3px 0;
+  }
+
+  .entry-description {
+    font-size: 10pt;
+    line-height: 1.5;
+    color: #444;
+    margin-top: 5px;
+  }
+
+  .entry-description ul {
+    margin-top: 8px;
+    padding-left: 25px;
+  }
+
+  .entry-description li {
+    margin-bottom: 5px;
+  }
+
+  .skills-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 20px;
+  }
+
+  .skill-item {
+    font-size: 10pt;
+    color: #333;
+  }
+
+  .skill-item:before {
+    content: "•";
+    color: #1a1a1a;
+    margin-right: 8px;
+  }
+
+  @media print {
+    .page-container {
+      padding: 0;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+  <div class="header">
+    <h1>{{ full_name }}</h1>
+    {% if description %}
+    <div class="header-description">{{ description }}</div>
+    {% endif %}
+
+    <div class="contact-line">
+      {% if email %}
+      <span>{{ email }}</span>
+      {% endif %}
+      {% if phone %}
+      <span>{{ phone }}</span>
+      {% endif %}
+      {% if address %}
+      <span>{{ address | join(', ') }}</span>
+      {% endif %}
+    </div>
+
+    <div class="contact-line" style="margin-top: 8px;">
+      {% if web %}
+      <span><a href="{{ web }}">{{ web }}</a></span>
+      {% endif %}
+      {% if linkedin %}
+      <span><a href="https://www.linkedin.com/{{ linkedin }}">LinkedIn</a></span>
+      {% endif %}
+      {% if github %}
+      <span><a href="https://github.com/{{ github }}">GitHub</a></span>
+      {% endif %}
+    </div>
+  </div>
+
+  {% for section_title, entries in body.items() %}
+  <div class="section">
+    <h2>{{ section_title }}</h2>
+
+    {% for entry in entries %}
+    <div class="entry">
+      {% if entry.title %}
+      <div class="entry-title">{{ entry.title }}</div>
+      {% endif %}
+
+      {% if entry.company or entry.school or entry.start or entry.end %}
+      <div class="entry-meta">
+        {% if entry.company %}{{ entry.company }}{% endif %}
+        {% if entry.school %}{{ entry.school }}{% endif %}
+        {% if entry.field %} — {{ entry.field }}{% endif %}
+        {% if entry.start or entry.end %}
+        | {{ entry.start }} — {{ entry.end }}
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if entry.description %}
+      <div class="entry-description">
+        {% autoescape false %}
+        {{ entry.description }}
+        {% endautoescape %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+
+  {% if keyskills or expertise %}
+  <div class="section">
+    <h2>Skills &amp; Expertise</h2>
+    <div class="skills-list">
+      {% if keyskills %}
+      {% for skill in keyskills %}
+      <div class="skill-item">{{ skill }}</div>
+      {% endfor %}
+      {% endif %}
+      {% if expertise %}
+      {% for exp in expertise %}
+      <div class="skill-item"><strong>{{ exp }}</strong></div>
+      {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

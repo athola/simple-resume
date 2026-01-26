@@ -1,0 +1,248 @@
+{%- extends "html/resume_base.html" -%}
+
+{% block styles %}
+<style>
+  /* Modern minimalist template */
+  html, body, p, ul, li {
+    margin: 0;
+    padding: 0;
+    font-size: 10pt;
+    line-height: 1.6;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: #2c3e50;
+  }
+
+  .page-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 50px;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+
+  h1 {
+    font-size: 32pt;
+    margin-bottom: 5px;
+    letter-spacing: -0.5px;
+  }
+
+  .subtitle {
+    font-size: 13pt;
+    color: #7f8c8d;
+    margin-bottom: 30px;
+    font-weight: 400;
+  }
+
+  .contact-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px 25px;
+    margin-bottom: 35px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #ecf0f1;
+    font-size: 9pt;
+  }
+
+  .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .contact-item a {
+    color: #3498db;
+    text-decoration: none;
+  }
+
+  h2 {
+    font-size: 13pt;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 30px 0 15px 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #3498db;
+    color: #3498db;
+  }
+
+  .section:first-of-type h2 {
+    margin-top: 0;
+  }
+
+  .entry {
+    margin-bottom: 20px;
+  }
+
+  .entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 5px;
+  }
+
+  .entry-title {
+    font-size: 11pt;
+    font-weight: 600;
+  }
+
+  .entry-date {
+    font-size: 9pt;
+    color: #95a5a6;
+  }
+
+  .entry-subtitle {
+    font-size: 10pt;
+    color: #7f8c8d;
+    margin-bottom: 8px;
+    font-style: italic;
+  }
+
+  .entry-description {
+    font-size: 9.5pt;
+    line-height: 1.6;
+    color: #5a6c7d;
+  }
+
+  .entry-description ul {
+    margin-top: 8px;
+    padding-left: 20px;
+  }
+
+  .entry-description li {
+    margin-bottom: 4px;
+  }
+
+  .skills-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 15px;
+  }
+
+  .skill-tag {
+    background: #ecf0f1;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 9pt;
+    color: #2c3e50;
+  }
+
+  .two-column {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    align-items: start;
+  }
+
+  @media print {
+    .page-container {
+      padding: 0;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+  <h1>{{ full_name }}</h1>
+  {% if description %}
+  <div class="subtitle">{{ description }}</div>
+  {% endif %}
+
+  <div class="contact-bar">
+    {% if email %}
+    <div class="contact-item">
+      <span>{{ email }}</span>
+    </div>
+    {% endif %}
+    {% if phone %}
+    <div class="contact-item">
+      <span>{{ phone }}</span>
+    </div>
+    {% endif %}
+    {% if address %}
+    <div class="contact-item">
+      <span>{{ address | join(', ') }}</span>
+    </div>
+    {% endif %}
+    {% if web %}
+    <div class="contact-item">
+      <a href="{{ web }}">{{ web }}</a>
+    </div>
+    {% endif %}
+    {% if linkedin %}
+    <div class="contact-item">
+      <a href="https://www.linkedin.com/{{ linkedin }}">linkedin.com/in/{{ linkedin }}</a>
+    </div>
+    {% endif %}
+    {% if github %}
+    <div class="contact-item">
+      <a href="https://github.com/{{ github }}">github.com/{{ github }}</a>
+    </div>
+    {% endif %}
+  </div>
+
+  {% for section_title, entries in body.items() %}
+  <div class="section">
+    <h2>{{ section_title }}</h2>
+
+    {% for entry in entries %}
+    <div class="entry">
+      {% if entry.title %}
+      <div class="entry-header">
+        <div class="entry-title">{{ entry.title }}</div>
+        {% if entry.start or entry.end %}
+        <div class="entry-date">
+          {% if entry.start %}{{ entry.start }}{% endif %}
+          {% if entry.start and entry.end %} - {% endif %}
+          {% if entry.end %}{{ entry.end }}{% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if entry.company or entry.school %}
+      <div class="entry-subtitle">
+        {% if entry.company %}{{ entry.company }}{% endif %}
+        {% if entry.company and entry.title_link %} | {% endif %}
+        {% if entry.title_link %}<a href="{{ entry.title_link }}">{{ entry.title_link }}</a>{% endif %}
+        {% if entry.school %}{{ entry.school }}{% endif %}
+      </div>
+      {% endif %}
+
+      {% if entry.field %}
+      <div class="entry-subtitle">{{ entry.field }}</div>
+      {% endif %}
+
+      {% if entry.description %}
+      <div class="entry-description">
+        {% autoescape false %}
+        {{ entry.description }}
+        {% endautoescape %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+
+  {% if keyskills or expertise %}
+  <div class="section">
+    <h2>Skills</h2>
+    <div class="skills-grid">
+      {% if keyskills %}
+      {% for skill in keyskills %}
+      <span class="skill-tag">{{ skill }}</span>
+      {% endfor %}
+      {% endif %}
+      {% if expertise %}
+      {% for exp in expertise %}
+      <span class="skill-tag"><strong>{{ exp }}</strong></span>
+      {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
