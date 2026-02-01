@@ -98,3 +98,4 @@ commit_msg.txt
 bandit-report.json
 *.log
 output.json
+.claude/

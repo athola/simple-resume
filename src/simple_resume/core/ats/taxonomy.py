@@ -10,20 +10,22 @@ Features:
 - Graceful degradation: Falls back to hardcoded list on failure
 
 See GitHub Issue #59 for design rationale.
+
+Architecture Note:
+The TaxonomyCache Protocol defines the interface for caching taxonomy data.
+The concrete implementation (TaxonomyLocalCache) lives in shell layer to
+maintain core/shell separation. See ADR002.
 """
 
 from __future__ import annotations
 
-import json
 import logging
-import time
-from dataclasses import dataclass, field
-from pathlib import Path
+from dataclasses import dataclass
+from typing import Protocol
 
 logger = logging.getLogger(__name__)
 
-# Cache directory for taxonomy data
-TAXONOMY_CACHE_DIR = Path.home() / ".cache" / "simple-resume" / "taxonomy"
+# Default cache TTL
 TAXONOMY_CACHE_TTL = 7 * 24 * 60 * 60  # 7 days in seconds
 
 
@@ -109,23 +111,15 @@ class TaxonomyConfig:
     max_retries: int = 3
 
 
-@dataclass
-class TaxonomyCache:
-    """Local file system cache for taxonomy data.
+class TaxonomyCache(Protocol):
+    """Protocol for taxonomy data caching.
 
-    Attributes:
-        cache_dir: Directory for cache files
-        ttl: Time-to-live for cached data
+    This defines the interface for caching taxonomy data. Concrete implementations
+    (e.g., TaxonomyLocalCache in shell layer) handle actual file I/O.
 
+    This separation maintains the functional core / imperative shell architecture.
+    See ADR002 for design rationale.
     """
-
-    cache_dir: Path = field(default_factory=lambda: TAXONOMY_CACHE_DIR)
-    ttl: int = TAXONOMY_CACHE_TTL
-
-    def _get_cache_path(self, taxonomy_name: str) -> Path:
-        """Get cache file path for a taxonomy."""
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
-        return self.cache_dir / f"{taxonomy_name}.json"
 
     def get(self, taxonomy_name: str) -> list[str] | None:
         """Get cached taxonomy data if valid.
@@ -137,25 +131,7 @@ class TaxonomyCache:
             List of skills if cache is valid, None otherwise
 
         """
-        cache_path = self._get_cache_path(taxonomy_name)
-
-        if not cache_path.exists():
-            return None
-
-        try:
-            data = json.loads(cache_path.read_text())
-            cached_time = data.get("timestamp", 0)
-
-            # Check if cache is still valid
-            if time.time() - cached_time > self.ttl:
-                logger.debug(f"Cache expired for {taxonomy_name}")
-                return None
-
-            skills = data.get("skills", [])
-            return list[str](skills) if isinstance(skills, list) else []
-        except (json.JSONDecodeError, OSError) as exc:
-            logger.warning(f"Failed to read cache for {taxonomy_name}: {exc}")
-            return None
+        ...
 
     def set(self, taxonomy_name: str, skills: list[str]) -> None:
         """Cache taxonomy data with timestamp.
@@ -165,18 +141,23 @@ class TaxonomyCache:
             skills: List of skills to cache
 
         """
-        cache_path = self._get_cache_path(taxonomy_name)
+        ...
 
-        data = {
-            "timestamp": time.time(),
-            "skills": sorted(set(skills)),
-        }
 
-        try:
-            cache_path.write_text(json.dumps(data, indent=2))
-            logger.info(f"Cached {len(skills)} skills from {taxonomy_name}")
-        except OSError as exc:
-            logger.warning(f"Failed to write cache for {taxonomy_name}: {exc}")
+class NullTaxonomyCache:
+    """No-op cache implementation for when caching is disabled.
+
+    This is a pure in-memory implementation with no file I/O,
+    suitable for use in the core layer.
+    """
+
+    def get(self, taxonomy_name: str) -> list[str] | None:  # noqa: ARG002
+        """Return None (cache miss) for all lookups."""
+        return None
+
+    def set(self, taxonomy_name: str, skills: list[str]) -> None:  # noqa: ARG002
+        """No-op: does not store anything."""
+        pass
 
 
 class SkillsTaxonomyFetcher:
@@ -207,7 +188,7 @@ class SkillsTaxonomyFetcher:
 
         """
         self.config = config or TaxonomyConfig()
-        self.cache = cache or TaxonomyCache(ttl=self.config.cache_ttl)
+        self.cache = cache or NullTaxonomyCache()
 
     def get_skills(self, taxonomy: str = "onet") -> list[str]:
         """Get skills from taxonomy with fallback to hardcoded list.

@@ -32,6 +32,11 @@ from simple_resume.core.ats.constants import (
     validate_threshold,
     validate_weight,
 )
+from simple_resume.core.ats.creative_terms import (
+    Industry,
+    expand_term,
+    is_creative_term,
+)
 
 
 class KeywordScorer(BaseScorer):
@@ -42,13 +47,15 @@ class KeywordScorer(BaseScorer):
     keyword extraction.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         weight: float = 1.0,
         fuzzy_threshold: float = 0.85,
         case_sensitive: bool = False,
         extract_keywords: bool = True,
         max_keywords: int = 50,
+        enable_creative_expansion: bool = False,
+        industry: Industry = Industry.GENERAL,
     ) -> None:
         """Initialize keyword scorer.
 
@@ -58,6 +65,8 @@ class KeywordScorer(BaseScorer):
             case_sensitive: Whether to preserve case (default: False)
             extract_keywords: Whether to auto-extract keywords (default: True)
             max_keywords: Maximum keywords to extract from job description
+            enable_creative_expansion: Enable creative term synonym expansion
+            industry: Industry context for creative term mappings
 
         Raises:
             ValueError: If weight or fuzzy_threshold are outside [0, 1]
@@ -70,6 +79,8 @@ class KeywordScorer(BaseScorer):
         self.case_sensitive = case_sensitive
         self.extract_keywords = extract_keywords
         self.max_keywords = max_keywords
+        self.enable_creative_expansion = enable_creative_expansion
+        self.industry = industry
 
     def _preprocess_text(self, text: str) -> str:
         """Preprocess text for keyword matching.
@@ -175,7 +186,7 @@ class KeywordScorer(BaseScorer):
 
         return best_similarity >= self.fuzzy_threshold, best_similarity
 
-    def score(
+    def score(  # noqa: PLR0912
         self,
         resume_text: str,
         job_description: str,
@@ -204,6 +215,7 @@ class KeywordScorer(BaseScorer):
                     "total_keywords": 0,
                     "matched_keywords": [],
                     "missing_keywords": [],
+                    "creative_terms_expanded": [],
                     "error": "Empty input provided",
                 },
             )
@@ -232,6 +244,7 @@ class KeywordScorer(BaseScorer):
                     "matched_keywords": [],
                     "fuzzy_matched": [],
                     "missing_keywords": [],
+                    "creative_terms_expanded": [],
                     "error": "No keywords to match",
                 },
             )
@@ -240,6 +253,19 @@ class KeywordScorer(BaseScorer):
         matched_keywords = []
         missing_keywords = []
         fuzzy_matches = []
+        creative_terms_found = []
+
+        # Expand creative terms if enabled
+        if self.enable_creative_expansion:
+            for keyword in list(keywords):
+                if is_creative_term(keyword, self.industry):
+                    expanded = expand_term(keyword, self.industry)
+                    if expanded:
+                        creative_terms_found.append(
+                            {"creative": keyword, "expanded": expanded}
+                        )
+                        # Add expanded term to keywords list
+                        keywords.append(expanded)
 
         for keyword in keywords:
             keyword_clean = keyword if self.case_sensitive else keyword.lower()
@@ -292,6 +318,7 @@ class KeywordScorer(BaseScorer):
                 "fuzzy_matched": fuzzy_matches,
                 "missing_keywords": missing_keywords,
                 "match_rate": overall_score,
+                "creative_terms_expanded": creative_terms_found,
             },
             component_scores=component_scores,
         )

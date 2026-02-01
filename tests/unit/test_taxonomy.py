@@ -15,10 +15,10 @@ import pytest
 from simple_resume.core.ats.taxonomy import (
     DEFAULT_SKILLS_LIST,
     SkillsTaxonomyFetcher,
-    TaxonomyCache,
     TaxonomyConfig,
     get_enhanced_skills,
 )
+from simple_resume.shell.taxonomy_cache import TaxonomyLocalCache as TaxonomyCache
 
 
 class TestTaxonomyConfig:
