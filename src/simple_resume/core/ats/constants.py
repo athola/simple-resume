@@ -46,6 +46,9 @@ FALLBACK_KEYWORD_WEIGHT: Final[float] = 0.30
 # Maximum keywords to extract from each document
 TOP_KEYWORDS_LIMIT: Final[int] = 20
 
+# Minimum word length for fallback keyword extraction
+MIN_FALLBACK_WORD_LENGTH: Final[int] = 4
+
 # Normalization divisor for experience relevance score.
 # Empirically, shared TF-IDF products rarely exceed 10.0 even for long documents.
 EXPERIENCE_RELEVANCE_NORMALIZER: Final[float] = 10.0

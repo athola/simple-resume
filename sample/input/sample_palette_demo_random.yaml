@@ -17,12 +17,8 @@ titles:
   programming: Technical Tooling
   keyskills: Key Skills
   languages: Languages
-description: 'Experienced with automated testing and modern development practices.
-  Experienced with microservices architecture and modern development practices.
-
-
-  Experienced with cloud infrastructure and modern development practices. Experienced
-  with caching strategies and modern development practices.'
+description: |
+  **Software Engineer** with expertise in **Python**, **JavaScript/React**, and cloud-native development. Builds scalable **microservices** on **AWS** using **Docker** and **Kubernetes**. Strong experience with **SQL/PostgreSQL** databases, **REST APIs**, and **CI/CD** pipelines using **Git**. Excellent communication skills.
 skills:
   UI/UX Design: 55
   Frontend Development: 48
@@ -55,11 +51,12 @@ programming:
   - Terraform
   - Docker
 keyskills:
-  - Service blueprints
-  - Usability testing
-  - Accessibility audits
-  - Stakeholder facilitation
-  - Experiment analysis
+  - Python
+  - JavaScript / React
+  - AWS / Docker / Kubernetes
+  - SQL / PostgreSQL
+  - REST APIs / Microservices
+  - CI/CD / Git
 languages:
   English: 60
   Spanish: 35

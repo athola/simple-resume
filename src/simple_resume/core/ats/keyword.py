@@ -28,6 +28,7 @@ from typing import Any
 from simple_resume.core.ats.base import BaseScorer, ScorerResult
 from simple_resume.core.ats.constants import (
     CRITICAL_KEYWORDS_THRESHOLD,
+    MIN_FALLBACK_WORD_LENGTH,
     MIN_KEYWORD_LENGTH,
     validate_threshold,
     validate_weight,
@@ -105,6 +106,7 @@ class KeywordScorer(BaseScorer):
         - Technical terms (capitalized words, acronyms)
         - Skills (common patterns)
         - Experience phrases
+        - Nouns and technical terms (fallback extraction)
 
         Args:
             text: Preprocessed text
@@ -115,15 +117,18 @@ class KeywordScorer(BaseScorer):
         """
         keywords = []
 
+        # Use original text for case-sensitive pattern matching
+        original_text = text
+
         # Extract technical terms (words with internal caps, acronyms)
         # Pattern: CamelCase, ALL_CAPS, words with numbers
         technical_pattern = r"\b[A-Z]{2,}\b|\b[A-Z][a-z]+[A-Z][a-z]+\b|\b\w*\d\w*\b"
-        technical_matches = re.findall(technical_pattern, text)
+        technical_matches = re.findall(technical_pattern, original_text)
         keywords.extend(technical_matches)
 
         # Extract phrases in quotes (often important skills/technologies)
         quote_pattern = r'"([^"]+)"'
-        quote_matches = re.findall(quote_pattern, text)
+        quote_matches = re.findall(quote_pattern, original_text)
         keywords.extend(quote_matches)
 
         # Common skill/technology patterns
@@ -131,8 +136,78 @@ class KeywordScorer(BaseScorer):
         skill_pattern = (
             r"\b[A-Za-z]{3,}\s?(?:framework|library|language|platform|tool|database)\b"
         )
-        skill_matches = re.findall(skill_pattern, text, re.IGNORECASE)
+        skill_matches = re.findall(skill_pattern, original_text, re.IGNORECASE)
         keywords.extend(skill_matches)
+
+        # Extract capitalized words (proper nouns, technologies like Python, Java)
+        # This catches single-word technologies that aren't acronyms
+        capitalized_pattern = r"\b[A-Z][a-z]{2,}\b"
+        capitalized_matches = re.findall(capitalized_pattern, original_text)
+        keywords.extend(capitalized_matches)
+
+        # Fallback: if no keywords found, extract significant words
+        # (nouns/technical terms typically 4+ chars, not common stopwords)
+        if not keywords:
+            stopwords = {
+                "the",
+                "and",
+                "for",
+                "are",
+                "but",
+                "not",
+                "you",
+                "all",
+                "can",
+                "had",
+                "her",
+                "was",
+                "one",
+                "our",
+                "out",
+                "has",
+                "have",
+                "been",
+                "were",
+                "being",
+                "will",
+                "with",
+                "this",
+                "that",
+                "from",
+                "they",
+                "would",
+                "there",
+                "their",
+                "what",
+                "about",
+                "which",
+                "when",
+                "make",
+                "like",
+                "just",
+                "over",
+                "such",
+                "into",
+                "than",
+                "them",
+                "some",
+                "could",
+                "other",
+                "experience",
+                "work",
+                "working",
+                "team",
+                "ability",
+            }
+            words = text.split()
+            for word in words:
+                word_clean = re.sub(r"[^\w]", "", word)
+                if (
+                    len(word_clean) >= MIN_FALLBACK_WORD_LENGTH
+                    and word_clean.lower() not in stopwords
+                    and not word_clean.isdigit()
+                ):
+                    keywords.append(word_clean)
 
         # Remove duplicates while preserving order
         seen = set()

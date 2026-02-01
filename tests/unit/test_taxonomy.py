@@ -7,6 +7,7 @@ Follows TDD: RED (failing test) -> GREEN (implementation) -> REFACTOR.
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -14,6 +15,7 @@ import pytest
 
 from simple_resume.core.ats.taxonomy import (
     DEFAULT_SKILLS_LIST,
+    NullTaxonomyCache,
     SkillsTaxonomyFetcher,
     TaxonomyConfig,
     get_enhanced_skills,
@@ -163,3 +165,162 @@ class TestGetEnhancedSkills:
         """Test DEFAULT_SKILLS_LIST is accessible for backwards compatibility."""
         assert DEFAULT_SKILLS_LIST
         assert len(DEFAULT_SKILLS_LIST) > 50
+
+
+class TestNullTaxonomyCache:
+    """Tests for NullTaxonomyCache no-op implementation."""
+
+    def test_get_always_returns_none(self):
+        """Test NullTaxonomyCache.get() always returns None (cache miss)."""
+        cache = NullTaxonomyCache()
+
+        assert cache.get("onet") is None
+        assert cache.get("linkedin") is None
+        assert cache.get("any_taxonomy") is None
+
+    def test_set_is_noop(self):
+        """Test NullTaxonomyCache.set() does nothing (no-op)."""
+        cache = NullTaxonomyCache()
+
+        # Should not raise, should have no effect
+        cache.set("test", ["Python", "JavaScript"])
+
+        # Subsequent get still returns None
+        assert cache.get("test") is None
+
+    def test_used_by_fetcher_when_no_cache_provided(self):
+        """Test fetcher uses NullTaxonomyCache by default."""
+        config = TaxonomyConfig(enabled=False)
+        fetcher = SkillsTaxonomyFetcher(config)
+
+        # Should still work, using hardcoded skills
+        skills = fetcher.get_skills("onet")
+        assert skills == DEFAULT_SKILLS_LIST
+
+
+class TestTaxonomyCacheErrorHandling:
+    """Tests for TaxonomyCache error handling."""
+
+    @pytest.fixture
+    def temp_cache_dir(self, tmp_path: Path) -> Path:
+        """Create a temporary cache directory."""
+        cache_dir = tmp_path / "taxonomy"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        return cache_dir
+
+    def test_handles_corrupted_json_gracefully(self, temp_cache_dir: Path):
+        """Test cache handles corrupted JSON files gracefully."""
+        cache = TaxonomyCache(cache_dir=temp_cache_dir, ttl=1000)
+
+        # Write corrupted JSON to cache file
+        cache_path = temp_cache_dir / "corrupted.json"
+        cache_path.write_text("{invalid json content")
+
+        # Should return None (cache miss), not raise
+        result = cache.get("corrupted")
+        assert result is None
+
+    def test_handles_write_failure_gracefully(self, temp_cache_dir: Path, monkeypatch):
+        """Test cache handles write failures gracefully."""
+        cache = TaxonomyCache(cache_dir=temp_cache_dir, ttl=1000)
+
+        # Patch write_text to raise OSError for taxonomy files
+        original_write_text = Path.write_text
+
+        def patched_write_text(self, content, **kwargs):
+            if "taxonomy" in str(self):
+                raise OSError("Simulated write failure")
+            return original_write_text(self, content, **kwargs)
+
+        monkeypatch.setattr(Path, "write_text", patched_write_text)
+
+        # Should not raise, just log warning
+        cache.set("test_write_fail", ["Python"])
+
+        # Verify nothing was cached (can't write)
+        # Reset monkeypatch to read properly
+        monkeypatch.undo()
+        result = cache.get("test_write_fail")
+        assert result is None
+
+    def test_handles_non_list_skills_data(self, temp_cache_dir: Path):
+        """Test cache handles invalid skills data type gracefully."""
+        cache = TaxonomyCache(cache_dir=temp_cache_dir, ttl=1000)
+
+        # Write JSON with invalid skills type
+        cache_path = temp_cache_dir / "invalid_type.json"
+        cache_path.write_text(
+            json.dumps(
+                {
+                    "timestamp": time.time(),
+                    "skills": "not a list",  # Should be list
+                }
+            )
+        )
+
+        # Should return empty list (defensive coding)
+        result = cache.get("invalid_type")
+        assert result == []
+
+
+class TestLinkedInTaxonomy:
+    """Tests for LinkedIn taxonomy stub."""
+
+    def test_linkedin_taxonomy_returns_hardcoded_fallback(self, tmp_path: Path):
+        """Test LinkedIn taxonomy falls back to hardcoded list."""
+        config = TaxonomyConfig(enabled=True)
+        cache = TaxonomyCache(cache_dir=tmp_path / "taxonomy", ttl=1000)
+        fetcher = SkillsTaxonomyFetcher(config, cache=cache)
+
+        # LinkedIn API not implemented, should fallback
+        skills = fetcher.get_skills("linkedin")
+        assert skills == DEFAULT_SKILLS_LIST
+
+    def test_linkedin_fetch_returns_empty_list(self):
+        """Test _fetch_linkedin returns empty list (stub implementation)."""
+        config = TaxonomyConfig(enabled=True)
+        fetcher = SkillsTaxonomyFetcher(config)
+
+        # Directly call private method to verify stub behavior
+        result = fetcher._fetch_linkedin()
+        assert result == []
+
+
+class TestSuccessfulApiFetchCaching:
+    """Tests for successful API fetch result caching."""
+
+    def test_successful_fetch_is_cached(self, tmp_path: Path):
+        """Test that successful API fetch results are cached."""
+        config = TaxonomyConfig(enabled=True)
+        cache = TaxonomyCache(cache_dir=tmp_path / "taxonomy", ttl=1000)
+        fetcher = SkillsTaxonomyFetcher(config, cache=cache)
+
+        # Mock _fetch_from_api to return skills
+        mock_skills = ["MockSkill1", "MockSkill2", "MockSkill3"]
+
+        with patch.object(fetcher, "_fetch_from_api", return_value=mock_skills):
+            # First call should fetch and cache
+            result = fetcher.get_skills("mock_taxonomy")
+            assert sorted(result) == sorted(mock_skills)
+
+        # Verify it was cached
+        cached = cache.get("mock_taxonomy")
+        assert cached is not None
+        assert sorted(cached) == sorted(mock_skills)
+
+    def test_cached_results_used_on_subsequent_calls(self, tmp_path: Path):
+        """Test cached results are used instead of re-fetching."""
+        config = TaxonomyConfig(enabled=True)
+        cache = TaxonomyCache(cache_dir=tmp_path / "taxonomy", ttl=1000)
+        fetcher = SkillsTaxonomyFetcher(config, cache=cache)
+
+        # Pre-seed cache
+        cache.set("pre_cached", ["CachedSkill"])
+
+        # Mock _fetch_from_api to track calls
+        with patch.object(fetcher, "_fetch_from_api") as mock_fetch:
+            result = fetcher.get_skills("pre_cached")
+
+            # Should use cached data, not call API
+            mock_fetch.assert_not_called()
+            assert result == ["CachedSkill"]

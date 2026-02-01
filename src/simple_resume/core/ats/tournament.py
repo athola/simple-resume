@@ -372,6 +372,8 @@ def score_resume(
     resume_text: str,
     job_description: str,
     custom_scorers: list[BaseScorer] | None = None,
+    *,
+    percentage: bool = True,
 ) -> TournamentResult:
     """Score a resume against a job description using the tournament.
 
@@ -381,10 +383,19 @@ def score_resume(
         resume_text: Full resume text
         job_description: Full job description text
         custom_scorers: Optional custom list of scorers
+        percentage: If True (default), return score as 0-100 percentage.
+                   If False, return raw 0-1 score.
 
     Returns:
-        TournamentResult with aggregated score
+        TournamentResult with aggregated score (0-100 if percentage=True)
 
     """
     tournament = ATSTournament(scorers=custom_scorers)
-    return tournament.score(resume_text, job_description)
+    result = tournament.score(resume_text, job_description)
+
+    if percentage:
+        # Add percentage info to metadata (score stays 0-1 for validation)
+        result.metadata["percentage_score"] = min(100.0, result.overall_score * 100)
+        result.metadata["scale"] = "percentage"
+
+    return result

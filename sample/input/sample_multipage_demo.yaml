@@ -26,12 +26,7 @@ titles:
   languages: Languages
 
 description: |
-  **Multi-page demo resume** showcasing how Simple-Resume flows content across multiple
-  pages with comprehensive sections including experience, projects, publications, speaking
-  engagements, awards, and community contributions. This demo validates *all supported
-  features*: profile images, skill bars, nested lists, Markdown formatting, hyperlinks,
-  tech stacks, and custom color schemes. Perfect for testing page breaks, spacing, and
-  CLI metadata reporting.
+  **Software Engineer** and Principal Solutions Architect with 15+ years building scalable cloud platforms. Expert in **Python**, **JavaScript/React**, and **Go** with deep experience deploying **microservices** on **AWS** using **Docker** and **Kubernetes**. Strong background in **SQL/PostgreSQL**, **REST APIs**, and **CI/CD** pipelines. Excellent communication and leadership skills.
 
 skills:
   Cloud Architecture: 55
@@ -98,11 +93,12 @@ programming:
     - PowerShell
 
 keyskills:
-  - Multi-cloud governance
-  - Cost optimization playbooks
-  - Observability platform design
-  - Executive storytelling
-  - Internal developer platforms
+  - Python / JavaScript / React
+  - AWS / Docker / Kubernetes
+  - SQL / PostgreSQL
+  - REST APIs / Microservices
+  - CI/CD / Git
+  - Strong communication skills
 
 languages:
   English: 60

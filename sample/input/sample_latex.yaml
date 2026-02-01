@@ -21,8 +21,7 @@ titles:
   keyskills: Key Skills
 
 description: |
-  Results-driven engineer focused on **reliable infrastructure** and **pragmatic solutions**.
-  Comfortable working across data pipelines, backend APIs, and on-call rotations.
+  Results-driven **Software Engineer** with expertise in **Python**, **Go**, and cloud-native development. Built scalable **microservices** on **AWS** using **Docker** and **Kubernetes**. Strong background in **SQL/PostgreSQL**, **REST APIs**, and **CI/CD** pipelines with **Git**. Excellent communication skills.
 
 expertise:
   Platform Engineering:
@@ -44,11 +43,12 @@ programming:
     - dbt
 
 keyskills:
-  - Kubernetes
-  - Postgres
-  - Event-driven architecture
-  - Reliability leadership
-  - Cross-team facilitation
+  - Python / JavaScript / React
+  - AWS / Docker / Kubernetes
+  - SQL / PostgreSQL
+  - REST APIs / Microservices
+  - CI/CD / Git
+  - Cross-team communication
 
 certification:
   - AWS Certified Solutions Architect

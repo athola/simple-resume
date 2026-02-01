@@ -22,30 +22,26 @@ titles:
   keyskills: Key Skills
 
 description: |
-  This is where you can write your pitch. It is written using **Markdown**. You can include bold, italics, links...
-
-  Take a look at the [cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet).
-
-  If you don't want this section you can just comment it. The same applies for the profile picture.
-
-
+  Full-stack **Software Engineer** specializing in **Python** and **JavaScript/React** development. Experienced building **REST APIs** and deploying **microservices** on **AWS** with **Docker** and **Kubernetes**. Strong background in **SQL/PostgreSQL** databases and **CI/CD** pipelines using **Git**.
 
 expertise:
-  - Data Engineering
-  - Cloud Platforms
-  - Artificial Intelligence
+  - Software Engineering
+  - Full-Stack Development
+  - Cloud Platforms (AWS)
+  - Microservices Architecture
 
-# Max value will be sidebar_width - 2*padding = 36 by default
 certification:
-  - Certificate1
-  - Certificate2
+  - AWS Certified Developer
+  - Kubernetes Administrator (CKA)
 
 keyskills:
-  - Spark / Dask
-  - SQL
-  - Luigi / Airflow
-  - AWS / Azure
   - Python
+  - JavaScript / React
+  - SQL / PostgreSQL
+  - AWS / Docker / Kubernetes
+  - REST APIs
+  - CI/CD / Git
+  - Microservices
 
 body:
   Experience:

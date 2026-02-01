@@ -23,7 +23,7 @@ titles:
   languages: Languages
 
 description: |
-  Demo resume showing palette configuration. Colors from the built-in generator.
+  **Software Engineer** specializing in **JavaScript/React** and **Python** development. Builds scalable **microservices** on **AWS** with **Docker** and **Kubernetes**. Strong experience with **SQL/PostgreSQL** databases and **REST APIs**. Passionate about **CI/CD** and modern **Git** workflows. Excellent communication skills.
 
 skills:
   UI/UX Design: 55
@@ -61,11 +61,12 @@ programming:
     - Docker
 
 keyskills:
-  - Service blueprints
-  - Usability testing
-  - Accessibility audits
-  - Stakeholder facilitation
-  - Experiment analysis
+  - JavaScript / React
+  - Python
+  - AWS / Docker / Kubernetes
+  - SQL / PostgreSQL
+  - REST APIs / Microservices
+  - CI/CD / Git
 
 languages:
   English: 60
