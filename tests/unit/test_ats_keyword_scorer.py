@@ -556,3 +556,61 @@ class TestKeywordScorerEdgeCases:
 
         # Should handle accented characters
         assert result.score >= 0.0
+
+
+class TestKeywordExtraction:
+    """Tests for the _extract_keywords method."""
+
+    def test_extracts_acronyms(self):
+        """Test extraction of acronyms like AWS, API."""
+        scorer = KeywordScorer(extract_keywords=True)
+        keywords = scorer._extract_keywords("Need AWS and API experience")
+        assert "AWS" in keywords
+        assert "API" in keywords
+
+    def test_extracts_camelcase(self):
+        """Test extraction of CamelCase terms like JavaScript."""
+        scorer = KeywordScorer(extract_keywords=True)
+        keywords = scorer._extract_keywords("Experience with JavaScript and TypeScript")
+        assert any("JavaScript" in kw for kw in keywords)
+
+    def test_extracts_quoted_terms(self):
+        """Test extraction of quoted phrases."""
+        scorer = KeywordScorer(extract_keywords=True)
+        keywords = scorer._extract_keywords('Must know "machine learning" techniques')
+        assert any("machine learning" in kw for kw in keywords)
+
+    def test_extracts_skill_patterns(self):
+        """Test extraction of technology patterns like 'Python language'."""
+        scorer = KeywordScorer(extract_keywords=True)
+        keywords = scorer._extract_keywords("Python language and React framework")
+        assert any("python" in kw.lower() for kw in keywords)
+
+    def test_fallback_extraction_for_plain_text(self):
+        """Test fallback extraction when no patterns match."""
+        scorer = KeywordScorer(extract_keywords=True)
+        # All lowercase, no patterns - triggers fallback
+        keywords = scorer._extract_keywords("developer needed for backend coding tasks")
+        assert len(keywords) > 0
+        assert any("developer" in kw.lower() for kw in keywords)
+
+    def test_respects_max_keywords_limit(self):
+        """Test that extraction respects max_keywords parameter."""
+        scorer = KeywordScorer(extract_keywords=True, max_keywords=3)
+        text = "AWS API GCP Docker Kubernetes Python Java React Angular Vue"
+        keywords = scorer._extract_keywords(text)
+        assert len(keywords) <= 3
+
+    def test_removes_duplicates(self):
+        """Test that duplicate keywords are removed."""
+        scorer = KeywordScorer(extract_keywords=True)
+        keywords = scorer._extract_keywords("Python Python PYTHON experience")
+        python_count = sum(1 for kw in keywords if "python" in kw.lower())
+        assert python_count == 1
+
+    def test_filters_short_keywords(self):
+        """Test that very short keywords are filtered."""
+        scorer = KeywordScorer(extract_keywords=True)
+        keywords = scorer._extract_keywords("Use AI and ML for data processing")
+        # AI and ML are too short (2 chars), should be filtered
+        assert not any(len(kw) <= 2 for kw in keywords)
