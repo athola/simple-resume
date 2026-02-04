@@ -97,7 +97,7 @@ uv run simple-resume generate --format pdf         # PDF
 uv run simple-resume generate --format html --open # HTML + open in browser
 ```
 
-Built-in templates: `resume_no_bars`, `resume_with_bars`, `demo` (see `src/simple_resume/shell/assets/templates/html/`). Static assets are stored in `.../assets/static/`.
+Built-in templates: `resume_no_bars`, `resume_with_bars`, `resume_modern`, `resume_professional`, `resume_creative`, `demo`. Cover letters use the `cover` template. See `src/simple_resume/shell/assets/templates/html/` for all templates; static assets are in `.../assets/static/`.
 
 ## Python API
 
@@ -155,7 +155,7 @@ Path("ats_report.yaml").write_text(yaml_report)
 
 - **TF-IDF + Cosine Similarity** (`TFIDFScorer`): Statistical term frequency analysis
 - **Jaccard + N-gram** (`JaccardScorer`): Set intersection and phrase overlap
-- **Exact Keyword** (`KeywordScorer`): Direct keyword matching with fuzzy tolerance
+- **Exact Keyword** (`KeywordScorer`): Direct keyword matching with fuzzy tolerance and skills taxonomy
 - **BERT Semantic** (`BERTScorer`): Contextual embeddings via sentence-transformers (optional)
 
 ```bash
@@ -163,7 +163,9 @@ Path("ats_report.yaml").write_text(yaml_report)
 uv add simple-resume[bert]
 ```
 
-The tournament system combines multiple algorithms using weighted averages to produce detailed scores. See [ATS Scoring Rubric](wiki/ATS-Scoring-Rubric.md) for complete methodology.
+**Skills Taxonomy (optional):** The keyword scorer can optionally integrate with external skills APIs (LinkedIn, O*NET) for expanded term recognition. This is offline-first—the hardcoded skills list works without configuration. Enable API integration via environment variables when needed.
+
+The tournament system combines multiple algorithms using weighted averages to produce detailed scores. See [ATS Scoring Rubric](wiki/ATS-Scoring-Rubric.md) for complete methodology and [Similarity Algorithm Evaluation](wiki/Similarity-Algorithm-Evaluation.md) for algorithm benchmarks.
 
 ## Customization
 

@@ -2,6 +2,30 @@
 
 This file documents all notable project changes. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.2.3] - 2026-02-03
+
+### Added
+
+- Offline-first skills taxonomy API integration with local caching
+  - `TaxonomyCache` protocol in core layer for caching taxonomy data
+  - `TaxonomyLocalCache` implementation in shell layer (7-day TTL)
+  - Graceful degradation to hardcoded skills list on API failure
+- `percentage` parameter to `score_resume()` for 0-100 scale metadata
+- Capitalized word pattern extraction in `KeywordScorer` fallback logic
+- `MIN_FALLBACK_WORD_LENGTH` constant for keyword extraction tuning
+
+### Changed
+
+- Moved `TaxonomyCache` file I/O to shell layer (functional core / imperative shell)
+- Sample YAML files updated with ATS-optimized content for testing
+
+### Tests
+
+- Comprehensive taxonomy cache tests (NullTaxonomyCache, corrupted JSON, write failures)
+- Keyword extraction tests for improved coverage
+
 ## [0.2.2] - 2026-01-25
 
 ### Added
@@ -287,8 +311,6 @@ Initial public release.
 -   Fixed several edge cases in template resolution and improved error reporting.
 -   Corrected color contrast calculations to improve accessibility.
 -   Resolved dependency injection issues in core components.
-
-## [Unreleased]
 
 ---
 

@@ -1,7 +1,7 @@
 # API Reference
 
 **Version:** 0.2.2
-**Last Updated:** 2026-01-22
+**Last Updated:** 2026-02-03
 **Stability:** Public API exports follow semantic versioning guarantees
 
 ---
@@ -285,12 +285,13 @@ print(f"Algorithms used: {result.metadata['scorer_names']}")
 - `resume_text: str` - Full resume text
 - `job_description: str` - Full job description text
 - `custom_scorers: list[BaseScorer] | None` - Optional custom scoring algorithms
+- `percentage: bool` - If True (default), add `percentage_score` (0-100) to metadata
 
 **Returns:** `TournamentResult`
 
 ### `ATSTournament`
 
-Multi-algorithm tournament runner for comprehensive resume-job matching.
+Multi-algorithm tournament runner for resume-job matching.
 
 ```python
 from simple_resume import ATSTournament, TFIDFScorer, JaccardScorer

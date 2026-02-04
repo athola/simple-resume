@@ -118,6 +118,6 @@ See the [Color Schemes guide](Color-Schemes.md).
 
 -   **PDF Generation Fails**: PDF generation depends on WeasyPrint or LaTeX. Verify dependencies are installed correctly.
 -   **YAML Syntax Errors**: YAML is sensitive to indentation. Use a YAML linter to check for syntax errors.
--   **Template Not Found**: Verify the `template` name in your YAML file matches an available template (e.g., `resume_base`, `resume_no_bars`).
+-   **Template Not Found**: Verify the `template` name in your YAML file matches an available template (`resume_no_bars`, `resume_with_bars`, `resume_modern`, `resume_professional`, `resume_creative`, `demo`, or `cover` for cover letters).
 
 Report other issues on [GitHub](https://github.com/athola/simple-resume/issues).
