@@ -354,11 +354,14 @@ Exact keyword match scorer with fuzzy tolerance.
 
 ```python
 from simple_resume import KeywordScorer
+from simple_resume.core.ats.keyword import KeywordScorerConfig
 
 scorer = KeywordScorer(
     weight=1.0,
-    fuzzy_threshold=0.85,
-    extract_keywords=True
+    config=KeywordScorerConfig(
+        fuzzy_threshold=0.85,
+        extract_keywords=True,
+    ),
 )
 result = scorer.score(resume_text, job_description)
 ```

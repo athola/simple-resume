@@ -7,7 +7,7 @@ Follows TDD: RED (failing test) -> GREEN (implementation) -> REFACTOR.
 from __future__ import annotations
 
 from simple_resume.core.ats.creative_terms import Industry
-from simple_resume.core.ats.keyword import KeywordScorer
+from simple_resume.core.ats.keyword import KeywordScorer, KeywordScorerConfig
 
 
 class TestKeywordScorerCreativeExpansion:
@@ -16,8 +16,10 @@ class TestKeywordScorerCreativeExpansion:
     def test_creates_scorer_with_creative_params(self):
         """Test scorer accepts creative expansion parameters."""
         scorer = KeywordScorer(
-            enable_creative_expansion=True,
-            industry=Industry.TECH,
+            config=KeywordScorerConfig(
+                enable_creative_expansion=True,
+                industry=Industry.TECH,
+            ),
         )
         assert scorer.enable_creative_expansion is True
         assert scorer.industry == Industry.TECH
@@ -29,7 +31,9 @@ class TestKeywordScorerCreativeExpansion:
 
     def test_expands_rockstar_to_senior(self):
         """Test 'rockstar developer' expands to 'senior developer'."""
-        scorer = KeywordScorer(enable_creative_expansion=True)
+        scorer = KeywordScorer(
+            config=KeywordScorerConfig(enable_creative_expansion=True)
+        )
         job = "Looking for a rockstar developer"
         resume = "Experienced senior developer with 5 years experience"
 
@@ -44,7 +48,9 @@ class TestKeywordScorerCreativeExpansion:
 
     def test_expands_ninja_to_expert(self):
         """Test 'ninja coder' expands to 'expert programmer'."""
-        scorer = KeywordScorer(enable_creative_expansion=True)
+        scorer = KeywordScorer(
+            config=KeywordScorerConfig(enable_creative_expansion=True)
+        )
         job = "Need a code ninja for backend"
         resume = "Expert programmer in Python and Go"
 
@@ -59,7 +65,9 @@ class TestKeywordScorerCreativeExpansion:
 
     def test_no_expansion_when_disabled(self):
         """Test creative terms not expanded when feature disabled."""
-        scorer = KeywordScorer(enable_creative_expansion=False)
+        scorer = KeywordScorer(
+            config=KeywordScorerConfig(enable_creative_expansion=False)
+        )
         job = "Looking for rockstar developer"
         resume = "Senior developer with experience"
 
@@ -71,12 +79,16 @@ class TestKeywordScorerCreativeExpansion:
     def test_industry_specific_mappings(self):
         """Test different industries use different dictionaries."""
         tech_scorer = KeywordScorer(
-            enable_creative_expansion=True,
-            industry=Industry.TECH,
+            config=KeywordScorerConfig(
+                enable_creative_expansion=True,
+                industry=Industry.TECH,
+            ),
         )
         enterprise_scorer = KeywordScorer(
-            enable_creative_expansion=True,
-            industry=Industry.ENTERPRISE,
+            config=KeywordScorerConfig(
+                enable_creative_expansion=True,
+                industry=Industry.ENTERPRISE,
+            ),
         )
 
         # Both should work but may have different mappings
@@ -85,7 +97,9 @@ class TestKeywordScorerCreativeExpansion:
 
     def test_multiple_creative_terms_expanded(self):
         """Test multiple creative terms in one job description."""
-        scorer = KeywordScorer(enable_creative_expansion=True)
+        scorer = KeywordScorer(
+            config=KeywordScorerConfig(enable_creative_expansion=True)
+        )
         job = "Rockstar developer and code ninja needed"
         resume = "Senior developer and expert programmer"
 
@@ -99,7 +113,9 @@ class TestKeywordScorerCreativeExpansion:
 
     def test_standard_terms_unchanged(self):
         """Test standard terms are not modified."""
-        scorer = KeywordScorer(enable_creative_expansion=True)
+        scorer = KeywordScorer(
+            config=KeywordScorerConfig(enable_creative_expansion=True)
+        )
         job = "Looking for senior software engineer"
         resume = "Senior software engineer with experience"
 
@@ -112,7 +128,9 @@ class TestKeywordScorerCreativeExpansion:
 
     def test_empty_expansion_list_when_no_creative_terms(self):
         """Test returns empty list when no creative terms present."""
-        scorer = KeywordScorer(enable_creative_expansion=True)
+        scorer = KeywordScorer(
+            config=KeywordScorerConfig(enable_creative_expansion=True)
+        )
         job = "Looking for Python developer"
         resume = "Python developer with Django experience"
 
@@ -126,7 +144,9 @@ class TestKeywordScorerCreativeConfidence:
 
     def test_creative_term_in_details(self):
         """Test creative term appears in details with expansion info."""
-        scorer = KeywordScorer(enable_creative_expansion=True)
+        scorer = KeywordScorer(
+            config=KeywordScorerConfig(enable_creative_expansion=True)
+        )
         job = "Rockstar developer needed"
         resume = "Senior developer available"
 
@@ -141,8 +161,12 @@ class TestKeywordScorerCreativeConfidence:
 
     def test_score_improvement_with_expansion(self):
         """Test score improves when creative terms are expanded."""
-        scorer_with = KeywordScorer(enable_creative_expansion=True)
-        scorer_without = KeywordScorer(enable_creative_expansion=False)
+        scorer_with = KeywordScorer(
+            config=KeywordScorerConfig(enable_creative_expansion=True)
+        )
+        scorer_without = KeywordScorer(
+            config=KeywordScorerConfig(enable_creative_expansion=False)
+        )
 
         job = "Looking for rockstar developer"
         resume = "Senior developer with experience"

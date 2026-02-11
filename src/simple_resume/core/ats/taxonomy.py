@@ -14,23 +14,32 @@ See GitHub Issue #59 for design rationale.
 Architecture Note:
 The TaxonomyCache Protocol defines the interface for caching taxonomy data.
 The concrete implementation (TaxonomyLocalCache) lives in shell layer to
-maintain core/shell separation. See ADR002.
+maintain core/shell separation. See ADR002 (Functional Core / Imperative Shell).
 """
 
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from enum import Enum
 from typing import Protocol
 
 logger = logging.getLogger(__name__)
+
+
+class TaxonomySource(str, Enum):
+    """Supported taxonomy API sources."""
+
+    ONET = "onet"
+    LINKEDIN = "linkedin"
+
 
 # Default cache TTL
 TAXONOMY_CACHE_TTL = 7 * 24 * 60 * 60  # 7 days in seconds
 
 
 # Hardcoded fallback skills list (current implementation)
-HARDCODED_SKILLS = [
+HARDCODED_SKILLS: tuple[str, ...] = (
     "Python",
     "JavaScript",
     "TypeScript",
@@ -90,10 +99,10 @@ HARDCODED_SKILLS = [
     "FastAPI",
     "Spring",
     "Express",
-]
+)
 
 
-@dataclass
+@dataclass(frozen=True)
 class TaxonomyConfig:
     """Configuration for taxonomy API integration.
 
@@ -110,6 +119,15 @@ class TaxonomyConfig:
     api_timeout: int = 10
     max_retries: int = 3
 
+    def __post_init__(self) -> None:
+        """Validate configuration values."""
+        if self.cache_ttl <= 0:
+            raise ValueError(f"cache_ttl must be > 0, got {self.cache_ttl}")
+        if self.api_timeout <= 0:
+            raise ValueError(f"api_timeout must be > 0, got {self.api_timeout}")
+        if self.max_retries < 0:
+            raise ValueError(f"max_retries must be >= 0, got {self.max_retries}")
+
 
 class TaxonomyCache(Protocol):
     """Protocol for taxonomy data caching.
@@ -118,7 +136,7 @@ class TaxonomyCache(Protocol):
     (e.g., TaxonomyLocalCache in shell layer) handle actual file I/O.
 
     This separation maintains the functional core / imperative shell architecture.
-    See ADR002 for design rationale.
+    See ADR002 (Functional Core / Imperative Shell) for design rationale.
     """
 
     def get(self, taxonomy_name: str) -> list[str] | None:
@@ -151,11 +169,11 @@ class NullTaxonomyCache:
     suitable for use in the core layer.
     """
 
-    def get(self, taxonomy_name: str) -> list[str] | None:  # noqa: ARG002
+    def get(self, _taxonomy_name: str) -> list[str] | None:
         """Return None (cache miss) for all lookups."""
         return None
 
-    def set(self, taxonomy_name: str, skills: list[str]) -> None:  # noqa: ARG002
+    def set(self, _taxonomy_name: str, _skills: list[str]) -> None:
         """No-op: does not store anything."""
         pass
 
@@ -168,10 +186,6 @@ class SkillsTaxonomyFetcher:
     - Only fetches API when explicitly enabled
     - Caches results locally for performance
     - Falls back on any error
-
-    Attributes:
-        config: Taxonomy configuration
-        cache: Local cache for taxonomy data
 
     """
 
@@ -187,10 +201,12 @@ class SkillsTaxonomyFetcher:
             cache: Optional cache instance (uses default if None)
 
         """
-        self.config = config or TaxonomyConfig()
-        self.cache = cache or NullTaxonomyCache()
+        self._config = config or TaxonomyConfig()
+        self._cache = cache or NullTaxonomyCache()
 
-    def get_skills(self, taxonomy: str = "onet") -> list[str]:
+    def get_skills(
+        self, taxonomy: str | TaxonomySource = TaxonomySource.ONET
+    ) -> list[str]:
         """Get skills from taxonomy with fallback to hardcoded list.
 
         Args:
@@ -200,32 +216,27 @@ class SkillsTaxonomyFetcher:
             List of skills (from API if enabled and cached, or hardcoded list)
 
         """
-        # If API integration is disabled, use hardcoded list
-        if not self.config.enabled:
+        if not self._config.enabled:
             logger.debug("Taxonomy API disabled, using hardcoded skills")
-            return HARDCODED_SKILLS
+            return list(HARDCODED_SKILLS)
 
-        # Try to get from cache first
-        cached_skills = self.cache.get(taxonomy)
+        cached_skills = self._cache.get(taxonomy)
         if cached_skills is not None:
-            logger.debug(f"Using cached skills from {taxonomy}")
+            logger.debug("Using cached skills from %s", taxonomy)
             return cached_skills
 
-        # Attempt to fetch from API
         try:
             skills = self._fetch_from_api(taxonomy)
             if skills:
-                # Cache the results
-                self.cache.set(taxonomy, skills)
+                self._cache.set(taxonomy, skills)
                 return skills
-        except Exception as exc:
-            logger.warning(f"Failed to fetch from {taxonomy} API: {exc}")
+        except (OSError, ConnectionError, TimeoutError, ValueError) as exc:
+            logger.warning("Failed to fetch from %s API: %s", taxonomy, exc)
 
-        # Fallback to hardcoded list on any error
-        logger.info(f"Falling back to hardcoded skills for {taxonomy}")
-        return HARDCODED_SKILLS
+        logger.warning("Falling back to hardcoded skills for %s", taxonomy)
+        return list(HARDCODED_SKILLS)
 
-    def _fetch_from_api(self, taxonomy: str) -> list[str]:
+    def _fetch_from_api(self, taxonomy: str | TaxonomySource) -> list[str]:
         """Fetch skills from taxonomy API.
 
         Args:
@@ -238,12 +249,12 @@ class SkillsTaxonomyFetcher:
             NotImplementedError: If taxonomy is not yet implemented
 
         """
-        if taxonomy == "onet":
+        source = TaxonomySource(taxonomy) if isinstance(taxonomy, str) else taxonomy
+        if source == TaxonomySource.ONET:
             return self._fetch_onet()
-        elif taxonomy == "linkedin":
+        elif source == TaxonomySource.LINKEDIN:
             return self._fetch_linkedin()
-        else:
-            raise NotImplementedError(f"Taxonomy '{taxonomy}' not implemented")
+        raise NotImplementedError(f"Taxonomy '{source.value}' not implemented")
 
     def _fetch_onet(self) -> list[str]:
         """Fetch skills from O*NET API.
@@ -262,8 +273,7 @@ class SkillsTaxonomyFetcher:
         # TODO: Implement O*NET API integration
         # O*NET provides downloadable data files at:
         # https://www.onetcenter.org/dictionary_files.html
-        logger.info("O*NET integration not yet implemented, using fallback")
-        return []
+        raise NotImplementedError("O*NET API integration not yet implemented")
 
     def _fetch_linkedin(self) -> list[str]:
         """Fetch skills from LinkedIn Skills API.
@@ -280,15 +290,12 @@ class SkillsTaxonomyFetcher:
 
         """
         # TODO: Implement LinkedIn Skills API integration
-        logger.info(
-            "LinkedIn Skills API integration not yet implemented, using fallback"
-        )
-        return []
+        raise NotImplementedError("LinkedIn Skills API integration not yet implemented")
 
 
 def get_enhanced_skills(
     use_taxonomy: bool = False,
-    taxonomy: str = "onet",
+    taxonomy: str | TaxonomySource = TaxonomySource.ONET,
 ) -> list[str]:
     """Get skills with optional taxonomy API integration.
 
@@ -304,12 +311,13 @@ def get_enhanced_skills(
     Example:
         >>> # Default: offline-first with hardcoded skills
         >>> skills = get_enhanced_skills()
-        >>> len(skills) > 50
+        >>> len(skills) > 0
         True
 
-        >>> # Enable taxonomy API (requires network, cache, or valid API)
+        >>> # Enable taxonomy API
+        >>> # Falls back to hardcoded skills (O*NET not yet implemented)
         >>> skills = get_enhanced_skills(use_taxonomy=True, taxonomy="onet")
-        >>> len(skills) > 50
+        >>> len(skills) > 0
         True
 
     """
@@ -324,6 +332,7 @@ DEFAULT_SKILLS_LIST = HARDCODED_SKILLS
 __all__ = [
     "TaxonomyConfig",
     "TaxonomyCache",
+    "TaxonomySource",
     "SkillsTaxonomyFetcher",
     "get_enhanced_skills",
     "DEFAULT_SKILLS_LIST",

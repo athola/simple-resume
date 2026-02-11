@@ -98,17 +98,17 @@ class TestSkillsTaxonomyFetcher:
         fetcher = SkillsTaxonomyFetcher(config)
 
         skills = fetcher.get_skills("onet")
-        assert skills == DEFAULT_SKILLS_LIST
+        assert skills == list(DEFAULT_SKILLS_LIST)
 
-    def test_enabled_api_returns_hardcoded_on_cache_miss(self, tmp_path: Path):
-        """Test fetcher falls back to hardcoded when API fetch fails."""
+    def test_enabled_api_raises_on_cache_miss_not_implemented(self, tmp_path: Path):
+        """Test fetcher raises NotImplementedError when API stub is called."""
         config = TaxonomyConfig(enabled=True)
         cache = TaxonomyCache(cache_dir=tmp_path / "taxonomy", ttl=1000)
         fetcher = SkillsTaxonomyFetcher(config, cache=cache)
 
-        # Cache miss + API not implemented = fallback
-        skills = fetcher.get_skills("onet")
-        assert skills == DEFAULT_SKILLS_LIST
+        # Cache miss + API not implemented = NotImplementedError propagates
+        with pytest.raises(NotImplementedError, match="not yet implemented"):
+            fetcher.get_skills("onet")
 
     def test_uses_cached_data_when_available(self, tmp_path: Path):
         """Test fetcher uses cached data when available."""
@@ -124,15 +124,20 @@ class TestSkillsTaxonomyFetcher:
 
         assert skills == cached_skills
 
-    def test_unimplemented_taxonomy_falls_back_gracefully(self, tmp_path: Path):
-        """Test unimplemented taxonomy falls back to hardcoded list."""
+    def test_unknown_taxonomy_falls_back_to_hardcoded(self, tmp_path: Path):
+        """Test unknown taxonomy string falls back to hardcoded skills.
+
+        With TaxonomySource enum, an invalid string raises ValueError during
+        enum conversion in _fetch_from_api. Since get_skills catches ValueError,
+        it gracefully falls back to the hardcoded skills list.
+        """
         config = TaxonomyConfig(enabled=True)
         cache = TaxonomyCache(cache_dir=tmp_path / "taxonomy", ttl=1000)
         fetcher = SkillsTaxonomyFetcher(config, cache=cache)
 
-        # "unimplemented" taxonomy doesn't exist
-        skills = fetcher.get_skills("unimplemented")
-        assert skills == DEFAULT_SKILLS_LIST  # Graceful fallback
+        # "unknown" is not a valid TaxonomySource, triggers ValueError fallback
+        skills = fetcher.get_skills("unknown")
+        assert skills == list(DEFAULT_SKILLS_LIST)
 
 
 class TestGetEnhancedSkills:
@@ -141,13 +146,13 @@ class TestGetEnhancedSkills:
     def test_default_returns_hardcoded_skills(self):
         """Test default behavior returns hardcoded skills (offline-first)."""
         skills = get_enhanced_skills()
-        assert skills == DEFAULT_SKILLS_LIST
+        assert skills == list(DEFAULT_SKILLS_LIST)
         assert len(skills) > 50  # Should have many skills
 
     def test_disabled_taxonomy_returns_hardcoded(self):
         """Test explicit disable returns hardcoded skills."""
         skills = get_enhanced_skills(use_taxonomy=False)
-        assert skills == DEFAULT_SKILLS_LIST
+        assert skills == list(DEFAULT_SKILLS_LIST)
 
     @patch("simple_resume.core.ats.taxonomy.SkillsTaxonomyFetcher")
     def test_enabled_taxonomy_uses_fetcher(self, mock_fetcher_class: Mock):
@@ -195,7 +200,7 @@ class TestNullTaxonomyCache:
 
         # Should still work, using hardcoded skills
         skills = fetcher.get_skills("onet")
-        assert skills == DEFAULT_SKILLS_LIST
+        assert skills == list(DEFAULT_SKILLS_LIST)
 
 
 class TestTaxonomyCacheErrorHandling:
@@ -266,24 +271,24 @@ class TestTaxonomyCacheErrorHandling:
 class TestLinkedInTaxonomy:
     """Tests for LinkedIn taxonomy stub."""
 
-    def test_linkedin_taxonomy_returns_hardcoded_fallback(self, tmp_path: Path):
-        """Test LinkedIn taxonomy falls back to hardcoded list."""
+    def test_linkedin_taxonomy_raises_not_implemented(self, tmp_path: Path):
+        """Test LinkedIn taxonomy raises NotImplementedError."""
         config = TaxonomyConfig(enabled=True)
         cache = TaxonomyCache(cache_dir=tmp_path / "taxonomy", ttl=1000)
         fetcher = SkillsTaxonomyFetcher(config, cache=cache)
 
-        # LinkedIn API not implemented, should fallback
-        skills = fetcher.get_skills("linkedin")
-        assert skills == DEFAULT_SKILLS_LIST
+        # LinkedIn API not implemented - propagates as NotImplementedError
+        with pytest.raises(NotImplementedError, match="not yet implemented"):
+            fetcher.get_skills("linkedin")
 
-    def test_linkedin_fetch_returns_empty_list(self):
-        """Test _fetch_linkedin returns empty list (stub implementation)."""
+    def test_linkedin_fetch_raises_not_implemented(self):
+        """Test _fetch_linkedin raises NotImplementedError (stub)."""
         config = TaxonomyConfig(enabled=True)
         fetcher = SkillsTaxonomyFetcher(config)
 
         # Directly call private method to verify stub behavior
-        result = fetcher._fetch_linkedin()
-        assert result == []
+        with pytest.raises(NotImplementedError, match="not yet implemented"):
+            fetcher._fetch_linkedin()
 
 
 class TestSuccessfulApiFetchCaching:

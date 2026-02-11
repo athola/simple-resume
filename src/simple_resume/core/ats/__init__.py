@@ -20,8 +20,9 @@ from simple_resume.core.ats.entities import (
     parse,
 )
 from simple_resume.core.ats.jaccard import JaccardScorer
-from simple_resume.core.ats.keyword import KeywordScorer
+from simple_resume.core.ats.keyword import KeywordScorer, KeywordScorerConfig
 from simple_resume.core.ats.reports import ATSReportGenerator
+from simple_resume.core.ats.taxonomy import TaxonomySource
 from simple_resume.core.ats.tfidf import TFIDFScorer
 from simple_resume.core.ats.tournament import (
     ATSTournament,
@@ -50,9 +51,11 @@ __all__ = [
     "TFIDFScorer",
     "JaccardScorer",
     "KeywordScorer",
+    "KeywordScorerConfig",
     "BERTScorer",
     "ATSTournament",
     "TournamentResult",
     "score_resume",
     "ATSReportGenerator",
+    "TaxonomySource",
 ]

@@ -22,6 +22,7 @@ Cons:
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from difflib import SequenceMatcher
 from typing import Any
 
@@ -31,13 +32,38 @@ from simple_resume.core.ats.constants import (
     MIN_FALLBACK_WORD_LENGTH,
     MIN_KEYWORD_LENGTH,
     validate_threshold,
-    validate_weight,
 )
 from simple_resume.core.ats.creative_terms import (
     Industry,
     expand_term,
     is_creative_term,
 )
+
+
+@dataclass(frozen=True)
+class KeywordScorerConfig:
+    """Configuration for keyword scoring behavior.
+
+    Attributes:
+        fuzzy_threshold: Minimum similarity ratio for fuzzy matching (0-1)
+        case_sensitive: Whether matching preserves case
+        extract_keywords: Whether to auto-extract keywords from job text
+        max_keywords: Cap on keywords extracted from job description
+        enable_creative_expansion: Expand creative synonyms during matching
+        industry: Industry context for creative term mappings
+
+    """
+
+    fuzzy_threshold: float = 0.85
+    case_sensitive: bool = False
+    extract_keywords: bool = True
+    max_keywords: int = 50
+    enable_creative_expansion: bool = False
+    industry: Industry = Industry.GENERAL
+
+    def __post_init__(self) -> None:
+        """Validate configuration values."""
+        validate_threshold(self.fuzzy_threshold, "fuzzy_threshold")
 
 
 class KeywordScorer(BaseScorer):
@@ -48,40 +74,29 @@ class KeywordScorer(BaseScorer):
     keyword extraction.
     """
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         weight: float = 1.0,
-        fuzzy_threshold: float = 0.85,
-        case_sensitive: bool = False,
-        extract_keywords: bool = True,
-        max_keywords: int = 50,
-        enable_creative_expansion: bool = False,
-        industry: Industry = Industry.GENERAL,
+        config: KeywordScorerConfig | None = None,
     ) -> None:
         """Initialize keyword scorer.
 
         Args:
             weight: Weight in tournament (default: 1.0, must be in [0, 1])
-            fuzzy_threshold: Minimum similarity for fuzzy match (must be in [0, 1])
-            case_sensitive: Whether to preserve case (default: False)
-            extract_keywords: Whether to auto-extract keywords (default: True)
-            max_keywords: Maximum keywords to extract from job description
-            enable_creative_expansion: Enable creative term synonym expansion
-            industry: Industry context for creative term mappings
+            config: Scoring configuration (uses defaults if None)
 
         Raises:
-            ValueError: If weight or fuzzy_threshold are outside [0, 1]
+            ValueError: If weight is outside [0, 1]
 
         """
-        validate_weight(weight, "weight")
-        validate_threshold(fuzzy_threshold, "fuzzy_threshold")
         super().__init__(weight=weight)
-        self.fuzzy_threshold = fuzzy_threshold
-        self.case_sensitive = case_sensitive
-        self.extract_keywords = extract_keywords
-        self.max_keywords = max_keywords
-        self.enable_creative_expansion = enable_creative_expansion
-        self.industry = industry
+        self._config = config or KeywordScorerConfig()
+        self.fuzzy_threshold = self._config.fuzzy_threshold
+        self.case_sensitive = self._config.case_sensitive
+        self.extract_keywords = self._config.extract_keywords
+        self.max_keywords = self._config.max_keywords
+        self.enable_creative_expansion = self._config.enable_creative_expansion
+        self.industry = self._config.industry
 
     def _preprocess_text(self, text: str) -> str:
         """Preprocess text for keyword matching.
@@ -99,7 +114,9 @@ class KeywordScorer(BaseScorer):
         text = re.sub(r"\s+", " ", text)
         return text.strip()
 
-    def _extract_keywords(self, text: str) -> list[str]:
+    def _extract_keywords(
+        self, text: str, original_text: str | None = None
+    ) -> list[str]:
         """Extract important keywords from text.
 
         Uses simple heuristics to identify likely keywords:
@@ -110,6 +127,8 @@ class KeywordScorer(BaseScorer):
 
         Args:
             text: Preprocessed text
+            original_text: Original text before preprocessing (for case-sensitive
+                pattern matching). Falls back to text if not provided.
 
         Returns:
             List of extracted keywords
@@ -118,7 +137,8 @@ class KeywordScorer(BaseScorer):
         keywords = []
 
         # Use original text for case-sensitive pattern matching
-        original_text = text
+        if original_text is None:
+            original_text = text
 
         # Extract technical terms (words with internal caps, acronyms)
         # Pattern: CamelCase, ALL_CAPS, words with numbers
@@ -261,7 +281,31 @@ class KeywordScorer(BaseScorer):
 
         return best_similarity >= self.fuzzy_threshold, best_similarity
 
-    def score(  # noqa: PLR0912
+    def _expand_creative_terms(
+        self, keywords: list[str]
+    ) -> tuple[set[str], list[dict[str, str]]]:
+        """Build expanded keyword set from creative term synonyms.
+
+        Args:
+            keywords: Original keywords to expand
+
+        Returns:
+            Tuple of (expanded_keywords set, creative_terms_found list)
+
+        """
+        expanded: set[str] = set()
+        found: list[dict[str, str]] = []
+        if not self.enable_creative_expansion:
+            return expanded, found
+        for keyword in keywords:
+            if is_creative_term(keyword, self.industry):
+                synonym = expand_term(keyword, self.industry)
+                if synonym:
+                    found.append({"creative": keyword, "expanded": synonym})
+                    expanded.add(synonym)
+        return expanded, found
+
+    def score(
         self,
         resume_text: str,
         job_description: str,
@@ -295,14 +339,14 @@ class KeywordScorer(BaseScorer):
                 },
             )
 
-        # Preprocess texts
+        # Preprocess texts (save originals for case-sensitive pattern matching)
         resume_clean = self._preprocess_text(resume_text)
         job_clean = self._preprocess_text(job_description)
 
         # Get keywords to match (either provided or extracted)
         keywords = kwargs.get("keywords")
         if keywords is None and self.extract_keywords:
-            keywords = self._extract_keywords(job_clean)
+            keywords = self._extract_keywords(job_clean, original_text=job_description)
         elif keywords is None:
             # Use all unique words from job as keywords
             keywords = list(set(job_clean.split()))
@@ -328,21 +372,20 @@ class KeywordScorer(BaseScorer):
         matched_keywords = []
         missing_keywords = []
         fuzzy_matches = []
-        creative_terms_found = []
 
-        # Expand creative terms if enabled
-        if self.enable_creative_expansion:
-            for keyword in list(keywords):
-                if is_creative_term(keyword, self.industry):
-                    expanded = expand_term(keyword, self.industry)
-                    if expanded:
-                        creative_terms_found.append(
-                            {"creative": keyword, "expanded": expanded}
-                        )
-                        # Add expanded term to keywords list
-                        keywords.append(expanded)
+        # Work on a copy to avoid mutating the caller's list
+        keywords = list(keywords)
 
-        for keyword in keywords:
+        # Expand creative terms into additional match candidates
+        expanded_keywords, creative_terms_found = self._expand_creative_terms(keywords)
+
+        # Track original keyword count before adding expansions
+        total_keywords = len(keywords)
+
+        # Match original keywords plus expanded terms against resume
+        all_match_terms = keywords + list(expanded_keywords)
+
+        for keyword in all_match_terms:
             keyword_clean = keyword if self.case_sensitive else keyword.lower()
             found, similarity = self._fuzzy_match(keyword_clean, resume_clean)
 
@@ -354,8 +397,7 @@ class KeywordScorer(BaseScorer):
             else:
                 missing_keywords.append(keyword)
 
-        # Calculate score
-        total_keywords = len(keywords)
+        # Calculate score (total_keywords based on original keywords, not expanded)
         exact_match_count = len(matched_keywords)
         fuzzy_match_count = len(fuzzy_matches)
 
