@@ -77,6 +77,8 @@ class TestGeneratePdf:
             format=OutputFormat.PDF,
             pattern="*.yaml",
             open_after=False,
+            parallel=False,
+            browser=None,
             custom_field="value",
         )
         assert result == mock_result
@@ -146,6 +148,7 @@ class TestGenerateHtml:
             format=OutputFormat.HTML,
             pattern="*.yaml",
             open_after=True,
+            parallel=False,
             browser="chrome",
         )
         assert result == mock_result
