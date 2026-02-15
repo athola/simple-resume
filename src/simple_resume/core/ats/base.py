@@ -253,9 +253,9 @@ class Degree:
         field: Field of study (e.g., "Computer Science"), optional
 
     Note:
-        The type field accepts both DegreeType enum values and strings.
-        Strings are automatically converted to DegreeType via from_string().
-        After initialization, type is always DegreeType (runtime narrowing).
+        Accepts str input for backwards compatibility; always stored as
+        DegreeType after initialization. Strings are automatically converted
+        to DegreeType via from_string() in __post_init__.
 
     """
 

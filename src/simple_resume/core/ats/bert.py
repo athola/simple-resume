@@ -12,7 +12,6 @@ Key advantages over TF-IDF:
 from __future__ import annotations
 
 import logging
-import os
 import re
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any
@@ -50,7 +49,7 @@ logger = logging.getLogger(__name__)
 # Default model - lightweight, fast, good quality
 DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
-# Environment variable for custom model selection
+# Environment variable name for custom model selection (read by shell layer)
 MODEL_ENV_VAR = "SIMPLE_RESUME_BERT_MODEL"
 
 # Section splitting constants
@@ -151,8 +150,7 @@ class BERTScorer(BaseScorer):
 
         Args:
             weight: Weight in tournament (default: 1.0, must be in [0, 1])
-            model_name: HuggingFace model name. Defaults to all-MiniLM-L6-v2
-                        or SIMPLE_RESUME_BERT_MODEL env var if set.
+            model_name: HuggingFace model name. Defaults to all-MiniLM-L6-v2.
 
         Raises:
             ValueError: If weight is outside [0, 1]
@@ -161,8 +159,7 @@ class BERTScorer(BaseScorer):
         validate_weight(weight, "weight")
         super().__init__(weight=weight)
 
-        # Model name priority: argument > env var > default
-        self.model_name = model_name or os.environ.get(MODEL_ENV_VAR) or DEFAULT_MODEL
+        self.model_name = model_name or DEFAULT_MODEL
 
         self._model: Any = None
         self._available: bool | None = None

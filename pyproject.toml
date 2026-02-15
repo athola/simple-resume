@@ -73,7 +73,6 @@ simple-resume = "simple_resume.shell.cli:main_entry"
 # Palette utilities
 palette-snapshot = "simple_resume.shell.cli.palette:snapshot"
 palette-list = "simple_resume.shell.cli.palette:palette_list"
-generate-random-palette-demo = "simple_resume.shell.cli.random_palette_demo:main"
 
 [tool.hatch.build.targets.sdist]
 include = ["src"]  # Only include content from src

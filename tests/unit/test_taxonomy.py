@@ -268,27 +268,26 @@ class TestTaxonomyCacheErrorHandling:
         assert result == []
 
 
-class TestLinkedInTaxonomy:
-    """Tests for LinkedIn taxonomy stub."""
+class TestTaxonomyApiStubs:
+    """Tests for taxonomy API stubs (all backends unimplemented)."""
 
-    def test_linkedin_taxonomy_raises_not_implemented(self, tmp_path: Path):
+    def test_onet_raises_not_implemented(self, tmp_path: Path):
+        """Test O*NET taxonomy raises NotImplementedError."""
+        config = TaxonomyConfig(enabled=True)
+        cache = TaxonomyCache(cache_dir=tmp_path / "taxonomy", ttl=1000)
+        fetcher = SkillsTaxonomyFetcher(config, cache=cache)
+
+        with pytest.raises(NotImplementedError, match="not yet implemented"):
+            fetcher.get_skills("onet")
+
+    def test_linkedin_raises_not_implemented(self, tmp_path: Path):
         """Test LinkedIn taxonomy raises NotImplementedError."""
         config = TaxonomyConfig(enabled=True)
         cache = TaxonomyCache(cache_dir=tmp_path / "taxonomy", ttl=1000)
         fetcher = SkillsTaxonomyFetcher(config, cache=cache)
 
-        # LinkedIn API not implemented - propagates as NotImplementedError
         with pytest.raises(NotImplementedError, match="not yet implemented"):
             fetcher.get_skills("linkedin")
-
-    def test_linkedin_fetch_raises_not_implemented(self):
-        """Test _fetch_linkedin raises NotImplementedError (stub)."""
-        config = TaxonomyConfig(enabled=True)
-        fetcher = SkillsTaxonomyFetcher(config)
-
-        # Directly call private method to verify stub behavior
-        with pytest.raises(NotImplementedError, match="not yet implemented"):
-            fetcher._fetch_linkedin()
 
 
 class TestSuccessfulApiFetchCaching:

@@ -78,6 +78,14 @@ repos:
         pass_filenames: false
         always_run: true
 
+      - id: no-ai-attribution
+        name: block-ai-co-authored-by
+        entry: |
+          bash -c 'if git log --format="%b" -1 HEAD 2>/dev/null | grep -iqE "Co-Authored-By:.*(Claude|Opus|Sonnet|Haiku|Anthropic|GPT|OpenAI|Copilot)"; then echo "ERROR: Commit contains AI Co-Authored-By line. Remove it."; exit 1; fi'
+        language: system
+        stages: [commit-msg]
+        always_run: true
+
       - id: architecture-tests
         name: architecture-layer-separation
         entry: bash -c 'uv run pytest tests/architecture/test_layer_separation.py --quiet --tb=short || (echo "Architecture tests failing (expected during refactoring - see CORE_REFACTOR_PLAN.md)" && exit 0)'
@@ -129,7 +137,23 @@ repos:
             fi
 
             VERSION=$(simple-resume --version 2>&1 | grep -oE "[0-9]+\.[0-9]+\.[0-9]+")
-            echo "Package installs and executes correctly (v$VERSION)"
+            echo "CLI installs and executes correctly (v$VERSION)"
+
+            # Python API smoke test (issue #84 regression guard)
+            TEST_DIR=$(mktemp -d)
+            mkdir -p "$TEST_DIR/input"
+            cp sample/input/sample_1.yaml "$TEST_DIR/input/"
+            printf "%s\n" \
+              "import simple_resume" \
+              "result = simple_resume.generate(" \
+              "    \"sample_1\"," \
+              "    options=simple_resume.GenerateOptions(formats=(\"html\",), data_dir=\"$TEST_DIR\")," \
+              ")" \
+              "assert \"html\" in result, f\"Expected html key, got {list(result.keys())}\"" \
+              "print(\"Python API generate() works without explicit service registration\")" \
+              > "$TEST_DIR/smoke_test.py"
+            python3 "$TEST_DIR/smoke_test.py"
+            rm -rf "$TEST_DIR"
           '
         language: system
         pass_filenames: false

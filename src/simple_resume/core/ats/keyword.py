@@ -39,6 +39,60 @@ from simple_resume.core.ats.creative_terms import (
     is_creative_term,
 )
 
+_STOPWORDS: frozenset[str] = frozenset(
+    {
+        "the",
+        "and",
+        "for",
+        "are",
+        "but",
+        "not",
+        "you",
+        "all",
+        "can",
+        "had",
+        "her",
+        "was",
+        "one",
+        "our",
+        "out",
+        "has",
+        "have",
+        "been",
+        "were",
+        "being",
+        "will",
+        "with",
+        "this",
+        "that",
+        "from",
+        "they",
+        "would",
+        "there",
+        "their",
+        "what",
+        "about",
+        "which",
+        "when",
+        "make",
+        "like",
+        "just",
+        "over",
+        "such",
+        "into",
+        "than",
+        "them",
+        "some",
+        "could",
+        "other",
+        "experience",
+        "work",
+        "working",
+        "team",
+        "ability",
+    }
+)
+
 
 @dataclass(frozen=True)
 class KeywordScorerConfig:
@@ -51,6 +105,7 @@ class KeywordScorerConfig:
         max_keywords: Cap on keywords extracted from job description
         enable_creative_expansion: Expand creative synonyms during matching
         industry: Industry context for creative term mappings
+        max_length_diff: Max character length difference for fuzzy candidates
 
     """
 
@@ -60,6 +115,7 @@ class KeywordScorerConfig:
     max_keywords: int = 50
     enable_creative_expansion: bool = False
     industry: Industry = Industry.GENERAL
+    max_length_diff: int = 3
 
     def __post_init__(self) -> None:
         """Validate configuration values."""
@@ -91,12 +147,6 @@ class KeywordScorer(BaseScorer):
         """
         super().__init__(weight=weight)
         self._config = config or KeywordScorerConfig()
-        self.fuzzy_threshold = self._config.fuzzy_threshold
-        self.case_sensitive = self._config.case_sensitive
-        self.extract_keywords = self._config.extract_keywords
-        self.max_keywords = self._config.max_keywords
-        self.enable_creative_expansion = self._config.enable_creative_expansion
-        self.industry = self._config.industry
 
     def _preprocess_text(self, text: str) -> str:
         """Preprocess text for keyword matching.
@@ -108,22 +158,72 @@ class KeywordScorer(BaseScorer):
             Cleaned text
 
         """
-        if not self.case_sensitive:
+        if not self._config.case_sensitive:
             text = text.lower()
         # Normalize whitespace
         text = re.sub(r"\s+", " ", text)
         return text.strip()
+
+    # -- Keyword extraction strategies -------------------------------------------
+
+    @staticmethod
+    def _extract_technical_terms(text: str) -> list[str]:
+        """Extract CamelCase, ALL_CAPS, and alphanumeric technical terms."""
+        pattern = r"\b[A-Z]{2,}\b|\b[A-Z][a-z]+[A-Z][a-z]+\b|\b\w*\d\w*\b"
+        return re.findall(pattern, text)
+
+    @staticmethod
+    def _extract_quoted_phrases(text: str) -> list[str]:
+        """Extract phrases enclosed in double quotes."""
+        return re.findall(r'"([^"]+)"', text)
+
+    @staticmethod
+    def _extract_skill_patterns(text: str) -> list[str]:
+        """Extract words followed by framework/library/language/etc."""
+        pattern = (
+            r"\b[A-Za-z]{3,}\s?(?:framework|library|language|platform|tool|database)\b"
+        )
+        return re.findall(pattern, text, re.IGNORECASE)
+
+    @staticmethod
+    def _extract_capitalized_words(text: str) -> list[str]:
+        """Extract capitalized words (proper nouns, technologies)."""
+        return re.findall(r"\b[A-Z][a-z]{2,}\b", text)
+
+    @staticmethod
+    def _extract_significant_words(text: str) -> list[str]:
+        """Fallback: extract non-stopword words of 4+ characters."""
+        results = []
+        for word in text.split():
+            word_clean = re.sub(r"[^\w]", "", word)
+            if (
+                len(word_clean) >= MIN_FALLBACK_WORD_LENGTH
+                and word_clean.lower() not in _STOPWORDS
+                and not word_clean.isdigit()
+            ):
+                results.append(word_clean)
+        return results
+
+    def _deduplicate_keywords(self, keywords: list[str]) -> list[str]:
+        """Remove duplicates while preserving order, capped at max_keywords."""
+        seen: set[str] = set()
+        unique: list[str] = []
+        for kw in keywords:
+            kw_clean = kw.strip().lower()
+            if kw_clean and len(kw_clean) > MIN_KEYWORD_LENGTH and kw_clean not in seen:
+                seen.add(kw_clean)
+                unique.append(kw.strip())
+        return unique[: self._config.max_keywords]
+
+    # -- Main extraction -------------------------------------------------------
 
     def _extract_keywords(
         self, text: str, original_text: str | None = None
     ) -> list[str]:
         """Extract important keywords from text.
 
-        Uses simple heuristics to identify likely keywords:
-        - Technical terms (capitalized words, acronyms)
-        - Skills (common patterns)
-        - Experience phrases
-        - Nouns and technical terms (fallback extraction)
+        Applies multiple heuristic strategies in order, falling back to
+        significant-word extraction when pattern-based methods find nothing.
 
         Args:
             text: Preprocessed text
@@ -134,152 +234,95 @@ class KeywordScorer(BaseScorer):
             List of extracted keywords
 
         """
-        keywords = []
-
-        # Use original text for case-sensitive pattern matching
         if original_text is None:
             original_text = text
 
-        # Extract technical terms (words with internal caps, acronyms)
-        # Pattern: CamelCase, ALL_CAPS, words with numbers
-        technical_pattern = r"\b[A-Z]{2,}\b|\b[A-Z][a-z]+[A-Z][a-z]+\b|\b\w*\d\w*\b"
-        technical_matches = re.findall(technical_pattern, original_text)
-        keywords.extend(technical_matches)
+        keywords: list[str] = []
+        keywords.extend(self._extract_technical_terms(original_text))
+        keywords.extend(self._extract_quoted_phrases(original_text))
+        keywords.extend(self._extract_skill_patterns(original_text))
+        keywords.extend(self._extract_capitalized_words(original_text))
 
-        # Extract phrases in quotes (often important skills/technologies)
-        quote_pattern = r'"([^"]+)"'
-        quote_matches = re.findall(quote_pattern, original_text)
-        keywords.extend(quote_matches)
-
-        # Common skill/technology patterns
-        # Words with 3+ consecutive consonants or specific patterns
-        skill_pattern = (
-            r"\b[A-Za-z]{3,}\s?(?:framework|library|language|platform|tool|database)\b"
-        )
-        skill_matches = re.findall(skill_pattern, original_text, re.IGNORECASE)
-        keywords.extend(skill_matches)
-
-        # Extract capitalized words (proper nouns, technologies like Python, Java)
-        # This catches single-word technologies that aren't acronyms
-        capitalized_pattern = r"\b[A-Z][a-z]{2,}\b"
-        capitalized_matches = re.findall(capitalized_pattern, original_text)
-        keywords.extend(capitalized_matches)
-
-        # Fallback: if no keywords found, extract significant words
-        # (nouns/technical terms typically 4+ chars, not common stopwords)
         if not keywords:
-            stopwords = {
-                "the",
-                "and",
-                "for",
-                "are",
-                "but",
-                "not",
-                "you",
-                "all",
-                "can",
-                "had",
-                "her",
-                "was",
-                "one",
-                "our",
-                "out",
-                "has",
-                "have",
-                "been",
-                "were",
-                "being",
-                "will",
-                "with",
-                "this",
-                "that",
-                "from",
-                "they",
-                "would",
-                "there",
-                "their",
-                "what",
-                "about",
-                "which",
-                "when",
-                "make",
-                "like",
-                "just",
-                "over",
-                "such",
-                "into",
-                "than",
-                "them",
-                "some",
-                "could",
-                "other",
-                "experience",
-                "work",
-                "working",
-                "team",
-                "ability",
-            }
-            words = text.split()
-            for word in words:
-                word_clean = re.sub(r"[^\w]", "", word)
-                if (
-                    len(word_clean) >= MIN_FALLBACK_WORD_LENGTH
-                    and word_clean.lower() not in stopwords
-                    and not word_clean.isdigit()
-                ):
-                    keywords.append(word_clean)
+            keywords.extend(self._extract_significant_words(text))
 
-        # Remove duplicates while preserving order
-        seen = set()
-        unique_keywords = []
-        for kw in keywords:
-            kw_clean = kw.strip().lower()
-            if kw_clean and len(kw_clean) > MIN_KEYWORD_LENGTH and kw_clean not in seen:
-                seen.add(kw_clean)
-                unique_keywords.append(kw.strip())
-
-        return unique_keywords[: self.max_keywords]
+        return self._deduplicate_keywords(keywords)
 
     def _fuzzy_match(
         self,
         keyword: str,
         text: str,
+        *,
+        word_set: frozenset[str] | None = None,
+        words: list[str] | None = None,
     ) -> tuple[bool, float]:
         """Perform fuzzy matching for a keyword against text.
 
-        Uses SequenceMatcher for robust similarity calculation.
+        Uses SequenceMatcher for robust similarity calculation with
+        optimizations: set-based exact lookup and length filtering.
 
         Args:
             keyword: Keyword to find
             text: Text to search in
+            word_set: Pre-computed set of words for O(1) exact matching
+            words: Pre-computed word list for fuzzy matching
 
         Returns:
             (found, similarity_score)
 
         """
-        # Direct match
+        keyword_lower = keyword.lower()
+
+        # Fast path: exact set lookup (O(1) vs O(n) substring scan)
+        if word_set is not None and keyword_lower in word_set:
+            return True, 1.0
+
+        # Direct substring match
         if keyword in text:
             return True, 1.0
 
         # Word boundary match
         pattern = r"\b" + re.escape(keyword) + r"\b"
-        if re.search(pattern, text, re.IGNORECASE if not self.case_sensitive else 0):
+        if re.search(
+            pattern, text, re.IGNORECASE if not self._config.case_sensitive else 0
+        ):
             return True, 1.0
 
-        # Fuzzy matching using SequenceMatcher
-        # Check similarity with each word in text
-        text_lower = text.lower()
-        keyword_lower = keyword.lower()
-        words = text_lower.split()
+        # Fuzzy matching with length filtering and early exit
+        if words is None:
+            words = text.lower().split()
+        keyword_len = len(keyword_lower)
 
         best_similarity = 0.0
         for word in words:
-            # Use SequenceMatcher for proper fuzzy matching
+            # Skip words with large length differences (can't be similar)
+            if abs(len(word) - keyword_len) > self._config.max_length_diff:
+                continue
             matcher = SequenceMatcher(None, keyword_lower, word, autojunk=False)
             similarity = matcher.ratio()
+            if similarity >= self._config.fuzzy_threshold:
+                return True, similarity
             best_similarity = max(best_similarity, similarity)
 
-        return best_similarity >= self.fuzzy_threshold, best_similarity
+        return best_similarity >= self._config.fuzzy_threshold, best_similarity
+
+    def _error_result(self, error: str) -> ScorerResult:
+        """Build a zero-score result for error or validation failure cases."""
+        return ScorerResult(
+            name="keyword_exact",
+            score=0.0,
+            weight=self.weight,
+            details={
+                "exact_matches": 0,
+                "fuzzy_matches": 0,
+                "total_keywords": 0,
+                "matched_keywords": [],
+                "fuzzy_matched": [],
+                "missing_keywords": [],
+                "creative_terms_expanded": [],
+                "error": error,
+            },
+        )
 
     def _expand_creative_terms(
         self, keywords: list[str]
@@ -295,11 +338,11 @@ class KeywordScorer(BaseScorer):
         """
         expanded: set[str] = set()
         found: list[dict[str, str]] = []
-        if not self.enable_creative_expansion:
+        if not self._config.enable_creative_expansion:
             return expanded, found
         for keyword in keywords:
-            if is_creative_term(keyword, self.industry):
-                synonym = expand_term(keyword, self.industry)
+            if is_creative_term(keyword, self._config.industry):
+                synonym = expand_term(keyword, self._config.industry)
                 if synonym:
                     found.append({"creative": keyword, "expanded": synonym})
                     expanded.add(synonym)
@@ -325,19 +368,7 @@ class KeywordScorer(BaseScorer):
         """
         # Handle edge cases
         if not resume_text.strip() or not job_description.strip():
-            return ScorerResult(
-                name="keyword_exact",
-                score=0.0,
-                weight=self.weight,
-                details={
-                    "exact_matches": 0,
-                    "total_keywords": 0,
-                    "matched_keywords": [],
-                    "missing_keywords": [],
-                    "creative_terms_expanded": [],
-                    "error": "Empty input provided",
-                },
-            )
+            return self._error_result("Empty input provided")
 
         # Preprocess texts (save originals for case-sensitive pattern matching)
         resume_clean = self._preprocess_text(resume_text)
@@ -345,28 +376,14 @@ class KeywordScorer(BaseScorer):
 
         # Get keywords to match (either provided or extracted)
         keywords = kwargs.get("keywords")
-        if keywords is None and self.extract_keywords:
+        if keywords is None and self._config.extract_keywords:
             keywords = self._extract_keywords(job_clean, original_text=job_description)
         elif keywords is None:
             # Use all unique words from job as keywords
             keywords = list(set(job_clean.split()))
 
         if not keywords:
-            return ScorerResult(
-                name="keyword_exact",
-                score=0.0,
-                weight=self.weight,
-                details={
-                    "exact_matches": 0,
-                    "fuzzy_matches": 0,
-                    "total_keywords": 0,
-                    "matched_keywords": [],
-                    "fuzzy_matched": [],
-                    "missing_keywords": [],
-                    "creative_terms_expanded": [],
-                    "error": "No keywords to match",
-                },
-            )
+            return self._error_result("No keywords to match")
 
         # Match keywords against resume
         matched_keywords = []
@@ -385,9 +402,18 @@ class KeywordScorer(BaseScorer):
         # Match original keywords plus expanded terms against resume
         all_match_terms = keywords + list(expanded_keywords)
 
+        # Pre-compute word set and list once for all keyword comparisons
+        resume_words = resume_clean.split()
+        resume_word_set = frozenset(resume_words)
+
         for keyword in all_match_terms:
-            keyword_clean = keyword if self.case_sensitive else keyword.lower()
-            found, similarity = self._fuzzy_match(keyword_clean, resume_clean)
+            keyword_clean = keyword if self._config.case_sensitive else keyword.lower()
+            found, similarity = self._fuzzy_match(
+                keyword_clean,
+                resume_clean,
+                word_set=resume_word_set,
+                words=resume_words,
+            )
 
             if found:
                 if similarity >= 1.0:

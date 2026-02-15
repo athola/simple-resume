@@ -12,11 +12,12 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from simple_resume.core.ats.taxonomy import TAXONOMY_CACHE_TTL
+
 logger = logging.getLogger(__name__)
 
 # Cache directory for taxonomy data
 TAXONOMY_CACHE_DIR = Path.home() / ".cache" / "simple-resume" / "taxonomy"
-TAXONOMY_CACHE_TTL = 7 * 24 * 60 * 60  # 7 days in seconds
 
 
 @dataclass
@@ -30,9 +31,12 @@ class TaxonomyLocalCache:
     cache_dir: Path = field(default_factory=lambda: TAXONOMY_CACHE_DIR)
     ttl: int = TAXONOMY_CACHE_TTL
 
+    def __post_init__(self) -> None:
+        """Ensure cache directory exists."""
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+
     def _get_cache_path(self, taxonomy_name: str) -> Path:
         """Get cache file path for a taxonomy."""
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
         return self.cache_dir / f"{taxonomy_name}.json"
 
     def get(self, taxonomy_name: str) -> list[str] | None:
@@ -47,13 +51,16 @@ class TaxonomyLocalCache:
             cached_time = data.get("timestamp", 0)
 
             if time.time() - cached_time > self.ttl:
-                logger.debug(f"Cache expired for {taxonomy_name}")
+                logger.debug("Cache expired for %s", taxonomy_name)
                 return None
 
             skills = data.get("skills", [])
             return list(skills) if isinstance(skills, list) else []
-        except (json.JSONDecodeError, OSError) as exc:
-            logger.warning(f"Failed to read cache for {taxonomy_name}: {exc}")
+        except json.JSONDecodeError as exc:
+            logger.warning("Corrupted cache detected for %s: %s", taxonomy_name, exc)
+            return None
+        except OSError as exc:
+            logger.warning("Failed to read cache for %s: %s", taxonomy_name, exc)
             return None
 
     def set(self, taxonomy_name: str, skills: list[str]) -> None:
@@ -67,12 +74,9 @@ class TaxonomyLocalCache:
 
         try:
             cache_path.write_text(json.dumps(data, indent=2))
-            logger.info(f"Cached {len(skills)} skills from {taxonomy_name}")
+            logger.info("Cached %d skills from %s", len(skills), taxonomy_name)
         except OSError as exc:
-            logger.warning(f"Failed to write cache for {taxonomy_name}: {exc}")
+            logger.error("Failed to write cache for %s: %s", taxonomy_name, exc)
 
 
-# Backwards compatibility alias
-TaxonomyCache = TaxonomyLocalCache
-
-__all__ = ["TaxonomyLocalCache", "TaxonomyCache", "TAXONOMY_CACHE_DIR"]
+__all__ = ["TaxonomyLocalCache", "TAXONOMY_CACHE_DIR"]

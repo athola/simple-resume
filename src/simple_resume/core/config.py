@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import atexit
 import copy
+import math
 from contextlib import ExitStack
 from importlib import resources
 from itertools import cycle
@@ -60,6 +61,8 @@ def _coerce_number(value: Any, *, field: str, prefix: str) -> float | int | None
     if isinstance(value, bool):
         raise ValueError(f"{prefix}{field} must be numeric. Got bool value {value!r}")
     if isinstance(value, (int, float)):
+        if isinstance(value, float) and not math.isfinite(value):
+            raise ValueError(f"{prefix}{field} must be a finite number. Got {value!r}")
         return value
     if isinstance(value, str):
         stripped = value.strip()
@@ -67,6 +70,10 @@ def _coerce_number(value: Any, *, field: str, prefix: str) -> float | int | None
             raise ValueError(f"{prefix}{field} must be numeric. Got empty string.")
         try:
             number = float(stripped)
+            if not math.isfinite(number):
+                raise ValueError(
+                    f"{prefix}{field} must be a finite number. Got {value!r}"
+                )
             return int(number) if number.is_integer() else number
         except ValueError as exc:
             raise ValueError(f"{prefix}{field} must be numeric. Got {value!r}") from exc
@@ -247,6 +254,34 @@ def _normalize_color_scheme(config: dict[str, Any]) -> None:
         config["color_scheme"] = "default"
 
 
+def _validate_hex_color(
+    value: Any,
+    field: str,
+    filename_prefix: str,
+) -> None:
+    """Validate a single color field value.
+
+    Args:
+        value: The color value to validate.
+        field: The field name for error messages.
+        filename_prefix: A prefix for error messages.
+
+    Raises:
+        ValueError: If the value is not a valid hex color string.
+
+    """
+    if not isinstance(value, str):
+        raise ValueError(
+            f"{filename_prefix}Invalid color format for '{field}': {value}. "
+            "Expected hex color string."
+        )
+    if not is_valid_color(value):
+        raise ValueError(
+            f"{filename_prefix}Invalid color format for '{field}': {value}. "
+            "Expected hex color like '#0395DE' or '#FFF'"
+        )
+
+
 def _validate_color_fields(config: dict[str, Any], filename_prefix: str) -> None:
     """Validate and set default values for color-related fields in the configuration.
 
@@ -267,16 +302,7 @@ def _validate_color_fields(config: dict[str, Any], filename_prefix: str) -> None
             value = config.get(field)
         if value is None:
             continue
-        if not isinstance(value, str):
-            raise ValueError(
-                f"{filename_prefix}Invalid color format for '{field}': {value}. "
-                "Expected hex color string."
-            )
-        if not is_valid_color(value):
-            raise ValueError(
-                f"{filename_prefix}Invalid color format for '{field}': {value}. "
-                "Expected hex color like '#0395DE' or '#FFF'"
-            )
+        _validate_hex_color(value, field, filename_prefix)
 
 
 def _auto_calculate_sidebar_text_color(config: dict[str, Any]) -> None:
@@ -307,16 +333,7 @@ def _handle_sidebar_bold_color(config: dict[str, Any], filename_prefix: str) -> 
     """
     explicit_color = config.get("sidebar_bold_color")
     if explicit_color:
-        if not isinstance(explicit_color, str):
-            raise ValueError(
-                f"{filename_prefix}Invalid color format for 'sidebar_bold_color': "
-                f"{explicit_color}. Expected hex color string."
-            )
-        if not is_valid_color(explicit_color):
-            raise ValueError(
-                f"{filename_prefix}Invalid color format for 'sidebar_bold_color': "
-                f"{explicit_color}. Expected hex color like '#0395DE' or '#FFF'"
-            )
+        _validate_hex_color(explicit_color, "sidebar_bold_color", filename_prefix)
         return
 
     config["sidebar_bold_color"] = ColorCalculationService.calculate_sidebar_bold_color(
@@ -340,16 +357,7 @@ def _handle_icon_color(config: dict[str, Any], filename_prefix: str) -> None:
     """
     heading_icon_color = config.get("heading_icon_color")
     if heading_icon_color:
-        if not isinstance(heading_icon_color, str):
-            raise ValueError(
-                f"{filename_prefix}Invalid color format for 'heading_icon_color': "
-                f"{heading_icon_color}. Expected hex color string."
-            )
-        if not is_valid_color(heading_icon_color):
-            raise ValueError(
-                f"{filename_prefix}Invalid color format for 'heading_icon_color': "
-                f"{heading_icon_color}. Expected hex color like '#0395DE' or '#FFF'"
-            )
+        _validate_hex_color(heading_icon_color, "heading_icon_color", filename_prefix)
 
     config["heading_icon_color"] = ColorCalculationService.calculate_heading_icon_color(
         config
@@ -375,16 +383,7 @@ def _handle_bold_color(config: dict[str, Any], filename_prefix: str) -> None:
     """
     bold_color = config.get("bold_color")
     if bold_color:
-        if not isinstance(bold_color, str):
-            raise ValueError(
-                f"{filename_prefix}Invalid color format for 'bold_color': "
-                f"{bold_color}. Expected hex color string."
-            )
-        if not is_valid_color(bold_color):
-            raise ValueError(
-                f"{filename_prefix}Invalid color format for 'bold_color': "
-                f"{bold_color}. Expected hex color like '#0395DE' or '#FFF'"
-            )
+        _validate_hex_color(bold_color, "bold_color", filename_prefix)
         return
 
     frame_color = config.get("frame_color")

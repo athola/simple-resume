@@ -108,6 +108,11 @@ from simple_resume import generate, preview
 results = generate("resume_private/input/my_resume.yaml", formats=["pdf", "html"])
 print(results["pdf"].output_path)
 
+# Fine-grained control via GenerateOptions
+from simple_resume import GenerateOptions
+
+opts = GenerateOptions(formats=("pdf", "html"), open_after=True)
+
 # Browser preview with live reload
 preview("resume_private/input/my_resume.yaml")
 ```
@@ -165,7 +170,7 @@ uv add simple-resume[bert]
 
 **Skills Taxonomy (optional):** The keyword scorer can optionally integrate with external skills APIs (LinkedIn, O*NET) for expanded term recognition. This is offline-first—the hardcoded skills list works without configuration. Enable API integration via environment variables when needed.
 
-The tournament system combines multiple algorithms using weighted averages to produce detailed scores. See [ATS Scoring Rubric](wiki/ATS-Scoring-Rubric.md) for complete methodology and [Similarity Algorithm Evaluation](wiki/Similarity-Algorithm-Evaluation.md) for algorithm benchmarks.
+The tournament system combines multiple algorithms using weighted averages to produce detailed scores. See [ATS API Reference](wiki/ATS-API-Reference.md) for the full scoring API, [ATS Scoring Rubric](wiki/ATS-Scoring-Rubric.md) for methodology, and [Similarity Algorithm Evaluation](wiki/Similarity-Algorithm-Evaluation.md) for algorithm benchmarks.
 
 ## Customization
 
@@ -189,7 +194,7 @@ The workflow builds the package, generates a changelog from commit history, and 
 ## Workflows & docs
 
 - **Guides**: [Getting Started](wiki/Getting-Started.md), [Usage](wiki/Usage-Guide.md), [Workflows](wiki/Workflows.md), [Path Handling](wiki/Path-Handling-Guide.md).
-- **API Docs**: [API Reference](wiki/API-Reference.md), [API Stability Policy](wiki/API-Stability-Policy.md), [Shell Layer APIs](wiki/Shell-Layer-APIs.md).
+- **API Docs**: [API Reference](wiki/API-Reference.md), [ATS API Reference](wiki/ATS-API-Reference.md), [API Stability Policy](wiki/API-Stability-Policy.md), [Shell Layer APIs](wiki/Shell-Layer-APIs.md).
 - **Architecture**: [Architecture Guide](wiki/Architecture-Guide.md) and `wiki/architecture/`.
 - **Migration**: [Migration Guide](wiki/Migration-Guide.md) (includes generate module reorganization notes).
 - **Development**: [Development Guide](wiki/Development-Guide.md), [Contributing](wiki/Contributing.md), [PDF renderer evaluation](wiki/PDF-Renderer-Evaluation.md).

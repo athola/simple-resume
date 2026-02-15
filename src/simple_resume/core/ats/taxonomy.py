@@ -237,60 +237,25 @@ class SkillsTaxonomyFetcher:
         return list(HARDCODED_SKILLS)
 
     def _fetch_from_api(self, taxonomy: str | TaxonomySource) -> list[str]:
-        """Fetch skills from taxonomy API.
+        """Fetch skills from a taxonomy API.
+
+        This is a stub for future implementation. When taxonomy backends
+        are added, dispatch on ``TaxonomySource`` here.
 
         Args:
-            taxonomy: Taxonomy name
+            taxonomy: Taxonomy source name or enum value
 
         Returns:
             List of skills from the API
 
         Raises:
-            NotImplementedError: If taxonomy is not yet implemented
+            NotImplementedError: Always — no backends implemented yet
 
         """
         source = TaxonomySource(taxonomy) if isinstance(taxonomy, str) else taxonomy
-        if source == TaxonomySource.ONET:
-            return self._fetch_onet()
-        elif source == TaxonomySource.LINKEDIN:
-            return self._fetch_linkedin()
-        raise NotImplementedError(f"Taxonomy '{source.value}' not implemented")
-
-    def _fetch_onet(self) -> list[str]:
-        """Fetch skills from O*NET API.
-
-        O*NET is the U.S. Department of Labor's occupational database.
-        This is a placeholder for future implementation.
-
-        Returns:
-            List of skills from O*NET
-
-        Note:
-            This is a stub for future implementation. Actual implementation
-            would query O*NET's API or download their data files.
-
-        """
-        # TODO: Implement O*NET API integration
-        # O*NET provides downloadable data files at:
-        # https://www.onetcenter.org/dictionary_files.html
-        raise NotImplementedError("O*NET API integration not yet implemented")
-
-    def _fetch_linkedin(self) -> list[str]:
-        """Fetch skills from LinkedIn Skills API.
-
-        This is a placeholder for future implementation.
-        LinkedIn's Skills API requires OAuth authentication.
-
-        Returns:
-            List of skills from LinkedIn
-
-        Note:
-            This is a stub for future implementation. Actual implementation
-            would require LinkedIn API credentials and OAuth flow.
-
-        """
-        # TODO: Implement LinkedIn Skills API integration
-        raise NotImplementedError("LinkedIn Skills API integration not yet implemented")
+        raise NotImplementedError(
+            f"Taxonomy '{source.value}' API integration not yet implemented"
+        )
 
 
 def get_enhanced_skills(

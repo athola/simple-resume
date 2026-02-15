@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field, replace
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable, TypeVar, cast
 
@@ -31,8 +32,19 @@ from simple_resume.core.result import (
 )
 from simple_resume.core.validation import validate_directory_path
 from simple_resume.shell.generate import core as generate_core
+from simple_resume.shell.services import register_default_services
 
 T = TypeVar("T")
+
+
+@lru_cache(maxsize=1)
+def _ensure_services_initialized() -> None:
+    """Register default services on first use.
+
+    Decorated with ``lru_cache`` so ``register_default_services`` runs
+    exactly once regardless of how many generation calls are made.
+    """
+    register_default_services()
 
 
 @dataclass(frozen=True)
@@ -44,7 +56,75 @@ class GenerateOptions:
     template: str | None = None
     browser: str | None = None
     open_after: bool = False
+    data_dir: str | Path | None = None
+    output_dir: str | Path | None = None
     overrides: dict[str, Any] = field(default_factory=dict)
+
+
+# Core function names resolved at call time to support test mocking
+_FORMAT_CORE_FN_NAMES: dict[OutputFormat, str] = {
+    OutputFormat.PDF: "to_pdf",
+    OutputFormat.HTML: "to_html",
+    OutputFormat.MARKDOWN: "to_markdown",
+    OutputFormat.TEX: "to_tex",
+}
+
+
+def _generate_format(
+    config: GenerationConfig,
+    fmt: OutputFormat,
+    **overrides: Any,
+) -> GenerationResult | BatchGenerationResult:
+    """Generate output in a single format for one or more resumes.
+
+    This is the unified implementation behind the per-format public functions.
+    Format-specific behavior (browser, open_after) is handled via the format
+    strategy mapping.
+    """
+    core_fn = cast(
+        Callable[..., GenerationResult | BatchGenerationResult],
+        getattr(generate_core, _FORMAT_CORE_FN_NAMES[fmt]),
+    )
+    # Only PDF and HTML support auto-open; intermediate formats do not
+    supports_open = fmt in (OutputFormat.PDF, OutputFormat.HTML)
+    supports_browser = fmt is OutputFormat.HTML
+
+    def _runner(
+        session: session_mod.ResumeSession,
+    ) -> GenerationResult | BatchGenerationResult:
+        if config.name:
+            resume = session.resume(config.name)
+            if overrides:
+                resume = resume.with_config(**overrides)
+            output_path = config.output_path if config.output_path is not None else None
+            kwargs: dict[str, Any] = {"output_path": output_path}
+            if supports_open:
+                kwargs["open_after"] = config.open_after
+            if supports_browser:
+                kwargs["browser"] = config.browser
+            return core_fn(resume, **kwargs)
+        open_after = config.open_after if supports_open else False
+        browser = config.browser if supports_browser else None
+        extra_kwargs = {
+            k: v
+            for k, v in overrides.items()
+            if k not in ("format", "pattern", "open_after", "parallel")
+        }
+        return session.generate_all(
+            format=fmt,
+            pattern=config.pattern,
+            open_after=open_after,
+            parallel=overrides.get("parallel", False) if overrides else False,
+            browser=browser,
+            **extra_kwargs,
+        )
+
+    return _run_with_session(
+        config,
+        overrides=overrides,
+        default_format=fmt,
+        runner=_runner,
+    )
 
 
 def generate_pdf(
@@ -52,31 +132,7 @@ def generate_pdf(
     **overrides: Any,
 ) -> GenerationResult | BatchGenerationResult:
     """Generate PDF output for one or more resumes."""
-
-    def _runner(
-        session: session_mod.ResumeSession,
-    ) -> GenerationResult | BatchGenerationResult:
-        if config.name:
-            resume = session.resume(config.name)
-            if overrides:
-                resume = resume.with_config(**overrides)
-            output_path = config.output_path if config.output_path is not None else None
-            return generate_core.to_pdf(
-                resume, output_path=output_path, open_after=config.open_after
-            )
-        return session.generate_all(
-            format=OutputFormat.PDF,
-            pattern=config.pattern,
-            open_after=config.open_after,
-            **overrides,
-        )
-
-    return _run_with_session(
-        config,
-        overrides=overrides,
-        default_format=OutputFormat.PDF,
-        runner=_runner,
-    )
+    return _generate_format(config, OutputFormat.PDF, **overrides)
 
 
 def generate_html(
@@ -84,35 +140,7 @@ def generate_html(
     **overrides: Any,
 ) -> GenerationResult | BatchGenerationResult:
     """Generate HTML output for one or more resumes."""
-
-    def _runner(
-        session: session_mod.ResumeSession,
-    ) -> GenerationResult | BatchGenerationResult:
-        if config.name:
-            resume = session.resume(config.name)
-            if overrides:
-                resume = resume.with_config(**overrides)
-            output_path = config.output_path if config.output_path is not None else None
-            return generate_core.to_html(
-                resume,
-                output_path=output_path,
-                open_after=config.open_after,
-                browser=config.browser,
-            )
-        return session.generate_all(
-            format=OutputFormat.HTML,
-            pattern=config.pattern,
-            open_after=config.open_after,
-            browser=config.browser,
-            **overrides,
-        )
-
-    return _run_with_session(
-        config,
-        overrides=overrides,
-        default_format=OutputFormat.HTML,
-        runner=_runner,
-    )
+    return _generate_format(config, OutputFormat.HTML, **overrides)
 
 
 def generate_markdown(
@@ -120,32 +148,7 @@ def generate_markdown(
     **overrides: Any,
 ) -> GenerationResult | BatchGenerationResult:
     """Generate intermediate markdown output for one or more resumes."""
-
-    def _runner(
-        session: session_mod.ResumeSession,
-    ) -> GenerationResult | BatchGenerationResult:
-        if config.name:
-            resume = session.resume(config.name)
-            if overrides:
-                resume = resume.with_config(**overrides)
-            output_path = config.output_path if config.output_path is not None else None
-            return generate_core.to_markdown(
-                resume,
-                output_path=output_path,
-            )
-        return session.generate_all(
-            format=OutputFormat.MARKDOWN,
-            pattern=config.pattern,
-            open_after=False,  # Intermediate formats don't auto-open
-            **overrides,
-        )
-
-    return _run_with_session(
-        config,
-        overrides=overrides,
-        default_format=OutputFormat.MARKDOWN,
-        runner=_runner,
-    )
+    return _generate_format(config, OutputFormat.MARKDOWN, **overrides)
 
 
 def generate_tex(
@@ -153,32 +156,7 @@ def generate_tex(
     **overrides: Any,
 ) -> GenerationResult | BatchGenerationResult:
     """Generate intermediate LaTeX (.tex) output for one or more resumes."""
-
-    def _runner(
-        session: session_mod.ResumeSession,
-    ) -> GenerationResult | BatchGenerationResult:
-        if config.name:
-            resume = session.resume(config.name)
-            if overrides:
-                resume = resume.with_config(**overrides)
-            output_path = config.output_path if config.output_path is not None else None
-            return generate_core.to_tex(
-                resume,
-                output_path=output_path,
-            )
-        return session.generate_all(
-            format=OutputFormat.TEX,
-            pattern=config.pattern,
-            open_after=False,  # Intermediate formats don't auto-open
-            **overrides,
-        )
-
-    return _run_with_session(
-        config,
-        overrides=overrides,
-        default_format=OutputFormat.TEX,
-        runner=_runner,
-    )
+    return _generate_format(config, OutputFormat.TEX, **overrides)
 
 
 def generate_all(
@@ -386,6 +364,7 @@ def _run_with_session(
     runner: Callable[[session_mod.ResumeSession], T],
 ) -> T:
     """Execute a shell operation inside a managed ResumeSession."""
+    _ensure_services_initialized()
     session_config = _build_session_config(config, overrides, default_format)
     data_dir = _resolve_data_dir(config)
 

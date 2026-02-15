@@ -18,6 +18,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 from re import sub
+from typing import Literal
 
 
 class Industry(str, Enum):
@@ -43,12 +44,12 @@ class CreativeTerm:
 
     creative: str
     professional: str
-    confidence: str
+    confidence: Literal["low", "medium", "high"]
     industry: Industry = Industry.GENERAL
 
 
 # Core creative term mappings (GENERAL dictionary)
-_GENERAL_TERMS: list[CreativeTerm] = [
+_GENERAL_TERMS: tuple[CreativeTerm, ...] = (
     # Developer titles
     CreativeTerm(
         creative="rockstar developer",
@@ -112,16 +113,11 @@ _GENERAL_TERMS: list[CreativeTerm] = [
         professional="expert",
         confidence="low",
     ),
-    CreativeTerm(
-        creative="ninja",
-        professional="expert",
-        confidence="low",
-    ),
-]
+)
 
 
 # Tech startup industry dictionary (more permissive of creative language)
-_TECH_TERMS: list[CreativeTerm] = [
+_TECH_TERMS: tuple[CreativeTerm, ...] = (
     *_GENERAL_TERMS,
     # Tech-specific creative terms
     CreativeTerm(
@@ -142,11 +138,11 @@ _TECH_TERMS: list[CreativeTerm] = [
         confidence="low",
         industry=Industry.TECH,
     ),
-]
+)
 
 
 # Enterprise industry dictionary (stricter, more formal)
-_ENTERPRISE_TERMS: list[CreativeTerm] = [
+_ENTERPRISE_TERMS: tuple[CreativeTerm, ...] = (
     *_GENERAL_TERMS,
     # Enterprise mappings to formal titles
     CreativeTerm(
@@ -161,11 +157,11 @@ _ENTERPRISE_TERMS: list[CreativeTerm] = [
         confidence="high",
         industry=Industry.ENTERPRISE,
     ),
-]
+)
 
 
 # Creative industry dictionary (allows more expression)
-_CREATIVE_TERMS: list[CreativeTerm] = [
+_CREATIVE_TERMS: tuple[CreativeTerm, ...] = (
     *_GENERAL_TERMS,
     # Creative industry specific
     CreativeTerm(
@@ -180,28 +176,30 @@ _CREATIVE_TERMS: list[CreativeTerm] = [
         confidence="medium",
         industry=Industry.CREATIVE,
     ),
-]
+)
+
+
+_INDUSTRY_DICTIONARIES: dict[Industry, tuple[CreativeTerm, ...]] = {
+    Industry.GENERAL: _GENERAL_TERMS,
+    Industry.TECH: _TECH_TERMS,
+    Industry.ENTERPRISE: _ENTERPRISE_TERMS,
+    Industry.CREATIVE: _CREATIVE_TERMS,
+}
 
 
 def get_industry_dictionary(
     industry: Industry = Industry.GENERAL,
-) -> list[CreativeTerm]:
+) -> tuple[CreativeTerm, ...]:
     """Get creative term dictionary for a specific industry.
 
     Args:
         industry: The industry type (default: GENERAL)
 
     Returns:
-        List of CreativeTerm mappings for the industry
+        Tuple of CreativeTerm mappings for the industry
 
     """
-    dictionaries = {
-        Industry.GENERAL: _GENERAL_TERMS,
-        Industry.TECH: _TECH_TERMS,
-        Industry.ENTERPRISE: _ENTERPRISE_TERMS,
-        Industry.CREATIVE: _CREATIVE_TERMS,
-    }
-    return dictionaries.get(industry, _GENERAL_TERMS)
+    return _INDUSTRY_DICTIONARIES.get(industry, _GENERAL_TERMS)
 
 
 def normalize_term(term: str) -> str:
@@ -211,7 +209,7 @@ def normalize_term(term: str) -> str:
         term: The term to normalize
 
     Returns:
-        Normalized term (lowercase, trimmed)
+        Normalized term (lowercase, whitespace-collapsed, trimmed)
 
     """
     return sub(r"\s+", " ", term.strip().lower())

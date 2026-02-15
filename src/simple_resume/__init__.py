@@ -82,6 +82,7 @@ from simple_resume.shell.resume_extensions import (
     to_html,
     to_pdf,
 )
+from simple_resume.shell.runtime.generate import GenerateOptions
 
 # Rich result objects (lazy-loaded)
 from simple_resume.shell.runtime.lazy_import import (
@@ -106,7 +107,7 @@ from simple_resume.shell.runtime.lazy_import import (
 )
 
 # Version
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 
 # Public API exports - organized by functionality
 __all__ = [
@@ -144,6 +145,7 @@ __all__ = [
     "resume_generate",
     # Convenience helpers
     "generate",
+    "GenerateOptions",
     "preview",
     # ATS scoring (v0.2.0)
     "BaseScorer",

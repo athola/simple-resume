@@ -13,14 +13,19 @@ NormalizeConfigFn = Callable[
 ]
 RenderMarkdownFn = Callable[[dict[str, Any]], dict[str, Any]]
 
+_SKILL_SECTIONS: tuple[str, ...] = (
+    "expertise",
+    "programming",
+    "keyskills",
+    "certification",
+)
+
 
 def build_skill_group_payload(resume_data: Mapping[str, Any]) -> dict[str, Any]:
     """Return the computed skill group payload for sidebar sections."""
     return {
-        "expertise_groups": format_skill_groups(resume_data.get("expertise")),
-        "programming_groups": format_skill_groups(resume_data.get("programming")),
-        "keyskills_groups": format_skill_groups(resume_data.get("keyskills")),
-        "certification_groups": format_skill_groups(resume_data.get("certification")),
+        f"{section}_groups": format_skill_groups(resume_data.get(section))
+        for section in _SKILL_SECTIONS
     }
 
 

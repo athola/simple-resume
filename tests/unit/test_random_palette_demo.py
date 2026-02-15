@@ -2,12 +2,26 @@
 
 from __future__ import annotations
 
+import importlib.util
+import sys
+import types
 from pathlib import Path
 
 from oyaml import safe_load
 
-from simple_resume.shell.cli import random_palette_demo as demo
-from tests.bdd import Scenario
+# Archived from shell.cli to examples/utilities
+_demo_path = (
+    Path(__file__).resolve().parents[2]
+    / "examples"
+    / "utilities"
+    / "random_palette_demo.py"
+)
+_spec = importlib.util.spec_from_file_location("random_palette_demo", _demo_path)
+assert _spec is not None and _spec.loader is not None
+demo: types.ModuleType = importlib.util.module_from_spec(_spec)
+sys.modules["random_palette_demo"] = demo
+_spec.loader.exec_module(demo)
+from tests.bdd import Scenario  # noqa: E402
 
 
 def test_generate_random_yaml_produces_realistic_fields(

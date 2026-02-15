@@ -29,15 +29,24 @@ def candidate_yaml_path(name: str | os.PathLike[str]) -> Path | None:
         looks like a real path (has directory components or is absolute).
 
     """
-    if isinstance(name, (str, os.PathLike)):
-        maybe_path = Path(name)
-        suffix = maybe_path.suffix.lower()
-        if suffix in {".yaml", ".yml"}:
-            return maybe_path
-        if suffix == ".json":
-            if maybe_path.is_absolute() or len(maybe_path.parts) > 1:
-                return maybe_path
+    if not isinstance(name, (str, os.PathLike)):
+        return None
+
+    maybe_path = Path(name)
+    suffix = maybe_path.suffix.lower()
+
+    if suffix in {".yaml", ".yml"}:
+        return maybe_path
+
+    if suffix == ".json" and _looks_like_file_path(maybe_path):
+        return maybe_path
+
     return None
+
+
+def _looks_like_file_path(path: Path) -> bool:
+    """Check if path has directory components or is absolute."""
+    return path.is_absolute() or len(path.parts) > 1
 
 
 def resolve_paths_for_read(

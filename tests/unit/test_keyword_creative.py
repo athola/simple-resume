@@ -21,13 +21,13 @@ class TestKeywordScorerCreativeExpansion:
                 industry=Industry.TECH,
             ),
         )
-        assert scorer.enable_creative_expansion is True
-        assert scorer.industry == Industry.TECH
+        assert scorer._config.enable_creative_expansion is True
+        assert scorer._config.industry == Industry.TECH
 
     def test_default_creative_expansion_disabled(self):
         """Test creative expansion is disabled by default."""
         scorer = KeywordScorer()
-        assert scorer.enable_creative_expansion is False
+        assert scorer._config.enable_creative_expansion is False
 
     def test_expands_rockstar_to_senior(self):
         """Test 'rockstar developer' expands to 'senior developer'."""
@@ -92,8 +92,8 @@ class TestKeywordScorerCreativeExpansion:
         )
 
         # Both should work but may have different mappings
-        assert tech_scorer.industry == Industry.TECH
-        assert enterprise_scorer.industry == Industry.ENTERPRISE
+        assert tech_scorer._config.industry == Industry.TECH
+        assert enterprise_scorer._config.industry == Industry.ENTERPRISE
 
     def test_multiple_creative_terms_expanded(self):
         """Test multiple creative terms in one job description."""

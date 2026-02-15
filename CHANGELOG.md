@@ -4,7 +4,7 @@ This file documents all notable project changes. Format based on [Keep a Changel
 
 ## [Unreleased]
 
-## [0.2.3] - 2026-02-03
+## [0.2.3] - 2026-02-14
 
 ### Added
 
@@ -15,16 +15,25 @@ This file documents all notable project changes. Format based on [Keep a Changel
 - `percentage` parameter to `score_resume()` for 0-100 scale metadata
 - Capitalized word pattern extraction in `KeywordScorer` fallback logic
 - `MIN_FALLBACK_WORD_LENGTH` constant for keyword extraction tuning
+- `GenerateOptions` exported in public API for fine-grained generation control
+- `KeywordScorerConfig` dataclass replacing positional arguments
+- `TaxonomySource` enum replacing string literals for taxonomy origin tracking
 
 ### Changed
 
 - Moved `TaxonomyCache` file I/O to shell layer (functional core / imperative shell)
 - Sample YAML files updated with ATS-optimized content for testing
+- CLI refactored: extracted `_generation.py` and `_screen.py` modules from monolithic `main.py`
+- `ServiceLocator` class replaced with module-level functions (`register_service`, `get_service`)
+- `_coerce_number` now rejects non-finite floats (NaN, Inf)
+- Color validation extracted to `_validate_hex_color` helper
 
 ### Tests
 
 - Comprehensive taxonomy cache tests (NullTaxonomyCache, corrupted JSON, write failures)
 - Keyword extraction tests for improved coverage
+- Expanded CLI tests split into focused modules (ATS, commands, generation, session, validation)
+- Integration tests for ATS scoring pipeline
 
 ## [0.2.2] - 2026-01-25
 

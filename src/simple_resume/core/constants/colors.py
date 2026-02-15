@@ -24,6 +24,19 @@ WCAG_LINEARIZATION_DIVISOR: Final[float] = 12.92
 WCAG_LINEARIZATION_EXPONENT: Final[float] = 2.4
 WCAG_LINEARIZATION_OFFSET: Final[float] = 0.055
 
+# WCAG 2.1 luminance coefficients (ITU-R BT.709)
+# Reference: https://www.w3.org/TR/WCAG21/#dfn-relative-luminance
+WCAG_RED_COEFFICIENT: Final[float] = 0.2126
+WCAG_GREEN_COEFFICIENT: Final[float] = 0.7152
+WCAG_BLUE_COEFFICIENT: Final[float] = 0.0722
+
+# Fallback color constants (centralized to avoid magic strings)
+FALLBACK_DARK_GRAY: Final[str] = "#585858"
+FALLBACK_BLACK: Final[str] = "#000000"
+FALLBACK_DARK_TEXT: Final[str] = "#333333"
+FALLBACK_LIGHT_GRAY: Final[str] = "#F5F5F5"
+FALLBACK_WHITE: Final[str] = "#FFFFFF"
+
 # Color manipulation constants
 BOLD_DARKEN_FACTOR: Final[float] = 0.75
 SIDEBAR_BOLD_DARKEN_FACTOR: Final[float] = 0.8
@@ -90,6 +103,14 @@ __all__ = [
     "ICON_CONTRAST_THRESHOLD",
     "HEX_COLOR_SHORT_LENGTH",
     "HEX_COLOR_FULL_LENGTH",
+    "WCAG_RED_COEFFICIENT",
+    "WCAG_GREEN_COEFFICIENT",
+    "WCAG_BLUE_COEFFICIENT",
+    "FALLBACK_DARK_GRAY",
+    "FALLBACK_BLACK",
+    "FALLBACK_DARK_TEXT",
+    "FALLBACK_LIGHT_GRAY",
+    "FALLBACK_WHITE",
     "DEFAULT_BOLD_COLOR",
     "COLOR_FIELD_ORDER",
     "DIRECT_COLOR_KEYS",

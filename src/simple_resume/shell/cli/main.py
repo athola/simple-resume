@@ -6,33 +6,40 @@ import argparse
 import logging
 import sys
 from collections.abc import Callable, Iterable
-from os import PathLike
 from pathlib import Path
-from typing import Any, Protocol, cast
+from typing import Any, Protocol
 
 from simple_resume import __version__
-
-# ATS scoring imports
-from simple_resume.core.ats import (
-    ATSReportGenerator,
-    ATSTournament,
-    JaccardScorer,
-    KeywordScorer,
-    ScorerSelection,
-    TFIDFScorer,
-    TournamentResult,
-)
 from simple_resume.core.constants import OutputFormat
 from simple_resume.core.exceptions import SimpleResumeError, ValidationError
-from simple_resume.core.generate.exceptions import GenerationError
 from simple_resume.core.generate.plan import (
     CommandType,
     GeneratePlanOptions,
     GenerationCommand,
     build_generation_plan,
 )
-from simple_resume.core.result import BatchGenerationResult, GenerationResult
 from simple_resume.core.resume import Resume
+from simple_resume.shell.cli._generation import (  # noqa: F401
+    _bool_flag,
+    _build_config_overrides,
+    _build_plan_options,
+    _coerce_output_format,
+    _did_generation_succeed,
+    _execute_generation_plan,
+    _looks_like_palette_file,
+    _resolve_cli_formats,
+    _select_output_dir,
+    _select_output_path,
+    _summarize_batch_result,
+    _to_path_or_none,
+)
+from simple_resume.shell.cli._screen import (  # noqa: F401
+    _collect_ats_warnings,
+    _format_text_report,
+    _get_status_label,
+    _read_file_text,
+    handle_screen_command,
+)
 from simple_resume.shell.config import resolve_paths
 from simple_resume.shell.resume_extensions import (
     render_markdown_file,
@@ -42,16 +49,8 @@ from simple_resume.shell.resume_extensions import (
     to_pdf,
     to_tex,
 )
-from simple_resume.shell.runtime.generate import execute_generation_commands
 from simple_resume.shell.services import register_default_services
 from simple_resume.shell.session import ResumeSession, SessionConfig
-
-# Score threshold constants
-_EXCELLENT_THRESHOLD = 80
-_GOOD_THRESHOLD = 65
-_FAIR_THRESHOLD = 50
-_POOR_THRESHOLD = 35
-_PASSING_THRESHOLD = 0.5
 
 
 class GenerationResultProtocol(Protocol):
@@ -497,344 +496,6 @@ def handle_validate_command(args: argparse.Namespace) -> int:
         return _handle_unexpected_error(exc, "resume validation")
 
 
-def handle_screen_command(args: argparse.Namespace) -> int:  # noqa: PLR0912
-    """Screen resume against job description using ATS scoring."""
-    resume_path: Path = args.resume
-    job_path: Path = args.job
-    output_path: Path | None = getattr(args, "output", None)
-    report_format: str = getattr(args, "format", "text")
-    scorers_selection: str = getattr(args, "scorers", "all")
-    verbose: bool = getattr(args, "verbose", False)
-
-    try:
-        # Read resume text
-        resume_text = _read_file_text(resume_path)
-        if not resume_text.strip():
-            print(f"Error: Resume file is empty or could not be read: {resume_path}")
-            return 1
-
-        # Read job description
-        job_text = _read_file_text(job_path)
-        if not job_text.strip():
-            msg = f"Error: Job description file is empty: {job_path}"
-            print(msg)
-            return 1
-
-        # Configure scorers based on selection
-        if scorers_selection == ScorerSelection.ALL:
-            tournament = ATSTournament()  # Uses default scorers
-        elif scorers_selection == ScorerSelection.TFIDF:
-            tournament = ATSTournament(scorers=[TFIDFScorer(weight=1.0)])
-        elif scorers_selection == ScorerSelection.JACCARD:
-            tournament = ATSTournament(scorers=[JaccardScorer(weight=1.0)])
-        elif scorers_selection == ScorerSelection.KEYWORD:
-            tournament = ATSTournament(scorers=[KeywordScorer(weight=1.0)])
-        else:
-            tournament = ATSTournament()
-
-        # Run tournament
-        result = tournament.score(resume_text, job_text)
-
-        # Generate report
-        generator = ATSReportGenerator(
-            result,
-            resume_file=str(resume_path),
-            job_file=str(job_path),
-        )
-
-        # Output based on format
-        if report_format == "yaml":
-            report_content = generator.generate_yaml()
-        elif report_format == "json":
-            report_content = generator.generate_json()
-        else:  # text format
-            report_content = _format_text_report(result, verbose)
-
-        # Save or print
-        if output_path:
-            output_path = Path(output_path)
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            output_path.write_text(report_content)
-            print(f"Report saved to: {output_path}")
-        else:
-            print(report_content)
-
-        # Return exit code based on score
-        # Score 50+/100 is considered passing
-        return 0 if result.overall_score >= _PASSING_THRESHOLD else 1
-
-    except SimpleResumeError as exc:
-        print(f"Screening error: {exc}")
-        return 1
-    except Exception as exc:  # pragma: no cover - safety net
-        return _handle_unexpected_error(exc, "ATS screening")
-
-
-def _read_file_text(file_path: Path) -> str:
-    """Read text content from a file, handling various formats."""
-    file_path = Path(file_path)
-
-    if not file_path.exists():
-        raise FileNotFoundError(f"File not found: {file_path}")
-
-    suffix = file_path.suffix.lower()
-
-    # PDF/HTML file formats are not yet supported for job descriptions
-    # Provide user-friendly error with guidance on supported formats
-    if suffix in [".pdf", ".html", ".htm"]:
-        raise ValidationError(
-            f"Job description file format '{suffix}' is not yet supported",
-            errors=[
-                f"Cannot read '{file_path.name}' - "
-                "PDF/HTML parsing is planned for a future release",
-                "Supported formats: .txt, .md, .yaml, .json",
-            ],
-            context={"file_path": str(file_path), "format": suffix},
-            filename=str(file_path),
-        )
-
-    # Read text content
-    try:
-        return file_path.read_text(encoding="utf-8")
-    except UnicodeDecodeError:
-        # Try with different encoding
-        return file_path.read_text(encoding="latin-1")
-
-
-def _collect_ats_warnings(result: TournamentResult) -> list[str]:
-    """Collect warning messages from ATS scoring results.
-
-    Extracts 'error' keys from ScorerResult.details that indicate
-    non-fatal issues like sklearn fallbacks or empty input handling.
-
-    Args:
-        result: Tournament result containing algorithm results
-
-    Returns:
-        List of warning messages to display to users
-
-    """
-    warnings = []
-
-    # Check each algorithm result for error details
-    for alg_result in result.algorithm_results:
-        error = alg_result.details.get("error")
-        if error:
-            warnings.append(f"{alg_result.name}: {error}")
-
-    # Check tournament-level metadata for errors
-    if "error" in result.metadata:
-        warnings.append(f"Tournament: {result.metadata['error']}")
-
-    return warnings
-
-
-def _format_text_report(result: TournamentResult, verbose: bool = False) -> str:
-    """Format tournament result as human-readable text."""
-    score_100 = result.overall_score * 100
-
-    lines = [
-        "=" * 60,
-        "ATS SCORING REPORT",
-        "=" * 60,
-        "",
-        f"Overall Score: {score_100:.1f}/100",
-        f"Normalized:   {result.overall_score:.4f}",
-        "",
-        f"Status: {_get_status_label(score_100)}",
-        "",
-        "-" * 60,
-        "ALGORITHM BREAKDOWN",
-        "-" * 60,
-    ]
-
-    for alg_result in result.algorithm_results:
-        lines.extend(
-            [
-                "",
-                f"{alg_result.name}:",
-                f"  Score:    {alg_result.score * 100:.1f}/100",
-                f"  Weight:   {alg_result.weight}",
-                f"  Weighted: {alg_result.weighted_score * 100:.1f}/100",
-            ]
-        )
-
-        if verbose and "cosine_similarity" in alg_result.details:
-            lines.append(f"  Cosine:   {alg_result.details['cosine_similarity']:.4f}")
-
-        if verbose and "shared_keywords" in alg_result.details:
-            shared = alg_result.details["shared_keywords"]
-            if shared:
-                lines.append(f"  Shared:   {len(shared)} keywords/phrases")
-
-    if verbose and result.component_breakdown:
-        lines.extend(
-            [
-                "",
-                "-" * 60,
-                "COMPONENT SCORES",
-                "-" * 60,
-            ]
-        )
-        for component, score in result.component_breakdown.items():
-            lines.append(f"{component}: {score:.4f}")
-
-    # Collect warnings from algorithm results (issue #58)
-    warnings = _collect_ats_warnings(result)
-    if warnings:
-        lines.extend(
-            [
-                "",
-                "-" * 60,
-                "WARNINGS",
-                "-" * 60,
-            ]
-        )
-        for warning in warnings:
-            lines.append(f"  * {warning}")
-
-    # Show failed scorers if any
-    if result.failed_scorers:
-        lines.extend(
-            [
-                "",
-                "-" * 60,
-                "FAILED SCORERS",
-                "-" * 60,
-            ]
-        )
-        for scorer_name, error_msg in result.failed_scorers:
-            if verbose:
-                lines.append(f"  * {scorer_name}: {error_msg}")
-            else:
-                lines.append(f"  * {scorer_name} (use --verbose for details)")
-
-    lines.extend(
-        [
-            "",
-            "=" * 60,
-        ]
-    )
-
-    return "\n".join(lines)
-
-
-def _get_status_label(score: float) -> str:
-    """Get status label based on score (0-100 scale)."""
-    if score >= _EXCELLENT_THRESHOLD:
-        return "Excellent - Strong match!"
-    elif score >= _GOOD_THRESHOLD:
-        return "Good - Competitive candidate."
-    elif score >= _FAIR_THRESHOLD:
-        return "Fair - Consider improvements."
-    elif score >= _POOR_THRESHOLD:
-        return "Poor - Significant gaps."
-    else:
-        return "Very Poor - Not a match."
-
-
-def _resolve_cli_formats(args: argparse.Namespace) -> list[OutputFormat]:
-    """Normalize format arguments to `OutputFormat` values with safe defaults.
-
-    By default, intermediate formats (markdown/tex) are upgraded to their
-    final counterparts (html/pdf). When --no-render flag is set, intermediate
-    formats are preserved as-is.
-    """
-    raw_formats = getattr(args, "formats", None)
-    no_render_flag = getattr(args, "no_render", False)
-    candidates: Iterable[OutputFormat | str | None]
-
-    if raw_formats:
-        candidates = raw_formats
-    else:
-        candidates = [getattr(args, "format", OutputFormat.MARKDOWN.value)]
-
-    resolved: list[OutputFormat] = []
-    for value in candidates:
-        fmt = _coerce_output_format(value)
-        # By default, upgrade intermediate formats to final formats
-        # Unless --no-render is set, which preserves intermediate formats
-        if not no_render_flag:
-            if fmt is OutputFormat.MARKDOWN:
-                fmt = OutputFormat.HTML
-            elif fmt in (OutputFormat.TEX, OutputFormat.LATEX):
-                fmt = OutputFormat.PDF
-        resolved.append(fmt)
-    return resolved
-
-
-def _coerce_output_format(value: OutputFormat | str | None) -> OutputFormat:
-    """Convert CLI-provided format values to `OutputFormat` with helpful errors."""
-    if isinstance(value, OutputFormat):
-        return value
-    if isinstance(value, str):
-        try:
-            return OutputFormat(value)
-        except ValueError as exc:
-            raise ValidationError(
-                f"{value!r} is not a supported output format",
-                context={"format": value},
-            ) from exc
-    # Argparse guarantees a string, but unit tests often rely on bare mocks.
-    # Default to PDF format so patches still exercise the code path.
-    return OutputFormat.PDF
-
-
-def _summarize_batch_result(
-    result: GenerationResult | BatchGenerationResult,
-    format_type: OutputFormat | str,
-) -> int:
-    """Summarize batch generation results for CLI output.
-
-    Args:
-        result: The batch generation result object.
-        format_type: The format type (e.g., PDF, HTML).
-
-    Returns:
-        An exit code (0 for success, 1 for partial failure).
-
-    """
-    label = format_type.value if isinstance(format_type, OutputFormat) else format_type
-    if isinstance(result, BatchGenerationResult):
-        latex_skips: list[str] = []
-        other_failures: list[tuple[str, Exception]] = []
-
-        for name, error in (result.errors or {}).items():
-            if isinstance(error, GenerationError) and "LaTeX" in str(error):
-                latex_skips.append(name)
-            else:
-                other_failures.append((name, error))
-
-        print(f"{label.upper()} generation summary")
-        print(f"Successful: {result.successful}")
-        print(f"Failed: {len(other_failures)}")
-        if latex_skips:
-            print(f"Skipped (LaTeX): {len(latex_skips)}")
-            info_icon = "\N{INFORMATION SOURCE}\N{VARIATION SELECTOR-16}"
-            templates = ", ".join(sorted(latex_skips))
-            print(f"{info_icon} Skipped LaTeX template(s): {templates}")
-
-        for name, error in other_failures:
-            print(f"{name}: {error}")
-
-        return 0 if not other_failures else 1
-
-    return 0 if _did_generation_succeed(result) else 1
-
-
-def _did_generation_succeed(result: GenerationResult) -> bool:
-    """Check if generation succeeded.
-
-    Args:
-        result: Generation result with `exists` property.
-
-    Returns:
-        `True` if generation succeeded (output file exists), `False` otherwise.
-
-    """
-    return result.exists
-
-
 # ---------------------------------------------------------------------------
 # Session helpers
 # ---------------------------------------------------------------------------
@@ -896,7 +557,6 @@ def _session_list_resumes(session: ResumeSession) -> None:
     if not files:
         print("No resumes found.")
         return
-
     print("Available resumes:")
     for file_path in sorted(files):
         print(f"  - {Path(file_path).stem}")
@@ -1082,190 +742,16 @@ def _validate_all_resumes_cli(data_dir: Path | None) -> int:
     return 0 if valid == len(yaml_files) else 1
 
 
-def _to_path_or_none(value: Any) -> Path | None:
-    """Convert value to `Path` or `None`."""
-    if value in (None, "", False):
-        return None
-    if isinstance(value, Path):
-        return value
-    if isinstance(value, str):
-        return Path(value)
-    fspath = getattr(value, "__fspath__", None)
-    if callable(fspath):
-        fspath_result = fspath()
-        if isinstance(fspath_result, (str, Path)):
-            return Path(fspath_result)
-        if isinstance(fspath_result, PathLike):
-            return Path(fspath_result)
-    return None
-
-
-def _select_output_path(output: Path | None) -> Path | None:
-    if isinstance(output, Path):
-        return output if output.is_file() or output.suffix else output
-    return None
-
-
-def _select_output_dir(output: Path | None) -> Path | None:
-    if isinstance(output, Path):
-        return output if output.is_dir() else output.parent
-    return None
-
-
-def _looks_like_palette_file(palette: str | Path) -> bool:
-    """Check if palette argument looks like a YAML palette path."""
-    path = Path(palette)
-    return path.suffix.lower() in {".yaml", ".yml"}
-
-
-def _build_config_overrides(args: argparse.Namespace) -> dict[str, Any]:
-    """Construct a dictionary of configuration overrides from CLI arguments.
-
-    Args:
-        args: The parsed command-line arguments.
-
-    Returns:
-        A dictionary of configuration overrides.
-
-    """
-    overrides: dict[str, Any] = {}
-    theme_color = getattr(args, "theme_color", None)
-    palette = getattr(args, "palette", None)
-    page_width = getattr(args, "page_width", None)
-    page_height = getattr(args, "page_height", None)
-    output_mode = getattr(args, "output_mode", None)
-
-    if isinstance(output_mode, str) and output_mode:
-        overrides["output_mode"] = output_mode
-
-    if isinstance(theme_color, str) and theme_color:
-        overrides["theme_color"] = theme_color
-
-    if isinstance(palette, (str, Path)) and palette:
-        if _looks_like_palette_file(palette):
-            palette_path = Path(palette)
-            if palette_path.is_file():
-                overrides["palette_file"] = str(palette_path)
-            else:
-                print(
-                    f"Palette file '{palette_path}' not found. "
-                    "Defaulting to resume or preset colors already configured."
-                )
-        else:
-            overrides["color_scheme"] = str(palette)
-
-    if isinstance(page_width, (int, float)):
-        overrides["page_width"] = page_width
-    if isinstance(page_height, (int, float)):
-        overrides["page_height"] = page_height
-
-    return overrides
-
-
-def _build_plan_options(
-    args: argparse.Namespace,
-    overrides: dict[str, Any],
-    formats: list[OutputFormat],
-) -> GeneratePlanOptions:
-    """Build `GeneratePlanOptions` from CLI arguments and overrides."""
-    data_dir = _to_path_or_none(getattr(args, "data_dir", None))
-    output_value = _to_path_or_none(getattr(args, "output", None))
-
-    if getattr(args, "name", None):
-        output_path = _select_output_path(output_value)
-        output_dir = None
-    else:
-        output_path = None
-        output_dir = _select_output_dir(output_value)
-
-    return GeneratePlanOptions(
-        name=getattr(args, "name", None),
-        data_dir=data_dir,
-        template=getattr(args, "template", None),
-        output_path=output_path,
-        output_dir=output_dir,
-        preview=_bool_flag(getattr(args, "preview", False)),
-        open_after=_bool_flag(getattr(args, "open", False)),
-        browser=getattr(args, "browser", None),
-        formats=formats,
-        overrides=overrides,
-    )
-
-
-def _execute_generation_plan(commands: list[GenerationCommand]) -> int:
-    """Execute a list of generation commands and summarize their results for CLI output.
-
-    Args:
-        commands: A list of `GenerationCommand` objects to execute.
-
-    Returns:
-        An exit code (0 for full success, non-zero for any failures).
-
-    """
-    exit_code = 0
-    executions = execute_generation_commands(commands)
-    for command, result in executions:
-        if command.kind is CommandType.SINGLE:
-            label = command.format.value.upper() if command.format else "OUTPUT"
-            single_result = cast(GenerationResult, result)
-            if _did_generation_succeed(single_result):
-                output = getattr(result, "output_path", "generated")
-                print(f"{label} generated: {output}")
-            else:
-                print(f"Failed to generate {label}")
-                exit_code = max(exit_code, 1)
-            continue
-
-        if command.kind is CommandType.BATCH_SINGLE:
-            format_type = command.format
-            if format_type is None:
-                print("Error: Missing format for batch command")
-                exit_code = max(exit_code, 1)
-                continue
-            batch_payload = cast(GenerationResult | BatchGenerationResult, result)
-            result_code = _summarize_batch_result(batch_payload, format_type)
-            exit_code = max(exit_code, result_code)
-            continue
-
-        if not isinstance(result, dict):
-            print("Error: Batch-all command returned unexpected payload")
-            exit_code = max(exit_code, 1)
-            continue
-
-        # Cast to proper type since we know it's a
-        # dict[str, BatchGenerationResult | GenerationResult]
-        result_dict = cast(dict[str, BatchGenerationResult | GenerationResult], result)
-
-        plan_code = 0
-        for result_format, plan_result in result_dict.items():
-            if isinstance(plan_result, BatchGenerationResult):
-                batch_code = _summarize_batch_result(plan_result, result_format)
-                plan_code = max(plan_code, batch_code)
-            elif isinstance(plan_result, GenerationResult) and _did_generation_succeed(
-                plan_result
-            ):
-                output = getattr(plan_result, "output_path", "generated")
-                print(f"{result_format.upper()} generated: {output}")
-            else:
-                print(f"Failed to generate {result_format.upper()}")
-                plan_code = 1
-        exit_code = max(exit_code, plan_code)
-
-    return exit_code
-
-
-def _bool_flag(value: Any) -> bool:
-    """Coerce a value to a boolean flag.
-
-    Args:
-        value: The value to coerce.
-
-    Returns:
-        True if the value is truthy, False otherwise.
-
-    """
-    return value if isinstance(value, bool) else False
-
+__all__ = [
+    "_build_config_overrides",
+    "_handle_unexpected_error",
+    "_run_session_generation",
+    "create_parser",
+    "handle_generate_command",
+    "handle_session_command",
+    "handle_validate_command",
+    "main",
+]
 
 if __name__ == "__main__":  # pragma: no cover
     sys.exit(main())

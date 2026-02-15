@@ -11,6 +11,11 @@ import pytest
 from simple_resume.core.ats.base import ScorerResult
 from simple_resume.core.ats.keyword import KeywordScorer, KeywordScorerConfig
 
+# Score threshold constants for readable assertions
+SCORE_HIGH_MATCH = 0.7  # Strong keyword overlap expected
+SCORE_NEAR_PERFECT = 0.9  # Nearly all keywords present
+SCORE_MODERATE = 0.5  # Partial overlap threshold
+
 
 class TestKeywordScorer:
     """Test suite for KeywordScorer."""
@@ -93,7 +98,7 @@ class TestKeywordScorer:
         )
 
         # Should have high score with perfect keyword match
-        assert result.score >= 0.7
+        assert result.score >= SCORE_HIGH_MATCH
         assert result.details["exact_matches"] >= 3
 
     def test_score_with_no_keyword_match(self, scorer):
@@ -106,7 +111,7 @@ class TestKeywordScorer:
         )
 
         # Should have low score with no Python keywords
-        assert result.score < 0.5
+        assert result.score < SCORE_MODERATE
 
     def test_score_with_partial_keyword_match(self, scorer):
         """Test scoring with some keyword overlap."""
@@ -150,7 +155,7 @@ class TestKeywordScorer:
 
         # Should match regardless of case
         assert result.details["exact_matches"] >= 2
-        assert result.score > 0.5
+        assert result.score > SCORE_MODERATE
 
     def test_fuzzy_matching_enabled(self, sample_resume, sample_job_description):
         """Test scorer with fuzzy matching enabled."""
@@ -284,7 +289,7 @@ class TestKeywordScorer:
         result = scorer.score(resume, job, keywords=["Python", "developer", "AWS"])
 
         # Should match after normalization
-        assert result.score > 0.5
+        assert result.score > SCORE_MODERATE
 
     @pytest.mark.parametrize(
         ("resume", "job", "keywords", "expected_matches"),
@@ -362,7 +367,7 @@ class TestKeywordScorer:
         result = scorer.score("Python", "Python", keywords=["Python"])
 
         # Single word match should be perfect
-        assert result.score >= 0.9
+        assert result.score >= SCORE_NEAR_PERFECT
         assert result.details["exact_matches"] == 1
 
     def test_repeated_keywords(self, scorer):
@@ -411,7 +416,7 @@ class TestKeywordScorer:
         result = scorer.score(resume, job, keywords=["5", "years", "Python", "3"])
 
         # Should match numbers as part of keywords
-        assert result.score > 0.5
+        assert result.score > SCORE_MODERATE
 
     def test_case_sensitive_matching(self):
         """Test case sensitive mode."""
@@ -462,10 +467,10 @@ class TestKeywordScorerValidation:
     def test_valid_fuzzy_threshold_boundary(self):
         """Test that boundary fuzzy_threshold values are accepted."""
         scorer = KeywordScorer(config=KeywordScorerConfig(fuzzy_threshold=0.0))
-        assert scorer.fuzzy_threshold == 0.0
+        assert scorer._config.fuzzy_threshold == 0.0
 
         scorer = KeywordScorer(config=KeywordScorerConfig(fuzzy_threshold=1.0))
-        assert scorer.fuzzy_threshold == 1.0
+        assert scorer._config.fuzzy_threshold == 1.0
 
 
 # ============================================================================
