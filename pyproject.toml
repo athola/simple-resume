@@ -30,7 +30,7 @@ markers = [
 
 [project]
 name = "simple-resume"
-version = "0.2.3"
+version = "0.2.4"
 description = "Generate PDF resumes from YAML data using HTML templates"
 authors = [
     {name = "Alex Thola", email = "alexthola@gmail.com"}
@@ -46,6 +46,7 @@ dependencies = [
     "markdown>=3.7,<4.0",
     "oyaml>=1.0,<2.0",
     "weasyprint>=62.1,<63.0",
+    "pydyf>=0.10.0,<0.12.0",
     "palettable>=3.3.3,<4.0",
     "jinja2>=3.0,<4.0",
     "scikit-learn>=1.5,<2.0",

@@ -541,7 +541,10 @@ def _infer_data_dir_and_name(
         if source_path.is_dir():
             return source_path, None
         if source_path.suffix.lower() in _YAML_SUFFIXES:
-            return source_path.parent, source_path.stem
+            parent = source_path.parent
+            if parent.name == "input":
+                return parent.parent, source_path.stem
+            return parent, source_path.stem
 
     raise ValueError(
         "Unable to infer data_dir from source. Provide a YAML path, directory, "
