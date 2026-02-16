@@ -7,7 +7,7 @@ This file documents all notable project changes. Format based on [Keep a Changel
 ### Fixed
 
 - Pin `pydyf>=0.10.0,<0.12.0` to prevent WeasyPrint PDF rendering failures caused by incompatible pydyf releases
-- `_infer_data_dir_and_name` now returns the grandparent directory when a YAML file resides inside an `input/` subdirectory, matching the expected `data_dir` layout
+- `_infer_data_dir_and_name` now returns the grandparent directory when a YAML file resides inside an `input/` subdirectory, matching the expected `data_dir` layout (fixes #84)
 
 ### Changed
 
