@@ -31,20 +31,17 @@ class TestBERTScorerInitialization:
         scorer = BERTScorer(weight=0.35, model_name=custom_model)
         assert scorer.model_name == custom_model
 
-    def test_env_var_model_name(self):
-        """Scorer uses environment variable for model name."""
-        env_model = "env/custom-model"
-        with patch.dict("os.environ", {MODEL_ENV_VAR: env_model}):
+    def test_no_env_var_fallback_in_core(self):
+        """Scorer does not read env vars directly (shell layer responsibility)."""
+        with patch.dict("os.environ", {MODEL_ENV_VAR: "env/custom-model"}):
             scorer = BERTScorer(weight=0.35)
-            assert scorer.model_name == env_model
+            # Core layer uses DEFAULT_MODEL; env var resolution is shell concern
+            assert scorer.model_name == DEFAULT_MODEL
 
-    def test_argument_overrides_env_var(self):
-        """Explicit argument takes precedence over env var."""
-        arg_model = "arg/model"
-        env_model = "env/model"
-        with patch.dict("os.environ", {MODEL_ENV_VAR: env_model}):
-            scorer = BERTScorer(weight=0.35, model_name=arg_model)
-            assert scorer.model_name == arg_model
+    def test_explicit_model_name_takes_precedence(self):
+        """Explicit model_name argument is used when provided."""
+        scorer = BERTScorer(weight=0.35, model_name="custom/model")
+        assert scorer.model_name == "custom/model"
 
     def test_invalid_weight_raises_error(self):
         """Weight outside [0, 1] raises ValueError."""

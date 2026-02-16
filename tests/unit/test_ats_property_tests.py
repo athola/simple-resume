@@ -12,7 +12,7 @@ from hypothesis import strategies as st
 from hypothesis.strategies import text
 
 from simple_resume.core.ats.jaccard import JaccardScorer
-from simple_resume.core.ats.keyword import KeywordScorer
+from simple_resume.core.ats.keyword import KeywordScorer, KeywordScorerConfig
 from simple_resume.core.ats.tfidf import TFIDFScorer
 from simple_resume.core.ats.tournament import ATSTournament
 
@@ -207,7 +207,7 @@ class TestKeywordScorerProperties:
     @settings(max_examples=50, deadline=None)
     def test_fuzzy_threshold_affects_results(self, threshold, resume, job):
         """Test that different fuzzy thresholds produce valid results."""
-        scorer = KeywordScorer(fuzzy_threshold=threshold)
+        scorer = KeywordScorer(config=KeywordScorerConfig(fuzzy_threshold=threshold))
         result = scorer.score(resume, job)
 
         assert 0.0 <= result.score <= 1.0

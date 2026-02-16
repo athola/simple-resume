@@ -40,6 +40,7 @@ EXPECTED_PUBLIC_SYMBOLS = {
     "resume_generate",
     # Convenience helpers
     "generate",
+    "GenerateOptions",
     "preview",
     # ATS scoring (v0.2.0)
     "BaseScorer",

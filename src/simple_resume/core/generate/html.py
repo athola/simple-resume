@@ -6,7 +6,6 @@ without global state management.
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -150,21 +149,6 @@ def _prepare_html_with_jinja_impl(
         TemplateError: If render plan is invalid or uses LaTeX mode
 
     """
-    # Fast path for concurrency-heavy test scenario to keep render latency low.
-    if "concurrent_user_scenarios" in os.environ.get("PYTEST_CURRENT_TEST", ""):
-        html = f"<html><body>{params.render_plan.name}</body></html>"
-        fast_effects: list[Effect] = []
-        metadata = GenerationMetadata(
-            format_type="html",
-            template_name=params.render_plan.template_name or "unknown",
-            generation_time=0.0,
-            file_size=len(html),
-            resume_name=params.resume_name,
-            palette_info=params.render_plan.palette_metadata,
-            page_count=None,
-        )
-        return html, fast_effects, metadata
-
     if params.render_plan.mode is RenderMode.LATEX:
         raise TemplateError(
             "LaTeX mode not supported in HTML generation method",

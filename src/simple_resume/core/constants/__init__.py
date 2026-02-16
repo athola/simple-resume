@@ -91,13 +91,7 @@ class OutputFormat(str, Enum):
     @classmethod
     def values(cls) -> set[str]:
         """Return a set of all format values including aliases."""
-        return {
-            cls.PDF.value,
-            cls.HTML.value,
-            cls.MARKDOWN.value,
-            cls.TEX.value,
-            cls.LATEX.value,
-        }
+        return {member.value for member in cls}
 
     @classmethod
     def intermediate_formats(cls) -> set[OutputFormat]:
@@ -139,15 +133,19 @@ class OutputFormat(str, Enum):
 
 
 class TemplateType(str, Enum):
-    """Define available resume templates."""
+    """Define available resume and cover letter templates."""
 
     NO_BARS = "resume_no_bars"
     WITH_BARS = "resume_with_bars"
+    MODERN = "resume_modern"
+    PROFESSIONAL = "resume_professional"
+    CREATIVE = "resume_creative"
+    COVER = "cover"
 
     @classmethod
     def values(cls) -> set[str]:
         """Return a set of all template values."""
-        return {cls.NO_BARS.value, cls.WITH_BARS.value}
+        return {member.value for member in cls}
 
     @classmethod
     def is_valid(cls, template_str: str) -> bool:

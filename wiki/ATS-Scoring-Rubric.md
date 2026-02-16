@@ -156,7 +156,7 @@ BOOSTER_MULTIPLIER = 1.2  # Top 10% get 20% bonus
 | Exact Keyword | 0.30 | Direct keyword matching with fuzzy tolerance | Implemented |
 | BERT Semantic | 0.40 | Contextual embeddings for semantic understanding | Implemented (optional) |
 
-**Note:** BERT scorer requires the `bert` extra: `pip install simple-resume[bert]`
+**Note:** BERT scorer requires the `bert` extra: `uv add simple-resume[bert]` or `pip install simple-resume[bert]`. The BERT model name can be configured via `ATSTournament(bert_model_name="...")`.
 
 ---
 

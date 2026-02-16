@@ -20,31 +20,31 @@ titles:
   languages: Languages
 
 description: |
-  Demonstration resume with a **dark sidebar** to showcase automatic text color
-  adjustment. The sidebar text should automatically switch to light colors when
-  the sidebar background is dark.
+  **Software Engineer** with expertise in **JavaScript/React** and **Python** development. Builds scalable **microservices** deployed on **AWS** with **Docker** and **Kubernetes**. Strong experience with **SQL/PostgreSQL** databases and **REST APIs**. Passionate about **CI/CD** and modern **Git** workflows.
 
 skills:
-  Creative Coding: 50
-  Design Systems: 48
-  Accessibility: 52
-  Frontend Dev: 45
-  Prototyping: 40
+  JavaScript/React: 50
+  Python: 48
+  AWS/Docker: 52
+  SQL/PostgreSQL: 45
+  CI/CD/Git: 40
 
 expertise:
-  - Creative coding
-  - Design systems
-  - Accessibility
+  - Frontend Development (React)
+  - Backend Engineering (Python)
+  - Cloud Platforms (AWS)
 
 certification:
-  - Accessibility Auditor
-  - Frontend Specialist
+  - AWS Certified Solutions Architect
+  - Docker Certified Associate
 
 keyskills:
+  - JavaScript / React
   - Python
-  - Figma
-  - WebGL
-  - Storybook
+  - AWS / Docker / Kubernetes
+  - SQL / PostgreSQL
+  - REST APIs
+  - Microservices / CI/CD / Git
 
 languages:
   English: 58

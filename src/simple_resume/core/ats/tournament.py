@@ -101,6 +101,7 @@ class ATSTournament:
         self,
         scorers: list[BaseScorer] | None = None,
         include_bert: bool = True,
+        bert_model_name: str | None = None,
     ) -> None:
         """Initialize the tournament with a list of scorers.
 
@@ -109,8 +110,11 @@ class ATSTournament:
             include_bert: Whether to include BERT scorer if available (default: True).
                          Set to False to skip BERT even when sentence-transformers
                          is installed (useful for faster scoring or testing).
+            bert_model_name: Override the BERT model name. Shell layer can resolve
+                            this from environment variables or config files.
 
         """
+        self._bert_model_name = bert_model_name
         if scorers is None:
             self.scorers = self._create_default_scorers(include_bert=include_bert)
         else:
@@ -136,7 +140,10 @@ class ATSTournament:
         if include_bert:
             try:
                 bert_scorer_cls = _import_bert_scorer()
-                bert_scorer = bert_scorer_cls(weight=DEFAULT_BERT_WEIGHT)
+                bert_scorer = bert_scorer_cls(
+                    weight=DEFAULT_BERT_WEIGHT,
+                    model_name=self._bert_model_name,
+                )
                 if bert_scorer.available:
                     scorers.append(bert_scorer)
                     bert_available = True
@@ -190,91 +197,126 @@ class ATSTournament:
             TournamentResult with aggregated score and breakdown
 
         """
-        # Validate inputs
+        if error := self._validate_inputs(resume_text, job_description):
+            return TournamentResult(
+                overall_score=0.0,
+                algorithm_results=[],
+                component_breakdown={},
+                metadata={"error": error},
+            )
+
+        algorithm_results, failed_scorers = self._execute_scorers(
+            resume_text, job_description, **kwargs
+        )
+
+        if not algorithm_results:
+            return self._all_failed_result(failed_scorers)
+
+        return self._build_result(algorithm_results, failed_scorers)
+
+    @staticmethod
+    def _validate_inputs(resume_text: str, job_description: str) -> str | None:
+        """Return error message if inputs are invalid, else None."""
         if not resume_text or not resume_text.strip():
-            return TournamentResult(
-                overall_score=0.0,
-                algorithm_results=[],
-                component_breakdown={},
-                metadata={"error": "Resume text is empty"},
-            )
-
+            return "Resume text is empty"
         if not job_description or not job_description.strip():
-            return TournamentResult(
-                overall_score=0.0,
-                algorithm_results=[],
-                component_breakdown={},
-                metadata={"error": "Job description is empty"},
-            )
+            return "Job description is empty"
+        return None
 
-        algorithm_results = []
+    def _execute_scorers(
+        self,
+        resume_text: str,
+        job_description: str,
+        **kwargs: Any,
+    ) -> tuple[list[ScorerResult], list[tuple[str, str]]]:
+        """Run all scorers and collect results and failures."""
+        algorithm_results: list[ScorerResult] = []
         failed_scorers: list[tuple[str, str]] = []
 
-        # Run each scorer with graceful failure handling
         for scorer in self.scorers:
-            scorer_name = scorer.__class__.__name__
-            try:
-                result = scorer.score(resume_text, job_description, **kwargs)
+            result = self._run_scorer(
+                scorer, resume_text, job_description, failed_scorers, **kwargs
+            )
+            if result is not None:
                 algorithm_results.append(result)
-            except (ValueError, RuntimeError) as e:
-                # Expected scorer errors - log and continue
-                logger.warning(
-                    "Scorer %s failed during tournament: %s. "
-                    "Continuing with remaining scorers.",
-                    scorer_name,
-                    str(e),
-                )
-                failed_scorers.append((scorer_name, str(e)))
-            except Exception as e:
-                # Unexpected errors - log with full traceback and continue
-                logger.error(
-                    "Unexpected error in scorer %s during tournament: %s. "
-                    "Continuing with remaining scorers.",
-                    scorer_name,
-                    str(e),
-                    exc_info=True,
-                )
-                failed_scorers.append((scorer_name, f"Unexpected error: {e}"))
 
-        # If all scorers failed, return zero score with error metadata
-        if not algorithm_results:
-            logger.error(
-                "All %d scorers failed during tournament. No score available.",
-                len(self.scorers),
-            )
-            return TournamentResult(
-                overall_score=0.0,
-                algorithm_results=[],
-                component_breakdown={},
-                metadata={
-                    "error": "All scorers failed",
-                    "num_algorithms": len(self.scorers),
-                },
-                failed_scorers=failed_scorers,
-            )
+        return algorithm_results, failed_scorers
 
-        # Calculate weighted overall score (from successful scorers only)
-        overall_score = self._calculate_weighted_score(algorithm_results)
-
-        # Aggregate component scores across algorithms
-        component_breakdown = self._aggregate_component_scores(algorithm_results)
-
-        # Extract metadata
-        metadata = {
-            "num_algorithms": len(self.scorers),
-            "num_successful": len(algorithm_results),
-            "num_failed": len(failed_scorers),
-            "scorer_names": [r.name for r in algorithm_results],
-            "individual_scores": [r.score for r in algorithm_results],
-        }
-
+    def _all_failed_result(
+        self, failed_scorers: list[tuple[str, str]]
+    ) -> TournamentResult:
+        """Build result when all scorers failed."""
+        logger.error(
+            "All %d scorers failed during tournament. No score available.",
+            len(self.scorers),
+        )
         return TournamentResult(
-            overall_score=overall_score,
-            algorithm_results=algorithm_results,
-            component_breakdown=component_breakdown,
-            metadata=metadata,
+            overall_score=0.0,
+            algorithm_results=[],
+            component_breakdown={},
+            metadata={
+                "error": "All scorers failed",
+                "num_algorithms": len(self.scorers),
+            },
             failed_scorers=failed_scorers,
         )
+
+    def _build_result(
+        self,
+        algorithm_results: list[ScorerResult],
+        failed_scorers: list[tuple[str, str]],
+    ) -> TournamentResult:
+        """Aggregate successful results into a TournamentResult."""
+        return TournamentResult(
+            overall_score=self._calculate_weighted_score(algorithm_results),
+            algorithm_results=algorithm_results,
+            component_breakdown=self._aggregate_component_scores(algorithm_results),
+            metadata={
+                "num_algorithms": len(self.scorers),
+                "num_successful": len(algorithm_results),
+                "num_failed": len(failed_scorers),
+                "scorer_names": [r.name for r in algorithm_results],
+                "individual_scores": [r.score for r in algorithm_results],
+            },
+            failed_scorers=failed_scorers,
+        )
+
+    def _run_scorer(
+        self,
+        scorer: BaseScorer,
+        resume_text: str,
+        job_description: str,
+        failed_scorers: list[tuple[str, str]],
+        **kwargs: Any,
+    ) -> ScorerResult | None:
+        """Run a single scorer with graceful error handling.
+
+        Returns:
+            ScorerResult on success, None if the scorer failed.
+
+        """
+        scorer_name = scorer.__class__.__name__
+        try:
+            return scorer.score(resume_text, job_description, **kwargs)
+        except (ValueError, RuntimeError) as e:
+            logger.warning(
+                "Scorer %s failed during tournament: %s. "
+                "Continuing with remaining scorers.",
+                scorer_name,
+                str(e),
+            )
+            failed_scorers.append((scorer_name, str(e)))
+            return None
+        except Exception as e:
+            logger.error(
+                "Unexpected error in scorer %s during tournament: %s. "
+                "Continuing with remaining scorers.",
+                scorer_name,
+                str(e),
+                exc_info=True,
+            )
+            failed_scorers.append((scorer_name, f"Unexpected error: {e}"))
+            return None
 
     def _calculate_weighted_score(
         self,
@@ -372,6 +414,8 @@ def score_resume(
     resume_text: str,
     job_description: str,
     custom_scorers: list[BaseScorer] | None = None,
+    *,
+    percentage: bool = True,
 ) -> TournamentResult:
     """Score a resume against a job description using the tournament.
 
@@ -381,10 +425,19 @@ def score_resume(
         resume_text: Full resume text
         job_description: Full job description text
         custom_scorers: Optional custom list of scorers
+        percentage: If True (default), return score as 0-100 percentage.
+                   If False, return raw 0-1 score.
 
     Returns:
-        TournamentResult with aggregated score
+        TournamentResult with aggregated score (0-100 if percentage=True)
 
     """
     tournament = ATSTournament(scorers=custom_scorers)
-    return tournament.score(resume_text, job_description)
+    result = tournament.score(resume_text, job_description)
+
+    if percentage:
+        # Add percentage info to metadata (score stays 0-1 for validation)
+        result.metadata["percentage_score"] = min(100.0, result.overall_score * 100)
+        result.metadata["scale"] = "percentage"
+
+    return result

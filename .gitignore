@@ -14,6 +14,7 @@ __pycache__/
 .ruff_cache/
 .pre-commit-cache/
 .npm-cache/
+.uv-cache/
 .hypothesis/
 
 # Jupyter checkpoints
@@ -91,6 +92,10 @@ test_*.py
 src/static/images/*
 !src/static/images/default_*
 
+# Ephemeral audit/scan reports
+.ai-hygiene-audit.md
+.unbloat-scan*.md
+
 # Miscellaneous
 .DS_Store
 *.swp
@@ -98,3 +103,4 @@ commit_msg.txt
 bandit-report.json
 *.log
 output.json
+.claude/

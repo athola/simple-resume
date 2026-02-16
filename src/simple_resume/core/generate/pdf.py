@@ -479,12 +479,10 @@ def _prepare_pdf_with_latex_impl(
             template_name=params.render_plan.template_name or "latex/basic.tex",
         )
         tex_content = getattr(tex_result, "tex", tex_result)
-    except Exception as exc:
-        if "No such file or directory" in str(exc):
-            raise FileNotFoundError(
-                f"Template not found: {resolved_paths.templates}"
-            ) from exc
-        raise
+    except FileNotFoundError as exc:
+        raise FileNotFoundError(
+            f"Template not found: {resolved_paths.templates}"
+        ) from exc
 
     # Resolve paths for effects
     # resolved_paths is guaranteed by earlier guard

@@ -7,23 +7,34 @@ workarounds to avoid circular imports.
 
 from __future__ import annotations
 
+import logging
 import re
 from typing import Any
 
 from simple_resume.core.constants.colors import (
     BOLD_DARKEN_FACTOR,
     DEFAULT_COLOR_SCHEME,
+    FALLBACK_BLACK,
+    FALLBACK_DARK_GRAY,
+    FALLBACK_DARK_TEXT,
+    FALLBACK_LIGHT_GRAY,
+    FALLBACK_WHITE,
     HEX_COLOR_FULL_LENGTH,
     HEX_COLOR_SHORT_LENGTH,
     ICON_CONTRAST_THRESHOLD,
     LUMINANCE_DARK,
     LUMINANCE_VERY_DARK,
     LUMINANCE_VERY_LIGHT,
+    WCAG_BLUE_COEFFICIENT,
+    WCAG_GREEN_COEFFICIENT,
     WCAG_LINEARIZATION_DIVISOR,
     WCAG_LINEARIZATION_EXPONENT,
     WCAG_LINEARIZATION_OFFSET,
     WCAG_LINEARIZATION_THRESHOLD,
+    WCAG_RED_COEFFICIENT,
 )
+
+logger = logging.getLogger(__name__)
 
 __all__ = [
     "calculate_contrast_ratio",
@@ -58,7 +69,10 @@ def darken_color(hex_color: str, factor: float) -> str:
     try:
         rgb = hex_to_rgb(hex_color)
     except ValueError:
-        return "#585858"
+        logger.warning(
+            "Invalid color '%s' in darken_color, using fallback #585858", hex_color
+        )
+        return FALLBACK_DARK_GRAY
 
     darkened = tuple(max(0, min(255, round(component * factor))) for component in rgb)
     return "#{:02X}{:02X}{:02X}".format(*darkened)
@@ -89,7 +103,11 @@ def _calculate_luminance_from_rgb(rgb: tuple[int, int, int]) -> float:
     g_linear = _linearize(g)
     b_linear = _linearize(b)
 
-    return 0.2126 * r_linear + 0.7152 * g_linear + 0.0722 * b_linear
+    return (
+        WCAG_RED_COEFFICIENT * r_linear
+        + WCAG_GREEN_COEFFICIENT * g_linear
+        + WCAG_BLUE_COEFFICIENT * b_linear
+    )
 
 
 def calculate_luminance(hex_color: str) -> float:
@@ -114,14 +132,18 @@ def get_contrasting_text_color(background_color: str) -> str:
     try:
         luminance = calculate_luminance(background_color)
         if luminance <= LUMINANCE_VERY_DARK:
-            return "#F5F5F5"
+            return FALLBACK_LIGHT_GRAY
         if luminance <= LUMINANCE_DARK:
-            return "#FFFFFF"
+            return FALLBACK_WHITE
         if luminance >= LUMINANCE_VERY_LIGHT:
-            return "#333333"
-        return "#000000"
+            return FALLBACK_DARK_TEXT
+        return FALLBACK_BLACK
     except (ValueError, TypeError):  # pragma: no cover - defensive
-        return "#000000"
+        logger.warning(
+            "Invalid color '%s' in get_contrasting_text_color, using fallback",
+            background_color,
+        )
+        return FALLBACK_BLACK
 
 
 def calculate_icon_contrast_color(
@@ -154,7 +176,7 @@ class ColorCalculationService:
         sidebar_color = config.get("sidebar_color")
         if sidebar_color and is_valid_color(sidebar_color):
             return get_contrasting_text_color(sidebar_color)
-        return DEFAULT_COLOR_SCHEME.get("sidebar_text_color", "#000000")
+        return DEFAULT_COLOR_SCHEME.get("sidebar_text_color", FALLBACK_BLACK)
 
     @staticmethod
     def calculate_sidebar_bold_color(config: dict[str, Any]) -> str:
@@ -163,13 +185,13 @@ class ColorCalculationService:
         if sidebar_color and is_valid_color(sidebar_color):
             # Make the bold color slightly darker than the background
             return darken_color(sidebar_color, BOLD_DARKEN_FACTOR)
-        return "#000000"  # Default black
+        return FALLBACK_BLACK
 
     @staticmethod
     def calculate_heading_icon_color(config: dict[str, Any]) -> str:
         """Calculate heading icon color based on configuration."""
         user_icon_color = config.get("heading_icon_color")
-        frame_color = config.get("frame_color", "#000000")
+        frame_color = config.get("frame_color", FALLBACK_BLACK)
 
         if isinstance(user_icon_color, str) and is_valid_color(user_icon_color):
             return user_icon_color
@@ -184,7 +206,7 @@ class ColorCalculationService:
         sidebar_color = config.get("sidebar_color")
         if sidebar_color and is_valid_color(sidebar_color):
             return get_contrasting_text_color(sidebar_color)
-        return "#FFFFFF"  # Default white icon
+        return FALLBACK_WHITE
 
     @staticmethod
     def ensure_color_contrast(
@@ -205,7 +227,7 @@ class ColorCalculationService:
 
         """
         if not is_valid_color(background) or not is_valid_color(text_color):
-            return "#333333"  # Default fallback color
+            return FALLBACK_DARK_TEXT
 
         contrast = calculate_contrast_ratio(text_color, background)
         if contrast >= contrast_threshold:

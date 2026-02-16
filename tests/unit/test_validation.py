@@ -62,7 +62,7 @@ def test_validate_file_path_rejects_missing_file(
     story.given("a path to a non-existent file")
     missing = tmp_path / "missing.yaml"
 
-    with pytest.raises(FileSystemError, match="does not exist"):
+    with pytest.raises(FileSystemError, match="not found"):
         validate_file_path(missing)
 
 
@@ -132,7 +132,7 @@ def test_validate_directory_path_requires_existing_when_flagged(
     story.given("a missing directory with must_exist enabled")
     missing_dir = tmp_path / "missing"
 
-    with pytest.raises(FileSystemError, match="does not exist"):
+    with pytest.raises(FileSystemError, match="not found|does not exist"):
         validate_directory_path(missing_dir, must_exist=True)
 
 

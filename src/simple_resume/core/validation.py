@@ -46,9 +46,10 @@ def validate_format(
     )
 
     if not OutputFormat.is_valid(normalized):
+        formats = ", ".join(SUPPORTED_FORMATS)
         raise ValidationError(
-            f"Unsupported {param_name}: '{format_str}'. "
-            f"Supported formats: {', '.join(SUPPORTED_FORMATS)}"
+            f"Unsupported format '{format_str}'. Please use one of: {formats}",
+            errors=[f"Got: {format_str}", f"Expected one of: {formats}"],
         )
 
     return OutputFormat(normalized)
@@ -77,7 +78,10 @@ def validate_file_path(
 
     """
     if not file_path:
-        raise FileSystemError("File path cannot be empty")
+        raise FileSystemError(
+            "File path cannot be empty. Please provide a valid file path.",
+            context={"suggestion": "Example: resume.yaml or /path/to/resume.yaml"},
+        )
 
     path = Path(file_path) if isinstance(file_path, str) else file_path
 
@@ -86,7 +90,13 @@ def validate_file_path(
         path = path.resolve()
 
     if must_exist and not path.exists():
-        raise FileSystemError(f"Path does not exist: {path}")
+        raise FileSystemError(
+            f"File not found: {path}",
+            context={
+                "checked_path": str(path),
+                "suggestion": "Check the file path is correct and the file exists.",
+            },
+        )
 
     if must_be_file and must_exist and not path.is_file():
         raise FileSystemError(f"Path is not a file: {path}")

@@ -39,6 +39,7 @@ from simple_resume.core.validation import (
 )
 from simple_resume.shell import session as session_mod
 from simple_resume.shell.resume_extensions import to_html, to_markdown, to_pdf, to_tex
+from simple_resume.shell.services import register_default_services as _register_defaults
 
 _YAML_SUFFIXES = {".yaml", ".yml"}
 CommandResult = (
@@ -567,6 +568,7 @@ def generate(
     **overrides: Any,
 ) -> dict[str, GenerationResult | BatchGenerationResult]:
     """Render one or more formats for the same source."""
+    _register_defaults()
     opts = options or GenerateOptions()
 
     target_formats = tuple(opts.formats or (DEFAULT_FORMAT,))

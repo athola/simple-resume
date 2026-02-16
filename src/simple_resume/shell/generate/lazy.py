@@ -8,70 +8,18 @@ with lazy loading to reduce startup memory footprint.
 
 from __future__ import annotations
 
-import importlib
-from functools import lru_cache
 from pathlib import Path
-from types import ModuleType
 from typing import TYPE_CHECKING, Any, cast
 
 from simple_resume.core.models import GenerationConfig
+from simple_resume.shell.runtime.lazy_import import lazy_import
 
 if TYPE_CHECKING:
     from simple_resume.core.result import BatchGenerationResult, GenerationResult
     from simple_resume.shell.generate.core import GenerateOptions
 
-
-class _LazyCoreLoader:
-    """Lazy loader for core generation functions."""
-
-    def __init__(self) -> None:
-        self._core: ModuleType | None = None
-        self._loaded = False
-
-    def _load_core(self) -> ModuleType:
-        """Load core module if not already loaded."""
-        if not self._loaded:
-            self._core = importlib.import_module(".core", package=__package__)
-            self._loaded = True
-        if self._core is None:  # pragma: no cover
-            raise RuntimeError("Failed to load core module")
-        return self._core
-
-    @property
-    def generate_pdf(self) -> Any:
-        """Get generate_pdf function from core module."""
-        return self._load_core().generate_pdf
-
-    @property
-    def generate_html(self) -> Any:
-        """Get generate_html function from core module."""
-        return self._load_core().generate_html
-
-    @property
-    def generate_all(self) -> Any:
-        """Get generate_all function from core module."""
-        return self._load_core().generate_all
-
-    @property
-    def generate_resume(self) -> Any:
-        """Get generate_resume function from core module."""
-        return self._load_core().generate_resume
-
-    @property
-    def generate(self) -> Any:
-        """Get generate function from core module."""
-        return self._load_core().generate
-
-    @property
-    def preview(self) -> Any:
-        """Get preview function from core module."""
-        return self._load_core().preview
-
-
-@lru_cache(maxsize=1)
-def _get_lazy_core_loader() -> _LazyCoreLoader:
-    """Provide a lazily created singleton loader without module globals."""
-    return _LazyCoreLoader()
+# Single lazy module replaces the hand-rolled _LazyCoreLoader class
+_lazy_core = lazy_import("simple_resume.shell.generate.core")
 
 
 def generate_pdf(
@@ -97,7 +45,7 @@ def generate_pdf(
     .. versionadded:: 0.1.0
 
     """
-    lazy_core = _get_lazy_core_loader()
+    lazy_core = _lazy_core
     result: BatchGenerationResult = cast(
         "BatchGenerationResult", lazy_core.generate_pdf(config, **config_overrides)
     )
@@ -126,7 +74,7 @@ def generate_html(
     .. versionadded:: 0.1.0
 
     """
-    lazy_core = _get_lazy_core_loader()
+    lazy_core = _lazy_core
     result: BatchGenerationResult = cast(
         "BatchGenerationResult", lazy_core.generate_html(config, **config_overrides)
     )
@@ -155,7 +103,7 @@ def generate_all(
     .. versionadded:: 0.1.0
 
     """
-    lazy_core = _get_lazy_core_loader()
+    lazy_core = _lazy_core
     result: BatchGenerationResult = cast(
         "BatchGenerationResult", lazy_core.generate_all(config, **config_overrides)
     )
@@ -184,7 +132,7 @@ def generate_resume(
     .. versionadded:: 0.1.0
 
     """
-    lazy_core = _get_lazy_core_loader()
+    lazy_core = _lazy_core
     result: GenerationResult = cast(
         "GenerationResult", lazy_core.generate_resume(config, **config_overrides)
     )
@@ -218,7 +166,7 @@ def generate(
     .. versionadded:: 0.1.0
 
     """
-    lazy_core = _get_lazy_core_loader()
+    lazy_core = _lazy_core
     result: dict[str, GenerationResult | BatchGenerationResult] = cast(
         "dict[str, GenerationResult | BatchGenerationResult]",
         lazy_core.generate(source, options, **overrides),
@@ -259,7 +207,7 @@ def preview(
     .. versionadded:: 0.1.0
 
     """
-    lazy_core = _get_lazy_core_loader()
+    lazy_core = _lazy_core
     result: GenerationResult | BatchGenerationResult = cast(
         "GenerationResult | BatchGenerationResult",
         lazy_core.preview(

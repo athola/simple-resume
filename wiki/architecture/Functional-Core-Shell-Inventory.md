@@ -30,6 +30,17 @@ Pure functions and data structures with no I/O operations.
 | `core/resume.py` | Resume class with dependency injection | Pure (late-bound I/O) |
 | `core/skills.py` | Skills data transformations | Pure |
 | `core/validation.py` | Configuration validation logic | Pure |
+| `core/ats/base.py` | ATS scorer base classes and result types | Pure |
+| `core/ats/bert.py` | BERT semantic similarity scorer | Pure (late-bound I/O) |
+| `core/ats/constants.py` | ATS scoring constants and validation helpers | Pure |
+| `core/ats/creative_terms.py` | Creative industry term mappings | Pure |
+| `core/ats/entities.py` | Entity extraction from text | Pure |
+| `core/ats/jaccard.py` | Jaccard + N-gram overlap scorer | Pure |
+| `core/ats/keyword.py` | Keyword extraction and matching scorer | Pure |
+| `core/ats/taxonomy.py` | Skill taxonomy and categorization | Pure |
+| `core/ats/tfidf.py` | TF-IDF + Cosine similarity scorer | Pure |
+| `core/ats/tournament.py` | Multi-algorithm tournament runner | Pure |
+| `core/ats/reports.py` | ATS report generation | Pure |
 
 ### Shell Layer (`src/simple_resume/shell/`)
 
@@ -54,6 +65,10 @@ I/O operations, external dependencies, and orchestration.
 | `shell/runtime/generate.py` | Generation runtime | File I/O |
 | `shell/session/` | Session management | File I/O, state |
 | `shell/strategies.py` | PDF generation strategies | I/O delegation |
+| `shell/cli/_generation.py` | CLI generation helpers: format coercion, plan building | User I/O |
+| `shell/cli/_screen.py` | ATS screening display and file-reading | User I/O, file I/O |
+| `shell/service_locator.py` | Service registry for dependency injection | State |
+| `shell/taxonomy_cache.py` | Taxonomy cache file I/O | File I/O |
 
 ## Key Architectural Patterns
 

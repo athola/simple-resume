@@ -9,7 +9,12 @@ from __future__ import annotations
 import pytest
 
 from simple_resume.core.ats.base import ScorerResult
-from simple_resume.core.ats.keyword import KeywordScorer
+from simple_resume.core.ats.keyword import KeywordScorer, KeywordScorerConfig
+
+# Score threshold constants for readable assertions
+SCORE_HIGH_MATCH = 0.7  # Strong keyword overlap expected
+SCORE_NEAR_PERFECT = 0.9  # Nearly all keywords present
+SCORE_MODERATE = 0.5  # Partial overlap threshold
 
 
 class TestKeywordScorer:
@@ -93,7 +98,7 @@ class TestKeywordScorer:
         )
 
         # Should have high score with perfect keyword match
-        assert result.score >= 0.7
+        assert result.score >= SCORE_HIGH_MATCH
         assert result.details["exact_matches"] >= 3
 
     def test_score_with_no_keyword_match(self, scorer):
@@ -106,7 +111,7 @@ class TestKeywordScorer:
         )
 
         # Should have low score with no Python keywords
-        assert result.score < 0.5
+        assert result.score < SCORE_MODERATE
 
     def test_score_with_partial_keyword_match(self, scorer):
         """Test scoring with some keyword overlap."""
@@ -150,11 +155,13 @@ class TestKeywordScorer:
 
         # Should match regardless of case
         assert result.details["exact_matches"] >= 2
-        assert result.score > 0.5
+        assert result.score > SCORE_MODERATE
 
     def test_fuzzy_matching_enabled(self, sample_resume, sample_job_description):
         """Test scorer with fuzzy matching enabled."""
-        scorer = KeywordScorer(fuzzy_threshold=0.8, weight=1.0)
+        scorer = KeywordScorer(
+            weight=1.0, config=KeywordScorerConfig(fuzzy_threshold=0.8)
+        )
         result = scorer.score(
             sample_resume,
             sample_job_description,
@@ -172,8 +179,8 @@ class TestKeywordScorer:
         )
         job = "Looking for Python developer with Docker and Kubernetes"
 
-        scorer_strict = KeywordScorer(fuzzy_threshold=0.9)
-        scorer_loose = KeywordScorer(fuzzy_threshold=0.6)
+        scorer_strict = KeywordScorer(config=KeywordScorerConfig(fuzzy_threshold=0.9))
+        scorer_loose = KeywordScorer(config=KeywordScorerConfig(fuzzy_threshold=0.6))
 
         result_strict = scorer_strict.score(
             resume, job, keywords=["Python", "developer", "Docker", "Kubernetes"]
@@ -282,7 +289,7 @@ class TestKeywordScorer:
         result = scorer.score(resume, job, keywords=["Python", "developer", "AWS"])
 
         # Should match after normalization
-        assert result.score > 0.5
+        assert result.score > SCORE_MODERATE
 
     @pytest.mark.parametrize(
         ("resume", "job", "keywords", "expected_matches"),
@@ -360,7 +367,7 @@ class TestKeywordScorer:
         result = scorer.score("Python", "Python", keywords=["Python"])
 
         # Single word match should be perfect
-        assert result.score >= 0.9
+        assert result.score >= SCORE_NEAR_PERFECT
         assert result.details["exact_matches"] == 1
 
     def test_repeated_keywords(self, scorer):
@@ -377,7 +384,7 @@ class TestKeywordScorer:
     def test_fuzzy_matching_with_typos(self):
         """Test fuzzy matching with minor typos."""
         # Set a permissive fuzzy threshold
-        scorer = KeywordScorer(fuzzy_threshold=0.7)
+        scorer = KeywordScorer(config=KeywordScorerConfig(fuzzy_threshold=0.7))
 
         resume = "Python developer with Dockr and Kubernets experience"
         job = "Need Python developer with Docker and Kubernetes"
@@ -409,11 +416,11 @@ class TestKeywordScorer:
         result = scorer.score(resume, job, keywords=["5", "years", "Python", "3"])
 
         # Should match numbers as part of keywords
-        assert result.score > 0.5
+        assert result.score > SCORE_MODERATE
 
     def test_case_sensitive_matching(self):
         """Test case sensitive mode."""
-        scorer_case = KeywordScorer(case_sensitive=True)
+        scorer_case = KeywordScorer(config=KeywordScorerConfig(case_sensitive=True))
 
         resume = "Python developer with AWS"
         job = "PYTHON DEVELOPER WITH aws"  # mixed case in job
@@ -442,12 +449,12 @@ class TestKeywordScorerValidation:
     def test_invalid_fuzzy_threshold_negative(self):
         """Test that negative fuzzy_threshold raises ValueError."""
         with pytest.raises(ValueError, match="fuzzy_threshold must be in"):
-            KeywordScorer(fuzzy_threshold=-0.1)
+            KeywordScorerConfig(fuzzy_threshold=-0.1)
 
     def test_invalid_fuzzy_threshold_above_one(self):
         """Test that fuzzy_threshold > 1 raises ValueError."""
         with pytest.raises(ValueError, match="fuzzy_threshold must be in"):
-            KeywordScorer(fuzzy_threshold=1.5)
+            KeywordScorerConfig(fuzzy_threshold=1.5)
 
     def test_valid_weight_boundary(self):
         """Test that boundary weights are accepted."""
@@ -459,11 +466,11 @@ class TestKeywordScorerValidation:
 
     def test_valid_fuzzy_threshold_boundary(self):
         """Test that boundary fuzzy_threshold values are accepted."""
-        scorer = KeywordScorer(fuzzy_threshold=0.0)
-        assert scorer.fuzzy_threshold == 0.0
+        scorer = KeywordScorer(config=KeywordScorerConfig(fuzzy_threshold=0.0))
+        assert scorer._config.fuzzy_threshold == 0.0
 
-        scorer = KeywordScorer(fuzzy_threshold=1.0)
-        assert scorer.fuzzy_threshold == 1.0
+        scorer = KeywordScorer(config=KeywordScorerConfig(fuzzy_threshold=1.0))
+        assert scorer._config.fuzzy_threshold == 1.0
 
 
 # ============================================================================
@@ -476,7 +483,7 @@ class TestKeywordScorerEdgeCases:
 
     def test_fuzzy_threshold_zero_matches_everything(self):
         """Test that fuzzy_threshold=0.0 matches any word."""
-        scorer = KeywordScorer(fuzzy_threshold=0.0)
+        scorer = KeywordScorer(config=KeywordScorerConfig(fuzzy_threshold=0.0))
         result = scorer.score(
             "Python developer",
             "completely different words here",
@@ -489,7 +496,7 @@ class TestKeywordScorerEdgeCases:
 
     def test_fuzzy_threshold_one_requires_exact(self):
         """Test that fuzzy_threshold=1.0 requires exact matches."""
-        scorer = KeywordScorer(fuzzy_threshold=1.0)
+        scorer = KeywordScorer(config=KeywordScorerConfig(fuzzy_threshold=1.0))
         result = scorer.score(
             "Python developer",
             "Pythn develper",  # Typos
@@ -509,7 +516,7 @@ class TestKeywordScorerEdgeCases:
 
     def test_case_sensitive_matching(self):
         """Test case-sensitive matching mode."""
-        scorer = KeywordScorer(case_sensitive=True)
+        scorer = KeywordScorer(config=KeywordScorerConfig(case_sensitive=True))
         result = scorer.score(
             "python developer",
             "Python Developer needed",
@@ -556,3 +563,63 @@ class TestKeywordScorerEdgeCases:
 
         # Should handle accented characters
         assert result.score >= 0.0
+
+
+class TestKeywordExtraction:
+    """Tests for the _extract_keywords method."""
+
+    def test_extracts_acronyms(self):
+        """Test extraction of acronyms like AWS, API."""
+        scorer = KeywordScorer(config=KeywordScorerConfig(extract_keywords=True))
+        keywords = scorer._extract_keywords("Need AWS and API experience")
+        assert "AWS" in keywords
+        assert "API" in keywords
+
+    def test_extracts_camelcase(self):
+        """Test extraction of CamelCase terms like JavaScript."""
+        scorer = KeywordScorer(config=KeywordScorerConfig(extract_keywords=True))
+        keywords = scorer._extract_keywords("Experience with JavaScript and TypeScript")
+        assert any("JavaScript" in kw for kw in keywords)
+
+    def test_extracts_quoted_terms(self):
+        """Test extraction of quoted phrases."""
+        scorer = KeywordScorer(config=KeywordScorerConfig(extract_keywords=True))
+        keywords = scorer._extract_keywords('Must know "machine learning" techniques')
+        assert any("machine learning" in kw for kw in keywords)
+
+    def test_extracts_skill_patterns(self):
+        """Test extraction of technology patterns like 'Python language'."""
+        scorer = KeywordScorer(config=KeywordScorerConfig(extract_keywords=True))
+        keywords = scorer._extract_keywords("Python language and React framework")
+        assert any("python" in kw.lower() for kw in keywords)
+
+    def test_fallback_extraction_for_plain_text(self):
+        """Test fallback extraction when no patterns match."""
+        scorer = KeywordScorer(config=KeywordScorerConfig(extract_keywords=True))
+        # All lowercase, no patterns - triggers fallback
+        keywords = scorer._extract_keywords("developer needed for backend coding tasks")
+        assert len(keywords) > 0
+        assert any("developer" in kw.lower() for kw in keywords)
+
+    def test_respects_max_keywords_limit(self):
+        """Test that extraction respects max_keywords parameter."""
+        scorer = KeywordScorer(
+            config=KeywordScorerConfig(extract_keywords=True, max_keywords=3)
+        )
+        text = "AWS API GCP Docker Kubernetes Python Java React Angular Vue"
+        keywords = scorer._extract_keywords(text)
+        assert len(keywords) <= 3
+
+    def test_removes_duplicates(self):
+        """Test that duplicate keywords are removed."""
+        scorer = KeywordScorer(config=KeywordScorerConfig(extract_keywords=True))
+        keywords = scorer._extract_keywords("Python Python PYTHON experience")
+        python_count = sum(1 for kw in keywords if "python" in kw.lower())
+        assert python_count == 1
+
+    def test_filters_short_keywords(self):
+        """Test that very short keywords are filtered."""
+        scorer = KeywordScorer(config=KeywordScorerConfig(extract_keywords=True))
+        keywords = scorer._extract_keywords("Use AI and ML for data processing")
+        # AI and ML are too short (2 chars), should be filtered
+        assert not any(len(kw) <= 2 for kw in keywords)

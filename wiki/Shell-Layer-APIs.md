@@ -1,7 +1,7 @@
 # Shell Layer API Documentation
 
 **Status:** Internal Reference
-**Last Updated:** 2025-01-03
+**Last Updated:** 2026-02-14
 **Related:** [API Stability Policy](API-Stability-Policy.md)
 
 ---
@@ -250,19 +250,33 @@ class CustomPdfStrategy(PdfGenerationStrategy):
         pass
 ```
 
-#### `shell.services`
+#### `shell.service_locator`
 
-**Purpose:** Service locator and dependency injection
+**Purpose:** Service registry for dependency injection
 
-**Internal Functions:**
-- `register_default_services()` - Register default implementations
-- `DefaultPdfGenerationStrategy` - Default strategy factory
+**Public Functions:**
+- `register_service(name, service)` - Register a service instance by name
+- `register_service_factory(name, factory)` - Register a factory for lazy creation
+- `get_service(name, service_type)` - Get a typed service by name
+- `has_service(name)` - Check if a service is registered
+
+**Backward-Compatible Class:**
+- `ServiceLocator` - Thin facade over module-level registry
+- `get_service_locator()` - Get the global ServiceLocator instance
 
 **Usage:**
 ```python
-# ⚠️ Internal: Service registration (usually automatic)
-from simple_resume.shell.services import register_default_services
-register_default_services()
+# Module-level API (preferred)
+from simple_resume.shell.service_locator import register_service, get_service
+
+register_service("pdf_strategy", my_strategy)
+strategy = get_service("pdf_strategy", PdfGenerationStrategy)
+
+# Class-based API (backward compatible)
+from simple_resume.shell.service_locator import get_service_locator
+
+locator = get_service_locator()
+locator.register("pdf_strategy", my_strategy)
 ```
 
 #### `shell.runtime`
@@ -314,21 +328,36 @@ paths = resolve_paths(data_dir="resume_private")
 **Purpose:** Command-line interface
 
 **Internal Modules:**
-- `shell.cli.main` - CLI entry point and argument parsing
+- `shell.cli.main` - CLI entry point, argument parsing, and subcommand dispatch
+- `shell.cli._generation` - Generation helpers: format coercion, plan building, execution
+- `shell.cli._screen` - ATS screening display and file-reading helpers
 - `shell.cli.palette` - Palette utility commands
-- `shell.cli.random_palette_demo` - Demo tool
+- `examples/utilities/random_palette_demo` - Demo tool (archived from shell.cli)
 
-**Internal Functions:**
+**Internal Functions (main):**
 - `main()` - CLI entry point
 - `create_parser()` - Argument parser
-- `handle_generate_command(args)` - Generate subcommand handler
-- `handle_session_command(args)` - Session subcommand handler
-- `handle_validate_command(args)` - Validate subcommand handler
+
+**Internal Functions (_generation):**
+- `_resolve_cli_formats(args)` - Normalize format arguments to OutputFormat
+- `_build_config_overrides(args)` - Construct config overrides from CLI args
+- `_build_plan_options(args, overrides, formats)` - Build GeneratePlanOptions
+- `_execute_generation_plan(commands)` - Execute generation commands with result summary
+
+**Internal Functions (_screen):**
+- `handle_screen_command(args)` - ATS screening subcommand handler
 
 **Usage:**
 ```bash
-# ✅ Recommended: Use CLI commands
+# Generation commands
 simple-resume generate --format pdf
+simple-resume generate --format html --name my_resume
+
+# ATS screening
+simple-resume screen resume.txt job_description.txt
+simple-resume screen resume.txt job.txt --format yaml --output report.yaml
+
+# Other commands
 simple-resume session
 simple-resume validate
 ```

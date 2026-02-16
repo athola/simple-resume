@@ -20,31 +20,31 @@ titles:
   languages: Languages
 
 description: |
-  Demo showcasing **automatic text contrast adjustment**. This configuration uses
-  a dark purple sidebar, and all text in the sidebar automatically adjusts to
-  light colors for optimal readability.
+  **Software Engineer** focused on accessibility and frontend development. Expert in **JavaScript/React** with strong **Python** backend skills. Deploys applications using **Docker** on **AWS** with **PostgreSQL** databases. Advocates for **CI/CD** and **REST API** best practices.
 
 skills:
-  Color Accessibility: 55
-  UI/UX Design: 48
-  WCAG Compliance: 52
-  Color Theory: 45
-  A11y Testing: 40
+  JavaScript/React: 55
+  Python: 48
+  AWS/Docker: 52
+  SQL/PostgreSQL: 45
+  CI/CD: 40
 
 expertise:
-  - Color accessibility
-  - WCAG compliance
-  - UI/UX design
+  - Frontend Development (React)
+  - Accessibility Engineering
+  - Cloud Platforms (AWS)
 
 certification:
+  - AWS Certified Developer
   - Certified Professional in Accessibility
-  - WCAG Specialist
 
 keyskills:
-  - Color theory
-  - Contrast ratios
-  - Palette design
-  - A11y testing
+  - JavaScript / React
+  - Python
+  - AWS / Docker / Kubernetes
+  - SQL / PostgreSQL
+  - REST APIs / Git
+  - Microservices / CI/CD
 
 languages:
   English: 60

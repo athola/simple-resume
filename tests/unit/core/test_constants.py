@@ -75,6 +75,10 @@ class TestTemplateType:
         story.when("checking if they are valid")
         assert TemplateType.is_valid("resume_no_bars") is True
         assert TemplateType.is_valid("resume_with_bars") is True
+        assert TemplateType.is_valid("resume_modern") is True
+        assert TemplateType.is_valid("resume_professional") is True
+        assert TemplateType.is_valid("resume_creative") is True
+        assert TemplateType.is_valid("cover") is True
 
     def test_is_valid_returns_false_for_invalid_template(self, story: Scenario) -> None:
         """Test is_valid returns False for invalid template strings."""

@@ -46,6 +46,9 @@ FALLBACK_KEYWORD_WEIGHT: Final[float] = 0.30
 # Maximum keywords to extract from each document
 TOP_KEYWORDS_LIMIT: Final[int] = 20
 
+# Minimum word length for fallback keyword extraction
+MIN_FALLBACK_WORD_LENGTH: Final[int] = 4
+
 # Normalization divisor for experience relevance score.
 # Empirically, shared TF-IDF products rarely exceed 10.0 even for long documents.
 EXPERIENCE_RELEVANCE_NORMALIZER: Final[float] = 10.0
@@ -140,40 +143,36 @@ class WeightRange(Enum):
 
 
 # Validation helper functions
-def validate_score(score: float, name: str = "score") -> None:
-    """Validate that a score is in the valid range [0, 1].
+def _validate_range(
+    value: float,
+    min_val: float,
+    max_val: float,
+    name: str,
+) -> None:
+    """Validate that *value* is within [min_val, max_val].
 
     Args:
-        score: Score value to validate
-        name: Name of the score for error messages
+        value: Value to validate
+        min_val: Minimum allowed value (inclusive)
+        max_val: Maximum allowed value (inclusive)
+        name: Name for error messages
 
     Raises:
-        ValueError: If score is outside [0, 1]
+        ValueError: If value is outside the range
 
     """
-    if not ScoreRange.MIN.value <= score <= ScoreRange.MAX.value:
-        raise ValueError(
-            f"{name} must be in [{ScoreRange.MIN.value}, {ScoreRange.MAX.value}], "
-            f"got {score}"
-        )
+    if not min_val <= value <= max_val:
+        raise ValueError(f"{name} must be in [{min_val}, {max_val}], got {value}")
+
+
+def validate_score(score: float, name: str = "score") -> None:
+    """Validate that a score is in the valid range [0, 1]."""
+    _validate_range(score, ScoreRange.MIN.value, ScoreRange.MAX.value, name)
 
 
 def validate_weight(weight: float, name: str = "weight") -> None:
-    """Validate that a weight is in the valid range [0, 1].
-
-    Args:
-        weight: Weight value to validate
-        name: Name of the weight for error messages
-
-    Raises:
-        ValueError: If weight is outside [0, 1]
-
-    """
-    if not WeightRange.MIN.value <= weight <= WeightRange.MAX.value:
-        raise ValueError(
-            f"{name} must be in [{WeightRange.MIN.value}, {WeightRange.MAX.value}], "
-            f"got {weight}"
-        )
+    """Validate that a weight is in the valid range [0, 1]."""
+    _validate_range(weight, WeightRange.MIN.value, WeightRange.MAX.value, name)
 
 
 def validate_ngram_range(

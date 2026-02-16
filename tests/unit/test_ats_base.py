@@ -6,6 +6,7 @@ in the ATS scoring system.
 
 from __future__ import annotations
 
+from dataclasses import FrozenInstanceError
 from typing import Any
 
 import pytest
@@ -278,6 +279,20 @@ class TestDegree:
         """Test that whitespace-only string type raises ValueError."""
         with pytest.raises(ValueError, match="Degree type cannot be empty"):
             Degree(type="   ", school="MIT")
+
+    def test_frozen_dataclass_immutable(self):
+        """Test that Degree dataclass is frozen (immutable)."""
+        degree = Degree(type=DegreeType.BACHELOR, school="MIT", field="CS")
+
+        # Frozen dataclass raises FrozenInstanceError when modified
+        with pytest.raises(FrozenInstanceError):
+            degree.school = "Stanford"
+
+        with pytest.raises(FrozenInstanceError):
+            degree.field = "Physics"
+
+        with pytest.raises(FrozenInstanceError):
+            degree.type = DegreeType.MASTER
 
 
 class TestExtractedEntities:

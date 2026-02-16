@@ -485,7 +485,7 @@ class TestGenerateResume:
     def test_generate_resume_invalid_format(self, story: Scenario) -> None:
         story.given("an unsupported format is requested")
         config = GenerationConfig(name="test_resume", format="docx")
-        with pytest.raises(ValueError, match="Unsupported format:.*docx"):
+        with pytest.raises(ValueError, match=r"Unsupported format.*docx"):
             generate_resume(config)
 
     @patch("simple_resume.shell.generate.core.execute_generation_commands")

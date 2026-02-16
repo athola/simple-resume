@@ -9,7 +9,7 @@ import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, cast
 
 from simple_resume.core.ats.constants import validate_score, validate_weight
 
@@ -239,9 +239,13 @@ _DEGREE_TYPE_ALIASES: dict[str, DegreeType] = {
 }
 
 
-@dataclass
+@dataclass(frozen=True)
 class Degree:
     """Structured representation of an educational degree.
+
+    The dataclass is frozen (immutable) for thread-safety and hashability.
+    Uses object.__setattr__ in __post_init__ to handle type transformation
+    while maintaining backwards compatibility.
 
     Attributes:
         type: Type of degree (DegreeType enum or string for backwards compatibility)
@@ -249,8 +253,9 @@ class Degree:
         field: Field of study (e.g., "Computer Science"), optional
 
     Note:
-        The type field accepts both DegreeType enum values and strings.
-        Strings are automatically converted to DegreeType via from_string().
+        Accepts str input for backwards compatibility; always stored as
+        DegreeType after initialization. Strings are automatically converted
+        to DegreeType via from_string() in __post_init__.
 
     """
 
@@ -259,19 +264,27 @@ class Degree:
     field: str = ""
 
     def __post_init__(self) -> None:
-        """Validate and normalize degree type."""
+        """Validate and normalize degree type.
+
+        Uses object.__setattr__ to bypass frozen dataclass restrictions,
+        allowing type transformation during initialization while maintaining
+        immutability after creation.
+        """
         if isinstance(self.type, str):
             if not self.type.strip():
                 raise ValueError("Degree type cannot be empty")
             # Convert string to DegreeType for validation/normalization
-            self.type = DegreeType.from_string(self.type)
+            # Use object.__setattr__ because dataclass is frozen
+            object.__setattr__(self, "type", DegreeType.from_string(self.type))
 
     @property
     def type_value(self) -> str:
-        """Return the string value of the degree type."""
-        if isinstance(self.type, DegreeType):
-            return self.type.value
-        return str(self.type)
+        """Return the string value of the degree type.
+
+        After __post_init__, type is always DegreeType (runtime narrowing).
+        """
+        # After __post_init__, type is always DegreeType
+        return cast(DegreeType, self.type).value
 
     def to_dict(self) -> dict[str, str]:
         """Convert to dictionary for serialization."""
