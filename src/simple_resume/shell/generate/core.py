@@ -12,6 +12,7 @@ For lazy-loaded versions with better startup performance, see `generate.lazy`.
 from __future__ import annotations
 
 import time
+import warnings
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -526,11 +527,37 @@ def _infer_data_dir_and_name(
     source: str | Path,
     data_dir: str | Path | None,
 ) -> tuple[Path, str | None]:
-    """Infer a data directory and optional resume name from user-friendly inputs."""
+    """Infer a data directory and optional resume name from user-friendly inputs.
+
+    When *data_dir* is ``None``, the directory is inferred from *source*:
+    - Directory source → the directory itself (name is ``None``).
+    - YAML file inside an ``input/`` directory → the **grandparent** directory,
+      because downstream path resolution appends ``/input`` automatically.
+    - YAML file elsewhere → the parent directory.
+
+    When *data_dir* is provided explicitly, it is used as-is (with a warning if
+    its basename is ``"input"``).  Directory sources still return themselves.
+
+    Returns:
+        A ``(data_dir, resume_name)`` tuple.  *resume_name* is ``None`` for
+        directory sources.
+
+    Raises:
+        ValueError: If *source* does not exist on disk and no *data_dir* is given.
+
+    """
     source_path = Path(source)
 
     if data_dir is not None:
         base_dir = Path(data_dir)
+        if base_dir.name == "input":
+            warnings.warn(
+                f"data_dir '{base_dir}' ends in 'input/'. Downstream path "
+                "resolution appends '/input' automatically, which may cause "
+                "path doubling. Consider passing the parent directory instead.",
+                UserWarning,
+                stacklevel=2,
+            )
         if source_path.exists() and source_path.is_dir():
             return source_path, None
         if source_path.suffix.lower() in _YAML_SUFFIXES:
@@ -541,7 +568,10 @@ def _infer_data_dir_and_name(
         if source_path.is_dir():
             return source_path, None
         if source_path.suffix.lower() in _YAML_SUFFIXES:
-            return source_path.parent, source_path.stem
+            parent = source_path.parent
+            if parent.name == "input":
+                return parent.parent, source_path.stem
+            return parent, source_path.stem
 
     raise ValueError(
         "Unable to infer data_dir from source. Provide a YAML path, directory, "

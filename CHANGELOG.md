@@ -2,7 +2,18 @@
 
 This file documents all notable project changes. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.4] - 2026-02-15
+
+### Fixed
+
+- Pin `pydyf>=0.10.0,<0.12.0` to prevent WeasyPrint PDF rendering failures caused by incompatible pydyf releases
+- `_infer_data_dir_and_name` now returns the grandparent directory when a YAML file resides inside an `input/` subdirectory, matching the expected `data_dir` layout (fixes #84)
+
+### Changed
+
+- Bump `actions/setup-python` from v4 to v5 across all CI workflows
+- Bump `actions/cache` from v3 to v4 in pre-commit workflow
+- Add `pydyf` version constraint to mypy additional dependencies in `.pre-commit-config.yaml`
 
 ## [0.2.3] - 2026-02-14
 
