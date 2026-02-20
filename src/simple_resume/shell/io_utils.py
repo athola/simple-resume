@@ -62,7 +62,7 @@ def resolve_paths_for_read(
         return resolve_paths(**overrides)
 
     if candidate is not None:
-        if candidate.parent.name == "input":
+        if candidate.parent.name.lower() == "input":
             base_dir = candidate.parent.parent
         else:
             base_dir = candidate.parent

@@ -20,13 +20,21 @@ from tests.bdd import Scenario
 class TestInferDataDirFromYamlInInputDir:
     """YAML files inside an ``input/`` directory."""
 
-    def test_yaml_in_input_dir_returns_grandparent(
-        self, tmp_path: Path, story: Scenario
+    @pytest.mark.parametrize(
+        ("filename", "expected_stem"),
+        [
+            ("sample.yaml", "sample"),
+            ("resume.yml", "resume"),
+            ("Resume.YAML", "Resume"),
+        ],
+    )
+    def test_yaml_extensions_in_input_dir_return_grandparent(
+        self, tmp_path: Path, story: Scenario, filename: str, expected_stem: str
     ) -> None:
-        story.given("a YAML file inside an input/ subdirectory")
+        story.given(f"a '{filename}' file inside an input/ subdirectory")
         input_dir = tmp_path / "input"
         input_dir.mkdir()
-        yaml_file = input_dir / "sample.yaml"
+        yaml_file = input_dir / filename
         yaml_file.touch()
 
         story.when("inferring data_dir without an explicit override")
@@ -34,23 +42,7 @@ class TestInferDataDirFromYamlInInputDir:
 
         story.then("data_dir points to the grandparent (not input/ itself)")
         assert data_dir == tmp_path
-        assert name == "sample"
-
-    def test_yml_in_input_dir_returns_grandparent(
-        self, tmp_path: Path, story: Scenario
-    ) -> None:
-        story.given("a .yml file inside an input/ subdirectory")
-        input_dir = tmp_path / "input"
-        input_dir.mkdir()
-        yml_file = input_dir / "resume.yml"
-        yml_file.touch()
-
-        story.when("inferring data_dir without an explicit override")
-        data_dir, name = _infer_data_dir_and_name(yml_file, data_dir=None)
-
-        story.then("data_dir points to the grandparent")
-        assert data_dir == tmp_path
-        assert name == "resume"
+        assert name == expected_stem
 
     def test_yaml_in_nested_input_dir_returns_grandparent(
         self, tmp_path: Path, story: Scenario
@@ -68,21 +60,22 @@ class TestInferDataDirFromYamlInInputDir:
         assert data_dir == tmp_path / "projects" / "resumes"
         assert name == "resume"
 
-    def test_uppercase_yaml_extension_in_input_dir(
-        self, tmp_path: Path, story: Scenario
+    @pytest.mark.parametrize("dirname", ["Input", "INPUT", "iNpUt"])
+    def test_case_insensitive_input_dir_matching(
+        self, tmp_path: Path, story: Scenario, dirname: str
     ) -> None:
-        story.given("a .YAML file (uppercase) inside an input/ subdirectory")
-        input_dir = tmp_path / "input"
+        story.given(f"a YAML file inside a '{dirname}/' subdirectory")
+        input_dir = tmp_path / dirname
         input_dir.mkdir()
-        yaml_file = input_dir / "Resume.YAML"
+        yaml_file = input_dir / "sample.yaml"
         yaml_file.touch()
 
         story.when("inferring data_dir without an explicit override")
         data_dir, name = _infer_data_dir_and_name(yaml_file, data_dir=None)
 
-        story.then("the uppercase extension is handled and grandparent is returned")
+        story.then("the directory name is matched case-insensitively")
         assert data_dir == tmp_path
-        assert name == "Resume"
+        assert name == "sample"
 
 
 class TestInferDataDirFromYamlNotInInputDir:
@@ -267,3 +260,17 @@ class TestInferDataDirErrorCases:
         story.then("a ValueError is raised")
         with pytest.raises(ValueError, match="Unable to infer data_dir"):
             _infer_data_dir_and_name("/nonexistent/path", data_dir=None)
+
+    def test_non_yaml_file_in_input_dir_raises(
+        self, tmp_path: Path, story: Scenario
+    ) -> None:
+        story.given("a non-YAML file (.txt) inside an input/ directory and no data_dir")
+        input_dir = tmp_path / "input"
+        input_dir.mkdir()
+        txt_file = input_dir / "notes.txt"
+        txt_file.touch()
+
+        story.when("inferring data_dir without an explicit override")
+        story.then("a ValueError is raised because the file is not YAML")
+        with pytest.raises(ValueError, match="Unable to infer data_dir"):
+            _infer_data_dir_and_name(txt_file, data_dir=None)

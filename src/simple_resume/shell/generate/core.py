@@ -550,7 +550,7 @@ def _infer_data_dir_and_name(
 
     if data_dir is not None:
         base_dir = Path(data_dir)
-        if base_dir.name == "input":
+        if base_dir.name.lower() == "input":
             warnings.warn(
                 f"data_dir '{base_dir}' ends in 'input/'. Downstream path "
                 "resolution appends '/input' automatically, which may cause "
@@ -569,7 +569,7 @@ def _infer_data_dir_and_name(
             return source_path, None
         if source_path.suffix.lower() in _YAML_SUFFIXES:
             parent = source_path.parent
-            if parent.name == "input":
+            if parent.name.lower() == "input":
                 return parent.parent, source_path.stem
             return parent, source_path.stem
 
