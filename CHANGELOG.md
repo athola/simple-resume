@@ -2,6 +2,17 @@
 
 This file documents all notable project changes. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2026-02-20
+
+### Fixed
+
+- `input/` directory detection is now case-insensitive (`Input/`, `INPUT/`, etc.) in `_infer_data_dir_and_name` and `resolve_paths_for_read`, preventing path-resolution failures on case-preserving filesystems (fixes #86, #89, #90)
+
+### Tests
+
+- Parametrized case-variant tests for `input/` directory matching in `test_infer_data_dir.py` and `test_io_utils.py`
+- Collapsed three extension-specific tests into a single parametrized test
+
 ## [0.2.4] - 2026-02-15
 
 ### Fixed

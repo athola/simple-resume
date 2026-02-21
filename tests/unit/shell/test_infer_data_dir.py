@@ -203,6 +203,27 @@ class TestExplicitDataDirEndingInInput:
         assert data_dir == input_dir
         assert name == "sample"
 
+    @pytest.mark.parametrize("dirname", ["Input", "INPUT", "iNpUt"])
+    def test_warns_when_data_dir_named_input_case_insensitive(
+        self, tmp_path: Path, story: Scenario, dirname: str
+    ) -> None:
+        story.given(f"an explicit data_dir whose basename is '{dirname}'")
+        input_dir = tmp_path / dirname
+        input_dir.mkdir()
+        yaml_file = tmp_path / "sample.yaml"
+        yaml_file.touch()
+
+        story.when("inferring with that data_dir")
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            data_dir, name = _infer_data_dir_and_name(yaml_file, data_dir=input_dir)
+
+        story.then("a UserWarning about path-doubling is emitted regardless of case")
+        assert len(caught) == 1
+        assert "path doubling" in str(caught[0].message).lower()
+        assert data_dir == input_dir
+        assert name == "sample"
+
     def test_no_warning_for_normal_data_dir(
         self, tmp_path: Path, story: Scenario
     ) -> None:
