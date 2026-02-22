@@ -6,12 +6,14 @@ This file documents all notable project changes. Format based on [Keep a Changel
 
 ### Fixed
 
-- `input/` directory detection is now case-insensitive (`Input/`, `INPUT/`, etc.) in `_infer_data_dir_and_name` and `resolve_paths_for_read`, preventing path-resolution failures on case-preserving filesystems (fixes #86, #89, #90)
+- `input/` directory detection is now case-insensitive (`Input/`, `INPUT/`, etc.) in `_infer_data_dir_and_name` and `resolve_paths_for_read`, preventing path-resolution failures on case-preserving filesystems (fixes #86)
+- `resolve_paths_for_read` now rejects root-level `input/` directories where `parent.parent` would resolve to `/`
 
 ### Tests
 
-- Parametrized case-variant tests for `input/` directory matching in `test_infer_data_dir.py` and `test_io_utils.py`
+- Parametrized case-variant tests for `input/` directory matching in `test_infer_data_dir.py` and `test_io_utils.py` (#89)
 - Collapsed three extension-specific tests into a single parametrized test
+- Edge case test for non-YAML files in `input/` directory (#90)
 
 ## [0.2.4] - 2026-02-15
 

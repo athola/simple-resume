@@ -183,28 +183,8 @@ class TestInferDataDirWithExplicitOverride:
 class TestExplicitDataDirEndingInInput:
     """Warn when explicit data_dir ends in ``input/`` (path-doubling risk)."""
 
+    @pytest.mark.parametrize("dirname", ["input", "Input", "INPUT", "iNpUt"])
     def test_warns_when_data_dir_named_input(
-        self, tmp_path: Path, story: Scenario
-    ) -> None:
-        story.given("an explicit data_dir whose basename is 'input'")
-        input_dir = tmp_path / "input"
-        input_dir.mkdir()
-        yaml_file = tmp_path / "sample.yaml"
-        yaml_file.touch()
-
-        story.when("inferring with that data_dir")
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            data_dir, name = _infer_data_dir_and_name(yaml_file, data_dir=input_dir)
-
-        story.then("a UserWarning about path-doubling is emitted")
-        assert len(caught) == 1
-        assert "path doubling" in str(caught[0].message).lower()
-        assert data_dir == input_dir
-        assert name == "sample"
-
-    @pytest.mark.parametrize("dirname", ["Input", "INPUT", "iNpUt"])
-    def test_warns_when_data_dir_named_input_case_insensitive(
         self, tmp_path: Path, story: Scenario, dirname: str
     ) -> None:
         story.given(f"an explicit data_dir whose basename is '{dirname}'")

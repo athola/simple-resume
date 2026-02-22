@@ -54,7 +54,17 @@ def resolve_paths_for_read(
     overrides: dict[str, Any],
     candidate: Path | None,
 ) -> Paths:
-    """Resolve path configuration for read operations."""
+    """Resolve path configuration for read operations.
+
+    When *candidate* is inside a directory named ``input/`` (matched
+    case-insensitively), *base_dir* is set to the grandparent so that
+    downstream path resolution can safely append ``/input``.
+
+    Raises:
+        ValueError: If the candidate is in a root-level ``input/`` directory
+            where the grandparent would be ``/`` or ``.``.
+
+    """
     if supplied_paths is not None:
         return supplied_paths
 
@@ -63,7 +73,13 @@ def resolve_paths_for_read(
 
     if candidate is not None:
         if candidate.parent.name.lower() == "input":
-            base_dir = candidate.parent.parent
+            grandparent = candidate.parent.parent
+            if grandparent == Path("/") or grandparent == Path("."):
+                raise ValueError(
+                    f"Cannot resolve paths: '{candidate}' is in a root-level "
+                    "'input/' directory. Provide an explicit paths or overrides."
+                )
+            base_dir = grandparent
         else:
             base_dir = candidate.parent
 

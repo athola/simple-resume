@@ -102,6 +102,12 @@ class TestResolvePathsForRead:
         result = resolve_paths_for_read(None, {}, candidate)
         assert result.data == tmp_path
 
+    def test_root_level_input_dir_raises(self) -> None:
+        """Reject candidate in root-level input/ where grandparent is /."""
+        candidate = Path("/input/resume.yaml")
+        with pytest.raises(ValueError, match="root-level"):
+            resolve_paths_for_read(None, {}, candidate)
+
     def test_fallback_with_no_inputs(self) -> None:
         """Test fallback behavior with no supplied paths or candidate."""
         result = resolve_paths_for_read(None, {}, None)
