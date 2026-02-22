@@ -89,6 +89,25 @@ class TestResolvePathsForRead:
         # When candidate is in "input" dir, base_dir should be parent.parent
         assert result.data == tmp_path
 
+    @pytest.mark.parametrize("dirname", ["Input", "INPUT", "iNpUt"])
+    def test_handles_candidate_in_case_variant_input_dir(
+        self, tmp_path: Path, dirname: str
+    ) -> None:
+        """Case-insensitive matching of input/ directory name."""
+        input_dir = tmp_path / dirname
+        input_dir.mkdir(parents=True, exist_ok=True)
+        candidate = input_dir / "john.yaml"
+        candidate.write_text("config: {}")
+
+        result = resolve_paths_for_read(None, {}, candidate)
+        assert result.data == tmp_path
+
+    def test_root_level_input_dir_raises(self) -> None:
+        """Reject candidate in root-level input/ where grandparent is /."""
+        candidate = Path("/input/resume.yaml")
+        with pytest.raises(ValueError, match="root-level"):
+            resolve_paths_for_read(None, {}, candidate)
+
     def test_fallback_with_no_inputs(self) -> None:
         """Test fallback behavior with no supplied paths or candidate."""
         result = resolve_paths_for_read(None, {}, None)

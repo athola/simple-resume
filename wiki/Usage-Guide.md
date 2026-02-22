@@ -38,6 +38,8 @@ The `--data-dir` argument processes all YAML files within a specified directory.
 uv run simple-resume generate --data-dir my_resumes --format html
 ```
 
+Directory names matching `input` are detected case-insensitively (`input/`, `Input/`, `INPUT/`), so the grandparent-directory logic works on case-preserving filesystems such as macOS HFS+ and Windows NTFS.
+
 ### JSON Resume Import
 
 simple-resume supports importing JSON Resume files (`.json` from jsonresume.org). Drop a JSON Resume file into your input directory and `simple-resume` will automatically convert it at load time.

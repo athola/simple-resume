@@ -531,12 +531,14 @@ def _infer_data_dir_and_name(
 
     When *data_dir* is ``None``, the directory is inferred from *source*:
     - Directory source → the directory itself (name is ``None``).
-    - YAML file inside an ``input/`` directory → the **grandparent** directory,
-      because downstream path resolution appends ``/input`` automatically.
+    - YAML file inside an ``input/`` directory (matched case-insensitively,
+      e.g. ``Input/``, ``INPUT/``) → the **grandparent** directory, because
+      downstream path resolution appends ``/input`` automatically.
     - YAML file elsewhere → the parent directory.
 
     When *data_dir* is provided explicitly, it is used as-is (with a warning if
-    its basename is ``"input"``).  Directory sources still return themselves.
+    its basename matches ``"input"`` case-insensitively).  Directory sources
+    still return themselves.
 
     Returns:
         A ``(data_dir, resume_name)`` tuple.  *resume_name* is ``None`` for
@@ -550,7 +552,7 @@ def _infer_data_dir_and_name(
 
     if data_dir is not None:
         base_dir = Path(data_dir)
-        if base_dir.name == "input":
+        if base_dir.name.lower() == "input":
             warnings.warn(
                 f"data_dir '{base_dir}' ends in 'input/'. Downstream path "
                 "resolution appends '/input' automatically, which may cause "
@@ -569,7 +571,7 @@ def _infer_data_dir_and_name(
             return source_path, None
         if source_path.suffix.lower() in _YAML_SUFFIXES:
             parent = source_path.parent
-            if parent.name == "input":
+            if parent.name.lower() == "input":
                 return parent.parent, source_path.stem
             return parent, source_path.stem
 

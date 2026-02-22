@@ -1,7 +1,7 @@
 # ATS API Reference
 
-**Version:** 0.2.4
-**Last Updated:** 2026-02-15
+**Version:** 0.2.5
+**Last Updated:** 2026-02-20
 **Stability:** Public API exports follow semantic versioning guarantees
 **Parent:** [API Reference](API-Reference.md)
 

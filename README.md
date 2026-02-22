@@ -205,6 +205,7 @@ The workflow builds the package, generates a changelog from commit history, and 
 - `TemplateNotFound`: confirm installation includes packaged assets (bundled in wheels/editable installs); custom templates require `--templates-dir`.
 - PDF on Linux: install system libs `cairo`, `pango`, `gdk-pixbuf` (WeasyPrint requirement).
 - PDF rendering errors with WeasyPrint: `simple-resume` pins `pydyf>=0.10.0,<0.12.0` to avoid incompatible releases. If you override this constraint, PDF output may silently fail.
+- Case-variant `input/` directories: `Input/`, `INPUT/`, etc. are detected automatically (v0.2.5+). Earlier versions required lowercase `input/`.
 
 ## Contributing
 
