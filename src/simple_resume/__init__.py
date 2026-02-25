@@ -36,24 +36,34 @@ from simple_resume.core.ats.entities import EntityExtractor, extract_entities
 from simple_resume.core.ats.jaccard import JaccardScorer
 from simple_resume.core.ats.keyword import KeywordScorer
 from simple_resume.core.ats.reports import ATSReportGenerator
+
+# LLM infrastructure (new in v0.3.0)
+from simple_resume.core.ats.tailor import (
+    GapAnalysis,
+    JobRequirements,
+    analyze_gaps,
+    build_tailoring_prompt,
+)
 from simple_resume.core.ats.tfidf import TFIDFScorer
 from simple_resume.core.ats.tournament import (
     ATSTournament,
     TournamentResult,
     score_resume,
 )
-
-# Exception hierarchy
 from simple_resume.core.exceptions import (
     ConfigurationError,
     FileSystemError,
     GenerationError,
+    LLMError,
+    LLMNotAvailableError,
     PaletteError,
     SessionError,
     SimpleResumeError,
     TemplateError,
     ValidationError,
 )
+from simple_resume.core.importers.linkedin import linkedin_to_simple_resume
+from simple_resume.core.llm.protocol import LLMConfig, LLMProvider
 
 # Core classes (data models only - no I/O methods)
 from simple_resume.core.models import (
@@ -107,7 +117,7 @@ from simple_resume.shell.runtime.lazy_import import (
 )
 
 # Version
-__version__ = "0.2.5"
+__version__ = "0.3.0"
 
 # Public API exports - organized by functionality
 __all__ = [
@@ -160,4 +170,16 @@ __all__ = [
     "TournamentResult",
     "score_resume",
     "ATSReportGenerator",
+    # LLM infrastructure (v0.3.0)
+    "LLMProvider",
+    "LLMConfig",
+    "LLMError",
+    "LLMNotAvailableError",
+    # LinkedIn import (v0.3.0)
+    "linkedin_to_simple_resume",
+    # Job post tailoring (v0.3.0)
+    "JobRequirements",
+    "GapAnalysis",
+    "analyze_gaps",
+    "build_tailoring_prompt",
 ]

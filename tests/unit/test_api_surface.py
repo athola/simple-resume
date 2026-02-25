@@ -55,6 +55,18 @@ EXPECTED_PUBLIC_SYMBOLS = {
     "TournamentResult",
     "score_resume",
     "ATSReportGenerator",
+    # LLM infrastructure (v0.3.0)
+    "LLMProvider",
+    "LLMConfig",
+    "LLMError",
+    "LLMNotAvailableError",
+    # LinkedIn import (v0.3.0)
+    "linkedin_to_simple_resume",
+    # Job post tailoring (v0.3.0)
+    "JobRequirements",
+    "GapAnalysis",
+    "analyze_gaps",
+    "build_tailoring_prompt",
 }
 
 
