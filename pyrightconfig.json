@@ -1,0 +1,9 @@
+{
+  "venvPath": "/home/alext/simple-resume",
+  "venv": ".venv",
+  "pythonVersion": "3.10",
+  "typeCheckingMode": "standard",
+  "include": ["src", "tests"],
+  "exclude": [".venv", ".uv-cache", "dist"],
+  "reportMissingImports": "warning"
+}
