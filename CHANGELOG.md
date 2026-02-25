@@ -2,6 +2,33 @@
 
 This file documents all notable project changes. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-02-24
+
+### Added
+
+- PYOK (Plug Your Own Key) LLM integration infrastructure (#8)
+  - `LLMProvider` protocol and `LLMConfig` dataclass in `core/llm/protocol.py`
+  - Prompt templates for resume tailoring in `core/llm/prompts.py`
+  - `LiteLLMProvider` wrapper in `shell/llm/client.py` supporting OpenAI, Anthropic, Google, Mistral, and Cohere
+  - `resolve_api_key()` and `resolve_llm_config()` for automatic provider detection from environment variables
+  - `is_llm_available()` gate and `requires_llm` decorator for graceful degradation without `[llm]` extra
+  - `LLMError`, `LLMConfigError`, and `LLMProviderError` exception hierarchy
+- LinkedIn profile import CLI subcommand (`simple-resume import`) (#9)
+  - Parses HTML and plain-text LinkedIn profile exports via `linkedin_fetcher`
+  - Converts to simple-resume YAML format via `linkedin_to_simple_resume()`
+  - Supports `--output` flag for custom output path
+- Job post tailoring CLI subcommand (`simple-resume tailor`) (#10)
+  - `JobRequirements` dataclass and `analyze_gaps()` for resume-job gap analysis
+  - `build_tailoring_prompt()` for LLM-assisted resume tailoring
+  - `--report` flag for gap analysis only (no LLM required)
+  - `--api-key` and `--model` flags for LLM provider configuration
+- New optional dependency groups: `[llm]` for LiteLLM, `[linkedin]` for BeautifulSoup4
+
+### Changed
+
+- Version bump to 0.3.0 for new PYOK LLM integration features (minor version per semver)
+- CLI lazy-loads LinkedIn and LLM imports to avoid requiring optional dependencies at startup
+
 ## [0.2.5] - 2026-02-20
 
 ### Fixed
