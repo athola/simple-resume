@@ -232,6 +232,10 @@ ignore_missing_imports = true
 module = ["litellm", "litellm.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = ["bs4", "bs4.*"]
+ignore_missing_imports = true
+
 
 [tool.bandit]
 exclude_dirs = [".venv", ".uv-cache", ".git", "__pycache__"]
