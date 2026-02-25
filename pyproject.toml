@@ -67,6 +67,15 @@ bert = [
     "sentence-transformers>=3.0,<4.0",
     "torch>=2.5,<3.0",
 ]
+llm = [
+    "litellm>=1.0,<2.0",
+]
+linkedin = [
+    "beautifulsoup4>=4.12,<5.0",
+]
+all = [
+    "simple-resume[llm,linkedin]",
+]
 
 [project.scripts]
 simple-resume = "simple_resume.shell.cli:main_entry"
@@ -141,6 +150,8 @@ extend-ignore = [
 # These modules use runtime conditional imports to defer loading sentence-transformers/torch
 "src/simple_resume/core/ats/bert.py" = ["PLC0415"]
 "src/simple_resume/core/ats/tournament.py" = ["PLC0415"]
+"src/simple_resume/shell/llm/client.py" = ["PLC0415"]
+"src/simple_resume/shell/llm/gate.py" = ["PLC0415"]
 "tests/**/*.py" = [
     "PLR2004",  # Allow magic numbers in tests (e.g., test data)
     "PLR0913",  # Allow more arguments in test functions (many fixtures)
@@ -215,6 +226,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["sentence_transformers", "sentence_transformers.*", "torch", "torch.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["litellm", "litellm.*"]
 ignore_missing_imports = true
 
 

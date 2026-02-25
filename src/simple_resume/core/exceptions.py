@@ -220,6 +220,67 @@ class PaletteRemoteError(PaletteError):
         self.status_code = status_code
 
 
+class LLMNotAvailableError(SimpleResumeError):
+    """Raise when LLM features are used but optional [llm] dependency is missing."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        install_hint: str | None = None,
+        context: dict[str, Any] | None = None,
+        filename: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the exception.
+
+        Args:
+            message: The error message.
+            install_hint: Suggested pip install command.
+            context: Optional context for the error.
+            filename: The name of the file being processed.
+            **kwargs: Additional context (will be filtered).
+
+        """
+        filtered_kwargs = {
+            k: v for k, v in kwargs.items() if k not in ["context", "filename"]
+        }
+        super().__init__(message, context=context, filename=filename, **filtered_kwargs)
+        self.install_hint = install_hint
+
+
+class LLMError(SimpleResumeError):
+    """Raise when an LLM API call fails."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        provider: str | None = None,
+        model: str | None = None,
+        context: dict[str, Any] | None = None,
+        filename: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the exception.
+
+        Args:
+            message: The error message.
+            provider: The LLM provider name (e.g., "openai", "anthropic").
+            model: The model identifier.
+            context: Optional context for the error.
+            filename: The name of the file being processed.
+            **kwargs: Additional context (will be filtered).
+
+        """
+        filtered_kwargs = {
+            k: v for k, v in kwargs.items() if k not in ["context", "filename"]
+        }
+        super().__init__(message, context=context, filename=filename, **filtered_kwargs)
+        self.provider = provider
+        self.model = model
+
+
 class FileSystemError(SimpleResumeError):
     """Raise when file system operations fail."""
 
@@ -326,6 +387,8 @@ __all__ = [
     "ConfigurationError",
     "FileSystemError",
     "GenerationError",
+    "LLMError",
+    "LLMNotAvailableError",
     "PaletteError",
     # Palette-specific exceptions (now part of main hierarchy)
     "PaletteLookupError",

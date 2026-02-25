@@ -1,0 +1,117 @@
+"""LiteLLM wrapper implementing the LLMProvider protocol.
+
+This module handles actual API calls to LLM providers via litellm.
+It belongs in the shell layer because it performs I/O.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+from typing import Any
+
+from simple_resume.core.exceptions import LLMError
+from simple_resume.core.llm.protocol import LLMConfig, LLMProvider
+
+logger = logging.getLogger(__name__)
+
+try:
+    import litellm  # ty: ignore[unresolved-import]
+except ImportError:  # pragma: no cover
+    litellm = None
+
+
+class LiteLLMProvider(LLMProvider):
+    """LLM provider backed by litellm for multi-provider support.
+
+    Wraps litellm.completion() to provide a consistent interface
+    across OpenAI, Anthropic, and other providers.
+
+    Attributes:
+        config: The LLM configuration (model, API key, etc.).
+
+    """
+
+    def __init__(self, config: LLMConfig) -> None:
+        """Initialize with LLM configuration.
+
+        Args:
+            config: LLM configuration including API key and model.
+
+        """
+        self.config = config
+
+    def complete(self, prompt: str, system: str = "", **kwargs: Any) -> str:
+        """Send a completion request and return the text response.
+
+        Args:
+            prompt: The user prompt.
+            system: Optional system prompt.
+            **kwargs: Additional parameters passed to litellm.
+
+        Returns:
+            The text content of the LLM response.
+
+        Raises:
+            LLMError: If the API call fails.
+
+        """
+        messages: list[dict[str, str]] = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": prompt})
+
+        try:
+            response = litellm.completion(  # ty: ignore[possibly-missing-attribute]
+                model=self.config.model,
+                messages=messages,
+                api_key=self.config.api_key,
+                temperature=self.config.temperature,
+                max_tokens=self.config.max_tokens,
+                **kwargs,
+            )
+            return response.choices[0].message.content  # type: ignore[no-any-return]
+        except Exception as exc:
+            raise LLMError(
+                str(exc),
+                provider="litellm",
+                model=self.config.model,
+            ) from exc
+
+    def complete_structured(
+        self, prompt: str, schema: dict[str, Any], **kwargs: Any
+    ) -> dict[str, Any]:
+        """Send a completion request expecting a JSON-structured response.
+
+        Instructs the LLM to respond in JSON format and parses the result.
+
+        Args:
+            prompt: The user prompt.
+            schema: JSON schema describing the expected response structure.
+            **kwargs: Additional parameters passed to litellm.
+
+        Returns:
+            Parsed dictionary from the LLM JSON response.
+
+        Raises:
+            LLMError: If the API call fails or response is not valid JSON.
+
+        """
+        json_prompt = (
+            f"{prompt}\n\nRespond ONLY with valid JSON matching this schema:\n"
+            f"{json.dumps(schema, indent=2)}"
+        )
+
+        raw = self.complete(json_prompt, **kwargs)
+
+        try:
+            return json.loads(raw)  # type: ignore[no-any-return]
+        except json.JSONDecodeError as exc:
+            raise LLMError(
+                f"LLM response was not valid JSON: {exc}",
+                provider="litellm",
+                model=self.config.model,
+            ) from exc
+
+
+__all__ = ["LiteLLMProvider"]
