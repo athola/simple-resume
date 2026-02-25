@@ -15,11 +15,6 @@ from simple_resume.core.llm.protocol import LLMConfig, LLMProvider
 
 logger = logging.getLogger(__name__)
 
-try:
-    import litellm  # ty: ignore[unresolved-import]
-except ImportError:  # pragma: no cover
-    litellm = None
-
 
 class LiteLLMProvider(LLMProvider):
     """LLM provider backed by litellm for multi-provider support.
@@ -62,7 +57,9 @@ class LiteLLMProvider(LLMProvider):
         messages.append({"role": "user", "content": prompt})
 
         try:
-            response = litellm.completion(  # ty: ignore[possibly-missing-attribute]
+            import litellm as _litellm  # noqa: PLC0415  # ty: ignore[unresolved-import]  # pyright: ignore[reportMissingImports]
+
+            response = _litellm.completion(
                 model=self.config.model,
                 messages=messages,
                 api_key=self.config.api_key,
@@ -71,6 +68,13 @@ class LiteLLMProvider(LLMProvider):
                 **kwargs,
             )
             return response.choices[0].message.content  # type: ignore[no-any-return]
+        except ImportError as exc:  # pragma: no cover
+            raise LLMError(
+                "litellm is not installed. "
+                "Install with: pip install simple-resume[llm]",
+                provider="litellm",
+                model=self.config.model,
+            ) from exc
         except Exception as exc:
             raise LLMError(
                 str(exc),

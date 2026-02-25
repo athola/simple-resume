@@ -22,7 +22,7 @@ def is_llm_available() -> bool:
 
     """
     try:
-        import litellm  # noqa: F401  # ty: ignore[unresolved-import]
+        import litellm  # noqa: F401  # ty: ignore[unresolved-import]  # pyright: ignore[reportMissingImports]
 
         return True
     except ImportError:
