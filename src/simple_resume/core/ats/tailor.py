@@ -133,12 +133,12 @@ class _SkillCounts:
 
 def _compute_score(counts: list[_SkillCounts]) -> float:
     """Compute a weighted match score between 0.0 and 1.0."""
-    total_items = sum(c.total for c in counts)
-    if total_items == 0:
+    active = [c for c in counts if c.total > 0]
+    if not active:
         return 0.0
 
-    weighted = sum(c.weight * (c.matched / max(c.total, 1)) for c in counts)
-    return round(weighted, 3)
+    weighted = sum(c.weight * (c.matched / c.total) for c in active)
+    return round(weighted / sum(c.weight for c in active), 3)
 
 
 def _build_summary(  # noqa: PLR0913

@@ -67,7 +67,14 @@ class LiteLLMProvider(LLMProvider):
                 max_tokens=self.config.max_tokens,
                 **kwargs,
             )
-            return response.choices[0].message.content  # type: ignore[no-any-return]
+            content = response.choices[0].message.content
+            if content is None:
+                raise LLMError(
+                    "LLM returned empty response",
+                    provider="litellm",
+                    model=self.config.model,
+                )
+            return content  # type: ignore[no-any-return]
         except ImportError as exc:  # pragma: no cover
             raise LLMError(
                 "litellm is not installed. "
@@ -77,7 +84,7 @@ class LiteLLMProvider(LLMProvider):
             ) from exc
         except Exception as exc:
             raise LLMError(
-                str(exc),
+                f"{type(exc).__name__}: {exc}",
                 provider="litellm",
                 model=self.config.model,
             ) from exc

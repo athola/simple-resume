@@ -7,7 +7,7 @@ plus the configuration dataclass. This module is pure (no I/O, no API keys).
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 
@@ -23,7 +23,7 @@ class LLMConfig:
 
     """
 
-    api_key: str
+    api_key: str = field(repr=False)
     model: str = "claude-sonnet-4-20250514"
     temperature: float = 0.3
     max_tokens: int = 4096
