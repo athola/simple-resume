@@ -7,11 +7,14 @@ to simple-resume YAML format, and writes the result to disk.
 from __future__ import annotations
 
 import argparse
+import logging
 from pathlib import Path
 
 import yaml
 
 from simple_resume.core.exceptions import SimpleResumeError
+
+logger = logging.getLogger(__name__)
 
 
 def handle_import_command(args: argparse.Namespace) -> int:
@@ -62,9 +65,11 @@ def handle_import_command(args: argparse.Namespace) -> int:
         return 0
 
     except (FileNotFoundError, ValueError) as exc:
+        logger.error("Import error: %s", exc)
         print(f"Import error: {exc}")
         return 1
     except SimpleResumeError as exc:
+        logger.error("Import error: %s", exc)
         print(f"Import error: {exc}")
         return 1
     except Exception as exc:  # pragma: no cover - safety net

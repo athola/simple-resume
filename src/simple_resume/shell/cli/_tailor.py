@@ -7,6 +7,7 @@ using an LLM to produce tailored suggestions.
 from __future__ import annotations
 
 import argparse
+import logging
 from pathlib import Path
 
 import yaml
@@ -18,12 +19,22 @@ from simple_resume.core.ats.tailor import (
 )
 from simple_resume.core.exceptions import LLMError, SimpleResumeError
 
+logger = logging.getLogger(__name__)
+
 
 def _load_resume_yaml(resume_path: Path) -> dict[str, object]:
     """Load a resume YAML file and return the parsed dict."""
     if not resume_path.exists():
         raise FileNotFoundError(f"Resume file not found: {resume_path}")
-    return yaml.safe_load(resume_path.read_text(encoding="utf-8"))  # type: ignore[no-any-return]
+    try:
+        data = yaml.safe_load(resume_path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        raise ValueError(f"Invalid YAML in {resume_path}: {exc}") from exc
+    if not isinstance(data, dict):
+        raise ValueError(
+            f"Expected a YAML mapping in {resume_path}, got {type(data).__name__}"
+        )
+    return data
 
 
 def _load_job_posting(job_path: Path) -> str:
@@ -87,9 +98,11 @@ def handle_tailor_command(args: argparse.Namespace) -> int:
         )
 
     except (FileNotFoundError, ValueError) as exc:
+        logger.error("Tailor error: %s", exc)
         print(f"Tailor error: {exc}")
         return 1
     except SimpleResumeError as exc:
+        logger.error("Tailor error: %s", exc)
         print(f"Tailor error: {exc}")
         return 1
     except Exception as exc:  # pragma: no cover - safety net
@@ -153,15 +166,31 @@ def _run_llm_tailoring(  # noqa: PLR0913
         prompt = build_tailoring_prompt(resume_data, job_text)
         result = provider.complete(prompt)
 
+        # Strip markdown code fences if present
+        stripped = result.strip()
+        if stripped.startswith("```"):
+            lines = stripped.split("\n")
+            stripped = "\n".join(
+                lines[1:-1] if lines[-1].strip() == "```" else lines[1:]
+            )
+
+        # Validate YAML before writing
+        try:
+            yaml.safe_load(stripped)
+        except yaml.YAMLError as exc:
+            logger.warning("LLM returned invalid YAML: %s", exc)
+            print("Warning: LLM output may not be valid YAML. Saving raw output.")
+
         # Write tailored output
         output_path = resume_path.with_name(
             f"{resume_path.stem}_tailored{resume_path.suffix}"
         )
-        output_path.write_text(result, encoding="utf-8")
+        output_path.write_text(stripped, encoding="utf-8")
         print(f"Tailored resume saved: {output_path}")
         return 0
 
     except LLMError as exc:
+        logger.error("LLM error: %s", exc)
         print(f"LLM error: {exc}")
         return 1
 
