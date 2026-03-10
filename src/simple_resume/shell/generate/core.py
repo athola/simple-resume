@@ -12,7 +12,6 @@ For lazy-loaded versions with better startup performance, see `generate.lazy`.
 from __future__ import annotations
 
 import time
-import warnings
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -553,12 +552,10 @@ def _infer_data_dir_and_name(
     if data_dir is not None:
         base_dir = Path(data_dir)
         if base_dir.name.lower() == "input":
-            warnings.warn(
+            raise ValueError(
                 f"data_dir '{base_dir}' ends in 'input/'. Downstream path "
-                "resolution appends '/input' automatically, which may cause "
-                "path doubling. Consider passing the parent directory instead.",
-                UserWarning,
-                stacklevel=2,
+                "resolution appends '/input' automatically, which causes "
+                "path doubling. Pass the parent directory instead."
             )
         if source_path.exists() and source_path.is_dir():
             return source_path, None
@@ -572,7 +569,13 @@ def _infer_data_dir_and_name(
         if source_path.suffix.lower() in _YAML_SUFFIXES:
             parent = source_path.parent
             if parent.name.lower() == "input":
-                return parent.parent, source_path.stem
+                grandparent = parent.parent
+                if grandparent == Path("/") or grandparent == Path("."):
+                    raise ValueError(
+                        f"Cannot infer data_dir: '{source_path}' is in a root-level "
+                        "'input/' directory. Provide data_dir explicitly."
+                    )
+                return grandparent, source_path.stem
             return parent, source_path.stem
 
     raise ValueError(

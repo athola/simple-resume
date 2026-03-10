@@ -8,7 +8,6 @@ it.
 
 from __future__ import annotations
 
-import warnings
 from pathlib import Path
 
 import pytest
@@ -44,11 +43,12 @@ class TestInferDataDirFromYamlInInputDir:
         assert data_dir == tmp_path
         assert name == expected_stem
 
+    @pytest.mark.parametrize("dirname", ["input", "INPUT"])
     def test_yaml_in_nested_input_dir_returns_grandparent(
-        self, tmp_path: Path, story: Scenario
+        self, tmp_path: Path, story: Scenario, dirname: str
     ) -> None:
-        story.given("a YAML file inside a deeply nested input/ subdirectory")
-        nested = tmp_path / "projects" / "resumes" / "input"
+        story.given(f"a YAML file inside a deeply nested {dirname}/ subdirectory")
+        nested = tmp_path / "projects" / "resumes" / dirname
         nested.mkdir(parents=True)
         yaml_file = nested / "resume.yaml"
         yaml_file.touch()
@@ -56,7 +56,7 @@ class TestInferDataDirFromYamlInInputDir:
         story.when("inferring data_dir without an explicit override")
         data_dir, name = _infer_data_dir_and_name(yaml_file, data_dir=None)
 
-        story.then("data_dir points to the grandparent of input/")
+        story.then("data_dir points to the grandparent of the input/ directory")
         assert data_dir == tmp_path / "projects" / "resumes"
         assert name == "resume"
 
@@ -181,10 +181,10 @@ class TestInferDataDirWithExplicitOverride:
 
 
 class TestExplicitDataDirEndingInInput:
-    """Warn when explicit data_dir ends in ``input/`` (path-doubling risk)."""
+    """Raise ValueError when data_dir ends in ``input/`` (path-doubling)."""
 
     @pytest.mark.parametrize("dirname", ["input", "Input", "INPUT", "iNpUt"])
-    def test_warns_when_data_dir_named_input(
+    def test_raises_when_data_dir_named_input(
         self, tmp_path: Path, story: Scenario, dirname: str
     ) -> None:
         story.given(f"an explicit data_dir whose basename is '{dirname}'")
@@ -194,17 +194,11 @@ class TestExplicitDataDirEndingInInput:
         yaml_file.touch()
 
         story.when("inferring with that data_dir")
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            data_dir, name = _infer_data_dir_and_name(yaml_file, data_dir=input_dir)
+        story.then("a ValueError about path-doubling is raised regardless of case")
+        with pytest.raises(ValueError, match="path doubling"):
+            _infer_data_dir_and_name(yaml_file, data_dir=input_dir)
 
-        story.then("a UserWarning about path-doubling is emitted regardless of case")
-        assert len(caught) == 1
-        assert "path doubling" in str(caught[0].message).lower()
-        assert data_dir == input_dir
-        assert name == "sample"
-
-    def test_no_warning_for_normal_data_dir(
+    def test_no_error_for_normal_data_dir(
         self, tmp_path: Path, story: Scenario
     ) -> None:
         story.given("an explicit data_dir with a normal name")
@@ -214,12 +208,11 @@ class TestExplicitDataDirEndingInInput:
         yaml_file.touch()
 
         story.when("inferring with that data_dir")
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            _infer_data_dir_and_name(yaml_file, data_dir=custom_dir)
+        data_dir, name = _infer_data_dir_and_name(yaml_file, data_dir=custom_dir)
 
-        story.then("no warning is emitted")
-        assert len(caught) == 0
+        story.then("no error is raised and data_dir is used as-is")
+        assert data_dir == custom_dir
+        assert name == "sample"
 
 
 class TestRootLevelInputGuard:
@@ -250,6 +243,22 @@ class TestRootLevelInputGuard:
         story.then("ValueError is raised because file doesn't exist")
         with pytest.raises(ValueError, match="Unable to infer data_dir"):
             _infer_data_dir_and_name("/input/resume.yaml", data_dir=None)
+
+    def test_relative_input_dir_guard(
+        self, tmp_path: Path, story: Scenario, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        story.given("a YAML at relative input/resume.yaml (grandparent is '.')")
+        input_dir = tmp_path / "input"
+        input_dir.mkdir()
+        yaml_file = input_dir / "resume.yaml"
+        yaml_file.touch()
+
+        monkeypatch.chdir(tmp_path)
+
+        story.when("inferring data_dir via the relative path")
+        story.then("ValueError is raised because grandparent resolves to '.'")
+        with pytest.raises(ValueError, match="root-level"):
+            _infer_data_dir_and_name(Path("input/resume.yaml"), data_dir=None)
 
 
 class TestInferDataDirErrorCases:
