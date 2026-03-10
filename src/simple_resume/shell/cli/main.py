@@ -19,6 +19,9 @@ from simple_resume.core.generate.plan import (
     build_generation_plan,
 )
 from simple_resume.core.resume import Resume
+from simple_resume.shell.cli._errors import (  # noqa: F401
+    _handle_unexpected_error,
+)
 from simple_resume.shell.cli._generation import (  # noqa: F401
     _bool_flag,
     _build_config_overrides,
@@ -33,12 +36,18 @@ from simple_resume.shell.cli._generation import (  # noqa: F401
     _summarize_batch_result,
     _to_path_or_none,
 )
+from simple_resume.shell.cli._import import (  # noqa: F401
+    handle_import_command,
+)
 from simple_resume.shell.cli._screen import (  # noqa: F401
     _collect_ats_warnings,
     _format_text_report,
     _get_status_label,
     _read_file_text,
     handle_screen_command,
+)
+from simple_resume.shell.cli._tailor import (  # noqa: F401
+    handle_tailor_command,
 )
 from simple_resume.shell.config import resolve_paths
 from simple_resume.shell.resume_extensions import (
@@ -62,60 +71,6 @@ class GenerationResultProtocol(Protocol):
         ...
 
 
-def _handle_unexpected_error(exc: Exception, context: str) -> int:
-    """Handle unexpected exceptions with proper logging and classification.
-
-    Args:
-        exc: The unexpected exception.
-        context: Context where the error occurred (e.g., "generation", "validation").
-
-    Returns:
-        Appropriate exit code.
-
-    """
-    logger = logging.getLogger(__name__)
-
-    # Classify the error type for better user experience.
-    if isinstance(exc, (PermissionError, OSError)):
-        error_type = "File System Error"
-        exit_code = 2
-        suggestion = "Check file permissions and disk space"
-    elif isinstance(exc, (KeyError, AttributeError, TypeError)):
-        error_type = "Internal Error"
-        exit_code = 3
-        suggestion = "This may be a bug - please report it"
-    elif isinstance(exc, MemoryError):
-        error_type = "Resource Error"
-        exit_code = 4
-        suggestion = "System ran out of memory"
-    elif isinstance(exc, (ValueError, IndexError)):
-        error_type = "Input Error"
-        exit_code = 5
-        suggestion = "Check your input files and parameters"
-    else:
-        error_type = "Unexpected Error"
-        exit_code = 1
-        suggestion = "Check logs for details"
-
-    # Log the full error for debugging.
-    logger.error(
-        f"{error_type} in {context}: {exc}",
-        exc_info=True,
-        extra={
-            "error_type": error_type,
-            "context": context,
-            "exception_type": type(exc).__name__,
-        },
-    )
-
-    # Show user-friendly message.
-    print(f"{error_type}: {exc}")
-    if suggestion:
-        print(f"Suggestion: {suggestion}")
-
-    return exit_code
-
-
 def main() -> int:
     """Run the CLI entry point."""
     # Register default services for CLI operations
@@ -133,6 +88,8 @@ def main() -> int:
         "session": handle_session_command,
         "validate": handle_validate_command,
         "screen": handle_screen_command,
+        "import": handle_import_command,
+        "tailor": handle_tailor_command,
     }
 
     try:
@@ -333,6 +290,51 @@ def create_parser() -> argparse.ArgumentParser:
         "-v",
         action="store_true",
         help="Show detailed breakdown of scores",
+    )
+
+    # import subcommand
+    import_parser = subparsers.add_parser(
+        "import",
+        help="Import a LinkedIn profile and convert to simple-resume YAML",
+    )
+    import_parser.add_argument(
+        "linkedin",
+        help="Path to LinkedIn profile file (HTML or text)",
+    )
+    import_parser.add_argument(
+        "--output",
+        "-o",
+        type=Path,
+        help="Output YAML file path (default: same name with .yaml extension)",
+    )
+
+    # tailor subcommand
+    tailor_parser = subparsers.add_parser(
+        "tailor",
+        help="Tailor resume to a job posting using gap analysis and LLM",
+    )
+    tailor_parser.add_argument(
+        "resume",
+        type=Path,
+        help="Path to resume YAML file",
+    )
+    tailor_parser.add_argument(
+        "job",
+        type=Path,
+        help="Path to job posting file (text)",
+    )
+    tailor_parser.add_argument(
+        "--api-key",
+        help="API key for LLM provider (or set OPENAI_API_KEY env var)",
+    )
+    tailor_parser.add_argument(
+        "--model",
+        help="LLM model identifier (default: claude-sonnet-4-20250514)",
+    )
+    tailor_parser.add_argument(
+        "--report",
+        action="store_true",
+        help="Show gap analysis report only, without LLM tailoring",
     )
 
     return parser

@@ -16,15 +16,22 @@ Functions:
 from __future__ import annotations
 
 import copy
+import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
+
+import markdown as _markdown
 
 from simple_resume.core.constants import MARKDOWN_EXTENSION, TEX_EXTENSION, OutputFormat
 from simple_resume.core.exceptions import ConfigurationError, GenerationError
 from simple_resume.core.protocols import PdfGenerationStrategy
-from simple_resume.core.result import GenerationResult
+from simple_resume.core.result import GenerationMetadata, GenerationResult
 from simple_resume.shell.file_opener import open_file as shell_open_file
-from simple_resume.shell.render.latex import LatexCompilationError
+from simple_resume.shell.render.latex import (
+    LatexCompilationError,
+    compile_tex_to_pdf,
+    render_resume_latex_from_data,
+)
 from simple_resume.shell.render.operations import generate_html_with_jinja
 from simple_resume.shell.services import DefaultPdfGenerationStrategy
 from simple_resume.shell.strategies import PdfGenerationRequest
@@ -237,7 +244,6 @@ def to_markdown(
         resolved_path.write_text(md_content, encoding="utf-8")
 
         # Create metadata
-        from simple_resume.core.result import GenerationMetadata  # noqa: PLC0415
 
         metadata = GenerationMetadata(
             format_type="markdown",
@@ -425,11 +431,6 @@ def to_tex(
             resolved_path = Path(output_path)
 
         # Use the shell-layer render functions which have all dependencies
-        from simple_resume.core.result import GenerationMetadata  # noqa: PLC0415
-        from simple_resume.shell.render.latex import (  # noqa: PLC0415
-            render_resume_latex_from_data,
-        )
-
         # Get resume data for LaTeX rendering
         resume_data = resume.data if isinstance(resume.data, dict) else resume.raw_data
 
@@ -521,9 +522,7 @@ def render_markdown_file(
         md_content = input_path.read_text(encoding="utf-8")
 
         # Convert markdown to HTML using a simple wrapper
-        import markdown  # noqa: PLC0415
-
-        html_body = markdown.markdown(md_content, extensions=["tables", "fenced_code"])
+        html_body = _markdown.markdown(md_content, extensions=["tables", "fenced_code"])
 
         # Create full HTML document
         body_style = (
@@ -552,7 +551,6 @@ def render_markdown_file(
         resolved_output.write_text(html_content, encoding="utf-8")
 
         # Create metadata
-        from simple_resume.core.result import GenerationMetadata  # noqa: PLC0415
 
         metadata = GenerationMetadata(
             format_type="html",
@@ -617,11 +615,6 @@ def render_tex_file(
 
     try:
         # Use the LaTeX compilation from the shell layer
-        import shutil  # noqa: PLC0415
-
-        from simple_resume.shell.render.latex import (  # noqa: PLC0415
-            compile_tex_to_pdf,
-        )
 
         # Compile to PDF (outputs next to the .tex file)
         resolved_output.parent.mkdir(parents=True, exist_ok=True)
@@ -632,7 +625,6 @@ def render_tex_file(
             shutil.move(str(compiled_pdf), str(resolved_output))
 
         # Create metadata
-        from simple_resume.core.result import GenerationMetadata  # noqa: PLC0415
 
         file_size = resolved_output.stat().st_size if resolved_output.exists() else 0
         metadata = GenerationMetadata(
