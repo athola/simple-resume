@@ -41,6 +41,7 @@ from simple_resume.shell.cli._import import (  # noqa: F401
 )
 from simple_resume.shell.cli._screen import (  # noqa: F401
     _collect_ats_warnings,
+    _format_batch_report,
     _format_text_report,
     _get_status_label,
     _read_file_text,
@@ -290,6 +291,17 @@ def create_parser() -> argparse.ArgumentParser:
         "-v",
         action="store_true",
         help="Show detailed breakdown of scores",
+    )
+    screen_parser.add_argument(
+        "--batch",
+        action="store_true",
+        help="Batch mode: treat resume arg as a directory of resumes",
+    )
+    screen_parser.add_argument(
+        "--top",
+        type=int,
+        default=None,
+        help="Show only the top N results (batch mode only)",
     )
 
     # import subcommand
