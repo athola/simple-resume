@@ -145,7 +145,11 @@ def _handle_batch(  # noqa: PLR0913
     # Score each resume
     results: list[tuple[str, float]] = []
     for rfile in resume_files:
-        text = _read_file_text(rfile)
+        try:
+            text = _read_file_text(rfile)
+        except (OSError, SimpleResumeError) as exc:
+            print(f"  Skipping {rfile.name}: {exc}")
+            continue
         if not text.strip():
             continue
         score = tournament.score(text, job_text).overall_score
@@ -155,12 +159,9 @@ def _handle_batch(  # noqa: PLR0913
         print("Error: No resume files could be read.")
         return 1
 
-    # Sort by score descending
-    results.sort(key=lambda x: x[1], reverse=True)
-
-    # Apply top-N limit
+    # Apply top-N limit (sorting is done inside _format_batch_report)
     if top_n is not None and top_n > 0:
-        results = results[:top_n]
+        results = sorted(results, key=lambda x: x[1], reverse=True)[:top_n]
 
     report = _format_batch_report(results, str(job_path))
     _output_report(report, output_path)

@@ -115,6 +115,31 @@ class TestBatchScreeningCLI:
         assert exit_code == 1
         assert "no resume" in output.lower()
 
+    def test_batch_mode_skips_unreadable_files(
+        self, tmp_path: Path, story: Scenario, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        story.given("a directory with one good and one unreadable resume")
+        resumes_dir = tmp_path / "resumes"
+        resumes_dir.mkdir()
+        (resumes_dir / "good.txt").write_text("Python developer with 5 years exp.")
+        bad = resumes_dir / "bad.txt"
+        bad.write_text("content")
+        bad.chmod(0o000)
+
+        job_file = tmp_path / "job.txt"
+        job_file.write_text("Python developer needed.")
+
+        story.when("running batch screen")
+        args = _make_args(resume=resumes_dir, job=job_file, batch=True)
+        exit_code = handle_screen_command(args)
+
+        story.then("the good file is scored and the bad file is skipped")
+        bad.chmod(0o644)  # restore for cleanup
+        output = capsys.readouterr().out
+        assert exit_code == 0
+        assert "good" in output
+        assert "Skipping" in output
+
     def test_batch_mode_nonexistent_directory_returns_error(
         self, tmp_path: Path, story: Scenario
     ) -> None:
