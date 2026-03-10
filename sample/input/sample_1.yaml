@@ -1,6 +1,6 @@
 template: resume_no_bars
 
-full_name: John Doe
+full_name: Priya Raghavan
 
 # Address should be a list (with only one element if needed)
 address:
@@ -24,27 +24,27 @@ titles:
   keyskills: Key Skills
 
 description: |
-  Results-driven **Software Engineer** with 5+ years building scalable data pipelines and cloud-native applications. Proficient in **Python**, **JavaScript**, and **SQL** with hands-on experience deploying **microservices** on **AWS** and **Docker/Kubernetes**. Strong communicator passionate about **CI/CD** best practices and **REST API** design.
+  **Backend Engineer** with 6+ years designing high-throughput **data pipelines** and event-driven systems. Skilled in **Python**, **Go**, and **PostgreSQL** with deep experience building **streaming architectures** using **Apache Kafka** and **Redis**. Committed to **observability**, **performance tuning**, and shipping reliable distributed services.
 
 expertise:
-  - Software Engineering
-  - Data Engineering
-  - Cloud Platforms (AWS)
-  - Microservices Architecture
+  - Backend Systems Design
+  - Data Pipeline Architecture
+  - Streaming & Event Processing
+  - Performance Engineering
 
 certification:
   - AWS Certified Solutions Architect
-  - Docker Certified Associate
+  - Confluent Certified Developer for Apache Kafka
 
 keyskills:
   - Python
-  - JavaScript
-  - React
-  - SQL / PostgreSQL
-  - AWS / Docker / Kubernetes
-  - REST APIs
-  - CI/CD / Git
-  - Microservices
+  - Go
+  - PostgreSQL / Redis
+  - Apache Kafka
+  - Docker / Kubernetes
+  - gRPC / REST APIs
+  - Observability (Datadog)
+  - Linux / Shell Scripting
 
 body:
   Experience:

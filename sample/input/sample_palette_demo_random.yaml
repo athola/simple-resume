@@ -1,6 +1,6 @@
 template: resume_with_bars
-full_name: Taylor Lee
-job_title: DevOps Engineer
+full_name: Nia Whitfield
+job_title: Cloud Infrastructure Engineer
 address:
 - 101 Color Way
 - Austin, TX
@@ -18,45 +18,46 @@ titles:
   keyskills: Key Skills
   languages: Languages
 description: |
-  **Software Engineer** with expertise in **Python**, **JavaScript/React**, and cloud-native development. Builds scalable **microservices** on **AWS** using **Docker** and **Kubernetes**. Strong experience with **SQL/PostgreSQL** databases, **REST APIs**, and **CI/CD** pipelines using **Git**. Excellent communication skills.
+  **Cloud Infrastructure Engineer** specializing in designing and operating **multi-cloud** environments across **AWS**, **GCP**, and **Azure**. Expert in **Terraform**, **Pulumi**, and **Kubernetes** with 8+ years building **self-service platforms** and **cost-optimized** architectures. Strong advocate for **infrastructure as code**, **GitOps** workflows, and **zero-trust** networking.
 skills:
-  UI/UX Design: 55
-  Frontend Development: 48
-  Design Systems: 52
-  Prototyping: 46
-  User Research: 42
-  Data Visualization: 38
+  Cloud Architecture: 56
+  Infrastructure as Code: 54
+  Kubernetes / Containers: 52
+  Networking / Security: 48
+  Cost Optimization: 44
+  Observability: 42
 expertise:
-  Product Strategy:
-  - Journey mapping
-  - Experiment design
-  Delivery:
-  - Design systems
-  - Rapid prototyping
-  Research & Analytics:
-  - Field studies
-  - Accessibility audits
-certification:
-- DesignOps Professional
-- Accessibility Auditor
-- ScrumMaster (PSM I)
-programming:
-  Prototyping:
-  - TypeScript
-  - React
-  Data & Automation:
-  - Python
-  - SQL
+  Cloud Platforms:
+  - AWS (EKS, Lambda, CloudFormation)
+  - GCP (GKE, Cloud Run)
   Infrastructure:
-  - Terraform
-  - Docker
-keyskills:
+  - Terraform / Pulumi
+  - GitOps (ArgoCD, Flux)
+  Reliability:
+  - Chaos engineering
+  - Capacity planning
+certification:
+- AWS Solutions Architect Professional
+- Google Cloud Professional Cloud Architect
+- HashiCorp Terraform Associate
+programming:
+  Languages:
+  - Go
   - Python
-  - JavaScript / React
-  - AWS / Docker / Kubernetes
-  - SQL / PostgreSQL
-  - REST APIs / Microservices
-  - CI/CD / Git
+  - Bash
+  IaC & Orchestration:
+  - Terraform / Pulumi
+  - Helm / Kustomize
+  Observability:
+  - Prometheus
+  - Grafana
+keyskills:
+  - Terraform / Pulumi
+  - AWS / GCP / Azure
+  - Kubernetes / Helm / ArgoCD
+  - Go / Python / Bash
+  - Networking / Zero-Trust
+  - FinOps / Cost Optimization
 languages:
   English: 60
   Spanish: 35

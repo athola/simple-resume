@@ -1,6 +1,6 @@
 template: resume_with_bars
 
-full_name: Jordan Multipage
+full_name: Kenji Nakamura
 job_title: Principal Solutions Architect
 
 address:
@@ -26,7 +26,7 @@ titles:
   languages: Languages
 
 description: |
-  **Software Engineer** and Principal Solutions Architect with 15+ years building scalable cloud platforms. Expert in **Python**, **JavaScript/React**, and **Go** with deep experience deploying **microservices** on **AWS** using **Docker** and **Kubernetes**. Strong background in **SQL/PostgreSQL**, **REST APIs**, and **CI/CD** pipelines. Excellent communication and leadership skills.
+  **Principal Solutions Architect** bridging business strategy and technical execution across enterprise-scale platforms. 15+ years leading **cloud migrations**, **multi-region deployments**, and **platform modernization** programs. Adept at translating complex requirements into pragmatic architectures using **Go**, **Terraform**, and **Kubernetes** while mentoring engineering teams and driving **FinOps** disciplines.
 
 skills:
   Cloud Architecture: 55
@@ -93,12 +93,12 @@ programming:
     - PowerShell
 
 keyskills:
-  - Python / JavaScript / React
-  - AWS / Docker / Kubernetes
-  - SQL / PostgreSQL
-  - REST APIs / Microservices
-  - CI/CD / Git
-  - Strong communication skills
+  - Go / Python / TypeScript
+  - AWS / GCP / Multi-Cloud
+  - Terraform / Kubernetes / Helm
+  - Platform Strategy & FinOps
+  - Architecture Decision Records
+  - Executive Stakeholder Communication
 
 languages:
   English: 60
