@@ -1,6 +1,6 @@
 template: resume_no_bars
 
-full_name: John Doe
+full_name: Marcus Jennings
 
 # Address should be a list (with only one element if needed)
 address:
@@ -22,26 +22,26 @@ titles:
   keyskills: Key Skills
 
 description: |
-  Full-stack **Software Engineer** specializing in **Python** and **JavaScript/React** development. Experienced building **REST APIs** and deploying **microservices** on **AWS** with **Docker** and **Kubernetes**. Strong background in **SQL/PostgreSQL** databases and **CI/CD** pipelines using **Git**.
+  **DevOps/SRE Engineer** with 7+ years automating infrastructure and improving system reliability at scale. Expert in **Terraform**, **Ansible**, and **Kubernetes** orchestration across **AWS** and **GCP** environments. Passionate about **incident response**, **SLO-driven development**, and building **self-healing** production systems.
 
 expertise:
-  - Software Engineering
-  - Full-Stack Development
-  - Cloud Platforms (AWS)
-  - Microservices Architecture
+  - Site Reliability Engineering
+  - Infrastructure as Code
+  - Cloud Platform Operations
+  - Incident Management & Response
 
 certification:
-  - AWS Certified Developer
-  - Kubernetes Administrator (CKA)
+  - AWS Certified DevOps Engineer Professional
+  - Certified Kubernetes Administrator (CKA)
 
 keyskills:
-  - Python
-  - JavaScript / React
-  - SQL / PostgreSQL
-  - AWS / Docker / Kubernetes
-  - REST APIs
-  - CI/CD / Git
-  - Microservices
+  - Terraform / Ansible
+  - Kubernetes / Helm
+  - AWS / GCP
+  - Python / Bash
+  - Prometheus / Grafana
+  - CI/CD (GitHub Actions, Jenkins)
+  - Linux Administration
 
 body:
   Experience:

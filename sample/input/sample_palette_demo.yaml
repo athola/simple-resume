@@ -1,7 +1,7 @@
 template: resume_with_bars
 
-full_name: Casey Palette
-job_title: Product Design Technologist
+full_name: Daniela Ferreira
+job_title: Mobile App Developer
 
 address:
   - 101 Color Way
@@ -23,50 +23,50 @@ titles:
   languages: Languages
 
 description: |
-  **Software Engineer** specializing in **JavaScript/React** and **Python** development. Builds scalable **microservices** on **AWS** with **Docker** and **Kubernetes**. Strong experience with **SQL/PostgreSQL** databases and **REST APIs**. Passionate about **CI/CD** and modern **Git** workflows. Excellent communication skills.
+  **Mobile App Developer** with 6+ years shipping consumer-facing **iOS** and **Android** applications using **Swift**, **Kotlin**, and **React Native**. Experienced in **offline-first** architectures, **push notification** systems, and **App Store optimization**. Driven by crafting performant, accessible mobile experiences backed by **analytics** and **A/B testing**.
 
 skills:
-  UI/UX Design: 55
-  Frontend Development: 48
-  Design Systems: 52
-  Prototyping: 46
-  User Research: 42
-  Data Visualization: 38
+  iOS (Swift/SwiftUI): 56
+  Android (Kotlin): 50
+  React Native: 48
+  Mobile CI/CD: 45
+  App Store Optimization: 40
+  Analytics & A/B Testing: 38
 
 expertise:
-  Product Strategy:
-    - Journey mapping
-    - Experiment design
-  Delivery:
-    - Design systems
-    - Rapid prototyping
-  Research & Analytics:
-    - Field studies
-    - Accessibility audits
+  Native Development:
+    - Swift / SwiftUI
+    - Kotlin / Jetpack Compose
+  Cross-Platform:
+    - React Native
+    - Expo
+  Quality & Release:
+    - Fastlane / Bitrise
+    - Crashlytics / Sentry
 
 certification:
-  - DesignOps Professional
-  - Accessibility Auditor
-  - ScrumMaster (PSM I)
+  - Apple Certified iOS Developer
+  - Google Associate Android Developer
+  - AWS Certified Cloud Practitioner
 
 programming:
-  Prototyping:
+  Mobile:
+    - Swift
+    - Kotlin
+  Cross-Platform:
     - TypeScript
-    - React
-  Data & Automation:
+    - React Native
+  Backend:
     - Python
-    - SQL
-  Infrastructure:
-    - Terraform
-    - Docker
+    - Firebase
 
 keyskills:
-  - JavaScript / React
-  - Python
-  - AWS / Docker / Kubernetes
-  - SQL / PostgreSQL
-  - REST APIs / Microservices
-  - CI/CD / Git
+  - Swift / Kotlin
+  - React Native / Expo
+  - Firebase / Supabase
+  - Fastlane / Bitrise
+  - App Store Connect / Google Play
+  - Analytics / A/B Testing
 
 languages:
   English: 60

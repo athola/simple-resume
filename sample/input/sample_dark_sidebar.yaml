@@ -1,7 +1,7 @@
 template: resume_with_bars
 
-full_name: Casey Dark Mode
-job_title: Design Technologist
+full_name: Soren Lindqvist
+job_title: Cybersecurity Analyst
 
 address:
   - 101 Dark Way
@@ -20,31 +20,31 @@ titles:
   languages: Languages
 
 description: |
-  **Software Engineer** with expertise in **JavaScript/React** and **Python** development. Builds scalable **microservices** deployed on **AWS** with **Docker** and **Kubernetes**. Strong experience with **SQL/PostgreSQL** databases and **REST APIs**. Passionate about **CI/CD** and modern **Git** workflows.
+  **Cybersecurity Analyst** with 5+ years defending enterprise networks through **threat hunting**, **SIEM** operations, and **incident response**. Proficient in **Python** scripting for security automation and experienced with **vulnerability assessment** tools including **Nessus** and **Burp Suite**. Holds active **CISSP** and **CEH** certifications.
 
 skills:
-  JavaScript/React: 50
-  Python: 48
-  AWS/Docker: 52
-  SQL/PostgreSQL: 45
-  CI/CD/Git: 40
+  Threat Detection: 55
+  Incident Response: 52
+  SIEM / Log Analysis: 50
+  Vulnerability Assessment: 48
+  Python Scripting: 45
 
 expertise:
-  - Frontend Development (React)
-  - Backend Engineering (Python)
-  - Cloud Platforms (AWS)
+  - Threat Hunting & Intelligence
+  - Security Operations (SOC)
+  - Cloud Security (AWS/Azure)
 
 certification:
-  - AWS Certified Solutions Architect
-  - Docker Certified Associate
+  - CISSP (Certified Information Systems Security Professional)
+  - CEH (Certified Ethical Hacker)
 
 keyskills:
-  - JavaScript / React
-  - Python
-  - AWS / Docker / Kubernetes
-  - SQL / PostgreSQL
-  - REST APIs
-  - Microservices / CI/CD / Git
+  - Python / Bash
+  - Splunk / Elastic SIEM
+  - Nessus / Burp Suite
+  - MITRE ATT&CK Framework
+  - AWS Security / IAM
+  - Incident Response & Forensics
 
 languages:
   English: 58
