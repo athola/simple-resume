@@ -8,6 +8,7 @@ and a prompt suitable for LLM-based tailoring.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -115,7 +116,8 @@ def _check_skills(skills: list[str], resume_text: str) -> tuple[list[str], list[
     matched: list[str] = []
     missing: list[str] = []
     for skill in skills:
-        if skill.lower() in resume_text:
+        pattern = r"\b" + re.escape(skill.lower()) + r"\b"
+        if re.search(pattern, resume_text):
             matched.append(skill)
         else:
             missing.append(skill)

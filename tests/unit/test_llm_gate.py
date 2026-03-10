@@ -12,12 +12,11 @@ from simple_resume.shell.llm.gate import is_llm_available, requires_llm
 
 class TestIsLLMAvailable:
     def test_returns_true_when_litellm_importable(self):
-        with patch.dict("sys.modules", {"litellm": object()}):
+        with patch("simple_resume.shell.llm.gate._litellm", object()):
             assert is_llm_available() is True
 
     def test_returns_false_when_litellm_not_importable(self):
-        with patch.dict("sys.modules", {"litellm": None}):
-            # When module is set to None in sys.modules, import raises ImportError
+        with patch("simple_resume.shell.llm.gate._litellm", None):
             assert is_llm_available() is False
 
 

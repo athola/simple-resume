@@ -11,6 +11,11 @@ from typing import Any, Callable, TypeVar
 
 from simple_resume.core.exceptions import LLMNotAvailableError
 
+try:
+    import litellm as _litellm  # ty: ignore[unresolved-import]  # pyright: ignore[reportMissingImports]
+except ImportError:
+    _litellm = None
+
 F = TypeVar("F", bound=Callable[..., Any])
 
 
@@ -21,12 +26,7 @@ def is_llm_available() -> bool:
         True if litellm can be imported, False otherwise.
 
     """
-    try:
-        import litellm  # noqa: F401  # ty: ignore[unresolved-import]  # pyright: ignore[reportMissingImports]
-
-        return True
-    except ImportError:
-        return False
+    return _litellm is not None
 
 
 def requires_llm(func: F) -> F:

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import sys
 from unittest.mock import MagicMock
 
 import pytest
@@ -15,9 +14,9 @@ from simple_resume.shell.llm.client import LiteLLMProvider
 
 @pytest.fixture(autouse=True)
 def _mock_litellm(monkeypatch):
-    """Inject a mock litellm module into sys.modules for all tests."""
+    """Patch the top-level _litellm binding in the client module."""
     mock_mod = MagicMock()
-    monkeypatch.setitem(sys.modules, "litellm", mock_mod)
+    monkeypatch.setattr("simple_resume.shell.llm.client._litellm", mock_mod)
     return mock_mod
 
 

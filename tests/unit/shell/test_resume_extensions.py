@@ -483,7 +483,7 @@ class TestToTex:
 
         assert "No paths available" in str(exc_info.value)
 
-    @patch("simple_resume.shell.render.latex.render_resume_latex_from_data")
+    @patch("simple_resume.shell.resume_extensions.render_resume_latex_from_data")
     def test_to_tex_generates_tex_file(
         self, mock_render: Mock, sample_resume: Resume
     ) -> None:
@@ -511,7 +511,7 @@ class TestRenderMarkdownFile:
 
         assert "not found" in str(exc_info.value)
 
-    @patch("markdown.markdown")
+    @patch("simple_resume.shell.resume_extensions._markdown.markdown")
     def test_render_markdown_file_creates_html(
         self, mock_md: Mock, temp_dir: Path
     ) -> None:
@@ -541,7 +541,7 @@ class TestRenderTexFile:
 
         assert "not found" in str(exc_info.value)
 
-    @patch("simple_resume.shell.render.latex.compile_tex_to_pdf")
+    @patch("simple_resume.shell.resume_extensions.compile_tex_to_pdf")
     def test_render_tex_file_creates_pdf(
         self, mock_compile: Mock, temp_dir: Path
     ) -> None:

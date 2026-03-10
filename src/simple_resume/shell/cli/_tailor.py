@@ -18,6 +18,10 @@ from simple_resume.core.ats.tailor import (
     build_tailoring_prompt,
 )
 from simple_resume.core.exceptions import LLMError, SimpleResumeError
+from simple_resume.shell.cli._errors import _handle_unexpected_error
+from simple_resume.shell.llm.client import LiteLLMProvider
+from simple_resume.shell.llm.config import resolve_api_key, resolve_llm_config
+from simple_resume.shell.llm.gate import is_llm_available
 
 logger = logging.getLogger(__name__)
 
@@ -68,8 +72,6 @@ def handle_tailor_command(args: argparse.Namespace) -> int:
         Exit code (0 for success, non-zero for failure).
 
     """
-    from simple_resume.shell.cli.main import _handle_unexpected_error  # noqa: PLC0415
-
     resume_path: Path = args.resume
     job_path: Path = args.job
     api_key: str | None = getattr(args, "api_key", None)
@@ -131,8 +133,6 @@ def _run_llm_tailoring(  # noqa: PLR0913
         Exit code (0 for success, non-zero for failure).
 
     """
-    from simple_resume.shell.llm.config import resolve_api_key  # noqa: PLC0415
-
     resolved_key = resolve_api_key(cli_key=api_key)
     if not resolved_key:
         print(
@@ -143,22 +143,11 @@ def _run_llm_tailoring(  # noqa: PLR0913
         return 1
 
     try:
-        from simple_resume.shell.llm.config import (  # noqa: PLC0415
-            resolve_llm_config,
-        )
-        from simple_resume.shell.llm.gate import (  # noqa: PLC0415
-            is_llm_available,
-        )
-
         if not is_llm_available():
             print(
                 "LLM features require the [llm] extra: pip install simple-resume[llm]"
             )
             return 1
-
-        from simple_resume.shell.llm.client import (  # noqa: PLC0415
-            LiteLLMProvider,
-        )
 
         config = resolve_llm_config(api_key=resolved_key, model=model)
         provider = LiteLLMProvider(config)

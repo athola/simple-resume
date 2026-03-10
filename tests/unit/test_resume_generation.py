@@ -610,7 +610,7 @@ class TestIntermediateFormatGeneration:
         with pytest.raises(ConfigurationError, match="No paths available"):
             to_markdown(resume)
 
-    @patch("simple_resume.shell.render.latex.render_resume_latex_from_data")
+    @patch("simple_resume.shell.resume_extensions.render_resume_latex_from_data")
     def test_to_tex_generates_valid_file(
         self, mock_render: MagicMock, story: Scenario, tmp_path: Path
     ) -> None:
@@ -662,7 +662,7 @@ class TestIntermediateFormatGeneration:
         content = output_path.read_text(encoding="utf-8")
         assert "\\documentclass" in content or "Marcus Williams" in content
 
-    @patch("simple_resume.shell.render.latex.render_resume_latex_from_data")
+    @patch("simple_resume.shell.resume_extensions.render_resume_latex_from_data")
     def test_to_tex_with_paths_object(
         self, mock_render: MagicMock, story: Scenario, tmp_path: Path
     ) -> None:
@@ -747,7 +747,7 @@ class TestIntermediateFormatGeneration:
         assert result.format_type == "markdown"
         assert output_path.exists()
 
-    @patch("simple_resume.shell.render.latex.render_resume_latex_from_data")
+    @patch("simple_resume.shell.resume_extensions.render_resume_latex_from_data")
     def test_generate_routes_to_tex_format(
         self, mock_render: MagicMock, story: Scenario, tmp_path: Path
     ) -> None:

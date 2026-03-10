@@ -34,7 +34,7 @@ def _make_resume_data() -> dict:
         "full_name": "Jane Doe",
         "job_title": "Software Engineer",
         "keyskills": ["Python", "Docker", "JavaScript", "React"],
-        "description": "Backend engineer with 5 years experience building REST APIs.",
+        "description": "Built REST API services over 5 years.",
         "body": {
             "Experience": [
                 {

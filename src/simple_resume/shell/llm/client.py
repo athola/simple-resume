@@ -13,6 +13,11 @@ from typing import Any
 from simple_resume.core.exceptions import LLMError
 from simple_resume.core.llm.protocol import LLMConfig, LLMProvider
 
+try:
+    import litellm as _litellm  # ty: ignore[unresolved-import]  # pyright: ignore[reportMissingImports]
+except ImportError:
+    _litellm = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -56,9 +61,15 @@ class LiteLLMProvider(LLMProvider):
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": prompt})
 
-        try:
-            import litellm as _litellm  # noqa: PLC0415  # ty: ignore[unresolved-import]  # pyright: ignore[reportMissingImports]
+        if _litellm is None:
+            raise LLMError(
+                "litellm is not installed. "
+                "Install with: pip install simple-resume[llm]",
+                provider="litellm",
+                model=self.config.model,
+            )
 
+        try:
             response = _litellm.completion(
                 model=self.config.model,
                 messages=messages,
@@ -75,13 +86,8 @@ class LiteLLMProvider(LLMProvider):
                     model=self.config.model,
                 )
             return content  # type: ignore[no-any-return]
-        except ImportError as exc:  # pragma: no cover
-            raise LLMError(
-                "litellm is not installed. "
-                "Install with: pip install simple-resume[llm]",
-                provider="litellm",
-                model=self.config.model,
-            ) from exc
+        except LLMError:
+            raise
         except Exception as exc:
             raise LLMError(
                 f"{type(exc).__name__}: {exc}",

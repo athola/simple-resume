@@ -15,6 +15,7 @@ from simple_resume.core.ats import (
     TournamentResult,
 )
 from simple_resume.core.exceptions import SimpleResumeError, ValidationError
+from simple_resume.shell.cli._errors import _handle_unexpected_error
 
 # Score threshold constants
 _EXCELLENT_THRESHOLD = 80
@@ -26,8 +27,6 @@ _PASSING_THRESHOLD = 0.5
 
 def handle_screen_command(args: argparse.Namespace) -> int:  # noqa: PLR0912
     """Screen resume against job description using ATS scoring."""
-    from simple_resume.shell.cli.main import _handle_unexpected_error  # noqa: PLC0415
-
     resume_path: Path = args.resume
     job_path: Path = args.job
     output_path: Path | None = getattr(args, "output", None)

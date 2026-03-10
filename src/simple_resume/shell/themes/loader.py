@@ -13,6 +13,8 @@ from typing import Any
 
 import yaml
 
+from simple_resume.shell.config import ASSETS_ROOT
+
 logger = logging.getLogger(__name__)
 
 # Theme directory relative to assets
@@ -21,9 +23,6 @@ THEME_DIR_NAME = "themes"
 
 def get_themes_directory() -> Path:
     """Get the path to the bundled themes directory."""
-    # Late import to avoid circular dependency
-    from simple_resume.shell.config import ASSETS_ROOT  # noqa: PLC0415
-
     return ASSETS_ROOT / "static" / THEME_DIR_NAME
 
 
