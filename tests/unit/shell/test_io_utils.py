@@ -101,6 +101,7 @@ class TestResolvePathsForRead:
 
         result = resolve_paths_for_read(None, {}, candidate)
         assert result.data == tmp_path
+        assert result.input == input_dir
 
     def test_root_level_input_dir_raises(self) -> None:
         """Reject candidate in root-level input/ where grandparent is /."""
