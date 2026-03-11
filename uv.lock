@@ -3885,7 +3885,7 @@ wheels = [
 
 [[package]]
 name = "simple-resume"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "." }
 dependencies = [
     { name = "jinja2" },

@@ -92,7 +92,18 @@ uv run simple-resume screen resume.yaml job.txt --scorers tfidf
 
 # Verbose output with detailed breakdown
 uv run simple-resume screen resume.yaml job.txt --verbose
+
+# Batch mode: rank all resumes in a directory against a job description
+uv run simple-resume screen resumes_dir/ job.txt --batch
+
+# Batch mode with top-N filtering
+uv run simple-resume screen resumes_dir/ job.txt --batch --top 5
+
+# Batch mode with YAML report output
+uv run simple-resume screen resumes_dir/ job.txt --batch --format yaml --output rankings.yaml
 ```
+
+**Batch mode** (`--batch`) treats the resume argument as a directory. All files with supported suffixes (`.txt`, `.md`, `.yaml`, `.yml`, `.json`) are scored and ranked by overall score. Use `--top N` to limit output to the top N results.
 
 **Output formats:**
 - `text` (default): Human-readable text report

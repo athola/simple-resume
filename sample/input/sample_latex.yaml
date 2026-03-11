@@ -1,7 +1,7 @@
 template: resume_no_bars
 
-full_name: Avery Candidate
-job_title: Software Engineer
+full_name: Dr. Elena Vasquez
+job_title: Data Scientist / ML Engineer
 
 address:
   - 123 Example Road
@@ -21,38 +21,38 @@ titles:
   keyskills: Key Skills
 
 description: |
-  Results-driven **Software Engineer** with expertise in **Python**, **Go**, and cloud-native development. Built scalable **microservices** on **AWS** using **Docker** and **Kubernetes**. Strong background in **SQL/PostgreSQL**, **REST APIs**, and **CI/CD** pipelines with **Git**. Excellent communication skills.
+  **Data Scientist** and **ML Engineer** with a Ph.D. in computational statistics and 8+ years applying **machine learning** to real-world problems. Expert in **PyTorch**, **scikit-learn**, and **TensorFlow** with production experience deploying models via **MLflow** and **Kubeflow**. Published researcher in **NLP** and **Bayesian inference** with strong **R** and **Python** fluency.
 
 expertise:
-  Platform Engineering:
-    - Distributed systems
-    - Observability
-    - Incident response
-  Data Platforms:
-    - Streaming pipelines
-    - Analytics engineering
+  Machine Learning:
+    - Deep learning (CNNs, transformers)
+    - NLP & text analytics
+    - Bayesian modeling
+  Data Engineering:
+    - Feature stores
+    - ML pipeline orchestration
 
 programming:
   Languages:
     - Python
-    - Go
-    - Rust
+    - R
+    - Julia
   Tooling:
-    - Terraform
-    - Airflow
-    - dbt
+    - PyTorch / TensorFlow
+    - MLflow / Kubeflow
+    - Spark / dbt
 
 keyskills:
-  - Python / JavaScript / React
-  - AWS / Docker / Kubernetes
-  - SQL / PostgreSQL
-  - REST APIs / Microservices
-  - CI/CD / Git
-  - Cross-team communication
+  - Python / R / Julia
+  - PyTorch / TensorFlow / scikit-learn
+  - MLflow / Kubeflow
+  - SQL / Spark / dbt
+  - NLP / Computer Vision
+  - Statistical Modeling & Experimentation
 
 certification:
-  - AWS Certified Solutions Architect
-  - Google Professional Cloud Architect
+  - Google Professional Machine Learning Engineer
+  - AWS Certified Machine Learning Specialty
 
 body:
   Experience:

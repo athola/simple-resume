@@ -1,7 +1,7 @@
 template: resume_with_bars
 
-full_name: Casey Contrast
-job_title: Color Contrast Specialist
+full_name: Amara Osei
+job_title: UX / Accessibility Engineer
 
 address:
   - 101 Spectrum Way
@@ -20,31 +20,31 @@ titles:
   languages: Languages
 
 description: |
-  **Software Engineer** focused on accessibility and frontend development. Expert in **JavaScript/React** with strong **Python** backend skills. Deploys applications using **Docker** on **AWS** with **PostgreSQL** databases. Advocates for **CI/CD** and **REST API** best practices.
+  **UX/Accessibility Engineer** dedicated to building inclusive digital experiences that meet **WCAG 2.2 AAA** standards. Fluent in **TypeScript**, **React**, and **ARIA** patterns with a strong foundation in **automated accessibility testing** and **assistive technology** integration. Bridges design and engineering to ensure every user can navigate, understand, and interact with products.
 
 skills:
-  JavaScript/React: 55
-  Python: 48
-  AWS/Docker: 52
-  SQL/PostgreSQL: 45
-  CI/CD: 40
+  Accessibility/WCAG: 58
+  TypeScript/React: 55
+  ARIA Patterns: 50
+  Assistive Tech: 47
+  Design Systems: 44
 
 expertise:
-  - Frontend Development (React)
-  - Accessibility Engineering
-  - Cloud Platforms (AWS)
+  - WCAG Compliance & Auditing
+  - Inclusive Design Systems
+  - Assistive Technology Testing
 
 certification:
-  - AWS Certified Developer
-  - Certified Professional in Accessibility
+  - IAAP Certified Professional in Accessibility (CPAC)
+  - W3C Web Accessibility Specialist
 
 keyskills:
-  - JavaScript / React
-  - Python
-  - AWS / Docker / Kubernetes
-  - SQL / PostgreSQL
-  - REST APIs / Git
-  - Microservices / CI/CD
+  - TypeScript / React
+  - WCAG 2.2 / ARIA
+  - Axe / Lighthouse / Pa11y
+  - Figma / Storybook
+  - Screen Reader Testing
+  - Inclusive Design Patterns
 
 languages:
   English: 60

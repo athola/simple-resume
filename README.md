@@ -12,12 +12,39 @@ _Generate polished PDF and HTML resumes from a single YAML file._
 
 # simple-resume
 
-`simple-resume` is a Python 3.10+ CLI and library for converting structured YAML (or JSON Resume) into PDF, HTML, or LaTeX. Templates and static assets ship with the package so users can render without creating additional content.
+A Python 3.10+ CLI and library for converting structured YAML
+(or [JSON Resume][jsonresume]) into PDF, HTML, or LaTeX.
+Templates and static assets ship with the package so you can render
+without creating additional content.
 
-## Supported platforms
+## Why Simple-Resume
 
-- Python: 3.10+ (tested in CI)
-- OS: Linux, macOS, Windows. PDF output uses WeasyPrint; ensure Cairo/Pango/GTK are available on your platform (see [Usage Guide](wiki/Usage-Guide.md#system-dependencies)).
+- Keep your resume version-controlled as plain YAML.
+- Swap templates, palettes, and formats without rewriting content.
+- Score resumes against job descriptions with built-in ATS algorithms.
+- Pure-Python core with shell adapters; effects are testable and
+  side-effect aware.
+- Bundled HTML templates and static assets prevent "TemplateNotFound"
+  errors in wheels and editable installs.
+
+## Feature Comparison
+
+| Feature | simple-resume | JSON Resume | HackMyResume | Resume.io |
+|---------|---------------|-------------|--------------|-----------|
+| Open Source | Yes | Yes | Yes | No |
+| Data Format | YAML + JSON Resume | JSON | JSON/FRESH | Proprietary |
+| Version Control | Git-friendly | Git-friendly | Git-friendly | Cloud-only |
+| Local Processing | 100% private | 100% private | 100% private | Cloud storage |
+| Template System | HTML + Jinja2 | JSON themes | Multiple formats | Web builder |
+| LaTeX Support | Yes | No | No | No |
+| Python API | Native | No | No | No |
+| CLI Tools | Yes | Yes | Yes | No |
+| Real-time Preview | HTML + auto-reload | No | No | Yes |
+| ATS Scoring | Built-in (4 algorithms) | No | No | No |
+| Custom Themes | Unlimited | Limited | Limited | Paid only |
+| Color Palettes | Yes | No | Basic | Limited |
+
+See [Detailed Comparison](wiki/Comparison.md) for full analysis.
 
 ## Installation
 
@@ -29,51 +56,20 @@ uv add simple-resume
 pip install simple-resume
 ```
 
-## Why Simple-Resume
+**Platform requirements:** Python 3.10+ on Linux, macOS, or Windows.
+PDF output uses WeasyPrint, which requires Cairo/Pango/GTK system
+libraries (see [Usage Guide](wiki/Usage-Guide.md)).
 
-- Keep your resume version-controlled as plain YAML.
-- Swap templates, palettes, and formats without rewriting content.
-- Pure-Python core with shell adapters; effects are testable and side-effect aware.
-- Bundled HTML templates and static assets prevent "TemplateNotFound" errors in wheels/editable installs.
+## Quick Start
 
-## Feature Comparison
+Create a YAML file in `resume_private/input/my_resume.yaml`:
 
-| Feature | simple-resume | JSON Resume | HackMyResume | Resume.io |
-|---------|---------------|-------------|---------------|-----------|
-| **Open Source** | Yes | Yes | Yes | No |
-| **Data Format** | YAML + JSON Resume | JSON | JSON/FRESH | Proprietary |
-| **Version Control** | Yes (Git-friendly) | Yes (Git-friendly) | Yes (Git-friendly) | No (Cloud-only) |
-| **Local Processing** | Yes (100% private) | Yes (100% private) | Yes (100% private) | No (Cloud storage) |
-| **Template System** | HTML + Jinja2 | JSON themes | Multiple formats | Web builder |
-| **LaTeX Support** | Yes | No | No | No |
-| **Python API** | Yes (Native) | No | No | No |
-| **CLI Tools** | Yes | Yes | Yes | No |
-| **Real-time Preview** | Yes (HTML + auto-reload) | No | No | Yes |
-| **Custom Themes** | Yes (Unlimited) | Limited | Limited | Limited (Paid only) |
-| **Color Palettes** | Yes | No | Limited (Basic) | Limited |
-| **Privacy** | Yes | Yes | Yes | No (Data stored on servers) |
-| **Setup Time** | 5 min | 10 min | 15 min | 2 min |
-| **Learning Curve** | Moderate | Easy | Easy | Easiest |
-
-*See [Detailed Comparison](wiki/Comparison.md) for full analysis and use case recommendations.*
-
-### Development setup
-
-```bash
-git clone https://github.com/athola/simple-resume.git
-cd simple-resume
-uv sync --dev --extra utils   # or: pip install -e .[dev,utils]
-```
-
-## Quick start (CLI)
-
-Create a minimal YAML in `resume_private/input/my_resume.yaml`:
-
-> Note: JSON Resume (`*.json` from https://jsonresume.org) is also supported —
-> drop it into your `input/` folder and `simple-resume` will auto-convert it at load time.
+> JSON Resume (`*.json` from [jsonresume.org][jsonresume]) is also
+> supported — drop it into your `input/` folder and `simple-resume`
+> auto-converts it at load time.
 >
-> Tip: Editor autocomplete is available via JSON Schema at
-> `src/simple_resume/shell/assets/static/schema.json` (VS Code YAML extension supports schema association).
+> Editor autocomplete is available via the JSON Schema at
+> `src/simple_resume/shell/assets/static/schema.json`.
 
 ```yaml
 template: resume_no_bars
@@ -94,24 +90,22 @@ Generate output:
 
 ```bash
 uv run simple-resume generate --format pdf         # PDF
-uv run simple-resume generate --format html --open # HTML + open in browser
+uv run simple-resume generate --format html --open # HTML + browser
 ```
 
-Built-in templates: `resume_no_bars`, `resume_with_bars`, `resume_modern`, `resume_professional`, `resume_creative`, `demo`. Cover letters use the `cover` template. See `src/simple_resume/shell/assets/templates/html/` for all templates; static assets are in `.../assets/static/`.
+Built-in templates: `resume_no_bars`, `resume_with_bars`,
+`resume_modern`, `resume_professional`, `resume_creative`, `demo`.
+Cover letters use the `cover` template.
+See `src/simple_resume/shell/assets/templates/html/` for all templates.
 
 ## Python API
 
 ```python
 from simple_resume import generate, preview
 
-# Generate with format overrides
-results = generate("resume_private/input/my_resume.yaml", formats=["pdf", "html"])
+results = generate("resume_private/input/my_resume.yaml",
+                   formats=["pdf", "html"])
 print(results["pdf"].output_path)
-
-# Fine-grained control via GenerateOptions
-from simple_resume import GenerateOptions
-
-opts = GenerateOptions(formats=("pdf", "html"), open_after=True)
 
 # Browser preview with live reload
 preview("resume_private/input/my_resume.yaml")
@@ -126,97 +120,127 @@ with ResumeSession(data_dir="resume_private") as session:
     session.generate_all(format="pdf")
 ```
 
+See [API Reference](wiki/API-Reference.md) and
+[API Stability Policy](wiki/API-Stability-Policy.md) for the full
+public surface.
+
 ## ATS Resume Scoring
 
-Score resumes against job descriptions using multiple NLP algorithms:
+Score resumes against job descriptions using multiple NLP algorithms.
+
+### CLI
+
+```bash
+# Single resume
+uv run simple-resume screen resume.yaml job.txt
+
+# Batch mode — rank all resumes in a directory
+uv run simple-resume screen resumes/ job.txt --batch --top 5
+```
+
+### Python API
 
 ```python
 from simple_resume import score_resume
 
-# Score a resume against a job description
 result = score_resume(
     resume_text="Senior Python Developer with 5 years experience...",
-    job_description="We are looking for a Senior Python Engineer with 5 years of experience..."
+    job_description="Looking for a Senior Python Engineer..."
 )
-
 print(f"Match score: {result.overall_score * 100:.1f}%")
-print(f"Status: {result.metadata['scorer_names']}")
-
-# Generate a detailed report
-from simple_resume import ATSReportGenerator
-from pathlib import Path
-
-report_gen = ATSReportGenerator(
-    result=result,
-    resume_file="my_resume.yaml",
-    job_file="job_description.txt"
-)
-yaml_report = report_gen.generate_yaml()
-# Save to file (shell layer responsibility)
-Path("ats_report.yaml").write_text(yaml_report)
 ```
 
-**Available scoring algorithms:**
+### Scoring algorithms
 
-- **TF-IDF + Cosine Similarity** (`TFIDFScorer`): Statistical term frequency analysis
-- **Jaccard + N-gram** (`JaccardScorer`): Set intersection and phrase overlap
-- **Exact Keyword** (`KeywordScorer`): Direct keyword matching with fuzzy tolerance and skills taxonomy
-- **BERT Semantic** (`BERTScorer`): Contextual embeddings via sentence-transformers (optional)
+- **TF-IDF + Cosine Similarity** — statistical term frequency analysis
+- **Jaccard + N-gram** — set intersection and phrase overlap
+- **Exact Keyword** — direct matching with fuzzy tolerance and
+  skills taxonomy
+- **BERT Semantic** — contextual embeddings via sentence-transformers
+  (optional: `uv add simple-resume[bert]`)
 
-```bash
-# Install with BERT support (optional)
-uv add simple-resume[bert]
-```
-
-**Skills Taxonomy (optional):** The keyword scorer can optionally integrate with external skills APIs (LinkedIn, O*NET) for expanded term recognition. This is offline-first—the hardcoded skills list works without configuration. Enable API integration via environment variables when needed.
-
-The tournament system combines multiple algorithms using weighted averages to produce detailed scores. See [ATS API Reference](wiki/ATS-API-Reference.md) for the full scoring API, [ATS Scoring Rubric](wiki/ATS-Scoring-Rubric.md) for methodology, and [Similarity Algorithm Evaluation](wiki/Similarity-Algorithm-Evaluation.md) for algorithm benchmarks.
+The tournament system combines algorithms using weighted averages.
+See [ATS API Reference](wiki/ATS-API-Reference.md) for the scoring API,
+[ATS Scoring Rubric](wiki/ATS-Scoring-Rubric.md) for methodology, and
+[Similarity Algorithm Evaluation](wiki/Similarity-Algorithm-Evaluation.md)
+for benchmarks.
 
 ## Customization
 
-- **Palettes**: `--palette "Professional Blue"` or `--palette path/to/palette.yaml`.
-- **Custom templates**: `--template custom.html` with `--templates-dir /path/to/templates`.
-- **LaTeX**: set `config.output_mode: latex` and compile with your TeX toolchain (see [Usage Guide](wiki/Usage-Guide.md#latex-output)).
-- **Color utilities**: `simple_resume.core.colors.get_contrasting_text_color` for accessibility checks.
+- **Palettes**: `--palette "Professional Blue"` or
+  `--palette path/to/palette.yaml`
+- **Custom templates**: `--template custom.html` with
+  `--templates-dir /path/to/templates`
+- **LaTeX**: set `config.output_mode: latex` and compile with your TeX
+  toolchain (see [Usage Guide](wiki/Usage-Guide.md#latex-output))
+- **Color utilities**:
+  `simple_resume.core.colors.get_contrasting_text_color` for
+  accessibility checks
 
-## Release workflow
+## Documentation
 
-Releases are automated via GitHub Actions. To create a new release:
+**Getting started:** [Getting Started](wiki/Getting-Started.md),
+[Usage Guide](wiki/Usage-Guide.md),
+[Workflows](wiki/Workflows.md),
+[Path Handling](wiki/Path-Handling-Guide.md)
+
+**API:** [API Reference](wiki/API-Reference.md),
+[ATS API Reference](wiki/ATS-API-Reference.md),
+[Shell Layer APIs](wiki/Shell-Layer-APIs.md),
+[API Stability Policy](wiki/API-Stability-Policy.md)
+
+**Architecture:** [Architecture Guide](wiki/Architecture-Guide.md),
+[Lazy Loading](wiki/Lazy-Loading-Guide.md),
+[Migration Guide](wiki/Migration-Guide.md)
+
+**Design:** [Color Schemes](wiki/Color-Schemes.md),
+[PDF Renderer Evaluation](wiki/PDF-Renderer-Evaluation.md)
+
+**Samples:** `sample/` directory
+
+## Development
 
 ```bash
-# Tag the version (must start with 'v')
-git tag v0.1.2
-git push origin v0.1.2
+git clone https://github.com/athola/simple-resume.git
+cd simple-resume
+uv sync --dev --extra utils   # or: pip install -e .[dev,utils]
 ```
 
-The workflow builds the package, generates a changelog from commit history, and publishes a GitHub release with distribution artifacts.
+Run checks before opening a PR:
 
-## Workflows & docs
+```bash
+make lint && make test         # or: make check-all validate
+```
 
-- **Guides**: [Getting Started](wiki/Getting-Started.md), [Usage](wiki/Usage-Guide.md), [Workflows](wiki/Workflows.md), [Path Handling](wiki/Path-Handling-Guide.md).
-- **API Docs**: [API Reference](wiki/API-Reference.md), [ATS API Reference](wiki/ATS-API-Reference.md), [API Stability Policy](wiki/API-Stability-Policy.md), [Shell Layer APIs](wiki/Shell-Layer-APIs.md).
-- **Architecture**: [Architecture Guide](wiki/Architecture-Guide.md) and `wiki/architecture/`.
-- **Migration**: [Migration Guide](wiki/Migration-Guide.md) (includes generate module reorganization notes).
-- **Development**: [Development Guide](wiki/Development-Guide.md), [Contributing](wiki/Contributing.md), [PDF renderer evaluation](wiki/PDF-Renderer-Evaluation.md).
-- **Samples**: `sample/` directory; `sample_dark_sidebar.html` preview.
+Releases are automated via GitHub Actions — tag with `v*` and push:
+
+```bash
+git tag v0.1.2 && git push origin v0.1.2
+```
+
+See [Development Guide](wiki/Development-Guide.md) and
+[Contributing](wiki/Contributing.md) for full details.
+Submit issues or ideas in
+[GitHub Issues](https://github.com/athola/simple-resume/issues).
 
 ## Troubleshooting
 
-- `TemplateNotFound`: confirm installation includes packaged assets (bundled in wheels/editable installs); custom templates require `--templates-dir`.
-- PDF on Linux: install system libs `cairo`, `pango`, `gdk-pixbuf` (WeasyPrint requirement).
-- PDF rendering errors with WeasyPrint: `simple-resume` pins `pydyf>=0.10.0,<0.12.0` to avoid incompatible releases. If you override this constraint, PDF output may silently fail.
-- Case-variant `input/` directories: `Input/`, `INPUT/`, etc. are detected automatically (v0.2.5+). Earlier versions required lowercase `input/`.
-
-## Contributing
-
-1. Follow the [Development Guide](wiki/Development-Guide.md) to set up tools.
-2. Run `make lint` and `make test` (or `make check-all validate`) before opening a PR.
-3. Submit issues or ideas in [GitHub Issues](https://github.com/athola/simple-resume/issues) or discussions.
+- **TemplateNotFound**: confirm installation includes packaged assets;
+  custom templates require `--templates-dir`.
+- **PDF on Linux**: install system libs `cairo`, `pango`, `gdk-pixbuf`
+  (WeasyPrint requirement).
+- **PDF rendering errors**: `simple-resume` pins
+  `pydyf>=0.10.0,<0.12.0` to avoid incompatible releases. Overriding
+  this constraint may cause silent failures.
+- **Case-variant `input/` directories**: `Input/`, `INPUT/`, etc. are
+  detected automatically (v0.2.5+).
 
 ## License
 
 MIT License. See [LICENSE](LICENSE).
 
-## Star history
+## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=athola/simple-resume&type=date&legend=top-left)](https://www.star-history.com/#athola/simple-resume&type=date&legend=top-left)
+
+[jsonresume]: https://jsonresume.org
