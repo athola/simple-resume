@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
@@ -62,9 +63,15 @@ def _collect_resume_files(directory: Path) -> list[Path]:
 def _output_report(content: str, output_path: Path | None) -> None:
     """Print or save a report."""
     if output_path:
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(content, encoding="utf-8")
-        print(f"Report saved to: {output_path}")
+        try:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(content, encoding="utf-8")
+            print(f"Report saved to: {output_path}")
+        except OSError as exc:
+            print(
+                f"Error: report could not be saved to '{output_path}': {exc}",
+                file=sys.stderr,
+            )
     else:
         print(content)
 

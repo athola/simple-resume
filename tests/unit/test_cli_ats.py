@@ -354,6 +354,24 @@ class TestOutputReport:
         assert out_file.read_text() == "saved report"
         assert "Report saved" in capsys.readouterr().out
 
+    def test_write_failure_prints_error_to_stderr(
+        self, tmp_path: Path, story: Scenario, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        story.given("a read-only output path that will fail to write")
+        read_only_dir = tmp_path / "readonly"
+        read_only_dir.mkdir()
+        read_only_dir.chmod(0o444)
+        out_file = read_only_dir / "subdir" / "report.txt"
+
+        story.when("outputting the report to a path that fails")
+        _output_report("report text", out_file)
+
+        story.then("error is printed to stderr, not stdout")
+        captured = capsys.readouterr()
+        assert "report text" not in captured.out
+        assert "failed" in captured.err.lower() or "error" in captured.err.lower()
+        read_only_dir.chmod(0o755)
+
 
 # ============================================================================
 # Single-mode screen command
