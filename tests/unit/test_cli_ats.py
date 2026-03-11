@@ -609,6 +609,20 @@ class TestReadFileTextEncoding:
         story.then("the content is read using latin-1 fallback")
         assert "caf" in content
 
+    def test_latin1_fallback_emits_warning(
+        self, tmp_path: Path, story: Scenario
+    ) -> None:
+        story.given("a text file with latin-1 encoded characters")
+        latin1_file = tmp_path / "resume.txt"
+        latin1_file.write_bytes("Résumé with café".encode("latin-1"))
+
+        story.when("reading the file")
+        with pytest.warns(UserWarning, match="latin-1"):
+            content = cli._read_file_text(latin1_file)
+
+        story.then("a warning is emitted and the content is read")
+        assert "caf" in content
+
 
 # ============================================================================
 # Error handling in screen command

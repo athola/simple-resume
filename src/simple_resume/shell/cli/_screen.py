@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -201,7 +202,12 @@ def _read_file_text(file_path: Path) -> str:
     try:
         return file_path.read_text(encoding="utf-8")
     except UnicodeDecodeError:
-        # Try with different encoding
+        warnings.warn(
+            f"File '{file_path.name}' is not valid UTF-8, falling back to latin-1 "
+            "encoding. Check the file encoding if text appears garbled.",
+            UserWarning,
+            stacklevel=2,
+        )
         return file_path.read_text(encoding="latin-1")
 
 
