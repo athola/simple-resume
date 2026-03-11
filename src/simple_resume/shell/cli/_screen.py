@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
 from pathlib import Path
 
 from simple_resume.core.ats import (
@@ -26,6 +27,15 @@ _PASSING_THRESHOLD = 0.5
 
 
 _RESUME_SUFFIXES = {".txt", ".md", ".yaml", ".yml", ".json"}
+_UNSUPPORTED_SUFFIXES = {".pdf", ".html", ".htm"}
+
+
+@dataclass(frozen=True)
+class _BatchDisplayOpts:
+    """Display and output options for batch screening."""
+
+    top_n: int | None = None
+    output_path: Path | None = None
 
 
 def _build_tournament(scorers_selection: str) -> ATSTournament:
@@ -51,9 +61,8 @@ def _collect_resume_files(directory: Path) -> list[Path]:
 def _output_report(content: str, output_path: Path | None) -> None:
     """Print or save a report."""
     if output_path:
-        output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(content)
+        output_path.write_text(content, encoding="utf-8")
         print(f"Report saved to: {output_path}")
     else:
         print(content)
@@ -81,13 +90,13 @@ def handle_screen_command(args: argparse.Namespace) -> int:  # noqa: PLR0912
 
         # Batch mode: screen all resumes in a directory
         if batch:
+            display = _BatchDisplayOpts(top_n=top_n, output_path=output_path)
             return _handle_batch(
                 resume_path,
                 job_path,
                 job_text,
                 tournament,
-                top_n,
-                output_path,
+                display,
             )
 
         # Single mode: screen one resume
@@ -121,13 +130,12 @@ def handle_screen_command(args: argparse.Namespace) -> int:  # noqa: PLR0912
         return _handle_unexpected_error(exc, "ATS screening")
 
 
-def _handle_batch(  # noqa: PLR0913
+def _handle_batch(
     resume_path: Path,
     job_path: Path,
     job_text: str,
     tournament: ATSTournament,
-    top_n: int | None,
-    output_path: Path | None,
+    display: _BatchDisplayOpts,
 ) -> int:
     """Screen all resumes in a directory against a job description."""
     if not resume_path.exists() or not resume_path.is_dir():
@@ -161,35 +169,29 @@ def _handle_batch(  # noqa: PLR0913
         results.append((rfile.name, score))
 
     if not results:
-        print("Error: No resume files could be read.")
+        print("Error: No resumes could be scored successfully.")
         return 1
 
-    # Pre-sort for top-N slicing; _format_batch_report also sorts for display
-    if top_n is not None and top_n > 0:
-        results = sorted(results, key=lambda x: x[1], reverse=True)[:top_n]
-
-    report = _format_batch_report(results, str(job_path))
-    _output_report(report, output_path)
+    report = _format_batch_report(results, str(job_path), top_n=display.top_n)
+    _output_report(report, display.output_path)
     return 0
 
 
 def _read_file_text(file_path: Path) -> str:
     """Read text content from a file, handling various formats."""
-    file_path = Path(file_path)
-
     if not file_path.exists():
         raise FileNotFoundError(f"File not found: {file_path}")
 
     suffix = file_path.suffix.lower()
 
     # PDF/HTML file formats are not yet supported for text extraction
-    if suffix in [".pdf", ".html", ".htm"]:
+    if suffix in _UNSUPPORTED_SUFFIXES:
         raise ValidationError(
             f"File format '{suffix}' is not yet supported for text extraction",
             errors=[
                 f"Cannot read '{file_path.name}' - "
                 "PDF/HTML parsing is planned for a future release",
-                "Supported formats: .txt, .md, .yaml, .yml, .json",
+                f"Supported formats: {', '.join(sorted(_RESUME_SUFFIXES))}",
             ],
             context={"file_path": str(file_path), "format": suffix},
             filename=str(file_path),
@@ -321,24 +323,39 @@ def _format_text_report(result: TournamentResult, verbose: bool = False) -> str:
     return "\n".join(lines)
 
 
-def _format_batch_report(results: list[tuple[str, float]], job_file: str) -> str:
+def _format_batch_report(
+    results: list[tuple[str, float]],
+    job_file: str,
+    *,
+    top_n: int | None = None,
+) -> str:
     """Format batch screening results as a ranked report."""
-    results = sorted(results, key=lambda x: x[1], reverse=True)
+    ranked = sorted(results, key=lambda x: x[1], reverse=True)
+    total = len(ranked)
+    if top_n is not None and top_n > 0:
+        ranked = ranked[:top_n]
+
     lines = [
         "=" * 60,
         "BATCH ATS SCREENING REPORT",
         "=" * 60,
         "",
         f"Job description: {job_file}",
-        f"Resumes scored:  {len(results)}",
-        "",
-        "-" * 60,
-        "RANKED RESULTS",
-        "-" * 60,
-        "",
+        f"Resumes scored:  {total}",
     ]
+    if top_n is not None and top_n > 0 and top_n < total:
+        lines.append(f"Showing top:     {len(ranked)}")
+    lines.extend(
+        [
+            "",
+            "-" * 60,
+            "RANKED RESULTS",
+            "-" * 60,
+            "",
+        ]
+    )
 
-    for rank, (name, score) in enumerate(results, 1):
+    for rank, (name, score) in enumerate(ranked, 1):
         score_100 = score * 100
         status = _get_status_label(score_100)
         lines.append(f"{rank}. {name:40s} {score_100:5.1f}/100  {status}")
@@ -351,11 +368,10 @@ def _get_status_label(score: float) -> str:
     """Get status label based on score (0-100 scale)."""
     if score >= _EXCELLENT_THRESHOLD:
         return "Excellent - Strong match!"
-    elif score >= _GOOD_THRESHOLD:
+    if score >= _GOOD_THRESHOLD:
         return "Good - Competitive candidate."
-    elif score >= _FAIR_THRESHOLD:
+    if score >= _FAIR_THRESHOLD:
         return "Fair - Consider improvements."
-    elif score >= _POOR_THRESHOLD:
+    if score >= _POOR_THRESHOLD:
         return "Poor - Significant gaps."
-    else:
-        return "Very Poor - Not a match."
+    return "Very Poor - Not a match."

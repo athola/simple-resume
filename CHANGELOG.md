@@ -6,12 +6,12 @@ This file documents all notable project changes. Format based on [Keep a Changel
 
 ### Added
 
-- ATS batch screening mode for multi-resume ranking (#94)
-- Diversified sample YAML descriptions with unique personas (#95)
+- ATS batch screening mode for multi-resume ranking (#7)
+- Diversified sample YAML descriptions with unique personas (#83)
 
 ### Fixed
 
-- Hardened path inference with root guard and strict validation (#93)
+- Hardened path inference with root guard and strict validation (#93, #94, #95)
 - Addressed PR #100 review findings (error handling, CLI robustness)
 
 ## [0.3.0] - 2026-02-24
