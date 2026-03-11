@@ -140,6 +140,43 @@ class TestBatchScreeningCLI:
         assert "good" in output
         assert "Skipping" in output
 
+    def test_batch_mode_file_instead_of_directory_returns_error(
+        self, tmp_path: Path, story: Scenario
+    ) -> None:
+        story.given("a file path instead of a directory")
+        resume_file = tmp_path / "single_resume.txt"
+        resume_file.write_text("Python developer with 5 years experience.")
+        job_file = tmp_path / "job.txt"
+        job_file.write_text("Python developer needed.")
+
+        story.when("running batch screen with a file path")
+        args = _make_args(resume=resume_file, job=job_file, batch=True)
+        exit_code = handle_screen_command(args)
+
+        story.then("an error is returned because batch requires a directory")
+        assert exit_code == 1
+
+    def test_batch_mode_all_empty_resumes_returns_error(
+        self, tmp_path: Path, story: Scenario, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        story.given("a directory where all resume files are empty")
+        resumes_dir = tmp_path / "resumes"
+        resumes_dir.mkdir()
+        (resumes_dir / "empty_a.txt").write_text("   ")
+        (resumes_dir / "empty_b.txt").write_text("")
+
+        job_file = tmp_path / "job.txt"
+        job_file.write_text("Python developer needed.")
+
+        story.when("running batch screen")
+        args = _make_args(resume=resumes_dir, job=job_file, batch=True)
+        exit_code = handle_screen_command(args)
+
+        story.then("an error is returned because no files could be scored")
+        output = capsys.readouterr().out
+        assert exit_code == 1
+        assert "no resume" in output.lower()
+
     def test_batch_mode_nonexistent_directory_returns_error(
         self, tmp_path: Path, story: Scenario
     ) -> None:

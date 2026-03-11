@@ -535,9 +535,10 @@ def _infer_data_dir_and_name(
       downstream path resolution appends ``/input`` automatically.
     - YAML file elsewhere → the parent directory.
 
-    When *data_dir* is provided explicitly, it is used as-is (with a warning if
-    its basename matches ``"input"`` case-insensitively).  Directory sources
-    still return themselves.
+    When *data_dir* is provided explicitly, it is used as-is (raising
+    ``ValueError`` if its basename matches ``"input"`` case-insensitively,
+    since downstream path resolution appends ``/input`` automatically).
+    Directory sources still return themselves.
 
     Returns:
         A ``(data_dir, resume_name)`` tuple.  *resume_name* is ``None`` for

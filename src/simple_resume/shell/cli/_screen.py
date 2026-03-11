@@ -151,15 +151,20 @@ def _handle_batch(  # noqa: PLR0913
             print(f"  Skipping {rfile.name}: {exc}")
             continue
         if not text.strip():
+            print(f"  Skipping {rfile.name}: file is empty")
             continue
-        score = tournament.score(text, job_text).overall_score
+        try:
+            score = tournament.score(text, job_text).overall_score
+        except Exception as exc:  # noqa: BLE001
+            print(f"  Skipping {rfile.name}: scoring failed ({exc})")
+            continue
         results.append((rfile.name, score))
 
     if not results:
         print("Error: No resume files could be read.")
         return 1
 
-    # Apply top-N limit (sorting is done inside _format_batch_report)
+    # Pre-sort for top-N slicing; _format_batch_report also sorts for display
     if top_n is not None and top_n > 0:
         results = sorted(results, key=lambda x: x[1], reverse=True)[:top_n]
 
@@ -177,15 +182,14 @@ def _read_file_text(file_path: Path) -> str:
 
     suffix = file_path.suffix.lower()
 
-    # PDF/HTML file formats are not yet supported for job descriptions
-    # Provide user-friendly error with guidance on supported formats
+    # PDF/HTML file formats are not yet supported for text extraction
     if suffix in [".pdf", ".html", ".htm"]:
         raise ValidationError(
-            f"Job description file format '{suffix}' is not yet supported",
+            f"File format '{suffix}' is not yet supported for text extraction",
             errors=[
                 f"Cannot read '{file_path.name}' - "
                 "PDF/HTML parsing is planned for a future release",
-                "Supported formats: .txt, .md, .yaml, .json",
+                "Supported formats: .txt, .md, .yaml, .yml, .json",
             ],
             context={"file_path": str(file_path), "format": suffix},
             filename=str(file_path),
