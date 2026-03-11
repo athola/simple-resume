@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
+
+import oyaml as yaml
 
 from simple_resume.core.ats import (
     ATSReportGenerator,
@@ -38,6 +41,8 @@ class _BatchDisplayOpts:
 
     top_n: int | None = None
     output_path: Path | None = None
+    report_format: str = "text"
+    verbose: bool = False
 
 
 def _build_tournament(scorers_selection: str) -> ATSTournament:
@@ -98,7 +103,12 @@ def handle_screen_command(args: argparse.Namespace) -> int:  # noqa: PLR0912
 
         # Batch mode: screen all resumes in a directory
         if batch:
-            display = _BatchDisplayOpts(top_n=top_n, output_path=output_path)
+            display = _BatchDisplayOpts(
+                top_n=top_n,
+                output_path=output_path,
+                report_format=report_format,
+                verbose=verbose,
+            )
             return _handle_batch(
                 resume_path,
                 job_path,
@@ -158,8 +168,8 @@ def _handle_batch(
         )
         return 1
 
-    # Score each resume
-    results: list[tuple[str, float]] = []
+    # Score each resume, storing full TournamentResult
+    results: list[tuple[str, TournamentResult]] = []
     for rfile in resume_files:
         try:
             text = _read_file_text(rfile)
@@ -170,17 +180,23 @@ def _handle_batch(
             print(f"  Skipping {rfile.name}: file is empty")
             continue
         try:
-            score = tournament.score(text, job_text).overall_score
+            result = tournament.score(text, job_text)
         except Exception as exc:  # noqa: BLE001
             print(f"  Skipping {rfile.name}: scoring failed ({exc})")
             continue
-        results.append((rfile.name, score))
+        results.append((rfile.name, result))
 
     if not results:
         print("Error: No resumes could be scored successfully.")
         return 1
 
-    report = _format_batch_report(results, str(job_path), top_n=display.top_n)
+    report = _format_batch_report(
+        results,
+        str(job_path),
+        top_n=display.top_n,
+        report_format=display.report_format,
+        verbose=display.verbose,
+    )
     _output_report(report, display.output_path)
     return 0
 
@@ -337,17 +353,33 @@ def _format_text_report(result: TournamentResult, verbose: bool = False) -> str:
 
 
 def _format_batch_report(
-    results: list[tuple[str, float]],
+    results: list[tuple[str, TournamentResult]],
     job_file: str,
     *,
     top_n: int | None = None,
+    report_format: str = "text",
+    verbose: bool = False,
 ) -> str:
     """Format batch screening results as a ranked report."""
-    ranked = sorted(results, key=lambda x: x[1], reverse=True)
+    ranked = sorted(results, key=lambda x: x[1].overall_score, reverse=True)
     total = len(ranked)
     if top_n is not None and top_n > 0:
         ranked = ranked[:top_n]
 
+    if report_format in ("json", "yaml"):
+        return _format_batch_structured(ranked, job_file, total, report_format, verbose)
+
+    return _format_batch_text(ranked, job_file, total, top_n, verbose)
+
+
+def _format_batch_text(
+    ranked: list[tuple[str, TournamentResult]],
+    job_file: str,
+    total: int,
+    top_n: int | None,
+    verbose: bool,
+) -> str:
+    """Format batch results as human-readable text."""
     lines = [
         "=" * 60,
         "BATCH ATS SCREENING REPORT",
@@ -368,13 +400,60 @@ def _format_batch_report(
         ]
     )
 
-    for rank, (name, score) in enumerate(ranked, 1):
-        score_100 = score * 100
+    for rank, (name, result) in enumerate(ranked, 1):
+        score_100 = result.overall_score * 100
         status = _get_status_label(score_100)
         lines.append(f"{rank}. {name:40s} {score_100:5.1f}/100  {status}")
+        if verbose:
+            for alg in result.algorithm_results:
+                lines.append(
+                    f"     {alg.name:36s} {alg.score * 100:5.1f}  "
+                    f"(weight: {alg.weight})"
+                )
 
     lines.extend(["", "=" * 60])
     return "\n".join(lines)
+
+
+def _format_batch_structured(
+    ranked: list[tuple[str, TournamentResult]],
+    job_file: str,
+    total: int,
+    report_format: str,
+    verbose: bool,
+) -> str:
+    """Format batch results as JSON or YAML."""
+    entries = []
+    for name, result in ranked:
+        entry: dict[str, object] = {
+            "resume": name,
+            "overall_score": round(result.overall_score * 100, 1),
+            "status": _get_status_label(result.overall_score * 100),
+        }
+        if verbose:
+            entry["algorithm_results"] = [
+                {
+                    "name": alg.name,
+                    "score": round(alg.score * 100, 1),
+                    "weight": alg.weight,
+                }
+                for alg in result.algorithm_results
+            ]
+            entry["component_breakdown"] = {
+                k: round(v, 4) for k, v in result.component_breakdown.items()
+            }
+        entries.append(entry)
+
+    data: dict[str, object] = {
+        "job_description": job_file,
+        "resumes_scored": total,
+        "results": entries,
+    }
+
+    if report_format == "json":
+        return json.dumps(data, indent=2)
+    yaml_output: str = yaml.dump(data, default_flow_style=False, allow_unicode=True)
+    return yaml_output
 
 
 def _get_status_label(score: float) -> str:

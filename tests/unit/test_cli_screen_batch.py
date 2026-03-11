@@ -7,15 +7,28 @@ description, ranking them, and returning top-N results.
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 import pytest
 
+from simple_resume.core.ats import TournamentResult
 from simple_resume.shell.cli._screen import (
     _format_batch_report,
     handle_screen_command,
 )
 from tests.bdd import Scenario
+
+
+def _make_tournament_result(overall_score: float) -> TournamentResult:
+    """Build a minimal TournamentResult for use in unit tests."""
+    return TournamentResult(
+        overall_score=overall_score,
+        algorithm_results=[],
+        component_breakdown={},
+        metadata={},
+        failed_scorers=[],
+    )
 
 
 def _make_args(**kwargs):  # type: ignore[no-untyped-def]
@@ -193,9 +206,9 @@ class TestBatchReportFormatting:
     def test_format_batch_report_ranks_by_score(self, story: Scenario) -> None:
         story.given("batch results with varying scores")
         results = [
-            ("resume_c.txt", 0.9),
-            ("resume_a.txt", 0.5),
-            ("resume_b.txt", 0.7),
+            ("resume_c.txt", _make_tournament_result(0.9)),
+            ("resume_a.txt", _make_tournament_result(0.5)),
+            ("resume_b.txt", _make_tournament_result(0.7)),
         ]
 
         story.when("formatting the batch report")
@@ -211,7 +224,7 @@ class TestBatchReportFormatting:
 
     def test_format_batch_report_includes_header(self, story: Scenario) -> None:
         story.given("batch results")
-        results = [("resume.txt", 0.75)]
+        results = [("resume.txt", _make_tournament_result(0.75))]
 
         story.when("formatting the batch report")
         report = _format_batch_report(results, "job.txt")
@@ -219,3 +232,68 @@ class TestBatchReportFormatting:
         story.then("the report includes a header")
         assert "BATCH" in report.upper()
         assert "job.txt" in report
+
+
+class TestBatchFormatVerbose:
+    """Batch mode respects --format and --verbose flags (#105)."""
+
+    def test_batch_json_format(
+        self, tmp_path: Path, story: Scenario, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        story.given("a directory with resumes and --format json")
+        resumes_dir = tmp_path / "resumes"
+        resumes_dir.mkdir()
+        (resumes_dir / "resume_a.txt").write_text("Python developer with Django.")
+        (resumes_dir / "resume_b.txt").write_text("Java developer with Spring.")
+        job_file = tmp_path / "job.txt"
+        job_file.write_text("Looking for a Python developer.")
+
+        story.when("running batch screen with json format")
+        args = _make_args(resume=resumes_dir, job=job_file, batch=True, format="json")
+        exit_code = handle_screen_command(args)
+
+        story.then("valid JSON is produced with results array")
+        output = capsys.readouterr().out
+        assert exit_code == 0
+        data = json.loads(output)
+        assert "results" in data
+        assert len(data["results"]) == 2
+
+    def test_batch_yaml_format(
+        self, tmp_path: Path, story: Scenario, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        story.given("a directory with resumes and --format yaml")
+        resumes_dir = tmp_path / "resumes"
+        resumes_dir.mkdir()
+        (resumes_dir / "resume_a.txt").write_text("Python developer with Django.")
+        job_file = tmp_path / "job.txt"
+        job_file.write_text("Looking for a Python developer.")
+
+        story.when("running batch screen with yaml format")
+        args = _make_args(resume=resumes_dir, job=job_file, batch=True, format="yaml")
+        exit_code = handle_screen_command(args)
+
+        story.then("YAML output is produced without text report header")
+        output = capsys.readouterr().out
+        assert exit_code == 0
+        assert "BATCH ATS SCREENING REPORT" not in output
+        assert "results:" in output or "overall_score" in output
+
+    def test_batch_verbose_text_shows_algorithm_breakdown(
+        self, tmp_path: Path, story: Scenario, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        story.given("a directory with resumes and --verbose flag")
+        resumes_dir = tmp_path / "resumes"
+        resumes_dir.mkdir()
+        (resumes_dir / "resume_a.txt").write_text("Python developer with 5 years.")
+        job_file = tmp_path / "job.txt"
+        job_file.write_text("Senior Python developer needed.")
+
+        story.when("running batch screen with verbose")
+        args = _make_args(resume=resumes_dir, job=job_file, batch=True, verbose=True)
+        exit_code = handle_screen_command(args)
+
+        story.then("algorithm details are shown in the report")
+        output = capsys.readouterr().out
+        assert exit_code == 0
+        assert "tfidf" in output.lower() or "keyword" in output.lower()
