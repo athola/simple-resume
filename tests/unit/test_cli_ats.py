@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 
 from simple_resume.core.ats import ATSTournament, ScorerResult, TournamentResult
-from simple_resume.core.exceptions import ValidationError
 from simple_resume.shell.cli import main as cli
 from simple_resume.shell.cli._screen import (
     _build_tournament,
@@ -42,59 +41,49 @@ def _make_screen_args(**kwargs: object) -> argparse.Namespace:
 # ============================================================================
 
 
-def test_read_file_text_pdf_raises_validation_error(
-    tmp_path: Path, story: Scenario
-) -> None:
-    """Test that PDF files raise a user-friendly ValidationError."""
-    story.given("a PDF file path")
-    story.when("attempting to read it as job description text")
+def test_read_file_text_pdf_extracts_text(tmp_path: Path, story: Scenario) -> None:
+    """Test that PDF files are read via pdfplumber extraction."""
+    fpdf2 = pytest.importorskip("fpdf")
+    story.given("a PDF file with text content")
+    pdf_file = tmp_path / "resume.pdf"
+    pdf = fpdf2.FPDF()
+    pdf.add_page()
+    pdf.set_font("Helvetica", size=12)
+    pdf.cell(text="Python developer")
+    pdf.output(str(pdf_file))
 
-    pdf_file = tmp_path / "job.pdf"
-    pdf_file.write_bytes(b"%PDF-1.4 fake pdf content")
+    story.when("reading the PDF")
+    content = cli._read_file_text(pdf_file)
 
-    with pytest.raises(ValidationError) as exc_info:
-        cli._read_file_text(pdf_file)
-
-    story.then("a ValidationError with helpful guidance is raised")
-    assert ".pdf" in str(exc_info.value)
-    assert "not yet supported" in str(exc_info.value)
-    assert exc_info.value.errors is not None
-    assert any("Supported formats" in e for e in exc_info.value.errors)
+    story.then("text is extracted from the PDF")
+    assert "Python" in content
 
 
-def test_read_file_text_html_raises_validation_error(
-    tmp_path: Path, story: Scenario
-) -> None:
-    """Test that HTML files raise a user-friendly ValidationError."""
-    story.given("an HTML file path")
-    story.when("attempting to read it as job description text")
-
+def test_read_file_text_html_extracts_text(tmp_path: Path, story: Scenario) -> None:
+    """Test that HTML files are read via BeautifulSoup extraction."""
+    story.given("an HTML file with resume content")
     html_file = tmp_path / "job.html"
-    html_file.write_text("<html><body>Job posting</body></html>")
+    html_file.write_text("<html><body><p>Job posting content</p></body></html>")
 
-    with pytest.raises(ValidationError) as exc_info:
-        cli._read_file_text(html_file)
+    story.when("reading the HTML file")
+    content = cli._read_file_text(html_file)
 
-    story.then("a ValidationError with helpful guidance is raised")
-    assert ".html" in str(exc_info.value)
-    assert "not yet supported" in str(exc_info.value)
+    story.then("text is extracted without tags")
+    assert "Job posting content" in content
+    assert "<html>" not in content
 
 
-def test_read_file_text_htm_raises_validation_error(
-    tmp_path: Path, story: Scenario
-) -> None:
-    """Test that .htm files also raise a ValidationError."""
-    story.given("a .htm file path")
-    story.when("attempting to read it")
-
+def test_read_file_text_htm_extracts_text(tmp_path: Path, story: Scenario) -> None:
+    """Test that .htm files are also extracted."""
+    story.given("a .htm file")
     htm_file = tmp_path / "job.htm"
     htm_file.write_text("<html><body>Job posting</body></html>")
 
-    with pytest.raises(ValidationError) as exc_info:
-        cli._read_file_text(htm_file)
+    story.when("reading the .htm file")
+    content = cli._read_file_text(htm_file)
 
-    story.then("a ValidationError is raised")
-    assert ".htm" in str(exc_info.value)
+    story.then("text is extracted")
+    assert "Job posting" in content
 
 
 def test_read_file_text_txt_works(tmp_path: Path, story: Scenario) -> None:

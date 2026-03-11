@@ -151,6 +151,7 @@ extend-ignore = [
 "src/simple_resume/core/ats/tournament.py" = ["PLC0415"]
 "src/simple_resume/shell/llm/client.py" = ["PLC0415"]
 "src/simple_resume/shell/llm/gate.py" = ["PLC0415"]
+"src/simple_resume/shell/cli/_screen.py" = ["PLC0415"]
 "tests/**/*.py" = [
     "PLR2004",  # Allow magic numbers in tests (e.g., test data)
     "PLR0913",  # Allow more arguments in test functions (many fixtures)
@@ -233,6 +234,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["bs4", "bs4.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["pdfplumber", "pdfplumber.*"]
 ignore_missing_imports = true
 
 

@@ -31,8 +31,7 @@ _POOR_THRESHOLD = 35
 _PASSING_THRESHOLD = 0.5
 
 
-_RESUME_SUFFIXES = {".txt", ".md", ".yaml", ".yml", ".json"}
-_UNSUPPORTED_SUFFIXES = {".pdf", ".html", ".htm"}
+_RESUME_SUFFIXES = {".txt", ".md", ".yaml", ".yml", ".json", ".pdf", ".html", ".htm"}
 
 
 @dataclass(frozen=True)
@@ -201,6 +200,36 @@ def _handle_batch(
     return 0
 
 
+def _extract_pdf_text(file_path: Path) -> str:
+    """Extract text from a PDF file using pdfplumber."""
+    import pdfplumber
+
+    try:
+        with pdfplumber.open(file_path) as pdf:
+            pages = []
+            for page in pdf.pages:
+                text = page.extract_text()
+                if text:
+                    pages.append(text)
+            return "\n".join(pages)
+    except Exception as exc:
+        raise ValidationError(
+            f"Could not extract text from PDF '{file_path.name}'",
+            errors=[str(exc)],
+            context={"file_path": str(file_path)},
+            filename=str(file_path),
+        ) from exc
+
+
+def _extract_html_text(file_path: Path) -> str:
+    """Extract text from an HTML file using BeautifulSoup."""
+    from bs4 import BeautifulSoup
+
+    raw = file_path.read_text(encoding="utf-8")
+    soup = BeautifulSoup(raw, "html.parser")
+    return str(soup.get_text(separator="\n"))
+
+
 def _read_file_text(file_path: Path) -> str:
     """Read text content from a file, handling various formats."""
     if not file_path.exists():
@@ -208,18 +237,11 @@ def _read_file_text(file_path: Path) -> str:
 
     suffix = file_path.suffix.lower()
 
-    # PDF/HTML file formats are not yet supported for text extraction
-    if suffix in _UNSUPPORTED_SUFFIXES:
-        raise ValidationError(
-            f"File format '{suffix}' is not yet supported for text extraction",
-            errors=[
-                f"Cannot read '{file_path.name}' - "
-                "PDF/HTML parsing is planned for a future release",
-                f"Supported formats: {', '.join(sorted(_RESUME_SUFFIXES))}",
-            ],
-            context={"file_path": str(file_path), "format": suffix},
-            filename=str(file_path),
-        )
+    if suffix == ".pdf":
+        return _extract_pdf_text(file_path)
+
+    if suffix in {".html", ".htm"}:
+        return _extract_html_text(file_path)
 
     # Read text content
     try:
