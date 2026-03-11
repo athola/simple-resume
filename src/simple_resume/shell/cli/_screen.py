@@ -52,7 +52,7 @@ def _build_tournament(scorers_selection: str) -> ATSTournament:
 
 
 def _collect_resume_files(directory: Path) -> list[Path]:
-    """Collect readable resume files from a directory."""
+    """Collect resume files with supported suffixes from a directory."""
     return sorted(
         p
         for p in directory.iterdir()

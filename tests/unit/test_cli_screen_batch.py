@@ -6,6 +6,7 @@ description, ranking them, and returning top-N results.
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 import pytest
@@ -18,12 +19,7 @@ from tests.bdd import Scenario
 
 
 def _make_args(**kwargs):  # type: ignore[no-untyped-def]
-    """Build a minimal argparse.Namespace-like object."""
-
-    class Args:
-        pass
-
-    args = Args()
+    """Build a minimal argparse.Namespace for screen commands."""
     defaults = {
         "resume": None,
         "job": None,
@@ -35,9 +31,7 @@ def _make_args(**kwargs):  # type: ignore[no-untyped-def]
         "top": None,
     }
     defaults.update(kwargs)
-    for k, v in defaults.items():
-        setattr(args, k, v)
-    return args
+    return argparse.Namespace(**defaults)
 
 
 class TestBatchScreeningCLI:
