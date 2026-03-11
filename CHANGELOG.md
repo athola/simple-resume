@@ -2,6 +2,18 @@
 
 This file documents all notable project changes. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-03-10
+
+### Added
+
+- ATS batch screening mode for multi-resume ranking (#94)
+- Diversified sample YAML descriptions with unique personas (#95)
+
+### Fixed
+
+- Hardened path inference with root guard and strict validation (#93)
+- Addressed PR #100 review findings (error handling, CLI robustness)
+
 ## [0.3.0] - 2026-02-24
 
 ### Added

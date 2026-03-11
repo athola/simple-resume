@@ -30,7 +30,7 @@ markers = [
 
 [project]
 name = "simple-resume"
-version = "0.3.0"
+version = "0.3.1"
 description = "Generate PDF resumes from YAML data using HTML templates"
 authors = [
     {name = "Alex Thola", email = "alexthola@gmail.com"}

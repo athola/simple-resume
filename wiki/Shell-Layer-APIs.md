@@ -345,7 +345,12 @@ paths = resolve_paths(data_dir="resume_private")
 - `_execute_generation_plan(commands)` - Execute generation commands with result summary
 
 **Internal Functions (_screen):**
-- `handle_screen_command(args)` - ATS screening subcommand handler
+- `handle_screen_command(args)` - ATS screening subcommand handler (single and batch modes)
+- `_build_tournament(scorers_selection)` - Build tournament with selected scoring algorithms
+- `_collect_resume_files(directory)` - Collect readable resume files from a directory
+- `_output_report(content, output_path)` - Print or save a report string
+- `_handle_batch(resume_path, job_path, job_text, tournament, top_n, output_path)` - Batch screening handler
+- `_format_batch_report(results, job_file)` - Format ranked batch results as text
 
 **Usage:**
 ```bash
@@ -356,6 +361,10 @@ simple-resume generate --format html --name my_resume
 # ATS screening
 simple-resume screen resume.txt job_description.txt
 simple-resume screen resume.txt job.txt --format yaml --output report.yaml
+
+# Batch screening
+simple-resume screen resumes_dir/ job.txt --batch
+simple-resume screen resumes_dir/ job.txt --batch --top 5
 
 # Other commands
 simple-resume session
