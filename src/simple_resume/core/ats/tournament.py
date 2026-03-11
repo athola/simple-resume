@@ -20,10 +20,18 @@ from simple_resume.core.ats.constants import (
     FALLBACK_JACCARD_WEIGHT,
     FALLBACK_KEYWORD_WEIGHT,
     FALLBACK_TFIDF_WEIGHT,
+    HUMAN_BERT_WEIGHT,
+    HUMAN_FALLBACK_JACCARD_WEIGHT,
+    HUMAN_FALLBACK_KEYWORD_WEIGHT,
+    HUMAN_FALLBACK_TFIDF_WEIGHT,
+    HUMAN_JACCARD_WEIGHT,
+    HUMAN_KEYWORD_WEIGHT,
+    HUMAN_TFIDF_WEIGHT,
+    ScoringMode,
     validate_score,
 )
 from simple_resume.core.ats.jaccard import JaccardScorer
-from simple_resume.core.ats.keyword import KeywordScorer
+from simple_resume.core.ats.keyword import KeywordScorer, KeywordScorerConfig
 from simple_resume.core.ats.tfidf import TFIDFScorer
 
 logger = logging.getLogger(__name__)
@@ -102,6 +110,7 @@ class ATSTournament:
         scorers: list[BaseScorer] | None = None,
         include_bert: bool = True,
         bert_model_name: str | None = None,
+        scoring_mode: ScoringMode = ScoringMode.ATS,
     ) -> None:
         """Initialize the tournament with a list of scorers.
 
@@ -112,9 +121,11 @@ class ATSTournament:
                          is installed (useful for faster scoring or testing).
             bert_model_name: Override the BERT model name. Shell layer can resolve
                             this from environment variables or config files.
+            scoring_mode: Weight preset to use (default: ATS).
 
         """
         self._bert_model_name = bert_model_name
+        self._scoring_mode = scoring_mode
         if scorers is None:
             self.scorers = self._create_default_scorers(include_bert=include_bert)
         else:
@@ -125,6 +136,7 @@ class ATSTournament:
 
         If BERT is available and enabled, uses semantic-aware weights.
         If BERT is unavailable, uses fallback statistical-only weights.
+        Weights are selected based on the active scoring mode.
 
         Args:
             include_bert: Whether to try including BERT scorer
@@ -134,21 +146,24 @@ class ATSTournament:
 
         """
         scorers: list[BaseScorer] = []
+        is_human = self._scoring_mode == ScoringMode.HUMAN_REVIEWER
 
         # Try to include BERT scorer if enabled
         bert_available = False
         if include_bert:
             try:
                 bert_scorer_cls = _import_bert_scorer()
+                bert_weight = HUMAN_BERT_WEIGHT if is_human else DEFAULT_BERT_WEIGHT
                 bert_scorer = bert_scorer_cls(
-                    weight=DEFAULT_BERT_WEIGHT,
+                    weight=bert_weight,
                     model_name=self._bert_model_name,
                 )
                 if bert_scorer.available:
                     scorers.append(bert_scorer)
                     bert_available = True
                     logger.info(
-                        "BERT scorer enabled with weight %.2f", DEFAULT_BERT_WEIGHT
+                        "BERT scorer enabled with weight %.2f",
+                        bert_weight,
                     )
                 else:
                     logger.info(
@@ -158,25 +173,32 @@ class ATSTournament:
             except ImportError:
                 logger.info("BERT module not available")
 
-        # Add statistical scorers with appropriate weights
+        # Select weights based on mode and BERT availability
         if bert_available:
-            # Use reduced weights when BERT is present
-            scorers.extend(
-                [
-                    TFIDFScorer(weight=DEFAULT_TFIDF_WEIGHT),
-                    JaccardScorer(weight=DEFAULT_JACCARD_WEIGHT),
-                    KeywordScorer(weight=DEFAULT_KEYWORD_WEIGHT),
-                ]
-            )
+            tfidf_w = HUMAN_TFIDF_WEIGHT if is_human else DEFAULT_TFIDF_WEIGHT
+            jaccard_w = HUMAN_JACCARD_WEIGHT if is_human else DEFAULT_JACCARD_WEIGHT
+            keyword_w = HUMAN_KEYWORD_WEIGHT if is_human else DEFAULT_KEYWORD_WEIGHT
         else:
-            # Use fallback weights (sum to 1.0) when BERT unavailable
-            scorers.extend(
-                [
-                    TFIDFScorer(weight=FALLBACK_TFIDF_WEIGHT),
-                    JaccardScorer(weight=FALLBACK_JACCARD_WEIGHT),
-                    KeywordScorer(weight=FALLBACK_KEYWORD_WEIGHT),
-                ]
+            tfidf_w = HUMAN_FALLBACK_TFIDF_WEIGHT if is_human else FALLBACK_TFIDF_WEIGHT
+            jaccard_w = (
+                HUMAN_FALLBACK_JACCARD_WEIGHT if is_human else FALLBACK_JACCARD_WEIGHT
             )
+            keyword_w = (
+                HUMAN_FALLBACK_KEYWORD_WEIGHT if is_human else FALLBACK_KEYWORD_WEIGHT
+            )
+
+        # Build keyword scorer with creative expansion for human mode
+        keyword_config = KeywordScorerConfig(
+            enable_creative_expansion=is_human,
+        )
+
+        scorers.extend(
+            [
+                TFIDFScorer(weight=tfidf_w),
+                JaccardScorer(weight=jaccard_w),
+                KeywordScorer(weight=keyword_w, config=keyword_config),
+            ]
+        )
 
         return scorers
 

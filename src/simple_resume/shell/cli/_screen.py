@@ -16,7 +16,9 @@ from simple_resume.core.ats import (
     ATSTournament,
     JaccardScorer,
     KeywordScorer,
+    KeywordScorerConfig,
     ScorerSelection,
+    ScoringMode,
     TFIDFScorer,
     TournamentResult,
 )
@@ -44,15 +46,22 @@ class _BatchDisplayOpts:
     verbose: bool = False
 
 
-def _build_tournament(scorers_selection: str) -> ATSTournament:
+def _build_tournament(
+    scorers_selection: str,
+    scoring_mode: ScoringMode = ScoringMode.ATS,
+) -> ATSTournament:
     """Build a tournament with the selected scoring algorithms."""
     if scorers_selection == ScorerSelection.TFIDF:
         return ATSTournament(scorers=[TFIDFScorer(weight=1.0)])
     if scorers_selection == ScorerSelection.JACCARD:
         return ATSTournament(scorers=[JaccardScorer(weight=1.0)])
     if scorers_selection == ScorerSelection.KEYWORD:
-        return ATSTournament(scorers=[KeywordScorer(weight=1.0)])
-    return ATSTournament()
+        is_human = scoring_mode == ScoringMode.HUMAN_REVIEWER
+        kw_config = KeywordScorerConfig(
+            enable_creative_expansion=is_human,
+        )
+        return ATSTournament(scorers=[KeywordScorer(weight=1.0, config=kw_config)])
+    return ATSTournament(scoring_mode=scoring_mode)
 
 
 def _collect_resume_files(directory: Path) -> list[Path]:
@@ -91,6 +100,9 @@ def handle_screen_command(args: argparse.Namespace) -> int:  # noqa: PLR0912
     batch: bool = getattr(args, "batch", False)
     top_n: int | None = getattr(args, "top", None)
 
+    mode_str: str = getattr(args, "mode", "ats")
+    scoring_mode = ScoringMode(mode_str)
+
     try:
         # Read job description
         job_text = _read_file_text(job_path)
@@ -98,7 +110,7 @@ def handle_screen_command(args: argparse.Namespace) -> int:  # noqa: PLR0912
             print(f"Error: Job description file is empty: {job_path}")
             return 1
 
-        tournament = _build_tournament(scorers_selection)
+        tournament = _build_tournament(scorers_selection, scoring_mode=scoring_mode)
 
         # Batch mode: screen all resumes in a directory
         if batch:

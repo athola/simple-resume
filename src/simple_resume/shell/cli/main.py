@@ -303,6 +303,14 @@ def create_parser() -> argparse.ArgumentParser:
         default=None,
         help="Show only the top N results (batch mode only)",
     )
+    screen_parser.add_argument(
+        "--mode",
+        choices=["ats", "human"],
+        default="ats",
+        help="Scoring mode: 'ats' for automated screening, "
+        "'human' for human reviewer "
+        "(adjusts weights, enables creative term expansion)",
+    )
 
     # import subcommand
     import_parser = subparsers.add_parser(
