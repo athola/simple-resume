@@ -92,6 +92,9 @@ test_*.py
 src/static/images/*
 !src/static/images/default_*
 
+# AI-generated plans and specs (merge into existing docs instead)
+docs/superpowers/
+
 # Ephemeral audit/scan reports
 .ai-hygiene-audit.md
 .unbloat-scan*.md

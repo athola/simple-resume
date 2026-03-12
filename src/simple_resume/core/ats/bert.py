@@ -11,6 +11,7 @@ Key advantages over TF-IDF:
 
 from __future__ import annotations
 
+import importlib.util
 import logging
 import re
 from functools import lru_cache
@@ -70,8 +71,6 @@ def _check_sentence_transformers_available() -> bool:
     Uses importlib.util.find_spec to check package availability without
     actually importing it (avoids loading heavy ML dependencies).
     """
-    import importlib.util
-
     return importlib.util.find_spec("sentence_transformers") is not None
 
 

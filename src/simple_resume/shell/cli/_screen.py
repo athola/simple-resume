@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import oyaml as yaml
+import pdfplumber
+from bs4 import BeautifulSoup
 
 from simple_resume.core.ats import (
     ATSReportGenerator,
@@ -215,8 +217,6 @@ def _handle_batch(
 
 def _extract_pdf_text(file_path: Path) -> str:
     """Extract text from a PDF file using pdfplumber."""
-    import pdfplumber
-
     try:
         with pdfplumber.open(file_path) as pdf:
             pages = []
@@ -236,8 +236,6 @@ def _extract_pdf_text(file_path: Path) -> str:
 
 def _extract_html_text(file_path: Path) -> str:
     """Extract text from an HTML file using BeautifulSoup."""
-    from bs4 import BeautifulSoup
-
     try:
         raw = file_path.read_text(encoding="utf-8")
     except UnicodeDecodeError:
