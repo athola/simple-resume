@@ -42,9 +42,10 @@ EXPECTED_PUBLIC_SYMBOLS = {
     "generate",
     "GenerateOptions",
     "preview",
-    # ATS scoring (v0.2.0)
+    # ATS scoring (v0.2.0+)
     "BaseScorer",
     "ScorerResult",
+    "ScoringMode",
     "ExtractedEntities",
     "EntityExtractor",
     "extract_entities",

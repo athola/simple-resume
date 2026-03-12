@@ -22,14 +22,15 @@ from simple_resume.core.ats import (
     TFIDFScorer,
     TournamentResult,
 )
+from simple_resume.core.ats.constants import (
+    SCORE_EXCELLENT_THRESHOLD,
+    SCORE_FAIR_THRESHOLD,
+    SCORE_GOOD_THRESHOLD,
+    SCORE_POOR_THRESHOLD,
+)
 from simple_resume.core.exceptions import SimpleResumeError, ValidationError
 from simple_resume.shell.cli._errors import _handle_unexpected_error
 
-# Score threshold constants
-_EXCELLENT_THRESHOLD = 80
-_GOOD_THRESHOLD = 65
-_FAIR_THRESHOLD = 50
-_POOR_THRESHOLD = 35
 _PASSING_THRESHOLD = 0.5
 
 
@@ -237,7 +238,16 @@ def _extract_html_text(file_path: Path) -> str:
     """Extract text from an HTML file using BeautifulSoup."""
     from bs4 import BeautifulSoup
 
-    raw = file_path.read_text(encoding="utf-8")
+    try:
+        raw = file_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        warnings.warn(
+            f"File '{file_path.name}' is not valid UTF-8, falling back to latin-1 "
+            "encoding. Check the file encoding if text appears garbled.",
+            UserWarning,
+            stacklevel=2,
+        )
+        raw = file_path.read_text(encoding="latin-1")
     soup = BeautifulSoup(raw, "html.parser")
     return str(soup.get_text(separator="\n"))
 
@@ -492,12 +502,12 @@ def _format_batch_structured(
 
 def _get_status_label(score: float) -> str:
     """Get status label based on score (0-100 scale)."""
-    if score >= _EXCELLENT_THRESHOLD:
+    if score >= SCORE_EXCELLENT_THRESHOLD:
         return "Excellent - Strong match!"
-    if score >= _GOOD_THRESHOLD:
+    if score >= SCORE_GOOD_THRESHOLD:
         return "Good - Competitive candidate."
-    if score >= _FAIR_THRESHOLD:
+    if score >= SCORE_FAIR_THRESHOLD:
         return "Fair - Consider improvements."
-    if score >= _POOR_THRESHOLD:
+    if score >= SCORE_POOR_THRESHOLD:
         return "Poor - Significant gaps."
     return "Very Poor - Not a match."

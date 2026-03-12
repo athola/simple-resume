@@ -8,7 +8,11 @@ import pytest
 
 from simple_resume.core.exceptions import ValidationError
 from simple_resume.shell.cli import main as cli
-from simple_resume.shell.cli._screen import _collect_resume_files, _extract_pdf_text
+from simple_resume.shell.cli._screen import (
+    _collect_resume_files,
+    _extract_html_text,
+    _extract_pdf_text,
+)
 from tests.bdd import Scenario
 
 # Minimal valid PDF with one page containing "Hello World" text.
@@ -93,6 +97,22 @@ class TestHtmlExtraction:
         assert "Jane Doe" in content
         assert "Python developer" in content
         assert "<html>" not in content
+
+    def test_extract_html_latin1_fallback(
+        self, tmp_path: Path, story: Scenario
+    ) -> None:
+        story.given("an HTML file encoded in latin-1 with non-UTF-8 characters")
+        html_file = tmp_path / "latin1.html"
+        html_content = "<html><body><p>Résumé for José García</p></body></html>"
+        html_file.write_bytes(html_content.encode("latin-1"))
+
+        story.when("extracting text from the latin-1 HTML file")
+        with pytest.warns(UserWarning, match="not valid UTF-8"):
+            content = _extract_html_text(html_file)
+
+        story.then("text is extracted using latin-1 fallback")
+        assert "sum" in content
+        assert "Jos" in content
 
     def test_extract_htm_text(self, tmp_path: Path, story: Scenario) -> None:
         story.given("an .htm file")

@@ -43,6 +43,7 @@ def _make_args(**kwargs):  # type: ignore[no-untyped-def]
         "verbose": False,
         "batch": False,
         "top": None,
+        "mode": "ats",
     }
     defaults.update(kwargs)
     return argparse.Namespace(**defaults)
