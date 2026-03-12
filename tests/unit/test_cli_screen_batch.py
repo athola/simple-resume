@@ -6,24 +6,34 @@ description, ranking them, and returning top-N results.
 
 from __future__ import annotations
 
+import argparse
+import json
 from pathlib import Path
 
 import pytest
 
+from simple_resume.core.ats import ScorerResult, TournamentResult
 from simple_resume.shell.cli._screen import (
     _format_batch_report,
+    _format_batch_structured,
     handle_screen_command,
 )
 from tests.bdd import Scenario
 
 
+def _make_tournament_result(overall_score: float) -> TournamentResult:
+    """Build a minimal TournamentResult for use in unit tests."""
+    return TournamentResult(
+        overall_score=overall_score,
+        algorithm_results=[],
+        component_breakdown={},
+        metadata={},
+        failed_scorers=[],
+    )
+
+
 def _make_args(**kwargs):  # type: ignore[no-untyped-def]
-    """Build a minimal argparse.Namespace-like object."""
-
-    class Args:
-        pass
-
-    args = Args()
+    """Build a minimal argparse.Namespace for screen commands."""
     defaults = {
         "resume": None,
         "job": None,
@@ -33,11 +43,10 @@ def _make_args(**kwargs):  # type: ignore[no-untyped-def]
         "verbose": False,
         "batch": False,
         "top": None,
+        "mode": "ats",
     }
     defaults.update(kwargs)
-    for k, v in defaults.items():
-        setattr(args, k, v)
-    return args
+    return argparse.Namespace(**defaults)
 
 
 class TestBatchScreeningCLI:
@@ -199,9 +208,9 @@ class TestBatchReportFormatting:
     def test_format_batch_report_ranks_by_score(self, story: Scenario) -> None:
         story.given("batch results with varying scores")
         results = [
-            ("resume_c.txt", 0.9),
-            ("resume_a.txt", 0.5),
-            ("resume_b.txt", 0.7),
+            ("resume_c.txt", _make_tournament_result(0.9)),
+            ("resume_a.txt", _make_tournament_result(0.5)),
+            ("resume_b.txt", _make_tournament_result(0.7)),
         ]
 
         story.when("formatting the batch report")
@@ -217,7 +226,7 @@ class TestBatchReportFormatting:
 
     def test_format_batch_report_includes_header(self, story: Scenario) -> None:
         story.given("batch results")
-        results = [("resume.txt", 0.75)]
+        results = [("resume.txt", _make_tournament_result(0.75))]
 
         story.when("formatting the batch report")
         report = _format_batch_report(results, "job.txt")
@@ -225,3 +234,122 @@ class TestBatchReportFormatting:
         story.then("the report includes a header")
         assert "BATCH" in report.upper()
         assert "job.txt" in report
+
+
+class TestBatchFormatVerbose:
+    """Batch mode respects --format and --verbose flags (#105)."""
+
+    def test_batch_json_format(
+        self, tmp_path: Path, story: Scenario, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        story.given("a directory with resumes and --format json")
+        resumes_dir = tmp_path / "resumes"
+        resumes_dir.mkdir()
+        (resumes_dir / "resume_a.txt").write_text("Python developer with Django.")
+        (resumes_dir / "resume_b.txt").write_text("Java developer with Spring.")
+        job_file = tmp_path / "job.txt"
+        job_file.write_text("Looking for a Python developer.")
+
+        story.when("running batch screen with json format")
+        args = _make_args(resume=resumes_dir, job=job_file, batch=True, format="json")
+        exit_code = handle_screen_command(args)
+
+        story.then("valid JSON is produced with results array")
+        output = capsys.readouterr().out
+        assert exit_code == 0
+        data = json.loads(output)
+        assert "results" in data
+        assert len(data["results"]) == 2
+
+    def test_batch_yaml_format(
+        self, tmp_path: Path, story: Scenario, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        story.given("a directory with resumes and --format yaml")
+        resumes_dir = tmp_path / "resumes"
+        resumes_dir.mkdir()
+        (resumes_dir / "resume_a.txt").write_text("Python developer with Django.")
+        job_file = tmp_path / "job.txt"
+        job_file.write_text("Looking for a Python developer.")
+
+        story.when("running batch screen with yaml format")
+        args = _make_args(resume=resumes_dir, job=job_file, batch=True, format="yaml")
+        exit_code = handle_screen_command(args)
+
+        story.then("YAML output is produced without text report header")
+        output = capsys.readouterr().out
+        assert exit_code == 0
+        assert "BATCH ATS SCREENING REPORT" not in output
+        assert "results:" in output or "overall_score" in output
+
+    def test_batch_verbose_text_shows_algorithm_breakdown(
+        self, tmp_path: Path, story: Scenario, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        story.given("a directory with resumes and --verbose flag")
+        resumes_dir = tmp_path / "resumes"
+        resumes_dir.mkdir()
+        (resumes_dir / "resume_a.txt").write_text("Python developer with 5 years.")
+        job_file = tmp_path / "job.txt"
+        job_file.write_text("Senior Python developer needed.")
+
+        story.when("running batch screen with verbose")
+        args = _make_args(resume=resumes_dir, job=job_file, batch=True, verbose=True)
+        exit_code = handle_screen_command(args)
+
+        story.then("algorithm details are shown in the report")
+        output = capsys.readouterr().out
+        assert exit_code == 0
+        assert "tfidf" in output.lower() or "keyword" in output.lower()
+
+
+class TestBatchStructuredVerbose:
+    """_format_batch_structured with verbose=True includes algorithm details."""
+
+    def test_verbose_json_includes_algorithm_results(self, story: Scenario) -> None:
+        story.given("tournament results with algorithm breakdowns")
+        alg_results = [
+            ScorerResult(name="tfidf_cosine", score=0.8, weight=0.4),
+            ScorerResult(name="keyword_exact", score=0.6, weight=0.3),
+        ]
+        result = TournamentResult(
+            overall_score=0.72,
+            algorithm_results=alg_results,
+            component_breakdown={"skills": 0.75, "experience": 0.68},
+        )
+        ranked = [("resume_a.txt", result)]
+
+        story.when("formatting as JSON with verbose=True")
+        output = _format_batch_structured(
+            ranked, "job.txt", total=1, report_format="json", verbose=True
+        )
+        data = json.loads(output)
+
+        story.then("algorithm_results and component_breakdown are in the output")
+        entry = data["results"][0]
+        assert "algorithm_results" in entry
+        assert len(entry["algorithm_results"]) == 2
+        assert entry["algorithm_results"][0]["name"] == "tfidf_cosine"
+        assert entry["algorithm_results"][0]["score"] == 80.0
+        assert "component_breakdown" in entry
+        assert entry["component_breakdown"]["skills"] == 0.75
+
+    def test_non_verbose_json_excludes_algorithm_details(self, story: Scenario) -> None:
+        story.given("tournament results")
+        result = TournamentResult(
+            overall_score=0.65,
+            algorithm_results=[
+                ScorerResult(name="tfidf_cosine", score=0.7, weight=0.5),
+            ],
+            component_breakdown={"skills": 0.6},
+        )
+        ranked = [("resume_b.txt", result)]
+
+        story.when("formatting as JSON with verbose=False")
+        output = _format_batch_structured(
+            ranked, "job.txt", total=1, report_format="json", verbose=False
+        )
+        data = json.loads(output)
+
+        story.then("algorithm_results and component_breakdown are absent")
+        entry = data["results"][0]
+        assert "algorithm_results" not in entry
+        assert "component_breakdown" not in entry

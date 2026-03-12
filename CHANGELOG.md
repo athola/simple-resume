@@ -2,6 +2,33 @@
 
 This file documents all notable project changes. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-03-11
+
+### Added
+
+- Batch screening supports `--format json`, `--format yaml`, and `--verbose` flags (#105)
+- PDF text extraction via pdfplumber for ATS screening (#104)
+- HTML/HTM text extraction via BeautifulSoup for ATS screening (#104)
+- O*NET skills taxonomy data bundle with 400+ technology skills (#81)
+- LinkedIn skills taxonomy data bundle with 400+ professional skills (#82)
+- Merged skills pipeline: hardcoded + O*NET + LinkedIn bundles (#81, #82)
+- Shell-layer API fetcher stubs for O*NET and LinkedIn (#81, #82)
+- `--mode {ats,human}` flag for human reviewer scoring mode (#62)
+- `ScoringMode` enum with configurable tournament weight presets (#62)
+- Creative term expansion enabled by default in human reviewer mode (#62)
+
+### Fixed
+
+- Latin-1 encoding fallback now emits a UserWarning (#101)
+- Report file write errors handled gracefully with stderr message (#102)
+
+### Changed
+
+- `pdfplumber` and `beautifulsoup4` are now core dependencies (#104)
+- `_collect_resume_files` docstring corrected (#103)
+- Batch test helper uses `argparse.Namespace` instead of custom class (#103)
+- `linkedin` optional extra removed (beautifulsoup4 moved to core) (#104)
+
 ## [0.3.1] - 2026-03-10
 
 ### Added

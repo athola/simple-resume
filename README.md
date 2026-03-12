@@ -134,9 +134,20 @@ Score resumes against job descriptions using multiple NLP algorithms.
 # Single resume
 uv run simple-resume screen resume.yaml job.txt
 
+# Score a PDF or HTML resume directly
+uv run simple-resume screen resume.pdf job.txt
+
+# Human reviewer mode (emphasizes semantic similarity)
+uv run simple-resume screen resume.yaml job.txt --mode human
+
 # Batch mode — rank all resumes in a directory
 uv run simple-resume screen resumes/ job.txt --batch --top 5
+
+# Batch with structured output and detail
+uv run simple-resume screen resumes/ job.txt --batch --format json --verbose
 ```
+
+Supported input formats: `.yaml`, `.yml`, `.json`, `.txt`, `.md`, `.pdf`, `.html`, `.htm`.
 
 ### Python API
 
@@ -155,11 +166,12 @@ print(f"Match score: {result.overall_score * 100:.1f}%")
 - **TF-IDF + Cosine Similarity** — statistical term frequency analysis
 - **Jaccard + N-gram** — set intersection and phrase overlap
 - **Exact Keyword** — direct matching with fuzzy tolerance and
-  skills taxonomy
+  skills taxonomy (800+ skills from O*NET and LinkedIn bundles)
 - **BERT Semantic** — contextual embeddings via sentence-transformers
   (optional: `uv add simple-resume[bert]`)
 
-The tournament system combines algorithms using weighted averages.
+The tournament system combines algorithms using weighted averages with
+mode-specific presets (`--mode ats` or `--mode human`).
 See [ATS API Reference](wiki/ATS-API-Reference.md) for the scoring API,
 [ATS Scoring Rubric](wiki/ATS-Scoring-Rubric.md) for methodology, and
 [Similarity Algorithm Evaluation](wiki/Similarity-Algorithm-Evaluation.md)

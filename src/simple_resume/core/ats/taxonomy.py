@@ -24,6 +24,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Protocol
 
+from simple_resume.core.ats.taxonomy_data import LINKEDIN_SKILLS, ONET_SKILLS
+
 logger = logging.getLogger(__name__)
 
 
@@ -204,37 +206,61 @@ class SkillsTaxonomyFetcher:
         self._config = config or TaxonomyConfig()
         self._cache = cache or NullTaxonomyCache()
 
+    @staticmethod
+    def _load_onet_bundle() -> list[str]:
+        """Load curated O*NET skills bundle (no I/O, always succeeds)."""
+        return list(ONET_SKILLS)
+
+    @staticmethod
+    def _load_linkedin_bundle() -> list[str]:
+        """Load curated LinkedIn skills bundle (no I/O, always succeeds)."""
+        return list(LINKEDIN_SKILLS)
+
     def get_skills(
         self, taxonomy: str | TaxonomySource = TaxonomySource.ONET
     ) -> list[str]:
-        """Get skills from taxonomy with fallback to hardcoded list.
+        """Get merged skills from hardcoded list, bundles, and optional API.
 
-        Args:
-            taxonomy: Taxonomy name ("onet", "linkedin", etc.)
-
-        Returns:
-            List of skills (from API if enabled and cached, or hardcoded list)
-
+        Returns deduplicated, lowercase-normalized list of skills from:
+        1. Hardcoded skills (always included)
+        2. O*NET bundle (always included)
+        3. LinkedIn bundle (always included)
+        4. Live API results (only if config.enabled and API available)
         """
-        if not self._config.enabled:
-            logger.debug("Taxonomy API disabled, using hardcoded skills")
-            return list(HARDCODED_SKILLS)
+        all_skills: list[str] = list(HARDCODED_SKILLS)
+        all_skills.extend(self._load_onet_bundle())
+        all_skills.extend(self._load_linkedin_bundle())
 
-        cached_skills = self._cache.get(taxonomy)
-        if cached_skills is not None:
-            logger.debug("Using cached skills from %s", taxonomy)
-            return cached_skills
+        # Optionally fetch from live API
+        if self._config.enabled:
+            cached_skills = self._cache.get(taxonomy)
+            if cached_skills is not None:
+                logger.debug("Using cached skills from %s", taxonomy)
+                all_skills.extend(cached_skills)
+            else:
+                try:
+                    api_skills = self._fetch_from_api(taxonomy)
+                    if api_skills:
+                        self._cache.set(taxonomy, api_skills)
+                        all_skills.extend(api_skills)
+                except (
+                    OSError,
+                    ConnectionError,
+                    TimeoutError,
+                    ValueError,
+                    NotImplementedError,
+                ) as exc:
+                    logger.warning("Failed to fetch from %s API: %s", taxonomy, exc)
 
-        try:
-            skills = self._fetch_from_api(taxonomy)
-            if skills:
-                self._cache.set(taxonomy, skills)
-                return skills
-        except (OSError, ConnectionError, TimeoutError, ValueError) as exc:
-            logger.warning("Failed to fetch from %s API: %s", taxonomy, exc)
-
-        logger.warning("Falling back to hardcoded skills for %s", taxonomy)
-        return list(HARDCODED_SKILLS)
+        # Deduplicate (case-insensitive) preserving first occurrence
+        seen: set[str] = set()
+        unique: list[str] = []
+        for skill in all_skills:
+            key = skill.lower()
+            if key not in seen:
+                seen.add(key)
+                unique.append(skill)
+        return unique
 
     def _fetch_from_api(self, taxonomy: str | TaxonomySource) -> list[str]:
         """Fetch skills from a taxonomy API.
@@ -262,29 +288,10 @@ def get_enhanced_skills(
     use_taxonomy: bool = False,
     taxonomy: str | TaxonomySource = TaxonomySource.ONET,
 ) -> list[str]:
-    """Get skills with optional taxonomy API integration.
+    """Get skills with bundled taxonomy data and optional API integration.
 
-    This is the main entry point for taxonomy-enhanced skill extraction.
-
-    Args:
-        use_taxonomy: Enable taxonomy API integration (default: False)
-        taxonomy: Taxonomy name to use ("onet", "linkedin")
-
-    Returns:
-        List of skills (from taxonomy API if enabled, or hardcoded list)
-
-    Example:
-        >>> # Default: offline-first with hardcoded skills
-        >>> skills = get_enhanced_skills()
-        >>> len(skills) > 0
-        True
-
-        >>> # Enable taxonomy API
-        >>> # Falls back to hardcoded skills (O*NET not yet implemented)
-        >>> skills = get_enhanced_skills(use_taxonomy=True, taxonomy="onet")
-        >>> len(skills) > 0
-        True
-
+    Always merges hardcoded + O*NET + LinkedIn bundles. When use_taxonomy=True,
+    also attempts live API fetch with caching.
     """
     config = TaxonomyConfig(enabled=use_taxonomy)
     fetcher = SkillsTaxonomyFetcher(config)

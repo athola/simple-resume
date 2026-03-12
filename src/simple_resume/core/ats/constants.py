@@ -39,6 +39,25 @@ FALLBACK_TFIDF_WEIGHT: Final[float] = 0.40
 FALLBACK_JACCARD_WEIGHT: Final[float] = 0.30
 FALLBACK_KEYWORD_WEIGHT: Final[float] = 0.30
 
+# Human Reviewer weights - emphasizes semantic similarity over term overlap
+HUMAN_BERT_WEIGHT: Final[float] = 0.45
+HUMAN_TFIDF_WEIGHT: Final[float] = 0.25
+HUMAN_JACCARD_WEIGHT: Final[float] = 0.10
+HUMAN_KEYWORD_WEIGHT: Final[float] = 0.20
+
+# Human Reviewer fallback weights (no BERT)
+HUMAN_FALLBACK_TFIDF_WEIGHT: Final[float] = 0.35
+HUMAN_FALLBACK_JACCARD_WEIGHT: Final[float] = 0.15
+HUMAN_FALLBACK_KEYWORD_WEIGHT: Final[float] = 0.50
+
+
+class ScoringMode(str, Enum):
+    """Scoring mode presets for tournament weight configuration."""
+
+    ATS = "ats"
+    HUMAN_REVIEWER = "human"
+
+
 # =============================================================================
 # TF-IDF Scorer Constants
 # =============================================================================

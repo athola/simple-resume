@@ -1,6 +1,7 @@
-"""Unit tests for skills taxonomy API integration.
+"""Unit tests for skills taxonomy API integration and data bundles (#81, #82).
 
-Tests the offline-first taxonomy system with caching and graceful degradation.
+Tests the offline-first taxonomy system with caching, graceful degradation,
+and bundled O*NET / LinkedIn skills data.
 Follows TDD: RED (failing test) -> GREEN (implementation) -> REFACTOR.
 """
 
@@ -15,12 +16,20 @@ import pytest
 
 from simple_resume.core.ats.taxonomy import (
     DEFAULT_SKILLS_LIST,
+    HARDCODED_SKILLS,
     NullTaxonomyCache,
     SkillsTaxonomyFetcher,
     TaxonomyConfig,
     get_enhanced_skills,
 )
+from simple_resume.core.ats.taxonomy_data.linkedin_skills import LINKEDIN_SKILLS
+from simple_resume.core.ats.taxonomy_data.onet_skills import ONET_SKILLS
+from simple_resume.shell.ats.taxonomy_fetcher import (
+    LinkedInApiFetcher,
+    OnetApiFetcher,
+)
 from simple_resume.shell.taxonomy_cache import TaxonomyLocalCache as TaxonomyCache
+from tests.bdd import Scenario
 
 
 class TestTaxonomyConfig:
@@ -38,6 +47,27 @@ class TestTaxonomyConfig:
         """Test enabled flag can be configured."""
         config = TaxonomyConfig(enabled=True)
         assert config.enabled is True
+
+    def test_negative_cache_ttl_raises(self, story: Scenario) -> None:
+        story.given("a TaxonomyConfig with negative cache_ttl")
+        story.when("constructing the config")
+        with pytest.raises(ValueError, match="cache_ttl must be > 0"):
+            TaxonomyConfig(cache_ttl=-1)
+        story.then("ValueError is raised")
+
+    def test_negative_api_timeout_raises(self, story: Scenario) -> None:
+        story.given("a TaxonomyConfig with negative api_timeout")
+        story.when("constructing the config")
+        with pytest.raises(ValueError, match="api_timeout must be > 0"):
+            TaxonomyConfig(api_timeout=-5)
+        story.then("ValueError is raised")
+
+    def test_negative_max_retries_raises(self, story: Scenario) -> None:
+        story.given("a TaxonomyConfig with negative max_retries")
+        story.when("constructing the config")
+        with pytest.raises(ValueError, match="max_retries must be >= 0"):
+            TaxonomyConfig(max_retries=-1)
+        story.then("ValueError is raised")
 
 
 class TestTaxonomyCache:
@@ -92,26 +122,33 @@ class TestTaxonomyCache:
 class TestSkillsTaxonomyFetcher:
     """Tests for SkillsTaxonomyFetcher."""
 
-    def test_offline_first_returns_hardcoded_skills_by_default(self):
-        """Test fetcher returns hardcoded skills when API disabled."""
+    def test_offline_first_returns_merged_skills_by_default(self):
+        """Test fetcher returns merged skills when API disabled."""
         config = TaxonomyConfig(enabled=False)
         fetcher = SkillsTaxonomyFetcher(config)
 
         skills = fetcher.get_skills("onet")
-        assert skills == list(DEFAULT_SKILLS_LIST)
+        # With bundles merged in, result is a superset of hardcoded skills
+        assert len(skills) >= len(DEFAULT_SKILLS_LIST)
+        skills_lower = {s.lower() for s in skills}
+        for s in DEFAULT_SKILLS_LIST[:5]:
+            assert s.lower() in skills_lower
 
-    def test_enabled_api_raises_on_cache_miss_not_implemented(self, tmp_path: Path):
-        """Test fetcher raises NotImplementedError when API stub is called."""
+    def test_enabled_api_falls_back_on_cache_miss_not_implemented(self, tmp_path: Path):
+        """Test fetcher falls back when API stub raises."""
         config = TaxonomyConfig(enabled=True)
         cache = TaxonomyCache(cache_dir=tmp_path / "taxonomy", ttl=1000)
         fetcher = SkillsTaxonomyFetcher(config, cache=cache)
 
-        # Cache miss + API not implemented = NotImplementedError propagates
-        with pytest.raises(NotImplementedError, match="not yet implemented"):
-            fetcher.get_skills("onet")
+        # Cache miss + API not implemented = graceful fallback to merged bundles
+        skills = fetcher.get_skills("onet")
+        assert len(skills) >= len(DEFAULT_SKILLS_LIST)
+        skills_lower = {s.lower() for s in skills}
+        for s in DEFAULT_SKILLS_LIST[:5]:
+            assert s.lower() in skills_lower
 
     def test_uses_cached_data_when_available(self, tmp_path: Path):
-        """Test fetcher uses cached data when available."""
+        """Test fetcher includes cached data in merged results."""
         config = TaxonomyConfig(enabled=True)
         cache = TaxonomyCache(cache_dir=tmp_path / "taxonomy", ttl=1000)
 
@@ -122,14 +159,18 @@ class TestSkillsTaxonomyFetcher:
         fetcher = SkillsTaxonomyFetcher(config, cache=cache)
         skills = fetcher.get_skills("test_taxonomy")
 
-        assert skills == cached_skills
+        # Merged pipeline: hardcoded + bundles + cached (deduplicated)
+        skills_lower = {s.lower() for s in skills}
+        for s in cached_skills:
+            assert s.lower() in skills_lower
+        assert len(skills) > len(cached_skills)
 
-    def test_unknown_taxonomy_falls_back_to_hardcoded(self, tmp_path: Path):
-        """Test unknown taxonomy string falls back to hardcoded skills.
+    def test_unknown_taxonomy_falls_back_to_merged_skills(self, tmp_path: Path):
+        """Test unknown taxonomy string falls back to merged hardcoded + bundle skills.
 
         With TaxonomySource enum, an invalid string raises ValueError during
         enum conversion in _fetch_from_api. Since get_skills catches ValueError,
-        it gracefully falls back to the hardcoded skills list.
+        it gracefully uses hardcoded + bundle skills.
         """
         config = TaxonomyConfig(enabled=True)
         cache = TaxonomyCache(cache_dir=tmp_path / "taxonomy", ttl=1000)
@@ -137,22 +178,28 @@ class TestSkillsTaxonomyFetcher:
 
         # "unknown" is not a valid TaxonomySource, triggers ValueError fallback
         skills = fetcher.get_skills("unknown")
-        assert skills == list(DEFAULT_SKILLS_LIST)
+        # Result includes hardcoded + bundles (superset of hardcoded alone)
+        assert len(skills) >= len(DEFAULT_SKILLS_LIST)
+        skills_lower = {s.lower() for s in skills}
+        for s in DEFAULT_SKILLS_LIST[:5]:
+            assert s.lower() in skills_lower
 
 
 class TestGetEnhancedSkills:
     """Tests for the main get_enhanced_skills function."""
 
-    def test_default_returns_hardcoded_skills(self):
-        """Test default behavior returns hardcoded skills (offline-first)."""
+    def test_default_returns_merged_skills(self):
+        """Test default returns merged hardcoded + bundle skills."""
         skills = get_enhanced_skills()
-        assert skills == list(DEFAULT_SKILLS_LIST)
         assert len(skills) > 50  # Should have many skills
+        # Bundles are always merged in, result is superset of hardcoded
+        assert len(skills) >= len(DEFAULT_SKILLS_LIST)
 
-    def test_disabled_taxonomy_returns_hardcoded(self):
-        """Test explicit disable returns hardcoded skills."""
+    def test_disabled_taxonomy_returns_merged_skills(self):
+        """Test explicit disable still returns hardcoded + bundle skills."""
         skills = get_enhanced_skills(use_taxonomy=False)
-        assert skills == list(DEFAULT_SKILLS_LIST)
+        # Bundles always included regardless of use_taxonomy flag
+        assert len(skills) >= len(DEFAULT_SKILLS_LIST)
 
     @patch("simple_resume.core.ats.taxonomy.SkillsTaxonomyFetcher")
     def test_enabled_taxonomy_uses_fetcher(self, mock_fetcher_class: Mock):
@@ -198,9 +245,12 @@ class TestNullTaxonomyCache:
         config = TaxonomyConfig(enabled=False)
         fetcher = SkillsTaxonomyFetcher(config)
 
-        # Should still work, using hardcoded skills
+        # Should still work, using hardcoded + bundle skills
         skills = fetcher.get_skills("onet")
-        assert skills == list(DEFAULT_SKILLS_LIST)
+        assert len(skills) >= len(DEFAULT_SKILLS_LIST)
+        skills_lower = {s.lower() for s in skills}
+        for s in DEFAULT_SKILLS_LIST[:5]:
+            assert s.lower() in skills_lower
 
 
 class TestTaxonomyCacheErrorHandling:
@@ -269,25 +319,31 @@ class TestTaxonomyCacheErrorHandling:
 
 
 class TestTaxonomyApiStubs:
-    """Tests for taxonomy API stubs (all backends unimplemented)."""
+    """Tests for taxonomy API stubs (all backends unimplemented).
 
-    def test_onet_raises_not_implemented(self, tmp_path: Path):
-        """Test O*NET taxonomy raises NotImplementedError."""
+    The live API stubs raise NotImplementedError, but get_skills()
+    catches it and falls back to merged bundle data gracefully.
+    """
+
+    def test_onet_api_fallback_on_not_implemented(self, tmp_path: Path):
+        """Test O*NET API stub failure falls back to merged bundles."""
         config = TaxonomyConfig(enabled=True)
         cache = TaxonomyCache(cache_dir=tmp_path / "taxonomy", ttl=1000)
         fetcher = SkillsTaxonomyFetcher(config, cache=cache)
 
-        with pytest.raises(NotImplementedError, match="not yet implemented"):
-            fetcher.get_skills("onet")
+        # Should NOT raise — graceful fallback to merged bundles
+        skills = fetcher.get_skills("onet")
+        assert len(skills) >= len(DEFAULT_SKILLS_LIST)
 
-    def test_linkedin_raises_not_implemented(self, tmp_path: Path):
-        """Test LinkedIn taxonomy raises NotImplementedError."""
+    def test_linkedin_api_fallback_on_not_implemented(self, tmp_path: Path):
+        """Test LinkedIn API stub failure falls back to merged bundles."""
         config = TaxonomyConfig(enabled=True)
         cache = TaxonomyCache(cache_dir=tmp_path / "taxonomy", ttl=1000)
         fetcher = SkillsTaxonomyFetcher(config, cache=cache)
 
-        with pytest.raises(NotImplementedError, match="not yet implemented"):
-            fetcher.get_skills("linkedin")
+        # Should NOT raise — graceful fallback to merged bundles
+        skills = fetcher.get_skills("linkedin")
+        assert len(skills) >= len(DEFAULT_SKILLS_LIST)
 
 
 class TestSuccessfulApiFetchCaching:
@@ -303,11 +359,14 @@ class TestSuccessfulApiFetchCaching:
         mock_skills = ["MockSkill1", "MockSkill2", "MockSkill3"]
 
         with patch.object(fetcher, "_fetch_from_api", return_value=mock_skills):
-            # First call should fetch and cache
+            # First call should fetch, cache, and merge with bundles
             result = fetcher.get_skills("mock_taxonomy")
-            assert sorted(result) == sorted(mock_skills)
+            # Result includes bundles + mock_skills (deduplicated)
+            result_lower = {s.lower() for s in result}
+            for s in mock_skills:
+                assert s.lower() in result_lower
 
-        # Verify it was cached
+        # Verify API results were cached (only the API portion)
         cached = cache.get("mock_taxonomy")
         assert cached is not None
         assert sorted(cached) == sorted(mock_skills)
@@ -327,4 +386,142 @@ class TestSuccessfulApiFetchCaching:
 
             # Should use cached data, not call API
             mock_fetch.assert_not_called()
-            assert result == ["CachedSkill"]
+            # Result includes bundles + cached skill (deduplicated)
+            result_lower = {s.lower() for s in result}
+            assert "cachedskill" in result_lower
+
+
+class TestOnetBundle:
+    """O*NET skills bundle loads correctly."""
+
+    def test_onet_skills_is_nonempty_list(self, story: Scenario) -> None:
+        story.given("the O*NET skills bundle module")
+        story.when("accessing the skills list")
+        story.then("it contains a substantial number of skills")
+        assert isinstance(ONET_SKILLS, (list, tuple))
+        assert len(ONET_SKILLS) >= 200
+
+    def test_onet_skills_contains_common_tech(self, story: Scenario) -> None:
+        story.given("the O*NET skills bundle")
+        story.when("checking for common technology skills")
+        skills_lower = {s.lower() for s in ONET_SKILLS}
+
+        story.then("common skills are present")
+        assert "python" in skills_lower
+        assert "sql" in skills_lower
+        assert "project management" in skills_lower
+
+
+class TestLinkedInBundle:
+    """LinkedIn skills bundle loads correctly."""
+
+    def test_linkedin_skills_is_nonempty_list(self, story: Scenario) -> None:
+        story.given("the LinkedIn skills bundle module")
+        story.when("accessing the skills list")
+        story.then("it contains a substantial number of skills")
+        assert isinstance(LINKEDIN_SKILLS, (list, tuple))
+        assert len(LINKEDIN_SKILLS) >= 200
+
+    def test_linkedin_skills_contains_soft_skills(self, story: Scenario) -> None:
+        story.given("the LinkedIn skills bundle")
+        story.when("checking for soft skills common on LinkedIn")
+        skills_lower = {s.lower() for s in LINKEDIN_SKILLS}
+
+        story.then("professional soft skills are present")
+        assert "leadership" in skills_lower
+        assert "communication" in skills_lower
+
+
+class TestMergedSkillsPipeline:
+    """get_enhanced_skills merges hardcoded + bundle skills."""
+
+    def test_enhanced_skills_includes_hardcoded(self, story: Scenario) -> None:
+        story.given("default taxonomy configuration")
+        story.when("getting enhanced skills")
+        skills = get_enhanced_skills()
+        skills_lower = {s.lower() for s in skills}
+
+        story.then("hardcoded skills are included")
+        for skill in HARDCODED_SKILLS[:5]:
+            assert skill.lower() in skills_lower
+
+    def test_enhanced_skills_includes_bundles(self, story: Scenario) -> None:
+        story.given("default taxonomy configuration")
+        story.when("getting enhanced skills")
+        skills = get_enhanced_skills()
+
+        story.then("result is larger than hardcoded list alone")
+        assert len(skills) > len(HARDCODED_SKILLS)
+
+    def test_enhanced_skills_deduplicates(self, story: Scenario) -> None:
+        story.given("skills from multiple sources with overlaps")
+        story.when("getting enhanced skills")
+        skills = get_enhanced_skills()
+        skills_lower = [s.lower() for s in skills]
+
+        story.then("no duplicates exist (case-insensitive)")
+        assert len(skills_lower) == len(set(skills_lower))
+
+    def test_fetcher_get_skills_without_api(self, story: Scenario) -> None:
+        story.given("a fetcher with API disabled (default)")
+        fetcher = SkillsTaxonomyFetcher()
+
+        story.when("getting skills")
+        skills = fetcher.get_skills()
+
+        story.then("returns merged hardcoded + bundle skills")
+        assert len(skills) > len(HARDCODED_SKILLS)
+
+
+class TestApiFetcherStubs:
+    """Shell-layer API fetcher stubs are importable."""
+
+    def test_onet_fetcher_exists(self, story: Scenario) -> None:
+        story.given("the shell-layer taxonomy fetcher module")
+        story.when("instantiating the O*NET fetcher")
+        fetcher = OnetApiFetcher()
+
+        story.then("it has a fetch method")
+        assert hasattr(fetcher, "fetch")
+
+    def test_linkedin_fetcher_exists(self, story: Scenario) -> None:
+        story.given("the shell-layer taxonomy fetcher module")
+        story.when("instantiating the LinkedIn fetcher")
+        fetcher = LinkedInApiFetcher()
+
+        story.then("it has a fetch method")
+        assert hasattr(fetcher, "fetch")
+
+    def test_onet_fetcher_requires_credentials(self, story: Scenario) -> None:
+        story.given("an O*NET fetcher without credentials")
+        fetcher = OnetApiFetcher()
+
+        story.when("attempting to fetch without env vars")
+        with pytest.raises(NotImplementedError):
+            fetcher.fetch()
+
+        story.then("NotImplementedError is raised with guidance")
+
+    def test_onet_fetcher_raises_even_with_credentials(
+        self, story: Scenario, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        story.given("an O*NET fetcher with credentials set")
+        monkeypatch.setenv("ONET_API_USERNAME", "testuser")
+        monkeypatch.setenv("ONET_API_PASSWORD", "testpass")
+        fetcher = OnetApiFetcher()
+
+        story.when("attempting to fetch (API not yet implemented)")
+        with pytest.raises(NotImplementedError, match="not yet implemented"):
+            fetcher.fetch()
+
+        story.then("NotImplementedError is raised because live API is a stub")
+
+    def test_linkedin_fetcher_raises_not_implemented(self, story: Scenario) -> None:
+        story.given("a LinkedIn API fetcher")
+        fetcher = LinkedInApiFetcher()
+
+        story.when("attempting to fetch")
+        with pytest.raises(NotImplementedError, match="OAuth app approval"):
+            fetcher.fetch()
+
+        story.then("NotImplementedError is raised with OAuth guidance")

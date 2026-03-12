@@ -32,6 +32,7 @@ from __future__ import annotations
 
 # ATS scoring module (new in v0.2.0)
 from simple_resume.core.ats.base import BaseScorer, ExtractedEntities, ScorerResult
+from simple_resume.core.ats.constants import ScoringMode
 from simple_resume.core.ats.entities import EntityExtractor, extract_entities
 from simple_resume.core.ats.jaccard import JaccardScorer
 from simple_resume.core.ats.keyword import KeywordScorer
@@ -117,7 +118,7 @@ from simple_resume.shell.runtime.lazy_import import (
 )
 
 # Version
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 
 # Public API exports - organized by functionality
 __all__ = [
@@ -157,9 +158,10 @@ __all__ = [
     "generate",
     "GenerateOptions",
     "preview",
-    # ATS scoring (v0.2.0)
+    # ATS scoring (v0.2.0+)
     "BaseScorer",
     "ScorerResult",
+    "ScoringMode",
     "ExtractedEntities",
     "EntityExtractor",
     "extract_entities",

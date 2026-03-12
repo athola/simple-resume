@@ -13,7 +13,9 @@ from pathlib import Path
 import yaml
 
 from simple_resume.core.exceptions import SimpleResumeError
+from simple_resume.core.importers.linkedin import linkedin_to_simple_resume
 from simple_resume.shell.cli._errors import _handle_unexpected_error
+from simple_resume.shell.importers.linkedin_fetcher import read_linkedin_file
 
 logger = logging.getLogger(__name__)
 
@@ -29,13 +31,6 @@ def handle_import_command(args: argparse.Namespace) -> int:
         Exit code (0 for success, non-zero for failure).
 
     """
-    from simple_resume.core.importers.linkedin import (  # noqa: PLC0415 - optional dep
-        linkedin_to_simple_resume,
-    )
-    from simple_resume.shell.importers.linkedin_fetcher import (  # noqa: PLC0415 - optional dep
-        read_linkedin_file,
-    )
-
     linkedin_path: str = args.linkedin
     output_path: Path | None = getattr(args, "output", None)
 

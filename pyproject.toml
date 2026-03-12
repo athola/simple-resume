@@ -30,7 +30,7 @@ markers = [
 
 [project]
 name = "simple-resume"
-version = "0.3.1"
+version = "0.3.2"
 description = "Generate PDF resumes from YAML data using HTML templates"
 authors = [
     {name = "Alex Thola", email = "alexthola@gmail.com"}
@@ -50,6 +50,8 @@ dependencies = [
     "palettable>=3.3.3,<4.0",
     "jinja2>=3.0,<4.0",
     "scikit-learn>=1.5,<2.0",
+    "pdfplumber>=0.11,<1.0",
+    "beautifulsoup4>=4.12,<5.0",
 ]
 
 [project.optional-dependencies]
@@ -70,11 +72,8 @@ bert = [
 llm = [
     "litellm>=1.0,<2.0",
 ]
-linkedin = [
-    "beautifulsoup4>=4.12,<5.0",
-]
 all = [
-    "simple-resume[llm,linkedin]",
+    "simple-resume[llm]",
 ]
 
 [project.scripts]
@@ -234,6 +233,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["bs4", "bs4.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["pdfplumber", "pdfplumber.*"]
 ignore_missing_imports = true
 
 

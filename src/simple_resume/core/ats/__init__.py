@@ -13,6 +13,7 @@ from simple_resume.core.ats.base import (
     ScorerResult,
     ScorerSelection,
 )
+from simple_resume.core.ats.constants import ScoringMode
 from simple_resume.core.ats.entities import (
     EntityExtractor,
     ParsedDocument,
@@ -43,6 +44,7 @@ __all__ = [
     "ScorerName",
     "ScorerResult",
     "ScorerSelection",
+    "ScoringMode",
     "ExtractedEntities",
     "EntityExtractor",
     "ParsedDocument",
