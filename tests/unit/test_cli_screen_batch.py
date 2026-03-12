@@ -12,9 +12,10 @@ from pathlib import Path
 
 import pytest
 
-from simple_resume.core.ats import TournamentResult
+from simple_resume.core.ats import ScorerResult, TournamentResult
 from simple_resume.shell.cli._screen import (
     _format_batch_report,
+    _format_batch_structured,
     handle_screen_command,
 )
 from tests.bdd import Scenario
@@ -297,3 +298,57 @@ class TestBatchFormatVerbose:
         output = capsys.readouterr().out
         assert exit_code == 0
         assert "tfidf" in output.lower() or "keyword" in output.lower()
+
+
+class TestBatchStructuredVerbose:
+    """_format_batch_structured with verbose=True includes algorithm details."""
+
+    def test_verbose_json_includes_algorithm_results(self, story: Scenario) -> None:
+        story.given("tournament results with algorithm breakdowns")
+        alg_results = [
+            ScorerResult(name="tfidf_cosine", score=0.8, weight=0.4),
+            ScorerResult(name="keyword_exact", score=0.6, weight=0.3),
+        ]
+        result = TournamentResult(
+            overall_score=0.72,
+            algorithm_results=alg_results,
+            component_breakdown={"skills": 0.75, "experience": 0.68},
+        )
+        ranked = [("resume_a.txt", result)]
+
+        story.when("formatting as JSON with verbose=True")
+        output = _format_batch_structured(
+            ranked, "job.txt", total=1, report_format="json", verbose=True
+        )
+        data = json.loads(output)
+
+        story.then("algorithm_results and component_breakdown are in the output")
+        entry = data["results"][0]
+        assert "algorithm_results" in entry
+        assert len(entry["algorithm_results"]) == 2
+        assert entry["algorithm_results"][0]["name"] == "tfidf_cosine"
+        assert entry["algorithm_results"][0]["score"] == 80.0
+        assert "component_breakdown" in entry
+        assert entry["component_breakdown"]["skills"] == 0.75
+
+    def test_non_verbose_json_excludes_algorithm_details(self, story: Scenario) -> None:
+        story.given("tournament results")
+        result = TournamentResult(
+            overall_score=0.65,
+            algorithm_results=[
+                ScorerResult(name="tfidf_cosine", score=0.7, weight=0.5),
+            ],
+            component_breakdown={"skills": 0.6},
+        )
+        ranked = [("resume_b.txt", result)]
+
+        story.when("formatting as JSON with verbose=False")
+        output = _format_batch_structured(
+            ranked, "job.txt", total=1, report_format="json", verbose=False
+        )
+        data = json.loads(output)
+
+        story.then("algorithm_results and component_breakdown are absent")
+        entry = data["results"][0]
+        assert "algorithm_results" not in entry
+        assert "component_breakdown" not in entry

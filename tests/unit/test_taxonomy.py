@@ -48,6 +48,27 @@ class TestTaxonomyConfig:
         config = TaxonomyConfig(enabled=True)
         assert config.enabled is True
 
+    def test_negative_cache_ttl_raises(self, story: Scenario) -> None:
+        story.given("a TaxonomyConfig with negative cache_ttl")
+        story.when("constructing the config")
+        with pytest.raises(ValueError, match="cache_ttl must be > 0"):
+            TaxonomyConfig(cache_ttl=-1)
+        story.then("ValueError is raised")
+
+    def test_negative_api_timeout_raises(self, story: Scenario) -> None:
+        story.given("a TaxonomyConfig with negative api_timeout")
+        story.when("constructing the config")
+        with pytest.raises(ValueError, match="api_timeout must be > 0"):
+            TaxonomyConfig(api_timeout=-5)
+        story.then("ValueError is raised")
+
+    def test_negative_max_retries_raises(self, story: Scenario) -> None:
+        story.given("a TaxonomyConfig with negative max_retries")
+        story.when("constructing the config")
+        with pytest.raises(ValueError, match="max_retries must be >= 0"):
+            TaxonomyConfig(max_retries=-1)
+        story.then("ValueError is raised")
+
 
 class TestTaxonomyCache:
     """Tests for TaxonomyCache file system caching."""
@@ -480,3 +501,27 @@ class TestApiFetcherStubs:
             fetcher.fetch()
 
         story.then("NotImplementedError is raised with guidance")
+
+    def test_onet_fetcher_raises_even_with_credentials(
+        self, story: Scenario, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        story.given("an O*NET fetcher with credentials set")
+        monkeypatch.setenv("ONET_API_USERNAME", "testuser")
+        monkeypatch.setenv("ONET_API_PASSWORD", "testpass")
+        fetcher = OnetApiFetcher()
+
+        story.when("attempting to fetch (API not yet implemented)")
+        with pytest.raises(NotImplementedError, match="not yet implemented"):
+            fetcher.fetch()
+
+        story.then("NotImplementedError is raised because live API is a stub")
+
+    def test_linkedin_fetcher_raises_not_implemented(self, story: Scenario) -> None:
+        story.given("a LinkedIn API fetcher")
+        fetcher = LinkedInApiFetcher()
+
+        story.when("attempting to fetch")
+        with pytest.raises(NotImplementedError, match="OAuth app approval"):
+            fetcher.fetch()
+
+        story.then("NotImplementedError is raised with OAuth guidance")

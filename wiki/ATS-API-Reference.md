@@ -1,7 +1,7 @@
 # ATS API Reference
 
-**Version:** 0.2.5
-**Last Updated:** 2026-02-20
+**Version:** 0.3.2
+**Last Updated:** 2026-03-11
 **Stability:** Public API exports follow semantic versioning guarantees
 **Parent:** [API Reference](API-Reference.md)
 
@@ -35,12 +35,40 @@ print(f"Algorithms used: {result.metadata['scorer_names']}")
 
 **Returns:** `TournamentResult`
 
+### `ScoringMode`
+
+Enum for selecting tournament weight presets. Different modes optimize for different evaluators.
+
+```python
+from simple_resume import ScoringMode
+
+ScoringMode.ATS             # "ats" — optimized for automated tracking systems
+ScoringMode.HUMAN_REVIEWER  # "human" — optimized for human recruiter evaluation
+```
+
+**Weight presets (with BERT):**
+
+| Scorer | ATS | Human Reviewer |
+|--------|-----|----------------|
+| BERT | 0.35 | 0.45 |
+| TF-IDF | 0.30 | 0.25 |
+| Jaccard | 0.20 | 0.10 |
+| Keyword | 0.15 | 0.20 |
+
+Human reviewer mode also enables creative term expansion by default.
+
 ### `ATSTournament`
 
 Multi-algorithm tournament runner for resume-job matching.
 
 ```python
-from simple_resume import ATSTournament, TFIDFScorer, JaccardScorer
+from simple_resume import ATSTournament, ScoringMode, TFIDFScorer, JaccardScorer
+
+# Default tournament (ATS mode)
+tournament = ATSTournament()
+
+# Human reviewer mode — emphasizes semantic similarity
+tournament = ATSTournament(scoring_mode=ScoringMode.HUMAN_REVIEWER)
 
 # Custom tournament with specific weights
 tournament = ATSTournament(scorers=[
@@ -55,6 +83,7 @@ result = tournament.score(resume_text, job_description)
 - `scorers: list[BaseScorer] | None` - List of scoring algorithms (defaults to TF-IDF, Jaccard, Keyword)
 - `include_bert: bool` - Whether to include BERT scorer if available (default: True)
 - `bert_model_name: str | None` - Override BERT model name; shell layer can resolve from environment or config
+- `scoring_mode: ScoringMode` - Weight preset to use (default: `ScoringMode.ATS`)
 
 **Methods:**
 - `score(resume_text, job_description, **kwargs) -> TournamentResult` - Score resume against job

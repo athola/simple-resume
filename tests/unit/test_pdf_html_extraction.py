@@ -8,28 +8,57 @@ import pytest
 
 from simple_resume.core.exceptions import ValidationError
 from simple_resume.shell.cli import main as cli
-from simple_resume.shell.cli._screen import _collect_resume_files
+from simple_resume.shell.cli._screen import _collect_resume_files, _extract_pdf_text
 from tests.bdd import Scenario
+
+# Minimal valid PDF with one page containing "Hello World" text.
+# Hand-crafted to avoid needing fpdf2 as a test dependency.
+_MINIMAL_PDF = (
+    b"%PDF-1.0\n"
+    b"1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
+    b"2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
+    b"3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R"
+    b"/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj\n"
+    b"4 0 obj<</Length 44>>stream\n"
+    b"BT /F1 12 Tf 100 700 Td (Hello World) Tj ET\n"
+    b"endstream\nendobj\n"
+    b"5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\n"
+    b"xref\n0 6\n"
+    b"0000000000 65535 f \n"
+    b"0000000009 00000 n \n"
+    b"0000000058 00000 n \n"
+    b"0000000115 00000 n \n"
+    b"0000000266 00000 n \n"
+    b"0000000360 00000 n \n"
+    b"trailer<</Size 6/Root 1 0 R>>\n"
+    b"startxref\n435\n%%EOF"
+)
 
 
 class TestPdfExtraction:
     """PDF text extraction via pdfplumber."""
 
     def test_extract_pdf_text(self, tmp_path: Path, story: Scenario) -> None:
-        fpdf2 = pytest.importorskip("fpdf")
-        story.given("a PDF file with text content")
+        story.given("a minimal PDF file with text content")
         pdf_file = tmp_path / "resume.pdf"
-        pdf = fpdf2.FPDF()
-        pdf.add_page()
-        pdf.set_font("Helvetica", size=12)
-        pdf.cell(text="Python developer with Django experience")
-        pdf.output(str(pdf_file))
+        pdf_file.write_bytes(_MINIMAL_PDF)
 
         story.when("reading the PDF file")
         content = cli._read_file_text(pdf_file)
 
         story.then("text is extracted from the PDF")
-        assert "Python" in content
+        assert "Hello World" in content
+
+    def test_extract_pdf_text_directly(self, tmp_path: Path, story: Scenario) -> None:
+        story.given("a minimal PDF file")
+        pdf_file = tmp_path / "doc.pdf"
+        pdf_file.write_bytes(_MINIMAL_PDF)
+
+        story.when("extracting text directly via _extract_pdf_text")
+        content = _extract_pdf_text(pdf_file)
+
+        story.then("page text is extracted correctly")
+        assert "Hello World" in content
 
     def test_corrupt_pdf_raises_validation_error(
         self, tmp_path: Path, story: Scenario

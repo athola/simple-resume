@@ -1,7 +1,7 @@
 # API Reference
 
-**Version:** 0.2.5
-**Last Updated:** 2026-02-20
+**Version:** 0.3.2
+**Last Updated:** 2026-03-11
 **Stability:** Public API exports follow semantic versioning guarantees
 
 ---
